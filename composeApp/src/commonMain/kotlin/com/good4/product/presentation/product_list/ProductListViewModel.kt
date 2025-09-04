@@ -19,7 +19,7 @@ class ProductListViewModel {
             }
 
             is ProductListAction.OnProductClick -> {
-                // Handle product click in platform-agnostic way later
+
             }
         }
     }
