@@ -1,11 +1,10 @@
 package com.good4.product.presentation.product_list
 
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class ProductListViewModel: ViewModel() {
+class ProductListViewModel {
     private val _state = MutableStateFlow(ProductListState())
     val state = _state.asStateFlow()
 
@@ -19,7 +18,9 @@ class ProductListViewModel: ViewModel() {
                 }
             }
 
-            is ProductListAction.OnProductClick -> TODO()
+            is ProductListAction.OnProductClick -> {
+                // Handle product click in platform-agnostic way later
+            }
         }
     }
 }
