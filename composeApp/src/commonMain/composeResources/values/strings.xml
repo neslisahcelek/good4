@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Good4</string>
+    <string name="hello_compose">Hello Compose</string>
+    <string name="product_image_description">Product image</string>
+    <string name="address_icon_description">Address icon</string>
+    <string name="amount_icon_description">Amount icon</string>
+    <string name="lock_icon_description">Lock icon</string>
+    <string name="reserve_button_label">Rezerve et</string>
+    <string name="amount_with_unit">%d Adet</string>
+</resources>
+
