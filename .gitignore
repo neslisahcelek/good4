@@ -32,3 +32,4 @@ captures
 # JetBrains Fleet / VSCode
 .fleet/
 .vscode/
+.cursorrules
