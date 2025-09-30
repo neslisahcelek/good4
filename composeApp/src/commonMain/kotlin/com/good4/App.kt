@@ -1,14 +1,24 @@
 package com.good4
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.good4.product.presentation.product_list.ProductListScreenRoot
+import com.good4.product.presentation.product_list.ProductListViewModel
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.ic_logo
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -21,9 +31,16 @@ fun App() {
                 Text("Click me!")
             }
             AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Text("Compose: $greeting")
+                Image(
+                    painter = painterResource(Res.drawable.ic_logo),
+                    contentDescription = null
+                )
             }
+
+            ProductListScreenRoot(
+                viewModel = remember { ProductListViewModel() },
+                onProductClick = {}
+            )
         }
     }
 }
