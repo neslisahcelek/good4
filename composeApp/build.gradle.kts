@@ -4,12 +4,13 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.google.services)
 }
 
 kotlin {
@@ -47,6 +48,11 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
             implementation(libs.ktor.client.okhttp)
+            
+            // Firebase dependencies
+            implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+            implementation("com.google.firebase:firebase-firestore")
+            implementation("com.google.firebase:firebase-auth")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -62,6 +68,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.jetbrains.compose.navigation)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
             implementation(libs.koin.compose)
@@ -69,7 +76,6 @@ kotlin {
             api(libs.koin.core)
 
             implementation(libs.bundles.ktor)
-            implementation(libs.bundles.coil)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

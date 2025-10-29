@@ -3,6 +3,7 @@ package com.good4.product.presentation.product_list
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,7 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import com.good4.core.presentation.UiText
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
@@ -49,18 +51,19 @@ fun ProductItem(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            AsyncImage(
-                model = product.imageUrl,
-                contentDescription = stringResource(Res.string.product_image_description),
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(Res.drawable.ic_placeholder),
-                error = painterResource(Res.drawable.ic_placeholder),
-                fallback = painterResource(Res.drawable.ic_placeholder)
-            )
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.ic_placeholder),
+                    contentDescription = stringResource(Res.string.product_image_description),
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
             Column(
                 modifier = Modifier.padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
