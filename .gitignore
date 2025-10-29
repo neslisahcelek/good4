@@ -29,6 +29,16 @@ captures
 *.keystore
 *.jks
 
+# Firebase config 
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-debug.json
+**/firebase.json
+keystore.properties
+
+# Gradle local and signing
+local.properties
+
 # JetBrains Fleet / VSCode
 .fleet/
 .vscode/
