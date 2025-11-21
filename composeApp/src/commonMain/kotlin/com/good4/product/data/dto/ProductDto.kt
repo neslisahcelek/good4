@@ -7,19 +7,19 @@ import kotlinx.datetime.Instant
 @Serializable
 data class ProductDto(
     @SerialName("name")
-    val name: String,
+    val name: String? = null,
     @SerialName("description")
-    val description: String,
+    val description: String? = null,
     @SerialName("count")
-    val count: Int,
+    val count: Int? = null,
     @SerialName("businessId")
-    val businessId: String,
+    val businessId: String? = null,
     @SerialName("createdAt")
-    val createdDate: Instant,
+    val createdDate: Instant? = null,
     @SerialName("discountPrice")
-    val discountPrice: Int,
+    val discountPrice: Int? = null,
     @SerialName("originalPrice")
-    val originalPrice: Int,
+    val originalPrice: Int? = null,
     @SerialName("image")
-    val imageUrl: String,
+    val imageUrl: String? = null,
 )

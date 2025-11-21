@@ -20,6 +20,7 @@ import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_logo
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
@@ -37,8 +38,9 @@ fun App() {
                 )
             }
 
+            val viewModel: ProductListViewModel = koinViewModel()
             ProductListScreenRoot(
-                viewModel = remember { ProductListViewModel() },
+                viewModel = viewModel,
                 onProductClick = {}
             )
         }
