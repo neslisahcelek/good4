@@ -30,7 +30,7 @@ captures
 *.jks
 
 # Firebase config 
-**/google-services.json
+**/google-services*.json
 **/GoogleService-Info.plist
 **/firebase-debug.json
 **/firebase.json

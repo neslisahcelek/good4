@@ -8,6 +8,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.google.firebase.FirebaseApp
 import com.good4.core.data.repository.android.firebaseModule
 import com.good4.core.data.repository.android.firestoreModule
+import com.good4.di.commonModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
         // Initialize Koin
         startKoin {
             androidContext(this@MainActivity)
-            modules(firebaseModule, firestoreModule)
+            modules(commonModule, firebaseModule, firestoreModule)
         }
         
         setContent {

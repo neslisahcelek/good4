@@ -73,7 +73,10 @@ fun ProductListScreenPreview() {
                 storeName = "Sokak Kahvecisi",
                 address = "Yakut Çarşısı, Konyaaltı/Antalya",
                 description = "Orta boy, sıcak servis",
-                price = "100 TL",
+                price = "80 TL",
+                originalPrice = 100,
+                discountPrice = 80,
+                discountPercentage = 20,
                 imageUrl = "image1.png",
                 amount = 5
             ),
@@ -84,6 +87,9 @@ fun ProductListScreenPreview() {
                 address = "Atatürk Cd. No:12, Muratpaşa/Antalya",
                 description = "Büyük boy, sütlü",
                 price = "140 TL",
+                originalPrice = 140,
+                discountPrice = null,
+                discountPercentage = null,
                 imageUrl = "image2.png",
                 amount = 3
             ),
@@ -93,7 +99,10 @@ fun ProductListScreenPreview() {
                 storeName = "Sokak Kahvecisi",
                 address = "Yakut Çarşısı, Konyaaltı/Antalya",
                 description = "İnce belli",
-                price = "30 TL",
+                price = "25 TL",
+                originalPrice = 30,
+                discountPrice = 25,
+                discountPercentage = 17,
                 imageUrl = "image3.png",
                 amount = 20
             )
