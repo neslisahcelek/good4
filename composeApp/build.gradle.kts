@@ -53,6 +53,9 @@ kotlin {
             implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
             implementation("com.google.firebase:firebase-firestore")
             implementation("com.google.firebase:firebase-auth")
+            
+            // Kotlin reflection for Firestore serialization
+            implementation("org.jetbrains.kotlin:kotlin-reflect")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

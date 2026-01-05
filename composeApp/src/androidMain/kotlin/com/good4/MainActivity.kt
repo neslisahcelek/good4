@@ -19,6 +19,17 @@ class MainActivity : ComponentActivity() {
         // Initialize Firebase
         FirebaseApp.initializeApp(this)
         
+        // Firestore
+        try {
+            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val settings = com.google.firebase.firestore.FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .build()
+            firestore.firestoreSettings = settings
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
         // Initialize Koin
         startKoin {
             androidContext(this@MainActivity)

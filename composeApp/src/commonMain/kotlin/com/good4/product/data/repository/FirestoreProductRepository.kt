@@ -15,21 +15,29 @@ class FirestoreProductRepository(
     suspend fun getProducts(): Result<List<Product>, Error> {
         return when (val result = firestoreRepository.getCollectionWithIds("products", ProductDto::class)) {
             is Result.Success -> {
-                val products = result.data.map { documentWithId ->
-                    val productDto = documentWithId.data
-                    val businessResult = productDto.businessId?.let { businessId ->
-                        businessRepository.getBusinessById(businessId)
-                    }
-                    
-                    when (businessResult) {
+                // Önce tüm benzersiz business ID'lerini topla
+                val uniqueBusinessIds = result.data.mapNotNull { it.data.businessId }.distinct()
+                
+                // Tüm business bilgilerini bir kere çek ve cache'le
+                val businessCache = mutableMapOf<String, BusinessDto?>()
+                uniqueBusinessIds.forEach { businessId ->
+                    when (val businessResult = businessRepository.getBusinessById(businessId)) {
                         is Result.Success -> {
-                            productDto.toProduct(documentWithId.id, businessResult.data)
+                            businessCache[businessId] = businessResult.data
                         }
-                        else -> {
-                            productDto.toProduct(documentWithId.id, null)
+                        is Result.Error -> {
+                            businessCache[businessId] = null
                         }
                     }
                 }
+                
+                // Şimdi ürünleri business bilgileri ile eşleştir
+                val products = result.data.map { documentWithId ->
+                    val productDto = documentWithId.data
+                    val business = productDto.businessId?.let { businessCache[it] }
+                    productDto.toProduct(documentWithId.id, business)
+                }
+                
                 Result.Success(products)
             }
             is Result.Error -> result
@@ -79,6 +87,7 @@ private fun ProductDto.toProduct(documentId: String, business: BusinessDto?): Pr
     
     return Product(
         id = documentId.hashCode().toLong(),
+        documentId = documentId,
         name = name ?: "",
         description = description ?: "",
         storeName = business?.name ?: "",
@@ -91,3 +100,4 @@ private fun ProductDto.toProduct(documentId: String, business: BusinessDto?): Pr
         amount = count ?: 0
     )
 }
+

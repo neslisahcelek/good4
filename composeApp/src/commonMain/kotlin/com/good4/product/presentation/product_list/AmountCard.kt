@@ -3,6 +3,7 @@ package com.good4.product.presentation.product_list
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.Res
@@ -24,7 +25,8 @@ fun AmountCard(
     InfoCard(
         modifier = modifier,
         text = text,
-        icon = icon
+        icon = icon,
+        backgroundColor = Color.LightGray
     )
 }
 

@@ -2,6 +2,7 @@ package com.good4.product
 
 data class Product(
     val id: Long,
+    val documentId: String,
     val name: String,
     val description: String,
     val storeName: String,

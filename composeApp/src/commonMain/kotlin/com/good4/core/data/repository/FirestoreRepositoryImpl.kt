@@ -5,12 +5,13 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import kotlin.reflect.KClass
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 class FirestoreRepositoryImpl : FirestoreRepository {
     override suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error> {
         delay(500) // Simulate network delay
         println("Mock Firestore: Added document to $collectionPath with data: $data")
-        return Result.Success("mock_document_id_${System.currentTimeMillis()}")
+        return Result.Success("mock_document_id_${Random.nextInt()}")
     }
 
     override suspend fun <T : Any> getDocument(collectionPath: String, documentId: String, clazz: KClass<T>): Result<T, Error> {
@@ -41,8 +42,6 @@ class FirestoreRepositoryImpl : FirestoreRepository {
     
     override suspend fun <T : Any> getCollectionWithIds(collectionPath: String, clazz: KClass<T>): Result<List<DocumentWithId<T>>, Error> {
         delay(500) // Simulate network delay
-        println("Mock Firestore: Getting collection $collectionPath with IDs")
-        // In a real implementation, you'd fetch from Firestore and deserialize
         return Result.Error(NetworkError("Not implemented for mock"))
     }
 }

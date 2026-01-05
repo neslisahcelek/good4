@@ -65,20 +65,23 @@ fun ProductItem(
             }
             Column(
                 modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = product.name,
                     fontWeight = FontWeight.Bold,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
                     text = product.storeName,
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize,
                     color = Color.Gray,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AddressRow(
-                    address = UiText.DynamicString(product.address)
+                    address = UiText.DynamicString(product.address),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
                 Text(
                     text = product.description,
@@ -107,6 +110,7 @@ fun ProductItemPreview(modifier: Modifier = Modifier) {
         ProductItem(
             product = Product(
                 id = 1,
+                documentId = "preview_doc1",
                 name = "Filtre Kahve",
                 storeName = "Sokak Kahvecisi",
                 address = "Yakut Çarşısı Sokak Kahvecisi Konyaaltı/Antalya",
