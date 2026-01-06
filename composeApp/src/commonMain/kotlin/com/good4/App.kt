@@ -20,25 +20,16 @@ import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_logo
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                Image(
-                    painter = painterResource(Res.drawable.ic_logo),
-                    contentDescription = null
-                )
-            }
-
+            val viewModel: ProductListViewModel = koinViewModel()
             ProductListScreenRoot(
-                viewModel = remember { ProductListViewModel() },
+                viewModel = viewModel,
                 onProductClick = {}
             )
         }

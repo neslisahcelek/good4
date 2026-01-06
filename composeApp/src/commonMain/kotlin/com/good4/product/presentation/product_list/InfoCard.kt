@@ -25,7 +25,7 @@ fun InfoCard(
     text: UiText,
     icon: Painter? = null,
     iconContentDescription: UiText? = null,
-    textColor: Color = Color.Gray,
+    textColor: Color = Color.DarkGray,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     onClick: (() -> Unit)? = null
 ) {
@@ -34,7 +34,6 @@ fun InfoCard(
             modifier.clickable { onClick() }
         } else modifier,
         shape = RoundedCornerShape(10.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Row(
