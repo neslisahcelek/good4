@@ -19,6 +19,7 @@ navigationCompose = "2.9.0"
 kotlinSerialization = "1.6.3"
 kotlinx-datetime = "0.6.1"
 firebase-bom = "33.7.0"
+firebase-gitlive = "2.1.0"
 google-services = "4.4.2"
 koin = "4.1.1"
 ktor = "3.0.0"
@@ -50,6 +51,10 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "google-services" }
+
+# GitLive Firebase SDK (Kotlin Multiplatform)
+firebase-gitlive-auth = { group = "dev.gitlive", name = "firebase-auth", version.ref = "firebase-gitlive" }
+firebase-gitlive-firestore = { group = "dev.gitlive", name = "firebase-firestore", version.ref = "firebase-gitlive" }
 
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
