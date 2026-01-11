@@ -1,5 +1,6 @@
 package com.good4.user.data.dto
 
+import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -9,6 +10,8 @@ data class UserDto(
     val email: String? = null,
     @SerialName("fullName")
     val fullName: String? = null,
+    @SerialName("phoneNumber")
+    val phoneNumber: String? = null,
     @SerialName("role")
     val role: String? = null,
     @SerialName("verified")
@@ -20,7 +23,9 @@ data class UserDto(
     @SerialName("educationLevel")
     val educationLevel: String? = null,
     @SerialName("credit")
-    val credit: Int? = null
+    val credit: Int? = null,
+    @SerialName("registrationDate")
+    val registrationDate: Instant? = null
 )
 
 

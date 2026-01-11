@@ -31,7 +31,15 @@
     <string name="university">Üniversite *</string>
     <string name="major">Bölüm</string>
     <string name="education_level">Sınıf/Dönem</string>
-    <string name="education_level_placeholder">Örn: 3. sınıf</string>
+    <string name="education_level_placeholder">Sınıf/Dönem seçin</string>
+    <string name="education_level_1">1. Sınıf</string>
+    <string name="education_level_2">2. Sınıf</string>
+    <string name="education_level_3">3. Sınıf</string>
+    <string name="education_level_4">4. Sınıf</string>
+    <string name="education_level_5">5. Sınıf</string>
+    <string name="education_level_6">6. Sınıf</string>
+    <string name="education_level_masters">Yüksek Lisans</string>
+    <string name="education_level_phd">Doktora</string>
     <string name="password_required">Şifre *</string>
     <string name="password_confirm">Şifre Tekrar *</string>
     <string name="register">Kayıt Ol</string>
@@ -44,8 +52,12 @@
     <string name="personal_information">Kişisel Bilgiler</string>
     <string name="business_information">İşletme Bilgileri</string>
     <string name="business_name">İşletme Adı *</string>
+    <string name="business_phone">İşletme Telefonu</string>
     <string name="tax_number">Vergi Numarası</string>
     <string name="address">Adres *</string>
+    <string name="city">Şehir *</string>
+    <string name="district">İlçe</string>
+    <string name="security">Güvenlik</string>
     <string name="description">Açıklama</string>
     <string name="business_description_placeholder">İşletmeniz hakkında kısa bilgi</string>
 
@@ -110,6 +122,8 @@
 
     <!-- Auth Error Messages -->
     <string name="error_email_required">E-posta adresi gerekli</string>
+    <string name="error_email_invalid_format">Geçersiz e-posta formatı</string>
+    <string name="error_email_must_be_edu_tr">E-posta adresi edu.tr uzantılı olmalıdır</string>
     <string name="error_password_required">Şifre gerekli</string>
     <string name="error_full_name_required">Ad soyad gerekli</string>
     <string name="error_password_min_length">Şifre en az 6 karakter olmalı</string>

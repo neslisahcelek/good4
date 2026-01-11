@@ -156,12 +156,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Full Name
                 OutlinedTextField(
                     value = state.fullName,
                     onValueChange = { onAction(BusinessRegisterAction.OnFullNameChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Ad Soyad *") },
+                    label = { Text(stringResource(Res.string.full_name)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     colors = textFieldColors(),
@@ -170,12 +169,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Email
                 OutlinedTextField(
                     value = state.email,
                     onValueChange = { onAction(BusinessRegisterAction.OnEmailChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("E-posta *") },
+                    label = { Text(stringResource(Res.string.email_required)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -187,12 +185,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Phone
                 OutlinedTextField(
                     value = state.phoneNumber,
                     onValueChange = { onAction(BusinessRegisterAction.OnPhoneNumberChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Telefon") },
+                    label = { Text(stringResource(Res.string.phone)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
@@ -208,17 +205,15 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // İşletme Bilgileri Bölümü
-                SectionTitle("İşletme Bilgileri")
+                SectionTitle(stringResource(Res.string.business_information))
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Business Name
                 OutlinedTextField(
                     value = state.businessName,
                     onValueChange = { onAction(BusinessRegisterAction.OnBusinessNameChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("İşletme Adı *") },
+                    label = { Text(stringResource(Res.string.business_name)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     colors = textFieldColors(),
@@ -227,12 +222,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Business Phone
                 OutlinedTextField(
                     value = state.businessPhone,
                     onValueChange = { onAction(BusinessRegisterAction.OnBusinessPhoneChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("İşletme Telefonu") },
+                    label = { Text(stringResource(Res.string.business_phone)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
@@ -244,12 +238,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Address
                 OutlinedTextField(
                     value = state.address,
                     onValueChange = { onAction(BusinessRegisterAction.OnAddressChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Adres *") },
+                    label = { Text(stringResource(Res.string.address)) },
                     singleLine = false,
                     minLines = 2,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -259,12 +252,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // City
                 OutlinedTextField(
                     value = state.city,
                     onValueChange = { onAction(BusinessRegisterAction.OnCityChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Şehir *") },
+                    label = { Text(stringResource(Res.string.city)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     colors = textFieldColors(),
@@ -273,28 +265,12 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // District
                 OutlinedTextField(
                     value = state.district,
                     onValueChange = { onAction(BusinessRegisterAction.OnDistrictChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("İlçe") },
+                    label = { Text(stringResource(Res.string.district)) },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Description
-                OutlinedTextField(
-                    value = state.description,
-                    onValueChange = { onAction(BusinessRegisterAction.OnDescriptionChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("İşletme Açıklaması") },
-                    singleLine = false,
-                    minLines = 3,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     colors = textFieldColors(),
                     shape = RoundedCornerShape(12.dp)
@@ -306,17 +282,15 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Şifre Bölümü
-                SectionTitle("Güvenlik")
+                SectionTitle(stringResource(Res.string.security))
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Password
                 OutlinedTextField(
                     value = state.password,
                     onValueChange = { onAction(BusinessRegisterAction.OnPasswordChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Şifre *") },
+                    label = { Text(stringResource(Res.string.password_required)) },
                     singleLine = true,
                     visualTransformation = if (state.isPasswordVisible) {
                         VisualTransformation.None
@@ -341,12 +315,11 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Confirm Password
                 OutlinedTextField(
                     value = state.confirmPassword,
                     onValueChange = { onAction(BusinessRegisterAction.OnConfirmPasswordChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Şifre Tekrar *") },
+                    label = { Text(stringResource(Res.string.password_confirm)) },
                     singleLine = true,
                     visualTransformation = if (state.isPasswordVisible) {
                         VisualTransformation.None
@@ -369,7 +342,6 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Error Message
                 state.errorMessage?.let { error ->
                     Text(
                         text = error.asString(),
@@ -384,7 +356,6 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Register Button
                 Button(
                     onClick = { onAction(BusinessRegisterAction.OnRegisterClick) },
                     modifier = Modifier

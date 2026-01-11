@@ -8,8 +8,17 @@ import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
+import com.good4.core.util.validateStudentEmail
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.education_level_1
+import good4.composeapp.generated.resources.education_level_2
+import good4.composeapp.generated.resources.education_level_3
+import good4.composeapp.generated.resources.education_level_4
+import good4.composeapp.generated.resources.education_level_5
+import good4.composeapp.generated.resources.education_level_6
+import good4.composeapp.generated.resources.education_level_masters
+import good4.composeapp.generated.resources.education_level_phd
 import good4.composeapp.generated.resources.error_email_already_in_use
 import good4.composeapp.generated.resources.error_email_required
 import good4.composeapp.generated.resources.error_full_name_required
@@ -24,13 +33,27 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 class StudentRegisterViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(StudentRegisterState())
+    private val _state = MutableStateFlow(
+        StudentRegisterState(
+            educationLevels = listOf(
+                Res.string.education_level_1,
+                Res.string.education_level_2,
+                Res.string.education_level_3,
+                Res.string.education_level_4,
+                Res.string.education_level_5,
+                Res.string.education_level_6,
+                Res.string.education_level_masters,
+                Res.string.education_level_phd
+            )
+        )
+    )
     val state = _state.asStateFlow()
 
     fun onAction(action: StudentRegisterAction) {
@@ -46,9 +69,6 @@ class StudentRegisterViewModel(
             }
             is StudentRegisterAction.OnFullNameChange -> {
                 _state.update { it.copy(fullName = action.fullName, errorMessage = null) }
-            }
-            is StudentRegisterAction.OnPhoneNumberChange -> {
-                _state.update { it.copy(phoneNumber = action.phoneNumber, errorMessage = null) }
             }
             is StudentRegisterAction.OnUniversityChange -> {
                 _state.update { it.copy(university = action.university, errorMessage = null) }
@@ -85,6 +105,15 @@ class StudentRegisterViewModel(
             }
             return
         }
+        
+        val emailValidation = state.email.validateStudentEmail()
+        if (emailValidation != null) {
+            _state.update {
+                it.copy(errorMessage = UiText.StringResourceId(emailValidation))
+            }
+            return
+        }
+        
         if (state.password.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_password_required))
@@ -120,12 +149,14 @@ class StudentRegisterViewModel(
                     val userDto = UserDto(
                         email = state.email,
                         fullName = state.fullName,
+                        phoneNumber = null,
                         role = UserRole.STUDENT.value,
                         verified = false,
                         university = state.university,
                         major = state.major.ifBlank { null },
                         educationLevel = state.educationLevel.ifBlank { null },
-                        credit = 0
+                        credit = 1,
+                        registrationDate = Clock.System.now()
                     )
 
                     when (val userResult = userRepository.createUser(userId, userDto)) {

@@ -19,7 +19,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +35,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,7 +55,6 @@ import com.good4.core.presentation.DarkBlue
 import com.good4.core.presentation.DesertWhite
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PrimaryGreen
-import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -69,9 +74,12 @@ fun StudentRegisterScreenRoot(
         }
     }
 
+    val educationLevels = state.educationLevels.map { stringResource(it) }
+
     StudentRegisterScreen(
         modifier = modifier,
         state = state,
+        educationLevels = educationLevels,
         onAction = { action ->
             when (action) {
                 is StudentRegisterAction.OnBackClick -> onBackClick()
@@ -86,6 +94,7 @@ fun StudentRegisterScreenRoot(
 fun StudentRegisterScreen(
     modifier: Modifier = Modifier,
     state: StudentRegisterState,
+    educationLevels: List<String>,
     onAction: (StudentRegisterAction) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -172,22 +181,6 @@ fun StudentRegisterScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = state.phoneNumber,
-                    onValueChange = { onAction(StudentRegisterAction.OnPhoneNumberChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.phone)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
                     value = state.university,
                     onValueChange = { onAction(StudentRegisterAction.OnUniversityChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
@@ -213,16 +206,11 @@ fun StudentRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = state.educationLevel,
+                EducationLevelDropdown(
+                    selectedValue = state.educationLevel,
                     onValueChange = { onAction(StudentRegisterAction.OnEducationLevelChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.education_level)) },
-                    placeholder = { Text(stringResource(Res.string.education_level_placeholder)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
+                    educationLevels = educationLevels,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -338,6 +326,56 @@ fun StudentRegisterScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EducationLevelDropdown(
+    selectedValue: String,
+    onValueChange: (String) -> Unit,
+    educationLevels: List<String>,
+    modifier: Modifier = Modifier
+) {
+
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedValue,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(Res.string.education_level)) },
+            placeholder = { Text(stringResource(Res.string.education_level_placeholder)) },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            colors = textFieldColors(),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            educationLevels.forEach { level ->
+                DropdownMenuItem(
+                    text = { Text(level) },
+                    onClick = {
+                        onValueChange(level)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = DarkBlue,
@@ -351,6 +389,7 @@ fun StudentRegisterScreenPreview() {
     MaterialTheme {
         StudentRegisterScreen(
             state = StudentRegisterState(),
+            educationLevels = listOf("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", "5. Sınıf", "6. Sınıf", "Yüksek Lisans", "Doktora"),
             onAction = {}
         )
     }

@@ -8,6 +8,7 @@ import com.good4.business.data.dto.BusinessDto
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
@@ -44,46 +45,57 @@ class BusinessRegisterViewModel(
             is BusinessRegisterAction.OnEmailChange -> {
                 _state.update { it.copy(email = action.email, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnPasswordChange -> {
                 _state.update { it.copy(password = action.password, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnConfirmPasswordChange -> {
-                _state.update { it.copy(confirmPassword = action.confirmPassword, errorMessage = null) }
+                _state.update {
+                    it.copy(
+                        confirmPassword = action.confirmPassword,
+                        errorMessage = null
+                    )
+                }
             }
+
             is BusinessRegisterAction.OnFullNameChange -> {
                 _state.update { it.copy(fullName = action.fullName, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnPhoneNumberChange -> {
                 _state.update { it.copy(phoneNumber = action.phoneNumber, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnBusinessNameChange -> {
                 _state.update { it.copy(businessName = action.businessName, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnBusinessPhoneChange -> {
                 _state.update { it.copy(businessPhone = action.businessPhone, errorMessage = null) }
             }
-            is BusinessRegisterAction.OnBusinessEmailChange -> {
-                _state.update { it.copy(businessEmail = action.businessEmail, errorMessage = null) }
-            }
+
             is BusinessRegisterAction.OnAddressChange -> {
                 _state.update { it.copy(address = action.address, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnCityChange -> {
                 _state.update { it.copy(city = action.city, errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnDistrictChange -> {
                 _state.update { it.copy(district = action.district, errorMessage = null) }
             }
-            is BusinessRegisterAction.OnDescriptionChange -> {
-                _state.update { it.copy(description = action.description, errorMessage = null) }
-            }
+
             is BusinessRegisterAction.OnTogglePasswordVisibility -> {
                 _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             }
+
             is BusinessRegisterAction.OnRegisterClick -> register()
             is BusinessRegisterAction.OnClearError -> {
                 _state.update { it.copy(errorMessage = null) }
             }
+
             is BusinessRegisterAction.OnBackClick -> Unit
         }
     }
@@ -103,6 +115,15 @@ class BusinessRegisterViewModel(
             }
             return
         }
+
+        val emailValidation = state.email.validateEmail()
+        if (emailValidation != null) {
+            _state.update {
+                it.copy(errorMessage = UiText.StringResourceId(emailValidation))
+            }
+            return
+        }
+
         if (state.password.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_password_required))
@@ -161,6 +182,7 @@ class BusinessRegisterViewModel(
                             val userDto = UserDto(
                                 email = state.email,
                                 fullName = state.fullName,
+                                phoneNumber = state.phoneNumber.ifBlank { null },
                                 role = UserRole.BUSINESS.value,
                                 verified = false
                             )
@@ -174,6 +196,7 @@ class BusinessRegisterViewModel(
                                         )
                                     }
                                 }
+
                                 is Result.Error -> {
                                     _state.update {
                                         it.copy(
@@ -187,6 +210,7 @@ class BusinessRegisterViewModel(
                                 }
                             }
                         }
+
                         is Result.Error -> {
                             _state.update {
                                 it.copy(
@@ -200,14 +224,18 @@ class BusinessRegisterViewModel(
                         }
                     }
                 }
+
                 is Result.Error -> {
                     val errorMessage = when (authResult.error) {
                         is AuthError.EmailAlreadyInUse ->
                             UiText.StringResourceId(Res.string.error_email_already_in_use)
+
                         is AuthError.WeakPassword ->
                             UiText.StringResourceId(Res.string.error_weak_password)
+
                         is AuthError.NetworkError ->
                             UiText.StringResourceId(Res.string.error_network_connection_short)
+
                         else -> UiText.DynamicString(authResult.error.message)
                     }
                     _state.update {

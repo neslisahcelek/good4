@@ -5,7 +5,6 @@ sealed interface StudentRegisterAction {
     data class OnPasswordChange(val password: String) : StudentRegisterAction
     data class OnConfirmPasswordChange(val confirmPassword: String) : StudentRegisterAction
     data class OnFullNameChange(val fullName: String) : StudentRegisterAction
-    data class OnPhoneNumberChange(val phoneNumber: String) : StudentRegisterAction
     data class OnUniversityChange(val university: String) : StudentRegisterAction
     data class OnMajorChange(val major: String) : StudentRegisterAction
     data class OnEducationLevelChange(val educationLevel: String) : StudentRegisterAction

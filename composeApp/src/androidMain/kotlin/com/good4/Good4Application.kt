@@ -2,6 +2,8 @@ package com.good4
 
 import android.app.Application
 import com.google.firebase.FirebaseApp
+import com.good4.core.data.repository.android.firebaseModule
+import com.good4.core.data.repository.android.firestoreModule
 import com.good4.di.commonModule
 import com.good4.di.platformModule
 import org.koin.android.ext.koin.androidContext
@@ -15,7 +17,7 @@ class Good4Application : Application() {
         
         startKoin {
             androidContext(this@Good4Application)
-            modules(commonModule, platformModule)
+            modules(commonModule, platformModule, firebaseModule, firestoreModule)
         }
     }
 }
