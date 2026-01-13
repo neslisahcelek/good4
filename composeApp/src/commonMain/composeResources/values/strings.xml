@@ -1,7 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Good4</string>
-    <string name="hello_compose">Hello Compose</string>
+    <string name="app_tagline">Öğrenciler ve işletmeler arasında köprü kurarak, herkes için fayda sağlayan bir ekosistem oluşturuyoruz.</string>
+
+    <!-- Common -->
+    <string name="back">Geri</string>
+    <string name="or">veya</string>
+    <string name="error_prefix">Hata: %s</string>
+    <string name="loading">Yükleniyor…</string>
+    <string name="required_fields">* ile işaretli alanlar zorunludur</string>
+
+    <!-- Login Screen -->
+    <string name="email">E-posta</string>
+    <string name="email_placeholder">ornek@email.com</string>
+    <string name="password">Şifre</string>
+    <string name="password_placeholder">••••••••</string>
+    <string name="forgot_password">Şifremi unuttum</string>
+    <string name="login">Giriş Yap</string>
+    <string name="no_account">Hesabın yok mu?</string>
+    <string name="student_register">🎓 Öğrenci Olarak Kayıt Ol</string>
+    <string name="business_register">🏪 İşletme Olarak Kayıt Ol</string>
+
+    <!-- Student Register -->
+    <string name="student_registration">Öğrenci Kaydı</string>
+    <string name="student_emoji">🎓</string>
+    <string name="create_student_account">Öğrenci hesabı oluştur</string>
+    <string name="full_name">Ad Soyad *</string>
+    <string name="email_required">E-posta *</string>
+    <string name="phone">Telefon</string>
+    <string name="university">Üniversite *</string>
+    <string name="major">Bölüm</string>
+    <string name="education_level">Sınıf/Dönem</string>
+    <string name="education_level_placeholder">Sınıf/Dönem seçin</string>
+    <string name="education_level_1">1. Sınıf</string>
+    <string name="education_level_2">2. Sınıf</string>
+    <string name="education_level_3">3. Sınıf</string>
+    <string name="education_level_4">4. Sınıf</string>
+    <string name="education_level_5">5. Sınıf</string>
+    <string name="education_level_6">6. Sınıf</string>
+    <string name="education_level_masters">Yüksek Lisans</string>
+    <string name="education_level_phd">Doktora</string>
+    <string name="password_required">Şifre *</string>
+    <string name="password_confirm">Şifre Tekrar *</string>
+    <string name="register">Kayıt Ol</string>
+
+    <!-- Business Register -->
+    <string name="business_registration">İşletme Kaydı</string>
+    <string name="business_emoji">🏪</string>
+    <string name="create_business_account">İşletme hesabı oluştur</string>
+    <string name="admin_approval_notice">Kaydınız admin onayından sonra aktif olacaktır</string>
+    <string name="personal_information">Kişisel Bilgiler</string>
+    <string name="business_information">İşletme Bilgileri</string>
+    <string name="business_name">İşletme Adı *</string>
+    <string name="business_phone">İşletme Telefonu</string>
+    <string name="tax_number">Vergi Numarası</string>
+    <string name="address">Adres *</string>
+    <string name="city">Şehir *</string>
+    <string name="district">İlçe</string>
+    <string name="security">Güvenlik</string>
+    <string name="description">Açıklama</string>
+    <string name="business_description_placeholder">İşletmeniz hakkında kısa bilgi</string>
+
+    <!-- Product List -->
+    <string name="products_load_error">Ürünleri yüklemede sorun yaşıyoruz. Lütfen tekrar dene.</string>
+
+    <!-- Product Detail -->
+    <string name="product_detail">Ürün Detayı</string>
+    <string name="product_description">Ürün Açıklaması</string>
+    <string name="store_info">Mağaza Bilgileri</string>
+    <string name="available_amount">Kalan Adet</string>
+    <string name="original_price">Orijinal Fiyat</string>
+    <string name="discounted_price">İndirimli Fiyat</string>
+    <string name="reserve">Rezerve Et</string>
+    <string name="reserved_successfully">Başarıyla rezerve edildi!</string>
+    <string name="reservation_error">Rezervasyon yapılamadı. Lütfen tekrar dene.</string>
+
+    <!-- Product Icons -->
     <string name="product_image_description">Product image</string>
     <string name="address_icon_description">Address icon</string>
     <string name="amount_icon_description">Amount icon</string>
@@ -9,4 +83,62 @@
     <string name="reserve_button_label">Rezerve et</string>
     <string name="amount_with_unit">%d Adet</string>
     <string name="discount_percentage">%d%% indirim</string>
+
+    <!-- Admin -->
+    <string name="admin_dashboard">Yönetici Paneli</string>
+    <string name="manage_products">Ürün Yönetimi</string>
+    <string name="manage_campaigns">Kampanya Yönetimi</string>
+    <string name="add_product">Ürün Ekle</string>
+    <string name="add_campaign">Kampanya Ekle</string>
+    <string name="product_name">Ürün Adı *</string>
+    <string name="price">Fiyat *</string>
+    <string name="amount">Adet *</string>
+    <string name="image_url">Resim URL</string>
+    <string name="add">Ekle</string>
+    <string name="cancel">İptal</string>
+    <string name="save">Kaydet</string>
+    <string name="delete">Sil</string>
+    <string name="edit">Düzenle</string>
+
+    <!-- Business -->
+    <string name="business_dashboard">İşletme Paneli</string>
+    <string name="verify_code">Kod Doğrula</string>
+    <string name="enter_code">Kodu Girin</string>
+    <string name="verify">Doğrula</string>
+    <string name="code_verified">Kod doğrulandı!</string>
+    <string name="invalid_code">Geçersiz kod</string>
+
+    <!-- Student -->
+    <string name="my_reservations">Rezervasyonlarım</string>
+    <string name="no_reservations">Henüz rezervasyonunuz yok</string>
+    <string name="reservation_active">Aktif</string>
+    <string name="reservation_completed">Tamamlandı</string>
+    <string name="reservation_cancelled">İptal Edildi</string>
+
+    <!-- Profile -->
+    <string name="profile">Profil</string>
+    <string name="logout">Çıkış Yap</string>
+    <string name="account_info">Hesap Bilgileri</string>
+
+    <!-- Auth Error Messages -->
+    <string name="error_email_required">E-posta adresi gerekli</string>
+    <string name="error_email_invalid_format">Geçersiz e-posta formatı</string>
+    <string name="error_email_must_be_edu_tr">E-posta adresi edu.tr uzantılı olmalıdır</string>
+    <string name="error_password_required">Şifre gerekli</string>
+    <string name="error_full_name_required">Ad soyad gerekli</string>
+    <string name="error_password_min_length">Şifre en az 6 karakter olmalı</string>
+    <string name="error_passwords_not_match">Şifreler eşleşmiyor</string>
+    <string name="error_university_required">Üniversite gerekli</string>
+    <string name="error_business_name_required">İşletme adı gerekli</string>
+    <string name="error_address_required">Adres gerekli</string>
+    <string name="error_city_required">Şehir gerekli</string>
+    <string name="error_please_register">Lütfen kayıt olun.</string>
+    <string name="error_network_connection">İnternet bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.</string>
+    <string name="error_invalid_credentials">Geçersiz e-posta veya şifre. Lütfen tekrar deneyin.</string>
+    <string name="error_user_not_found">Kullanıcı bulunamadı. Lütfen kayıt olun.</string>
+    <string name="error_email_already_in_use">Bu e-posta adresi zaten kullanımda.</string>
+    <string name="error_weak_password">Şifre çok zayıf.</string>
+    <string name="error_network_connection_short">Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.</string>
+    <string name="error_user_info_save_failed">Kullanıcı bilgileri kaydedilemedi: %s</string>
+    <string name="error_business_save_failed">İşletme kaydedilemedi: %s</string>
 </resources>
