@@ -6,13 +6,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.good4.admin.presentation.home.AdminHomeScreenRoot
 import com.good4.auth.presentation.login.LoginScreenRoot
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterScreenRoot
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
+import com.good4.business.presentation.home.BusinessHomeScreenRoot
 import com.good4.core.presentation.SplashScreen
+import com.good4.student.presentation.home.StudentHomeScreenRoot
 import com.good4.user.domain.UserRole
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,35 +79,32 @@ fun Good4NavGraph(
             )
         }
 
-        // Student Routes - Commented out (stashed)
-        // composable<Route.StudentHome> {
-        //     StudentHomeScreenRoot(
-        //         onProductClick = { product ->
-        //             navController.navigate(Route.ProductDetail(product.documentId))
-        //         },
-        //         onLogout = {
-        //             navController.navigateToLogin()
-        //         }
-        //     )
-        // }
+        // Student Routes
+        composable<Route.StudentHome> {
+            StudentHomeScreenRoot(
+                onLogout = {
+                    navController.navigateToLogin()
+                }
+            )
+        }
 
-        // Business Routes - Commented out (stashed)
-        // composable<Route.BusinessHome> {
-        //     BusinessHomeScreenRoot(
-        //         onLogout = {
-        //             navController.navigateToLogin()
-        //         }
-        //     )
-        // }
+        // Business Routes
+        composable<Route.BusinessHome> {
+            BusinessHomeScreenRoot(
+                onLogout = {
+                    navController.navigateToLogin()
+                }
+            )
+        }
 
-        // Admin Routes - Commented out (stashed)
-        // composable<Route.AdminHome> {
-        //     AdminHomeScreenRoot(
-        //         onLogout = {
-        //             navController.navigateToLogin()
-        //         }
-        //     )
-        // }
+        // Admin Routes
+        composable<Route.AdminHome> {
+            AdminHomeScreenRoot(
+                onLogout = {
+                    navController.navigateToLogin()
+                }
+            )
+        }
     }
 }
 

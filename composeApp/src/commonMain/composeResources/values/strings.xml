@@ -72,8 +72,19 @@
     <string name="original_price">Orijinal Fiyat</string>
     <string name="discounted_price">İndirimli Fiyat</string>
     <string name="reserve">Rezerve Et</string>
-    <string name="reserved_successfully">Başarıyla rezerve edildi!</string>
+    <string name="reserved_successfully">Rezervasyon Tamamlandı</string>
     <string name="reservation_error">Rezervasyon yapılamadı. Lütfen tekrar dene.</string>
+    <string name="product_out_of_stock">Ürün stokta yok</string>
+    <string name="reservation_code">Rezervasyon Kodu: %s</string>
+    <string name="reserved_product">Ürün: %s</string>
+    <string name="reservation_expires_in">%s dakikada sona erecek</string>
+    <string name="reserved">Rezerve Edildi</string>
+    <string name="active_reservation_warning">Aktif bir rezervasyonunuz bulunduğu için şu anda başka bir ürün ayıramazsınız. Aşağıda mevcut ürününüz ve teslim süresiyle ilgili bilgiler yer almaktadır.</string>
+    <string name="product_label">Ürün: %s</string>
+    <string name="discount_time_info">17.00 - 20.00 saatleri arasında indirim geçerlidir. Yakut Çarşısı</string>
+    <string name="business_label">İşletme: %s</string>
+    <string name="reservation_code_label">Kodunuz: %s</string>
+    <string name="remaining_time">Kalan Süre: %s</string>
 
     <!-- Product Icons -->
     <string name="product_image_description">Product image</string>
@@ -109,6 +120,8 @@
     <string name="invalid_code">Geçersiz kod</string>
 
     <!-- Student -->
+    <string name="products">Ürünler</string>
+    <string name="reservations">Rezervasyonlar</string>
     <string name="my_reservations">Rezervasyonlarım</string>
     <string name="no_reservations">Henüz rezervasyonunuz yok</string>
     <string name="reservation_active">Aktif</string>
@@ -141,4 +154,10 @@
     <string name="error_network_connection_short">Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.</string>
     <string name="error_user_info_save_failed">Kullanıcı bilgileri kaydedilemedi: %s</string>
     <string name="error_business_save_failed">İşletme kaydedilemedi: %s</string>
+    <string name="already_have_reservation">Zaten aktif bir rezervasyonunuz var</string>
+    <string name="error_user_not_logged_in">Kullanıcı girişi yapılmamış</string>
+    <string name="error_reservation_failed">Rezervasyon başarısız: %s</string>
+    <string name="error_reservation_exception">Rezervasyon hatası: %s</string>
+    <string name="error_unknown">Bilinmeyen hata</string>
+    <string name="dismiss">Kapat</string>
 </resources>

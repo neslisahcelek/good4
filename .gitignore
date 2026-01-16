@@ -34,6 +34,7 @@ captures
 **/GoogleService-Info.plist
 **/firebase-debug.json
 **/firebase.json
+firestore.rules
 keystore.properties
 
 # Gradle local and signing

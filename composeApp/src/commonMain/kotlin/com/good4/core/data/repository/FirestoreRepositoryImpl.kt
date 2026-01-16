@@ -44,4 +44,23 @@ class FirestoreRepositoryImpl : FirestoreRepository {
         delay(500) // Simulate network delay
         return Result.Error(NetworkError("Not implemented for mock"))
     }
+    
+    override suspend fun <T : Any> queryCollectionWithIds(
+        collectionPath: String,
+        field: String,
+        value: Any,
+        clazz: KClass<T>
+    ): Result<List<DocumentWithId<T>>, Error> {
+        delay(500)
+        return Result.Error(NetworkError("Not implemented for mock"))
+    }
+    
+    override suspend fun <T : Any> queryCollectionWithMultipleConditions(
+        collectionPath: String,
+        conditions: Map<String, Any>,
+        clazz: KClass<T>
+    ): Result<List<DocumentWithId<T>>, Error> {
+        delay(500)
+        return Result.Error(NetworkError("Not implemented for mock"))
+    }
 }

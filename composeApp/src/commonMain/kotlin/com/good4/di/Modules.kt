@@ -5,6 +5,7 @@ import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
 import com.good4.business.data.dto.FirestoreBusinessRepository
+import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.FirestoreRepositoryImpl
 import com.good4.user.data.repository.UserRepository
@@ -17,6 +18,9 @@ expect val platformModule: org.koin.core.module.Module
 val commonModule = module {
     // Core repository for auth-related operations
     single<FirestoreRepository> { FirestoreRepositoryImpl() }
+
+    // Config repository
+    single { AppConfigRepository(get<FirestoreRepository>()) }
 
     // Repositories required for auth
     single { FirestoreBusinessRepository(get<FirestoreRepository>()) }

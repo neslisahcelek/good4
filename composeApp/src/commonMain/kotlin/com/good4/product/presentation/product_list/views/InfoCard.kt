@@ -1,13 +1,15 @@
-package com.good4.product.presentation.product_list
+package com.good4.product.presentation.product_list.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +29,8 @@ fun InfoCard(
     iconContentDescription: UiText? = null,
     textColor: Color = Color.DarkGray,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    isLoading: Boolean = false
 ) {
     Card(
         modifier = if (onClick != null) {
@@ -47,12 +50,20 @@ fun InfoCard(
                     contentDescription = iconContentDescription?.asString()
                 )
             }
-            Text(
-                text = text.asString(),
-                fontWeight = FontWeight.Bold,
-                color = textColor,
-                modifier = Modifier.padding(start = 4.dp)
-            )
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    color = textColor,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = text.asString(),
+                    fontWeight = FontWeight.Bold,
+                    color = textColor,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
         }
     }
 }

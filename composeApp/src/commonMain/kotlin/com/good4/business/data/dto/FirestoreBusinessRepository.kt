@@ -1,5 +1,6 @@
 package com.good4.business.data.dto
 
+import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
@@ -9,6 +10,10 @@ class FirestoreBusinessRepository(
 ) {
     suspend fun getBusinesses(): Result<List<BusinessDto>, Error> {
         return firestoreRepository.getCollection("businesses", BusinessDto::class)
+    }
+    
+    suspend fun getBusinessesWithIds(): Result<List<DocumentWithId<BusinessDto>>, Error> {
+        return firestoreRepository.getCollectionWithIds("businesses", BusinessDto::class)
     }
     
     suspend fun getBusinessById(id: String): Result<BusinessDto, Error> {
