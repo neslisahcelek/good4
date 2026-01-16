@@ -18,6 +18,8 @@ data class CodeDto(
     val status: String? = null,
     @SerialName("createdAt")
     val createdAt: Instant? = null,
+    @SerialName("expiresAt")
+    val expiresAt: Instant? = null,
     @SerialName("usedAt")
     val usedAt: Instant? = null
 )

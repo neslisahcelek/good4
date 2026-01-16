@@ -16,4 +16,16 @@ interface FirestoreRepository {
     suspend fun deleteDocument(collectionPath: String, documentId: String): Result<Unit, Error>
     suspend fun <T : Any> getCollection(collectionPath: String, clazz: KClass<T>): Result<List<T>, Error>
     suspend fun <T : Any> getCollectionWithIds(collectionPath: String, clazz: KClass<T>): Result<List<DocumentWithId<T>>, Error>
+    suspend fun <T : Any> queryCollectionWithIds(
+        collectionPath: String,
+        field: String,
+        value: Any,
+        clazz: KClass<T>
+    ): Result<List<DocumentWithId<T>>, Error>
+    
+    suspend fun <T : Any> queryCollectionWithMultipleConditions(
+        collectionPath: String,
+        conditions: Map<String, Any>,
+        clazz: KClass<T>
+    ): Result<List<DocumentWithId<T>>, Error>
 }

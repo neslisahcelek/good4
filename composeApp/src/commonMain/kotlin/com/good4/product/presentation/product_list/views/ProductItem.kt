@@ -1,4 +1,4 @@
-package com.good4.product.presentation.product_list
+package com.good4.product.presentation.product_list.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +27,8 @@ import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.product_image_description
+import good4.composeapp.generated.resources.reserved
+import good4.composeapp.generated.resources.reserve_button_label
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -34,7 +36,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun ProductItem(
     modifier: Modifier = Modifier,
-    product: Product
+    product: Product,
+    onReserveClick: (() -> Unit)? = null,
+    isReserving: Boolean = false,
+    reservationSuccess: Boolean = false
 ) {
     Card(
         modifier = modifier
@@ -93,15 +98,17 @@ fun ProductItem(
                 ) {
                     AmountCard(amount = product.amount)
                     ReserveButtonCard(
-                        onClick = { /* TODO: handle reserve */ }
+                        onClick = if (reservationSuccess) null else onReserveClick,
+                        isLoading = isReserving,
+                        label = if (reservationSuccess) UiText.StringResourceId(id = Res.string.reserved) else UiText.StringResourceId(
+                            id = Res.string.reserve_button_label
+                        )
                     )
                 }
             }
         }
     }
 }
-
- 
 
 @Preview
 @Composable
@@ -113,6 +120,7 @@ fun ProductItemPreview(modifier: Modifier = Modifier) {
                 documentId = "preview_doc1",
                 name = "Filtre Kahve",
                 storeName = "Sokak Kahvecisi",
+                businessId = "business123",
                 address = "Yakut Çarşısı Sokak Kahvecisi Konyaaltı/Antalya",
                 description = "Orta Boy",
                 price = "100 TL",

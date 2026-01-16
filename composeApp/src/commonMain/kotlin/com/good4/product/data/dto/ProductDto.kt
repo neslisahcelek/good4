@@ -2,7 +2,6 @@ package com.good4.product.data.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.datetime.Instant
 
 @Serializable
 data class ProductDto(
@@ -15,11 +14,11 @@ data class ProductDto(
     @SerialName("businessId")
     val businessId: String? = null,
     @SerialName("createdAt")
-    val createdDate: Instant? = null,
+    val createdAt: String? = null,
     @SerialName("discountPrice")
     val discountPrice: Int? = null,
     @SerialName("originalPrice")
     val originalPrice: Int? = null,
     @SerialName("image")
-    val imageUrl: String? = null,
+    val image: String? = null
 )

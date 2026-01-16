@@ -1,4 +1,4 @@
-package com.good4.product.presentation.product_list
+package com.good4.product.presentation.product_list.views
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable

@@ -1,4 +1,4 @@
-package com.good4.product.presentation.product_list
+package com.good4.product.presentation.product_list.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row

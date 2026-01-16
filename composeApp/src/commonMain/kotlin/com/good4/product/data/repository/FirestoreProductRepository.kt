@@ -31,11 +31,14 @@ class FirestoreProductRepository(
                     }
                 }
                 
-                // Şimdi ürünleri business bilgileri ile eşleştir
+                // Şimdi ürünleri business bilgileri ile eşleştir ve stokta olanları filtrele
                 val products = result.data.map { documentWithId ->
                     val productDto = documentWithId.data
                     val business = productDto.businessId?.let { businessCache[it] }
                     productDto.toProduct(documentWithId.id, business)
+                }.filter { product ->
+                    // Sadece stokta olan ürünleri göster (amount > 0)
+                    product.amount > 0
                 }
                 
                 Result.Success(products)
@@ -91,11 +94,12 @@ private fun ProductDto.toProduct(documentId: String, business: BusinessDto?): Pr
         name = name ?: "",
         description = description ?: "",
         storeName = business?.name ?: "",
+        businessId = businessId ?: "",
         price = "$displayPrice TL",
         originalPrice = originalPriceValue,
         discountPrice = discountPriceValue,
         discountPercentage = discountPercentageValue,
-        imageUrl = imageUrl ?: "",
+        imageUrl = image ?: "",
         address = business?.address ?: "",
         amount = count ?: 0
     )

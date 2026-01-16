@@ -2,21 +2,75 @@ package com.good4.product.presentation.product_list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.good4.auth.data.repository.AuthRepository
+import com.good4.code.data.dto.CodeDto
+import com.good4.code.data.repository.CodeRepository
+import com.good4.code.data.repository.statusEnum
+import com.good4.code.domain.CodeStatus
+import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
+import com.good4.core.presentation.UiText
 import com.good4.product.data.repository.FirestoreProductRepository
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.already_have_reservation
+import good4.composeapp.generated.resources.error_reservation_exception
+import good4.composeapp.generated.resources.error_reservation_failed
+import good4.composeapp.generated.resources.error_unknown
+import good4.composeapp.generated.resources.error_user_not_logged_in
+import good4.composeapp.generated.resources.product_out_of_stock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 class ProductListViewModel(
-    private val productRepository: FirestoreProductRepository
+    private val productRepository: FirestoreProductRepository,
+    private val codeRepository: CodeRepository,
+    private val authRepository: AuthRepository,
+    private val configRepository: AppConfigRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProductListState())
     val state = _state.asStateFlow()
-
-    init {
-        loadProducts()
+    
+    private var isLoaded: Boolean = false
+    
+    fun loadActiveReservation(): Unit {
+        val userId = authRepository.currentUser?.uid ?: return
+        
+        viewModelScope.launch {
+            when (val result = codeRepository.getPendingCodeByUserId(userId)) {
+                is Result.Success -> {
+                    val pendingCode = result.data ?: return@launch
+                    val expiryTime = pendingCode.expiresAt ?: return@launch
+                    
+                    val product = _state.value.products.firstOrNull { it.documentId == pendingCode.productId }
+                        ?: run {
+                            when (val productResult = productRepository.getProductById(pendingCode.productId ?: "")) {
+                                is Result.Success -> productResult.data
+                                is Result.Error -> return@launch
+                            }
+                        }
+                    
+                    val codeId = when (val idResult = codeRepository.getCodeIdByValue(pendingCode.value ?: "")) {
+                        is Result.Success -> idResult.data
+                        is Result.Error -> return@launch
+                    }
+                    
+                    _state.update {
+                        it.copy(
+                            activeReservation = ReservationInfo(
+                                code = pendingCode.value ?: "",
+                                product = product,
+                                expiryTime = expiryTime,
+                                codeId = codeId
+                            )
+                        )
+                    }
+                }
+                is Result.Error -> { }
+            }
+        }
     }
 
     fun onAction(action: ProductListAction) {
@@ -28,10 +82,117 @@ class ProductListViewModel(
                     )
                 }
             }
-
-            is ProductListAction.OnProductClick -> {
-                // TODO: Navigate to product detail
+            is ProductListAction.OnReserveProduct -> {
+                if (_state.value.activeReservation != null) {
+                    _state.update {
+                        it.copy(
+                            errorMessage = UiText.StringResourceId(Res.string.already_have_reservation)
+                        )
+                    }
+                } else {
+                    reserveProduct(action.product)
+                }
             }
+            is ProductListAction.OnDismissError -> {
+                _state.update {
+                    it.copy(errorMessage = null)
+                }
+            }
+            is ProductListAction.OnReservationExpired -> {
+                viewModelScope.launch {
+                    codeRepository.markCodeAsExpired(action.codeId)
+                    
+                    _state.update {
+                        it.copy(activeReservation = null)
+                    }
+                }
+            }
+        }
+    }
+    
+    private fun reserveProduct(product: com.good4.product.Product) {
+        val userId = authRepository.currentUser?.uid
+        if (userId == null) {
+            _state.update {
+                it.copy(
+                    isReserving = false,
+                    errorMessage = UiText.StringResourceId(Res.string.error_user_not_logged_in)
+                )
+            }
+            return
+        }
+        
+        if (product.amount <= 0) {
+            _state.update {
+                it.copy(
+                    isReserving = false,
+                    errorMessage = UiText.StringResourceId(Res.string.product_out_of_stock)
+                )
+            }
+            return
+        }
+        
+        viewModelScope.launch {
+            _state.update { it.copy(isReserving = true, errorMessage = null) }
+
+            try {
+                val codeValue = (100000..999999).random().toString()
+                val now = Clock.System.now()
+                val expirationDuration = configRepository.getExpirationDuration()
+                val expiryTime = now + expirationDuration
+
+                val codeDto = CodeDto(
+                    value = codeValue,
+                    businessId = product.businessId,
+                    productId = product.documentId,
+                    userId = userId,
+                    status = CodeStatus.PENDING.value,
+                    createdAt = now,
+                    expiresAt = expiryTime,
+                    usedAt = null
+                )
+
+                when (val result = codeRepository.createCode(codeDto)) {
+                    is Result.Success -> {
+                        _state.update {
+                            it.copy(
+                                isReserving = false,
+                                activeReservation = ReservationInfo(
+                                    code = codeValue,
+                                    product = product,
+                                    expiryTime = expiryTime,
+                                    codeId = result.data
+                                )
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _state.update {
+                            it.copy(
+                                isReserving = false,
+                                errorMessage = UiText.DynamicString(
+                                    "${Res.string.error_reservation_failed}: ${result.error.message ?: ""}"
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        isReserving = false,
+                        errorMessage = UiText.DynamicString(
+                            "${Res.string.error_reservation_exception}: ${e.message ?: ""}"
+                        )
+                    )
+                }
+            }
+        }
+    }
+    
+    fun loadProductsIfNeeded() {
+        if (!isLoaded && !_state.value.isLoading) {
+            loadProducts()
         }
     }
 
@@ -46,7 +207,7 @@ class ProductListViewModel(
 
             when (val result = productRepository.getProducts()) {
                 is Result.Success -> {
-                    println("ProductListViewModel: Products loaded successfully: ${result.data.size}")
+                    isLoaded = true
                     _state.update {
                         it.copy(
                             products = result.data,
@@ -56,12 +217,12 @@ class ProductListViewModel(
                     }
                 }
                 is Result.Error -> {
-                    println("ProductListViewModel: Error loading products: ${result.error.message}")
+                    isLoaded = true
                     _state.update {
                         it.copy(
                             products = emptyList(),
                             isLoading = false,
-                            errorMessage = result.error.message
+                            errorMessage = UiText.DynamicString(result.error.message ?: "")
                         )
                     }
                 }
