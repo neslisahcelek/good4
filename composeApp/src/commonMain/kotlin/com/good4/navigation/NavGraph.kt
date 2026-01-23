@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.good4.admin.presentation.home.AdminHomeScreenRoot
 import com.good4.auth.presentation.login.LoginScreenRoot
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
@@ -97,13 +98,13 @@ fun Good4NavGraph(
         }
 
         // Admin Routes
-//        composable<Route.AdminHome> {
-//            AdminHomeScreenRoot(
-//                onLogout = {
-//                    navController.navigateToLogin()
-//                }
-//            )
-//        }
+        composable<Route.AdminHome> {
+            AdminHomeScreenRoot(
+                onLogout = {
+                    navController.navigateToLogin()
+                }
+            )
+        }
     }
 }
 
@@ -123,4 +124,3 @@ fun NavHostController.navigateToLogin() {
         popUpTo(0) { inclusive = true }
     }
 }
-

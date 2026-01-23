@@ -1,24 +1,16 @@
 package com.good4.business.presentation.products
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -40,30 +32,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import com.good4.core.presentation.SoftGray
 import com.good4.core.presentation.InkBlack
 import com.good4.core.presentation.Background
-import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.Surface
 import com.good4.core.presentation.SlateGray
-import com.good4.product.Product
+import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_content_desc
 import good4.composeapp.generated.resources.business_products_added_message
 import good4.composeapp.generated.resources.business_products_empty
-import good4.composeapp.generated.resources.business_products_price_unavailable
-import good4.composeapp.generated.resources.business_products_stock_prefix
 import good4.composeapp.generated.resources.business_products_title
-import good4.composeapp.generated.resources.emoji_product_placeholder
 import good4.composeapp.generated.resources.emoji_products_empty
 import good4.composeapp.generated.resources.price_currency_suffix
 import org.jetbrains.compose.resources.stringResource
@@ -179,7 +161,7 @@ fun BusinessProductsScreenRoot(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(state.products, key = { it.documentId }) { product ->
-                    ProductCard(
+                    ProductListCard(
                         product = product,
                         currencySuffix = currencySuffix,
                         onClick = {
@@ -234,153 +216,6 @@ fun BusinessProductsScreenRoot(
             },
             onUpdateProduct = viewModel::updateProduct
         )
-    }
-}
-
-@Composable
-private fun ProductCard(
-    modifier: Modifier = Modifier,
-    product: Product,
-    currencySuffix: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = Surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (product.imageUrl.isNotBlank()) {
-                AsyncImage(
-                    model = product.imageUrl,
-                    contentDescription = product.name,
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(SoftGray),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(SoftGray),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(Res.string.emoji_product_placeholder),
-                        fontSize = 32.sp
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = product.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = InkBlack,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                if (product.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = product.description,
-                        fontSize = 12.sp,
-                        color = SlateGray,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    when {
-                        product.discountPrice != null && product.originalPrice != null -> {
-                            Text(
-                                text = "${product.discountPrice} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = LimeGreen
-                            )
-                            Text(
-                                text = "${product.originalPrice} $currencySuffix",
-                                fontSize = 12.sp,
-                                color = SlateGray,
-                                style = androidx.compose.ui.text.TextStyle(
-                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
-                                )
-                            )
-                        }
-                        product.discountPrice != null -> {
-                            Text(
-                                text = "${product.discountPrice} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = InkBlack
-                            )
-                        }
-                        product.originalPrice != null -> {
-                            Text(
-                                text = "${product.originalPrice} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = InkBlack
-                            )
-                        }
-                        else -> {
-                            Text(
-                                text = stringResource(Res.string.business_products_price_unavailable),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = SlateGray
-                            )
-                        }
-                    }
-                }
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (product.amount > 0) LimeGreen.copy(alpha = 0.1f)
-                            else Color.Red.copy(alpha = 0.1f)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = stringResource(Res.string.business_products_stock_prefix) + product.amount,
-                        fontSize = 12.sp,
-                        color = if (product.amount > 0) LimeGreen else Color.Red,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
     }
 }
 

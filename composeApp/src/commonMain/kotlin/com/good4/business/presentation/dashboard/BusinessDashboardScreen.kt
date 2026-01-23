@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +42,7 @@ import com.good4.core.presentation.Background
 import com.good4.core.presentation.MintGreen
 import com.good4.core.presentation.LimeGreen
 import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.components.StatCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.dashboard_code_prefix
 import good4.composeapp.generated.resources.dashboard_completed
@@ -53,7 +51,6 @@ import good4.composeapp.generated.resources.dashboard_pending
 import good4.composeapp.generated.resources.dashboard_recent_actions
 import good4.composeapp.generated.resources.dashboard_status_pending
 import good4.composeapp.generated.resources.dashboard_status_used
-import good4.composeapp.generated.resources.dashboard_title
 import good4.composeapp.generated.resources.dashboard_total_products
 import good4.composeapp.generated.resources.dashboard_welcome_prefix
 import org.jetbrains.compose.resources.stringResource
@@ -162,60 +159,6 @@ fun BusinessDashboardScreen(
                         RecentCodeCard(code = code)
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatCard(
-    modifier: Modifier = Modifier,
-    title: String,
-    value: String,
-    icon: ImageVector,
-    color: Color
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(color.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.padding(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Text(
-                    text = value,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = InkBlack
-                )
             }
         }
     }

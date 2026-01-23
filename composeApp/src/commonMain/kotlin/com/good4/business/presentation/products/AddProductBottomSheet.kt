@@ -1,42 +1,15 @@
 package com.good4.business.presentation.products
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.InkBlack
 import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.components.ProductImagePicker
+import com.good4.core.presentation.components.ProductFormFields
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.amount
 import good4.composeapp.generated.resources.business_products_add_button
 import good4.composeapp.generated.resources.business_products_add_title
-import good4.composeapp.generated.resources.description
-import good4.composeapp.generated.resources.discounted_price
-import good4.composeapp.generated.resources.original_price
-import good4.composeapp.generated.resources.product_name
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,136 +32,27 @@ fun AddProductBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Text(
-                text = stringResource(Res.string.business_products_add_title),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = InkBlack
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = state.productName,
-                onValueChange = onProductNameChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.product_name)) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = state.productDescription,
-                onValueChange = onProductDescriptionChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.description)) },
-                minLines = 3,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = state.productOriginalPrice,
-                onValueChange = onOriginalPriceChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.original_price)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = state.productDiscountPrice,
-                onValueChange = onDiscountPriceChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.discounted_price)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = state.productAmount,
-                onValueChange = onAmountChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.amount)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            ProductImagePicker(
-                currentImageUrl = state.productImageUrl,
-                onImageUrlChange = onImageUrlChange,
-                onError = onImagePickerError,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onAddProduct,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = !state.isAddLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = LimeGreen,
-                    disabledContainerColor = LimeGreen.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                if (state.isAddLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(4.dp),
-                        color = Color.White
-                    )
-                } else {
-                    Text(
-                        text = stringResource(Res.string.business_products_add_button),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+        ProductFormFields(
+            title = stringResource(Res.string.business_products_add_title),
+            submitLabel = stringResource(Res.string.business_products_add_button),
+            onSubmit = onAddProduct,
+            modifier = modifier,
+            isSubmitting = state.isAddLoading,
+            submitButtonColor = LimeGreen,
+            submitButtonDisabledColor = LimeGreen.copy(alpha = 0.5f),
+            productName = state.productName,
+            onProductNameChange = onProductNameChange,
+            productDescription = state.productDescription,
+            onProductDescriptionChange = onProductDescriptionChange,
+            originalPrice = state.productOriginalPrice,
+            onOriginalPriceChange = onOriginalPriceChange,
+            discountPrice = state.productDiscountPrice,
+            onDiscountPriceChange = onDiscountPriceChange,
+            amount = state.productAmount,
+            onAmountChange = onAmountChange,
+            imageUrl = state.productImageUrl,
+            onImageUrlChange = onImageUrlChange,
+            onImagePickerError = onImagePickerError
+        )
     }
 }
