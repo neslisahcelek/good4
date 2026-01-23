@@ -6,36 +6,37 @@ import com.good4.core.domain.NetworkError
 import kotlin.reflect.KClass
 import kotlinx.coroutines.delay
 import kotlin.random.Random
+import com.good4.core.util.Logger
 
 class FirestoreRepositoryImpl : FirestoreRepository {
     override suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error> {
         delay(500) // Simulate network delay
-        println("Mock Firestore: Added document to $collectionPath with data: $data")
+        Logger.d("FirestoreRepositoryMock", "Added document to $collectionPath with data: $data")
         return Result.Success("mock_document_id_${Random.nextInt()}")
     }
 
     override suspend fun <T : Any> getDocument(collectionPath: String, documentId: String, clazz: KClass<T>): Result<T, Error> {
         delay(500) // Simulate network delay
-        println("Mock Firestore: Getting document $documentId from $collectionPath")
+        Logger.d("FirestoreRepositoryMock", "Getting document $documentId from $collectionPath")
         // In a real implementation, you'd fetch from Firestore and deserialize
         return Result.Error(NetworkError("Not implemented for mock"))
     }
 
     override suspend fun <T : Any> updateDocument(collectionPath: String, documentId: String, data: T): Result<Unit, Error> {
         delay(500) // Simulate network delay
-        println("Mock Firestore: Updated document $documentId in $collectionPath with data: $data")
+        Logger.d("FirestoreRepositoryMock", "Updated document $documentId in $collectionPath with data: $data")
         return Result.Success(Unit)
     }
 
     override suspend fun deleteDocument(collectionPath: String, documentId: String): Result<Unit, Error> {
         delay(500) // Simulate network delay
-        println("Mock Firestore: Deleted document $documentId from $collectionPath")
+        Logger.d("FirestoreRepositoryMock", "Deleted document $documentId from $collectionPath")
         return Result.Success(Unit)
     }
 
     override suspend fun <T : Any> getCollection(collectionPath: String, clazz: KClass<T>): Result<List<T>, Error> {
         delay(500) // Simulate network delay
-        println("Mock Firestore: Getting collection $collectionPath")
+        Logger.d("FirestoreRepositoryMock", "Getting collection $collectionPath")
         // In a real implementation, you'd fetch from Firestore and deserialize
         return Result.Error(NetworkError("Not implemented for mock"))
     }
