@@ -16,6 +16,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,10 +53,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.DarkBlue
-import com.good4.core.presentation.DesertWhite
-import com.good4.core.presentation.ErrorRed
-import com.good4.core.presentation.PrimaryGreen
+import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.Background
+import com.good4.core.presentation.BrickRed
+import com.good4.core.presentation.LimeGreen
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -100,6 +102,7 @@ fun StudentRegisterScreen(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
+        containerColor = Background,
         topBar = {
             TopAppBar(
                 title = {
@@ -117,7 +120,7 @@ fun StudentRegisterScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DesertWhite
+                    containerColor = Background
                 )
             )
         }
@@ -125,7 +128,7 @@ fun StudentRegisterScreen(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(DesertWhite)
+                .background(Background)
                 .padding(paddingValues)
         ) {
             Column(
@@ -146,7 +149,7 @@ fun StudentRegisterScreen(
                     text = stringResource(Res.string.create_student_account),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkBlue
+                    color = InkBlack
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -230,14 +233,23 @@ fun StudentRegisterScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next
                     ),
-                    trailingIcon = {
-                        IconButton(onClick = { onAction(StudentRegisterAction.OnTogglePasswordVisibility) }) {
-                            Text(
-                                text = if (state.isPasswordVisible) "🙈" else "👁️",
-                                fontSize = 20.sp
-                            )
+                trailingIcon = {
+                    IconButton(onClick = { onAction(StudentRegisterAction.OnTogglePasswordVisibility) }) {
+                        val contentDescription = if (state.isPasswordVisible) {
+                            stringResource(Res.string.password_visibility_hide)
+                        } else {
+                            stringResource(Res.string.password_visibility_show)
                         }
-                    },
+                        Icon(
+                            imageVector = if (state.isPasswordVisible) {
+                                Icons.Filled.VisibilityOff
+                            } else {
+                                Icons.Filled.Visibility
+                            },
+                            contentDescription = contentDescription
+                        )
+                    }
+                },
                     colors = textFieldColors(),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -274,7 +286,7 @@ fun StudentRegisterScreen(
                 state.errorMessage?.let { error ->
                     Text(
                         text = error.asString(),
-                        color = ErrorRed,
+                        color = BrickRed,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -292,8 +304,8 @@ fun StudentRegisterScreen(
                         .height(56.dp),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen,
-                        disabledContainerColor = PrimaryGreen.copy(alpha = 0.5f)
+                        containerColor = LimeGreen,
+                        disabledContainerColor = LimeGreen.copy(alpha = 0.5f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -378,20 +390,29 @@ private fun EducationLevelDropdown(
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = DarkBlue,
-    focusedLabelColor = DarkBlue,
-    cursorColor = DarkBlue
+    focusedBorderColor = InkBlack,
+    focusedLabelColor = InkBlack,
+    cursorColor = InkBlack
 )
 
 @Preview
 @Composable
 fun StudentRegisterScreenPreview() {
     MaterialTheme {
+        val educationLevels = listOf(
+            stringResource(Res.string.education_level_1),
+            stringResource(Res.string.education_level_2),
+            stringResource(Res.string.education_level_3),
+            stringResource(Res.string.education_level_4),
+            stringResource(Res.string.education_level_5),
+            stringResource(Res.string.education_level_6),
+            stringResource(Res.string.education_level_masters),
+            stringResource(Res.string.education_level_phd)
+        )
         StudentRegisterScreen(
             state = StudentRegisterState(),
-            educationLevels = listOf("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", "5. Sınıf", "6. Sınıf", "Yüksek Lisans", "Doktora"),
+            educationLevels = educationLevels,
             onAction = {}
         )
     }
 }
-

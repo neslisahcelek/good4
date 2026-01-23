@@ -16,13 +16,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,12 +48,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.DarkBlue
-import com.good4.core.presentation.DesertWhite
-import com.good4.core.presentation.ErrorRed
-import com.good4.core.presentation.LightGreen
-import com.good4.core.presentation.PrimaryGreen
-import com.good4.core.presentation.TextGray
+import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.Background
+import com.good4.core.presentation.BrickRed
+import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.LimeGreen
+import com.good4.core.presentation.SlateGray
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.*
@@ -94,31 +99,36 @@ fun LoginScreen(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(DesertWhite)
-    ) {
-        Column(
+    Scaffold(
+        modifier = modifier,
+        containerColor = Background
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues)
+                .background(Background)
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Spacer(modifier = Modifier.height(60.dp))
 
             Text(
                 text = stringResource(Res.string.app_name),
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkBlue
+                color = InkBlack
             )
 
             Text(
                 text = stringResource(Res.string.app_tagline),
                 fontSize = 16.sp,
-                color = TextGray,
+                color = SlateGray,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp).padding(horizontal = 24.dp)
             )
@@ -137,9 +147,9 @@ fun LoginScreen(
                     imeAction = ImeAction.Next
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = DarkBlue,
-                    focusedLabelColor = DarkBlue,
-                    cursorColor = DarkBlue
+                    focusedBorderColor = InkBlack,
+                    focusedLabelColor = InkBlack,
+                    cursorColor = InkBlack
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -170,16 +180,25 @@ fun LoginScreen(
                 ),
                 trailingIcon = {
                     IconButton(onClick = { onAction(LoginAction.OnTogglePasswordVisibility) }) {
-                        Text(
-                            text = if (state.isPasswordVisible) "🙈" else "👁️",
-                            fontSize = 20.sp
+                        val contentDescription = if (state.isPasswordVisible) {
+                            stringResource(Res.string.password_visibility_hide)
+                        } else {
+                            stringResource(Res.string.password_visibility_show)
+                        }
+                        Icon(
+                            imageVector = if (state.isPasswordVisible) {
+                                Icons.Filled.VisibilityOff
+                            } else {
+                                Icons.Filled.Visibility
+                            },
+                            contentDescription = contentDescription
                         )
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = DarkBlue,
-                    focusedLabelColor = DarkBlue,
-                    cursorColor = DarkBlue
+                    focusedBorderColor = InkBlack,
+                    focusedLabelColor = InkBlack,
+                    cursorColor = InkBlack
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -190,7 +209,7 @@ fun LoginScreen(
             ) {
                 Text(
                     text = stringResource(Res.string.forgot_password),
-                    color = DarkBlue,
+                    color = InkBlack,
                     fontSize = 14.sp
                 )
             }
@@ -204,7 +223,7 @@ fun LoginScreen(
                 }
                 Text(
                     text = error.asString(),
-                    color = ErrorRed,
+                    color = BrickRed,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -222,8 +241,8 @@ fun LoginScreen(
                     .height(56.dp),
                 enabled = !state.isLoading,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkBlue,
-                    disabledContainerColor = DarkBlue.copy(alpha = 0.5f)
+                    containerColor = InkBlack,
+                    disabledContainerColor = InkBlack.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -253,11 +272,11 @@ fun LoginScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(1.dp)
-                        .background(TextGray.copy(alpha = 0.3f))
+                        .background(SlateGray.copy(alpha = 0.3f))
                 )
                 Text(
                     text = stringResource(Res.string.or),
-                    color = TextGray,
+                    color = SlateGray,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -265,7 +284,7 @@ fun LoginScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(1.dp)
-                        .background(TextGray.copy(alpha = 0.3f))
+                        .background(SlateGray.copy(alpha = 0.3f))
                 )
             }
 
@@ -273,7 +292,7 @@ fun LoginScreen(
 
             Text(
                 text = stringResource(Res.string.no_account),
-                color = TextGray,
+                color = SlateGray,
                 fontSize = 14.sp
             )
 
@@ -285,7 +304,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryGreen
+                    containerColor = LimeGreen
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -304,7 +323,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LightGreen
+                    containerColor = MintGreen
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -312,11 +331,12 @@ fun LoginScreen(
                     text = stringResource(Res.string.business_register),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = DarkBlue
+                    color = InkBlack
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 }
@@ -331,4 +351,3 @@ fun LoginScreenPreview() {
         )
     }
 }
-

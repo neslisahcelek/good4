@@ -6,7 +6,6 @@
     <!-- Common -->
     <string name="back">Geri</string>
     <string name="or">veya</string>
-    <string name="error_prefix">Hata: %s</string>
     <string name="loading">Yükleniyor…</string>
     <string name="required_fields">* ile işaretli alanlar zorunludur</string>
 
@@ -15,6 +14,8 @@
     <string name="email_placeholder">ornek@email.com</string>
     <string name="password">Şifre</string>
     <string name="password_placeholder">••••••••</string>
+    <string name="password_visibility_show">Şifreyi göster</string>
+    <string name="password_visibility_hide">Şifreyi gizle</string>
     <string name="forgot_password">Şifremi unuttum</string>
     <string name="login">Giriş Yap</string>
     <string name="no_account">Hesabın yok mu?</string>
@@ -48,7 +49,6 @@
     <string name="business_registration">İşletme Kaydı</string>
     <string name="business_emoji">🏪</string>
     <string name="create_business_account">İşletme hesabı oluştur</string>
-    <string name="admin_approval_notice">Kaydınız admin onayından sonra aktif olacaktır</string>
     <string name="personal_information">Kişisel Bilgiler</string>
     <string name="business_information">İşletme Bilgileri</string>
     <string name="business_name">İşletme Adı *</string>
@@ -75,16 +75,14 @@
     <string name="reserved_successfully">Rezervasyon Tamamlandı</string>
     <string name="reservation_error">Rezervasyon yapılamadı. Lütfen tekrar dene.</string>
     <string name="product_out_of_stock">Ürün stokta yok</string>
-    <string name="reservation_code">Rezervasyon Kodu: %s</string>
-    <string name="reserved_product">Ürün: %s</string>
-    <string name="reservation_expires_in">%s dakikada sona erecek</string>
     <string name="reserved">Rezerve Edildi</string>
     <string name="active_reservation_warning">Aktif bir rezervasyonunuz bulunduğu için şu anda başka bir ürün ayıramazsınız. Aşağıda mevcut ürününüz ve teslim süresiyle ilgili bilgiler yer almaktadır.</string>
-    <string name="product_label">Ürün: %s</string>
+    <string name="active_reservation_info">Rezervasyon kodunu işletmeye 45 dakika içinde göstermelisin.</string>
+    <string name="product_label_prefix">Ürün: </string>
     <string name="discount_time_info">17.00 - 20.00 saatleri arasında indirim geçerlidir. Yakut Çarşısı</string>
-    <string name="business_label">İşletme: %s</string>
-    <string name="reservation_code_label">Kodunuz: %s</string>
-    <string name="remaining_time">Kalan Süre: %s</string>
+    <string name="business_label_prefix">İşletme: </string>
+    <string name="reservation_code_label_prefix">Kodunuz: </string>
+    <string name="remaining_time_prefix">Kalan Süre: </string>
 
     <!-- Product Icons -->
     <string name="product_image_description">Product image</string>
@@ -92,8 +90,7 @@
     <string name="amount_icon_description">Amount icon</string>
     <string name="lock_icon_description">Lock icon</string>
     <string name="reserve_button_label">Rezerve et</string>
-    <string name="amount_with_unit">%d Adet</string>
-    <string name="discount_percentage">%d%% indirim</string>
+    <string name="amount_unit_label">Adet</string>
 
     <!-- Admin -->
     <string name="admin_dashboard">Yönetici Paneli</string>
@@ -132,6 +129,105 @@
     <string name="profile">Profil</string>
     <string name="logout">Çıkış Yap</string>
     <string name="account_info">Hesap Bilgileri</string>
+    <string name="profile_title_student">Profilim</string>
+    <string name="profile_title_business">İşletme Profili</string>
+    <string name="profile_credit_label">Kredin</string>
+    <string name="profile_university_label">Üniversite</string>
+    <string name="profile_major_label">Bölüm</string>
+    <string name="profile_education_level_label">Eğitim Seviyesi</string>
+    <string name="profile_address_label">Adres</string>
+    <string name="profile_phone_label">Telefon</string>
+
+    <!-- Business Dashboard -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_welcome_prefix">Hoş geldin, </string>
+    <string name="dashboard_pending">Bekleyen</string>
+    <string name="dashboard_completed">Tamamlanan</string>
+    <string name="dashboard_total_products">Toplam Ürün</string>
+    <string name="dashboard_recent_actions">Son İşlemler</string>
+    <string name="dashboard_no_actions">Henüz işlem yok</string>
+    <string name="dashboard_code_prefix">Kod: </string>
+    <string name="dashboard_status_used">Kullanıldı</string>
+    <string name="dashboard_status_pending">Bekliyor</string>
+
+    <!-- Business Home -->
+    <string name="nav_dashboard">Ana Sayfa</string>
+    <string name="nav_verify_code">Kod Doğrula</string>
+    <string name="nav_products">Ürünler</string>
+    <string name="nav_profile">Profil</string>
+
+    <!-- Business Products -->
+    <string name="business_products_title">Ürünlerim</string>
+    <string name="business_products_empty">Henüz ürün eklenmemiş</string>
+    <string name="business_products_add_title">Yeni Ürün Ekle</string>
+    <string name="business_products_edit_title">Ürün Düzenle</string>
+    <string name="business_products_add_button">Ürün Ekle</string>
+    <string name="business_products_update_button">Güncelle</string>
+    <string name="business_products_add_content_desc">Ürün Ekle</string>
+    <string name="business_products_price_unavailable">Fiyat Yok</string>
+    <string name="business_products_stock_prefix">Stok: </string>
+    <string name="business_products_added_message">Ürün eklendi</string>
+
+    <!-- Image Picker -->
+    <string name="image_picker_gallery">Galeriden Seç</string>
+    <string name="image_picker_camera">Fotoğraf Çek</string>
+    <string name="image_uploading">Fotoğraf yükleniyor…</string>
+    <string name="image_uploaded">Fotoğraf yüklendi</string>
+    <string name="image_picker_ios_placeholder">iOS için görsel seçici yakında eklenecek.</string>
+    <string name="product_image_preview_desc">Ürün görsel önizleme</string>
+
+    <!-- Verify Code -->
+    <string name="verify_code_input_label">Rezervasyon Kodu</string>
+    <string name="verify_code_placeholder">123456</string>
+    <string name="verify_code_button">Doğrula</string>
+    <string name="verify_code_success">Kod başarıyla doğrulandı!</string>
+    <string name="verify_code_product_prefix">Ürün: </string>
+    <string name="verify_code_new">Yeni kod doğrula</string>
+    <string name="verify_code_error_invalid">Kod 6 haneli olmalıdır</string>
+    <string name="verify_code_error_failed">Kod doğrulanamadı</string>
+
+    <!-- Student Reservations -->
+    <string name="student_reservations_title">Rezervasyonlarım</string>
+    <string name="student_reservations_empty_title">Henüz rezervasyonun yok</string>
+    <string name="student_reservations_empty_subtitle">Bir ürün rezerve ettiğinde\nburada görünecek</string>
+    <string name="student_reservations_code_title">Kodun</string>
+    <string name="student_reservations_remaining_prefix">Kalan süre: </string>
+    <string name="student_reservations_credit_label">Kalan Hak</string>
+    <string name="student_reservations_credit_reset_prefix">Hakların </string>
+    <string name="student_reservations_credit_reset_suffix"> günde bir yenilenir.</string>
+    <string name="reservation_status_pending">Bekliyor</string>
+    <string name="reservation_status_completed">Tamamlandı</string>
+    <string name="reservation_status_expired">Süresi Doldu</string>
+    <string name="reservation_status_cancelled">İptal Edildi</string>
+    <string name="price_currency_suffix">TL</string>
+    <string name="discount_badge_suffix"> indirim</string>
+    <string name="discount_badge_prefix">%</string>
+    <string name="reservation_expired_short">Süresi doldu</string>
+    <string name="time_minute_suffix">dk</string>
+    <string name="time_second_suffix">sn</string>
+    <string name="emoji_products_empty">🍽️</string>
+    <string name="emoji_product_placeholder">📦</string>
+    <string name="emoji_ticket">🎫</string>
+    <string name="placeholder_dash">-</string>
+    <string name="unknown_initial">?</string>
+
+    <!-- Product List -->
+    <string name="error_no_credit_prefix">Üzgünüz, bu haftaki kredi hakkını doldurdun. Kredin </string>
+    <string name="error_no_credit_suffix"> günde bir yenilenir.</string>
+    <string name="error_reservation_failed_prefix">Rezervasyon başarısız: </string>
+    <string name="error_reservation_exception_prefix">Rezervasyon hatası: </string>
+    <string name="error_user_info_fetch_failed">Kullanıcı bilgileri alınamadı. Lütfen tekrar dene.</string>
+    <string name="preview_product_name">Örnek Ürün</string>
+    <string name="preview_business_name">Örnek İşletme</string>
+    <string name="preview_address">Örnek Adres</string>
+    <string name="preview_description">Örnek açıklama</string>
+    <string name="preview_price">120</string>
+
+    <!-- Business Products Errors -->
+    <string name="error_business_not_found">İşletme bulunamadı</string>
+    <string name="business_name_fallback">İşletme</string>
+    <string name="product_name_fallback">Ürün</string>
+    <string name="error_product_name_required">Ürün adı gerekli</string>
 
     <!-- Auth Error Messages -->
     <string name="error_email_required">E-posta adresi gerekli</string>
@@ -152,12 +248,11 @@
     <string name="error_email_already_in_use">Bu e-posta adresi zaten kullanımda.</string>
     <string name="error_weak_password">Şifre çok zayıf.</string>
     <string name="error_network_connection_short">Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.</string>
-    <string name="error_user_info_save_failed">Kullanıcı bilgileri kaydedilemedi: %s</string>
-    <string name="error_business_save_failed">İşletme kaydedilemedi: %s</string>
+    <string name="error_user_info_save_failed_prefix">Kullanıcı bilgileri kaydedilemedi: </string>
+    <string name="error_business_save_failed_prefix">İşletme kaydedilemedi: </string>
     <string name="already_have_reservation">Zaten aktif bir rezervasyonunuz var</string>
     <string name="error_user_not_logged_in">Kullanıcı girişi yapılmamış</string>
-    <string name="error_reservation_failed">Rezervasyon başarısız: %s</string>
-    <string name="error_reservation_exception">Rezervasyon hatası: %s</string>
     <string name="error_unknown">Bilinmeyen hata</string>
+    <string name="error_image_upload_failed">Fotoğraf yüklenemedi</string>
     <string name="dismiss">Kapat</string>
 </resources>

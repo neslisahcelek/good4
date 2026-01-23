@@ -28,4 +28,13 @@ interface FirestoreRepository {
         conditions: Map<String, Any>,
         clazz: KClass<T>
     ): Result<List<DocumentWithId<T>>, Error>
+
+    suspend fun <T : Any> queryCollectionWithMultipleConditionsAndLimit(
+        collectionPath: String,
+        conditions: Map<String, Any>,
+        orderByField: String?,
+        descending: Boolean,
+        limit: Long,
+        clazz: KClass<T>
+    ): Result<List<DocumentWithId<T>>, Error>
 }

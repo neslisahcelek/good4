@@ -6,6 +6,7 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -203,6 +204,49 @@ class FirestoreRepositoryAndroidImpl(
             }
 
             val querySnapshot = query.get().await()
+
+            val results = querySnapshot.documents.mapNotNull { document ->
+                try {
+                    val data: Map<String, Any?> = document.data ?: emptyMap()
+                    val jsonString = convertMapToJsonString(data)
+                    val decoded = decodeFromJsonString(jsonString, clazz)
+                    DocumentWithId(id = document.id, data = decoded)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            Result.Success(results)
+        } catch (e: Exception) {
+            Result.Error(NetworkError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun <T : Any> queryCollectionWithMultipleConditionsAndLimit(
+        collectionPath: String,
+        conditions: Map<String, Any>,
+        orderByField: String?,
+        descending: Boolean,
+        limit: Long,
+        clazz: KClass<T>
+    ): Result<List<DocumentWithId<T>>, Error> {
+        return try {
+            var query = firestore.collection(collectionPath) as Query
+
+            conditions.forEach { (field, value) ->
+                query = query.whereEqualTo(field, value)
+            }
+
+            if (orderByField != null) {
+                val direction = if (descending) {
+                    Query.Direction.DESCENDING
+                } else {
+                    Query.Direction.ASCENDING
+                }
+                query = query.orderBy(orderByField, direction)
+            }
+
+            val querySnapshot = query.limit(limit).get().await()
 
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {

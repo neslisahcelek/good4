@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
+import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.user.data.dto.UserDto
@@ -27,17 +28,19 @@ import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
 import good4.composeapp.generated.resources.error_university_required
-import good4.composeapp.generated.resources.error_user_info_save_failed
+import good4.composeapp.generated.resources.error_user_info_save_failed_prefix
 import good4.composeapp.generated.resources.error_weak_password
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.jetbrains.compose.resources.getString
 
 class StudentRegisterViewModel(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val configRepository: AppConfigRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -145,6 +148,8 @@ class StudentRegisterViewModel(
             when (val authResult = authRepository.signUp(state.email, state.password)) {
                 is Result.Success -> {
                     val userId = authResult.data.uid
+                    val now = Clock.System.now()
+                    val weeklyCredit = configRepository.getStudentWeeklyCredit()
 
                     val userDto = UserDto(
                         email = state.email,
@@ -155,8 +160,9 @@ class StudentRegisterViewModel(
                         university = state.university,
                         major = state.major.ifBlank { null },
                         educationLevel = state.educationLevel.ifBlank { null },
-                        credit = 1,
-                        registrationDate = Clock.System.now()
+                        credit = weeklyCredit,
+                        lastCreditResetAt = now,
+                        registrationDate = now
                     )
 
                     when (val userResult = userRepository.createUser(userId, userDto)) {
@@ -169,12 +175,12 @@ class StudentRegisterViewModel(
                             }
                         }
                         is Result.Error -> {
+                            val prefix = getString(Res.string.error_user_info_save_failed_prefix)
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = UiText.StringResourceId(
-                                        Res.string.error_user_info_save_failed,
-                                        arrayOf(userResult.error.message)
+                                    errorMessage = UiText.DynamicString(
+                                        prefix + (userResult.error.message ?: "")
                                     )
                                 )
                             }
@@ -202,4 +208,3 @@ class StudentRegisterViewModel(
         }
     }
 }
-

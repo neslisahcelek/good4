@@ -18,7 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.good4.core.presentation.Surface
+import com.good4.core.presentation.SlateGray
 import com.good4.core.presentation.UiText
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.products
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -27,8 +31,8 @@ fun InfoCard(
     text: UiText,
     icon: Painter? = null,
     iconContentDescription: UiText? = null,
-    textColor: Color = Color.DarkGray,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    textColor: Color = SlateGray,
+    backgroundColor: Color = Surface,
     onClick: (() -> Unit)? = null,
     isLoading: Boolean = false
 ) {
@@ -36,13 +40,13 @@ fun InfoCard(
         modifier = if (onClick != null) {
             modifier.clickable { onClick() }
         } else modifier,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Row(
             modifier = Modifier
-                .height(40.dp)
-                .padding(horizontal = 10.dp, vertical = 8.dp)
+                .height(44.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             if (icon != null) {
                 Image(
@@ -61,7 +65,7 @@ fun InfoCard(
                     text = text.asString(),
                     fontWeight = FontWeight.Bold,
                     color = textColor,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.padding(start = 6.dp)
                 )
             }
         }
@@ -73,9 +77,7 @@ fun InfoCard(
 fun InfoCardPreview() {
     MaterialTheme {
         InfoCard(
-            text = UiText.DynamicString("Örnek Metin")
+            text = UiText.StringResourceId(Res.string.products)
         )
     }
 }
-
-

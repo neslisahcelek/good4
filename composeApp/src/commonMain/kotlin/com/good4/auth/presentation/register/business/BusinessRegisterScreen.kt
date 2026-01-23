@@ -16,6 +16,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,10 +48,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.DarkBlue
-import com.good4.core.presentation.DesertWhite
-import com.good4.core.presentation.ErrorRed
-import com.good4.core.presentation.LightGreen
+import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.Background
+import com.good4.core.presentation.BrickRed
+import com.good4.core.presentation.BorderGray
+import com.good4.core.presentation.MintGreen
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -92,6 +95,7 @@ fun BusinessRegisterScreen(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
+        containerColor = Background,
         topBar = {
             TopAppBar(
                 title = {
@@ -109,7 +113,7 @@ fun BusinessRegisterScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DesertWhite
+                    containerColor = Background
                 )
             )
         }
@@ -117,7 +121,7 @@ fun BusinessRegisterScreen(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(DesertWhite)
+                .background(Background)
                 .padding(paddingValues)
         ) {
             Column(
@@ -138,16 +142,7 @@ fun BusinessRegisterScreen(
                     text = stringResource(Res.string.create_business_account),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkBlue
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(Res.string.admin_approval_notice),
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    textAlign = TextAlign.Center
+                    color = InkBlack
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -201,7 +196,7 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                HorizontalDivider(color = Color.LightGray)
+                HorizontalDivider(color = BorderGray)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -278,7 +273,7 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                HorizontalDivider(color = Color.LightGray)
+                HorizontalDivider(color = BorderGray)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -303,9 +298,18 @@ fun BusinessRegisterScreen(
                     ),
                     trailingIcon = {
                         IconButton(onClick = { onAction(BusinessRegisterAction.OnTogglePasswordVisibility) }) {
-                            Text(
-                                text = if (state.isPasswordVisible) "🙈" else "👁️",
-                                fontSize = 20.sp
+                            val contentDescription = if (state.isPasswordVisible) {
+                                stringResource(Res.string.password_visibility_hide)
+                            } else {
+                                stringResource(Res.string.password_visibility_show)
+                            }
+                            Icon(
+                                imageVector = if (state.isPasswordVisible) {
+                                    Icons.Filled.VisibilityOff
+                                } else {
+                                    Icons.Filled.Visibility
+                                },
+                                contentDescription = contentDescription
                             )
                         }
                     },
@@ -345,7 +349,7 @@ fun BusinessRegisterScreen(
                 state.errorMessage?.let { error ->
                     Text(
                         text = error.asString(),
-                        color = ErrorRed,
+                        color = BrickRed,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -363,16 +367,16 @@ fun BusinessRegisterScreen(
                         .height(56.dp),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = LightGreen,
-                        contentColor = DarkBlue,
-                        disabledContainerColor = LightGreen.copy(alpha = 0.5f)
+                        containerColor = MintGreen,
+                        contentColor = InkBlack,
+                        disabledContainerColor = MintGreen.copy(alpha = 0.5f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = DarkBlue,
+                            color = InkBlack,
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -404,16 +408,16 @@ private fun SectionTitle(title: String) {
         text = title,
         fontSize = 18.sp,
         fontWeight = FontWeight.SemiBold,
-        color = DarkBlue,
+        color = InkBlack,
         modifier = Modifier.fillMaxWidth()
     )
 }
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = DarkBlue,
-    focusedLabelColor = DarkBlue,
-    cursorColor = DarkBlue
+    focusedBorderColor = InkBlack,
+    focusedLabelColor = InkBlack,
+    cursorColor = InkBlack
 )
 
 @Preview
@@ -426,4 +430,3 @@ fun BusinessRegisterScreenPreview() {
         )
     }
 }
-

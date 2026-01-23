@@ -1,7 +1,7 @@
 package com.good4.product.data.repository
 
-import com.good4.business.data.dto.BusinessDto
 import com.good4.business.data.dto.FirestoreBusinessRepository
+import com.good4.business.domain.Business
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
@@ -12,14 +12,12 @@ class FirestoreProductRepository(
     private val firestoreRepository: FirestoreRepository,
     private val businessRepository: FirestoreBusinessRepository
 ) {
-    suspend fun getProducts(): Result<List<Product>, Error> {
+    suspend fun getProducts(includeOutOfStock: Boolean = false): Result<List<Product>, Error> {
         return when (val result = firestoreRepository.getCollectionWithIds("products", ProductDto::class)) {
             is Result.Success -> {
-                // Önce tüm benzersiz business ID'lerini topla
                 val uniqueBusinessIds = result.data.mapNotNull { it.data.businessId }.distinct()
                 
-                // Tüm business bilgilerini bir kere çek ve cache'le
-                val businessCache = mutableMapOf<String, BusinessDto?>()
+                val businessCache = mutableMapOf<String, Business?>()
                 uniqueBusinessIds.forEach { businessId ->
                     when (val businessResult = businessRepository.getBusinessById(businessId)) {
                         is Result.Success -> {
@@ -31,16 +29,47 @@ class FirestoreProductRepository(
                     }
                 }
                 
-                // Şimdi ürünleri business bilgileri ile eşleştir ve stokta olanları filtrele
                 val products = result.data.map { documentWithId ->
                     val productDto = documentWithId.data
                     val business = productDto.businessId?.let { businessCache[it] }
                     productDto.toProduct(documentWithId.id, business)
-                }.filter { product ->
-                    // Sadece stokta olan ürünleri göster (amount > 0)
-                    product.amount > 0
+                }.let { items ->
+                    if (includeOutOfStock) {
+                        items
+                    } else {
+                        items.filter { product -> product.amount > 0 }
+                    }
                 }
                 
+                Result.Success(products)
+            }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun getProductsByBusinessId(
+        businessId: String,
+        includeOutOfStock: Boolean = true
+    ): Result<List<Product>, Error> {
+        return when (val result = firestoreRepository.queryCollectionWithIds(
+            collectionPath = "products",
+            field = "businessId",
+            value = businessId,
+            clazz = ProductDto::class
+        )) {
+            is Result.Success -> {
+                val business = when (val businessResult = businessRepository.getBusinessById(businessId)) {
+                    is Result.Success -> businessResult.data
+                    is Result.Error -> null
+                }
+
+                val products = result.data.map { documentWithId ->
+                    val productDto = documentWithId.data
+                    productDto.toProduct(documentWithId.id, business)
+                }.let { items ->
+                    if (includeOutOfStock) items else items.filter { it.amount > 0 }
+                }
+
                 Result.Success(products)
             }
             is Result.Error -> result
@@ -73,13 +102,25 @@ class FirestoreProductRepository(
     suspend fun updateProduct(id: String, product: ProductDto): Result<Unit, Error> {
         return firestoreRepository.updateDocument("products", id, product)
     }
+
+    suspend fun decrementProductCount(id: String): Result<Unit, Error> {
+        return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
+            is Result.Success -> {
+                val currentCount = result.data.count ?: 0
+                val updatedCount = (currentCount - 1).coerceAtLeast(0)
+                val updatedProduct = result.data.copy(count = updatedCount)
+                updateProduct(id, updatedProduct)
+            }
+            is Result.Error -> result
+        }
+    }
     
     suspend fun deleteProduct(id: String): Result<Unit, Error> {
         return firestoreRepository.deleteDocument("products", id)
     }
 }
 
-private fun ProductDto.toProduct(documentId: String, business: BusinessDto?): Product {
+private fun ProductDto.toProduct(documentId: String, business: Business?): Product {
     val originalPriceValue = originalPrice
     val discountPriceValue = discountPrice
     val discountPercentageValue = if (originalPriceValue != null && discountPriceValue != null && originalPriceValue > 0) {
@@ -95,13 +136,12 @@ private fun ProductDto.toProduct(documentId: String, business: BusinessDto?): Pr
         description = description ?: "",
         storeName = business?.name ?: "",
         businessId = businessId ?: "",
-        price = "$displayPrice TL",
+        price = displayPrice.toString(),
         originalPrice = originalPriceValue,
         discountPrice = discountPriceValue,
         discountPercentage = discountPercentageValue,
-        imageUrl = image ?: "",
+        imageUrl = imageUrl ?: "",
         address = business?.address ?: "",
         amount = count ?: 0
     )
 }
-

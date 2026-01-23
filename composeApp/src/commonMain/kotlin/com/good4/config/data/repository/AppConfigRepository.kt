@@ -25,9 +25,15 @@ class AppConfigRepository(
             is Result.Success -> {
                 val dto = result.data
                 val expirationMinutes = dto.reservationExpirationMinutes ?: DEFAULT_EXPIRATION_MINUTES
+                val creditResetIntervalDays = dto.creditResetIntervalDays
+                    ?: AppConfig.DEFAULT.creditResetIntervalDays
+                val studentWeeklyCredit = dto.studentWeeklyCredit
+                    ?: AppConfig.DEFAULT.studentWeeklyCredit
                 
                 _config.value = AppConfig(
-                    reservationExpirationDuration = expirationMinutes.minutes
+                    reservationExpirationDuration = expirationMinutes.minutes,
+                    creditResetIntervalDays = creditResetIntervalDays,
+                    studentWeeklyCredit = studentWeeklyCredit
                 )
             }
             is Result.Error -> {
@@ -38,5 +44,13 @@ class AppConfigRepository(
 
     fun getExpirationDuration(): kotlin.time.Duration {
         return _config.value.reservationExpirationDuration
+    }
+
+    fun getCreditResetIntervalDays(): Int {
+        return _config.value.creditResetIntervalDays
+    }
+
+    fun getStudentWeeklyCredit(): Int {
+        return _config.value.studentWeeklyCredit
     }
 }

@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
@@ -33,15 +32,11 @@ kotlin {
         }
     }
 
-    jvm("desktop")
-
     room {
         schemaDirectory("$projectDir/schemas")
     }
 
     sourceSets {
-        val desktopMain by getting
-
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -79,12 +74,6 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.firebase.gitlive.auth)
             implementation(libs.firebase.gitlive.firestore)
-        }
-        
-        desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.ktor.client.okhttp)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -153,16 +142,4 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
-}
-
-compose.desktop {
-    application {
-        mainClass = "com.good4.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.good4"
-            packageVersion = "1.0.0"
-        }
-    }
 }

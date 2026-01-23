@@ -15,7 +15,7 @@ import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_address_required
 import good4.composeapp.generated.resources.error_business_name_required
-import good4.composeapp.generated.resources.error_business_save_failed
+import good4.composeapp.generated.resources.error_business_save_failed_prefix
 import good4.composeapp.generated.resources.error_city_required
 import good4.composeapp.generated.resources.error_email_already_in_use
 import good4.composeapp.generated.resources.error_email_required
@@ -24,12 +24,13 @@ import good4.composeapp.generated.resources.error_network_connection_short
 import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
-import good4.composeapp.generated.resources.error_user_info_save_failed
+import good4.composeapp.generated.resources.error_user_info_save_failed_prefix
 import good4.composeapp.generated.resources.error_weak_password
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 class BusinessRegisterViewModel(
     private val authRepository: AuthRepository,
@@ -198,12 +199,12 @@ class BusinessRegisterViewModel(
                                 }
 
                                 is Result.Error -> {
+                                    val prefix = getString(Res.string.error_user_info_save_failed_prefix)
                                     _state.update {
                                         it.copy(
                                             isLoading = false,
-                                            errorMessage = UiText.StringResourceId(
-                                                Res.string.error_user_info_save_failed,
-                                                arrayOf(userResult.error.message)
+                                            errorMessage = UiText.DynamicString(
+                                                prefix + (userResult.error.message ?: "")
                                             )
                                         )
                                     }
@@ -212,12 +213,12 @@ class BusinessRegisterViewModel(
                         }
 
                         is Result.Error -> {
+                            val prefix = getString(Res.string.error_business_save_failed_prefix)
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = UiText.StringResourceId(
-                                        Res.string.error_business_save_failed,
-                                        arrayOf(businessResult.error.message)
+                                    errorMessage = UiText.DynamicString(
+                                        prefix + (businessResult.error.message ?: "")
                                     )
                                 )
                             }
@@ -249,4 +250,3 @@ class BusinessRegisterViewModel(
         }
     }
 }
-

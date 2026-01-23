@@ -28,7 +28,7 @@ class StudentProfileViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            when (val result = userRepository.getUser(userId)) {
+            when (val result = userRepository.refreshStudentCreditIfNeeded(userId)) {
                 is Result.Success -> {
                     _state.update {
                         it.copy(
@@ -55,4 +55,3 @@ class StudentProfileViewModel(
         }
     }
 }
-

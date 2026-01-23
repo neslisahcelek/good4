@@ -19,18 +19,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.good4.core.presentation.DarkBlue
-import com.good4.core.presentation.DesertWhite
-import com.good4.core.presentation.LightGreen
+import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.Background
+import com.good4.core.presentation.MintGreen
 import com.good4.product.presentation.product_list.views.ProductListScreenRoot
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.student.presentation.profile.StudentProfileScreen
 import com.good4.student.presentation.reservations.StudentReservationsScreen
+import com.good4.student.presentation.reservations.StudentReservationsViewModel
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.products
 import good4.composeapp.generated.resources.reservations
@@ -69,12 +71,22 @@ fun StudentHomeScreenRoot(
     )
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+    val productListViewModel: ProductListViewModel = koinViewModel()
+    val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
+
+    LaunchedEffect(selectedItemIndex) {
+        when (selectedItemIndex) {
+            0 -> productListViewModel.refresh()
+            1 -> reservationsViewModel.refresh()
+        }
+    }
 
     Scaffold(
         modifier = modifier,
+        containerColor = Background,
         bottomBar = {
             NavigationBar(
-                containerColor = DesertWhite
+                containerColor = Background
             ) {
                 navItems.forEachIndexed { index, item ->
                     NavigationBarItem(
@@ -92,9 +104,9 @@ fun StudentHomeScreenRoot(
                         },
                         label = { Text(item.title) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = DarkBlue,
-                            selectedTextColor = DarkBlue,
-                            indicatorColor = LightGreen.copy(alpha = 0.3f)
+                            selectedIconColor = InkBlack,
+                            selectedTextColor = InkBlack,
+                            indicatorColor = MintGreen.copy(alpha = 0.3f)
                         )
                     )
                 }
@@ -108,13 +120,14 @@ fun StudentHomeScreenRoot(
         ) {
             when (selectedItemIndex) {
                 0 -> {
-                    val viewModel: ProductListViewModel = koinViewModel()
                     ProductListScreenRoot(
-                        viewModel = viewModel
+                        viewModel = productListViewModel
                     )
                 }
                 1 -> {
-                    StudentReservationsScreen()
+                    StudentReservationsScreen(
+                        viewModel = reservationsViewModel
+                    )
                 }
                 2 -> {
                     StudentProfileScreen(
@@ -135,4 +148,3 @@ fun StudentHomeScreenPreview() {
         )
     }
 }
-

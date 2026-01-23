@@ -15,9 +15,9 @@ fun SplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DesertWhite),
+            .background(Background),
         contentAlignment = Alignment.Center
     ) {
-        CircularProgressIndicator(color = DarkBlue)
+        CircularProgressIndicator(color = InkBlack)
     }
 }

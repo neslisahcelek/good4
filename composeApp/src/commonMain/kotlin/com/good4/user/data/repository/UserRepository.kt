@@ -4,13 +4,15 @@ import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
 import com.good4.core.domain.UnknownError
+import com.good4.config.data.repository.AppConfigRepository
 import com.good4.user.User
 import com.good4.user.data.dto.UserDto
 import com.good4.user.domain.UserRole
 import kotlinx.datetime.Clock
 
 class UserRepository(
-    private val firestoreRepository: FirestoreRepository
+    private val firestoreRepository: FirestoreRepository,
+    private val configRepository: AppConfigRepository
 ) {
     suspend fun createUser(userId: String, userDto: UserDto): Result<Unit, Error> {
         return firestoreRepository.updateDocument("users", userId, userDto)
@@ -29,6 +31,18 @@ class UserRepository(
 
     suspend fun updateUser(userId: String, userDto: UserDto): Result<Unit, Error> {
         return firestoreRepository.updateDocument("users", userId, userDto)
+    }
+
+    suspend fun decrementUserCredit(userId: String): Result<Unit, Error> {
+        return when (val result = getUserDto(userId)) {
+            is Result.Success -> {
+                val currentCredit = result.data.credit ?: 0
+                val updatedCredit = (currentCredit - 1).coerceAtLeast(0)
+                val updatedDto = result.data.copy(credit = updatedCredit)
+                updateUser(userId, updatedDto)
+            }
+            is Result.Error -> result
+        }
     }
 
     suspend fun getUserRole(userId: String): Result<UserRole, Error> {
@@ -58,42 +72,99 @@ class UserRepository(
         }
     }
 
+    suspend fun refreshStudentCreditIfNeeded(userId: String): Result<User, Error> {
+        return when (val result = getUserDto(userId)) {
+            is Result.Success -> {
+                val userDto = result.data
+                val role = UserRole.fromValue(userDto.role)
+                if (role != UserRole.STUDENT) {
+                    return Result.Success(userDto.toUser(userId))
+                }
+
+                val now = Clock.System.now()
+                val intervalDays = configRepository.getCreditResetIntervalDays()
+                val weeklyCredit = userDto.weeklyCreditOverride
+                    ?: configRepository.getStudentWeeklyCredit()
+                val lastResetAt = userDto.lastCreditResetAt
+                val registrationDate = userDto.registrationDate
+
+                if (lastResetAt == null) {
+                    val daysSinceRegistration = registrationDate?.let { (now - it).inWholeDays }
+                    val shouldReset = daysSinceRegistration != null && daysSinceRegistration >= intervalDays
+                    val needsCreditInit = userDto.credit == null || registrationDate == null
+
+                    val updatedDto = when {
+                        shouldReset || needsCreditInit -> userDto.copy(
+                            credit = weeklyCredit,
+                            lastCreditResetAt = now
+                        )
+                        registrationDate != null -> userDto.copy(
+                            lastCreditResetAt = registrationDate
+                        )
+                        else -> userDto.copy(lastCreditResetAt = now)
+                    }
+
+                    return when (val updateResult = updateUser(userId, updatedDto)) {
+                        is Result.Success -> Result.Success(updatedDto.toUser(userId))
+                        is Result.Error -> updateResult
+                    }
+                }
+
+                val daysSinceReset = (now - lastResetAt).inWholeDays
+                if (daysSinceReset >= intervalDays) {
+                    val updatedDto = userDto.copy(
+                        credit = weeklyCredit,
+                        lastCreditResetAt = now
+                    )
+                    when (val updateResult = updateUser(userId, updatedDto)) {
+                        is Result.Success -> Result.Success(updatedDto.toUser(userId))
+                        is Result.Error -> updateResult
+                    }
+                } else {
+                    Result.Success(userDto.toUser(userId))
+                }
+            }
+            is Result.Error -> result
+        }
+    }
+
     suspend fun resetStudentCreditsWeekly(): Result<Unit, Error> {
         return when (val studentsResult = getUsersByRole(UserRole.STUDENT)) {
             is Result.Success -> {
                 val students = studentsResult.data
                 val now = Clock.System.now()
+                val intervalDays = configRepository.getCreditResetIntervalDays()
+                val weeklyCredit = configRepository.getStudentWeeklyCredit()
                 var hasError = false
                 var lastError: Error? = null
 
                 students.forEach { student ->
-                    val registrationDate = student.registrationDate
-                    if (registrationDate != null) {
-                        val timeSinceRegistration = now - registrationDate
-                        val daysSinceRegistration = timeSinceRegistration.inWholeDays
-                        val weeksSinceRegistration = daysSinceRegistration / 7
+                    val lastResetAt = student.lastCreditResetAt ?: student.registrationDate
+                    val daysSinceReset = lastResetAt?.let { (now - it).inWholeDays } ?: 0
+                    val targetCredit = student.weeklyCreditOverride ?: weeklyCredit
 
-                        if (weeksSinceRegistration >= 1 && student.credit != 1) {
-                            val updatedDto = UserDto(
-                                email = student.email,
-                                fullName = student.fullName,
-                                phoneNumber = student.phoneNumber,
-                                role = UserRole.STUDENT.value,
-                                verified = student.verified,
-                                university = student.university,
-                                major = student.major,
-                                educationLevel = student.educationLevel,
-                                credit = 1,
-                                registrationDate = student.registrationDate
-                            )
+                    if (daysSinceReset >= intervalDays) {
+                        val updatedDto = UserDto(
+                            email = student.email,
+                            fullName = student.fullName,
+                            phoneNumber = student.phoneNumber,
+                            role = UserRole.STUDENT.value,
+                            verified = student.verified,
+                            university = student.university,
+                            major = student.major,
+                            educationLevel = student.educationLevel,
+                            credit = targetCredit,
+                            weeklyCreditOverride = student.weeklyCreditOverride,
+                            lastCreditResetAt = now,
+                            registrationDate = student.registrationDate
+                        )
 
-                            when (val updateResult = updateUser(student.id, updatedDto)) {
-                                is Result.Error -> {
-                                    hasError = true
-                                    lastError = updateResult.error
-                                }
-                                is Result.Success -> Unit
+                        when (val updateResult = updateUser(student.id, updatedDto)) {
+                            is Result.Error -> {
+                                hasError = true
+                                lastError = updateResult.error
                             }
+                            is Result.Success -> Unit
                         }
                     }
                 }
@@ -121,7 +192,8 @@ private fun UserDto.toUser(userId: String): User {
         major = major,
         educationLevel = educationLevel,
         credit = credit,
+        weeklyCreditOverride = weeklyCreditOverride,
+        lastCreditResetAt = lastCreditResetAt,
         registrationDate = registrationDate
     )
 }
-

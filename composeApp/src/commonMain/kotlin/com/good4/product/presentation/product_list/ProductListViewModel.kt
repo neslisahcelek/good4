@@ -11,10 +11,14 @@ import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.product.data.repository.FirestoreProductRepository
+import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.already_have_reservation
-import good4.composeapp.generated.resources.error_reservation_exception
-import good4.composeapp.generated.resources.error_reservation_failed
+import good4.composeapp.generated.resources.error_no_credit_prefix
+import good4.composeapp.generated.resources.error_no_credit_suffix
+import good4.composeapp.generated.resources.error_reservation_exception_prefix
+import good4.composeapp.generated.resources.error_reservation_failed_prefix
+import good4.composeapp.generated.resources.error_user_info_fetch_failed
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_logged_in
 import good4.composeapp.generated.resources.product_out_of_stock
@@ -23,17 +27,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.jetbrains.compose.resources.getString
 
 class ProductListViewModel(
     private val productRepository: FirestoreProductRepository,
     private val codeRepository: CodeRepository,
     private val authRepository: AuthRepository,
-    private val configRepository: AppConfigRepository
+    private val configRepository: AppConfigRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProductListState())
     val state = _state.asStateFlow()
     
     private var isLoaded: Boolean = false
+
+    fun refresh() {
+        isLoaded = false
+        loadProducts()
+        loadActiveReservation()
+    }
     
     fun loadActiveReservation(): Unit {
         val userId = authRepository.currentUser?.uid ?: return
@@ -41,7 +53,11 @@ class ProductListViewModel(
         viewModelScope.launch {
             when (val result = codeRepository.getPendingCodeByUserId(userId)) {
                 is Result.Success -> {
-                    val pendingCode = result.data ?: return@launch
+                    val pendingCode = result.data
+                    if (pendingCode == null) {
+                        _state.update { it.copy(activeReservation = null) }
+                        return@launch
+                    }
                     val expiryTime = pendingCode.expiresAt ?: return@launch
                     
                     val product = _state.value.products.firstOrNull { it.documentId == pendingCode.productId }
@@ -121,18 +137,49 @@ class ProductListViewModel(
             }
             return
         }
-        
-        if (product.amount <= 0) {
-            _state.update {
-                it.copy(
-                    isReserving = false,
-                    errorMessage = UiText.StringResourceId(Res.string.product_out_of_stock)
-                )
-            }
-            return
-        }
-        
+
         viewModelScope.launch {
+            when (val userResult = userRepository.refreshStudentCreditIfNeeded(userId)) {
+                is Result.Success -> {
+                    val credit = userResult.data.credit ?: 0
+                    if (credit <= 0) {
+                        val resetDays = configRepository.getCreditResetIntervalDays()
+                        val prefix = getString(Res.string.error_no_credit_prefix)
+                        val suffix = getString(Res.string.error_no_credit_suffix)
+                        _state.update {
+                            it.copy(
+                                isReserving = false,
+                                errorMessage = UiText.DynamicString(
+                                    prefix + resetDays + suffix
+                                )
+                            )
+                        }
+                        return@launch
+                    }
+                }
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isReserving = false,
+                            errorMessage = UiText.StringResourceId(
+                                Res.string.error_user_info_fetch_failed
+                            )
+                        )
+                    }
+                    return@launch
+                }
+            }
+
+            if (product.amount <= 0) {
+                _state.update {
+                    it.copy(
+                        isReserving = false,
+                        errorMessage = UiText.StringResourceId(Res.string.product_out_of_stock)
+                    )
+                }
+                return@launch
+            }
+
             _state.update { it.copy(isReserving = true, errorMessage = null) }
 
             try {
@@ -167,22 +214,24 @@ class ProductListViewModel(
                         }
                     }
                     is Result.Error -> {
+                        val prefix = getString(Res.string.error_reservation_failed_prefix)
                         _state.update {
                             it.copy(
                                 isReserving = false,
                                 errorMessage = UiText.DynamicString(
-                                    "${Res.string.error_reservation_failed}: ${result.error.message ?: ""}"
+                                    prefix + (result.error.message ?: "")
                                 )
                             )
                         }
                     }
                 }
             } catch (e: Exception) {
+                val prefix = getString(Res.string.error_reservation_exception_prefix)
                 _state.update {
                     it.copy(
                         isReserving = false,
                         errorMessage = UiText.DynamicString(
-                            "${Res.string.error_reservation_exception}: ${e.message ?: ""}"
+                            prefix + (e.message ?: "")
                         )
                     )
                 }
@@ -230,4 +279,3 @@ class ProductListViewModel(
         }
     }
 }
-

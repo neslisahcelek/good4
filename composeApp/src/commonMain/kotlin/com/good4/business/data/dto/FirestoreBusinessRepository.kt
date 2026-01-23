@@ -1,5 +1,6 @@
 package com.good4.business.data.dto
 
+import com.good4.business.domain.Business
 import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
@@ -8,16 +9,29 @@ import com.good4.core.domain.Result
 class FirestoreBusinessRepository(
     private val firestoreRepository: FirestoreRepository
 ) {
-    suspend fun getBusinesses(): Result<List<BusinessDto>, Error> {
-        return firestoreRepository.getCollection("businesses", BusinessDto::class)
+    suspend fun getBusinesses(): Result<List<Business>, Error> {
+        return when (val result = firestoreRepository.getCollectionWithIds("businesses", BusinessDto::class)) {
+            is Result.Success -> {
+                Result.Success(result.data.map { it.data.toBusiness(it.id) })
+            }
+            is Result.Error -> result
+        }
     }
     
-    suspend fun getBusinessesWithIds(): Result<List<DocumentWithId<BusinessDto>>, Error> {
-        return firestoreRepository.getCollectionWithIds("businesses", BusinessDto::class)
+    suspend fun getBusinessesWithIds(): Result<List<DocumentWithId<Business>>, Error> {
+        return when (val result = firestoreRepository.getCollectionWithIds("businesses", BusinessDto::class)) {
+            is Result.Success -> {
+                Result.Success(result.data.map { DocumentWithId(it.id, it.data.toBusiness(it.id)) })
+            }
+            is Result.Error -> result
+        }
     }
     
-    suspend fun getBusinessById(id: String): Result<BusinessDto, Error> {
-        return firestoreRepository.getDocument("businesses", id, BusinessDto::class)
+    suspend fun getBusinessById(id: String): Result<Business, Error> {
+        return when (val result = firestoreRepository.getDocument("businesses", id, BusinessDto::class)) {
+            is Result.Success -> Result.Success(result.data.toBusiness(id))
+            is Result.Error -> result
+        }
     }
     
     suspend fun addBusiness(business: BusinessDto): Result<String, Error> {

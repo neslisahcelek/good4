@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.config.data.repository.AppConfigRepository
+import com.good4.core.domain.Result
 import com.good4.navigation.Good4NavGraph
 import com.good4.navigation.Route
 import com.good4.user.data.repository.UserRepository
@@ -33,8 +34,8 @@ class MainActivity : ComponentActivity() {
 
                 val currentUser = authRepository.currentUser
                 if (currentUser != null) {
-                    when (val result = userRepository.getUser(currentUser.uid)) {
-                        is com.good4.core.domain.Result.Success -> {
+                    when (val result = userRepository.refreshStudentCreditIfNeeded(currentUser.uid)) {
+                        is Result.Success -> {
                             userRole = result.data.role
                             startDestination = when (result.data.role) {
                                 UserRole.ADMIN -> Route.AdminHome
@@ -43,7 +44,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        is com.good4.core.domain.Result.Error -> {
+                        is Result.Error -> {
                             startDestination = Route.Login
                         }
                     }
@@ -63,4 +64,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

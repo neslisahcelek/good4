@@ -25,6 +25,11 @@ data class CodeWithDetails(
     val businessName: String?
 )
 
+data class CodeCounts(
+    val pending: Int,
+    val completed: Int
+)
+
 class CodeRepository(
     private val firestoreRepository: FirestoreRepository,
     private val businessRepository: FirestoreBusinessRepository,
@@ -51,46 +56,82 @@ class CodeRepository(
             is Result.Error -> result
         }
     }
-    
+
+    private suspend fun buildCodesWithDetails(
+        userCodes: List<com.good4.core.data.repository.DocumentWithId<CodeDto>>
+    ): List<CodeWithDetails> {
+        return userCodes.map { documentWithId ->
+            val code = documentWithId.data
+
+            val productName = code.productId?.let { productId ->
+                when (val productResult = productRepository.getProductById(productId)) {
+                    is Result.Success -> productResult.data.name
+                    is Result.Error -> null
+                }
+            }
+
+            val businessName = code.businessId?.let { businessId ->
+                when (val businessResult = businessRepository.getBusinessById(businessId)) {
+                    is Result.Success -> businessResult.data.name
+                    is Result.Error -> null
+                }
+            }
+
+            CodeWithDetails(
+                id = documentWithId.id,
+                value = code.value ?: "",
+                businessId = code.businessId ?: "",
+                productId = code.productId ?: "",
+                userId = code.userId ?: "",
+                status = code.status ?: CodeStatus.PENDING.value,
+                createdAt = code.createdAt?.toString(),
+                usedAt = code.usedAt?.toString(),
+                productName = productName,
+                businessName = businessName
+            )
+        }
+    }
+
     suspend fun getCodesByUserId(userId: String): Result<List<CodeWithDetails>, Error> {
         return when (val result = firestoreRepository.queryCollectionWithIds("codes", "userId", userId, CodeDto::class)) {
             is Result.Success -> {
-                val userCodes = result.data
-
-                val codesWithDetails = userCodes.map { documentWithId ->
-                    val code = documentWithId.data
-                    
-                    // Get product and business names
-                    val productName = code.productId?.let { productId ->
-                        when (val productResult = productRepository.getProductById(productId)) {
-                            is Result.Success -> productResult.data.name
-                            is Result.Error -> null
-                        }
-                    }
-
-                    val businessName = code.businessId?.let { businessId ->
-                        when (val businessResult = businessRepository.getBusinessById(businessId)) {
-                            is Result.Success -> businessResult.data.name
-                            is Result.Error -> null
-                        }
-                    }
-
-                    CodeWithDetails(
-                        id = documentWithId.id,
-                        value = code.value ?: "",
-                        businessId = code.businessId ?: "",
-                        productId = code.productId ?: "",
-                        userId = code.userId ?: "",
-                        status = code.status ?: CodeStatus.PENDING.value,
-                        createdAt = code.createdAt?.toString(),
-                        usedAt = code.usedAt?.toString(),
-                        productName = productName,
-                        businessName = businessName
-                    )
-                }
-
-                Result.Success(codesWithDetails)
+                Result.Success(buildCodesWithDetails(result.data))
             }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun getCodesByUserIdAndStatus(
+        userId: String,
+        status: CodeStatus,
+        limit: Long? = null,
+        orderByField: String? = null,
+        descending: Boolean = false
+    ): Result<List<CodeWithDetails>, Error> {
+        val conditions = mapOf(
+            "userId" to userId,
+            "status" to status.value
+        )
+
+        val result = if (limit != null) {
+            firestoreRepository.queryCollectionWithMultipleConditionsAndLimit(
+                collectionPath = "codes",
+                conditions = conditions,
+                orderByField = orderByField,
+                descending = descending,
+                limit = limit,
+                clazz = CodeDto::class
+            )
+        } else {
+            firestoreRepository.queryCollectionWithMultipleConditions(
+                collectionPath = "codes",
+                conditions = conditions,
+                clazz = CodeDto::class
+            )
+        }
+
+        return when (result) {
+            is Result.Success -> Result.Success(buildCodesWithDetails(result.data))
             is Result.Error -> result
         }
     }
@@ -130,6 +171,34 @@ class CodeRepository(
         }
     }
 
+    suspend fun getCodeCountsByBusinessId(businessId: String): Result<CodeCounts, Error> {
+        return when (val result = firestoreRepository.queryCollectionWithIds("codes", "businessId", businessId, CodeDto::class)) {
+            is Result.Success -> {
+                val pending = result.data.count { it.data.statusEnum == CodeStatus.PENDING }
+                val completed = result.data.count { it.data.statusEnum == CodeStatus.USED }
+                Result.Success(CodeCounts(pending = pending, completed = completed))
+            }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun getRecentCodesByBusinessId(
+        businessId: String,
+        limit: Long
+    ): Result<List<CodeWithDetails>, Error> {
+        return when (val result = firestoreRepository.queryCollectionWithMultipleConditionsAndLimit(
+            collectionPath = "codes",
+            conditions = mapOf("businessId" to businessId),
+            orderByField = "createdAt",
+            descending = true,
+            limit = limit,
+            clazz = CodeDto::class
+        )) {
+            is Result.Success -> Result.Success(buildCodesWithDetails(result.data))
+            is Result.Error -> result
+        }
+    }
+
     suspend fun verifyCode(codeValue: String, businessId: String): Result<CodeWithDetails, Error> {
         return when (val result = firestoreRepository.getCollectionWithIds("codes", CodeDto::class)) {
             is Result.Success -> {
@@ -164,11 +233,16 @@ class CodeRepository(
     }
 
     suspend fun markCodeAsUsed(codeId: String): Result<Unit, Error> {
-        val updatedCode = CodeDto(
-            status = CodeStatus.USED.value,
-            usedAt = kotlinx.datetime.Clock.System.now()
-        )
-        return firestoreRepository.updateDocument("codes", codeId, updatedCode)
+        return when (val result = firestoreRepository.getDocument("codes", codeId, CodeDto::class)) {
+            is Result.Success -> {
+                val updatedCode = result.data.copy(
+                    status = CodeStatus.USED.value,
+                    usedAt = kotlinx.datetime.Clock.System.now()
+                )
+                firestoreRepository.updateDocument("codes", codeId, updatedCode)
+            }
+            is Result.Error -> result
+        }
     }
 
     suspend fun createCode(code: CodeDto): Result<String, Error> {
@@ -190,10 +264,15 @@ class CodeRepository(
     }
     
     suspend fun markCodeAsExpired(codeId: String): Result<Unit, Error> {
-        val updatedCode = CodeDto(
-            status = CodeStatus.EXPIRED.value
-        )
-        return firestoreRepository.updateDocument("codes", codeId, updatedCode)
+        return when (val result = firestoreRepository.getDocument("codes", codeId, CodeDto::class)) {
+            is Result.Success -> {
+                val updatedCode = result.data.copy(
+                    status = CodeStatus.EXPIRED.value
+                )
+                firestoreRepository.updateDocument("codes", codeId, updatedCode)
+            }
+            is Result.Error -> result
+        }
     }
 
     suspend fun checkAndExpireCodes(): Result<Unit, Error> {
@@ -217,4 +296,3 @@ class CodeRepository(
         }
     }
 }
-

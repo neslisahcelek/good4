@@ -14,6 +14,7 @@ data class User(
     val major: String? = null,
     val educationLevel: String? = null,
     val credit: Int? = null,
+    val weeklyCreditOverride: Int? = null,
+    val lastCreditResetAt: Instant? = null,
     val registrationDate: Instant? = null
 )
-

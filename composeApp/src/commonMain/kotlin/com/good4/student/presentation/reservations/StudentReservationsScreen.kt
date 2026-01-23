@@ -1,8 +1,8 @@
 package com.good4.student.presentation.reservations
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import com.good4.code.domain.CodeStatus
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,11 +16,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -35,10 +40,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.DarkBlue
-import com.good4.core.presentation.DesertWhite
-import com.good4.core.presentation.LightGreen
-import com.good4.core.presentation.PrimaryGreen
+import com.good4.code.domain.CodeStatus
+import com.good4.core.presentation.Background
+import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.SoftGray
+import com.good4.core.presentation.Surface
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.emoji_ticket
+import good4.composeapp.generated.resources.preview_business_name
+import good4.composeapp.generated.resources.preview_product_name
+import good4.composeapp.generated.resources.reservation_expired_short
+import good4.composeapp.generated.resources.reservation_status_completed
+import good4.composeapp.generated.resources.reservation_status_expired
+import good4.composeapp.generated.resources.reservation_status_pending
+import good4.composeapp.generated.resources.student_reservations_code_title
+import good4.composeapp.generated.resources.student_reservations_credit_label
+import good4.composeapp.generated.resources.student_reservations_credit_reset_prefix
+import good4.composeapp.generated.resources.student_reservations_credit_reset_suffix
+import good4.composeapp.generated.resources.student_reservations_empty_subtitle
+import good4.composeapp.generated.resources.student_reservations_empty_title
+import good4.composeapp.generated.resources.student_reservations_remaining_prefix
+import good4.composeapp.generated.resources.student_reservations_title
+import good4.composeapp.generated.resources.time_minute_suffix
+import good4.composeapp.generated.resources.time_second_suffix
+import good4.composeapp.generated.resources.verify_code_placeholder
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -50,72 +78,140 @@ fun StudentReservationsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(DesertWhite)
-    ) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = "Rezervasyonlarım",
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = DesertWhite
-            )
-        )
+    StudentReservationsContent(
+        modifier = modifier,
+        state = state
+    )
+}
 
-        when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StudentReservationsContent(
+    modifier: Modifier = Modifier,
+    state: StudentReservationsState
+) {
+    Scaffold(
+        modifier = modifier,
+        containerColor = Background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(Res.string.student_reservations_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Background
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Background)
+                .padding(paddingValues)
+        ) {
+            state.remainingCredit?.let { credit ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MintGreen
+                    ),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
-                    CircularProgressIndicator(color = DarkBlue)
-                }
-            }
-            state.reservations.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "🎫",
-                            fontSize = 64.sp
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Henüz rezervasyonun yok",
-                            fontSize = 18.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Bir ürün rezerve ettiğinde\nburada görünecek",
+                            text = stringResource(Res.string.student_reservations_credit_label),
                             fontSize = 14.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
+                            color = SlateGray
+                        )
+                        Text(
+                            text = credit.toString(),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = InkBlack
                         )
                     }
                 }
+                if (credit == 0 && state.creditResetIntervalDays != null) {
+                    val resetText =
+                        stringResource(Res.string.student_reservations_credit_reset_prefix) +
+                                state.creditResetIntervalDays +
+                                stringResource(Res.string.student_reservations_credit_reset_suffix)
+                    Text(
+                        text = resetText,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        fontSize = 12.sp,
+                        color = SlateGray,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = state.reservations,
-                        key = { it.id }
-                    ) { reservation ->
-                        ReservationCard(reservation = reservation)
+
+            when {
+                state.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = InkBlack)
+                    }
+                }
+
+                state.reservations.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.emoji_ticket),
+                                fontSize = 64.sp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(Res.string.student_reservations_empty_title),
+                                fontSize = 18.sp,
+                                color = SlateGray,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(Res.string.student_reservations_empty_subtitle),
+                                fontSize = 14.sp,
+                                color = SlateGray,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(
+                            items = state.reservations,
+                            key = { it.id }
+                        ) { reservation ->
+                            ReservationCard(reservation = reservation)
+                        }
                     }
                 }
             }
@@ -131,10 +227,11 @@ private fun ReservationCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = Surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, SlateGray.copy(alpha = 0.12f))
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -148,28 +245,38 @@ private fun ReservationCard(
                     text = reservation.productName,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = DarkBlue
+                    color = InkBlack
                 )
-                StatusBadge(status = reservation.status)
+                StatusBadge(status = reservation.statusEnum)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = reservation.businessName,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Store,
+                    contentDescription = null,
+                    tint = SlateGray,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = reservation.businessName,
+                    fontSize = 14.sp,
+                    color = SlateGray
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Kod gösterimi
             if (reservation.statusEnum == CodeStatus.PENDING) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(LightGreen.copy(alpha = 0.2f))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SoftGray)
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -177,24 +284,36 @@ private fun ReservationCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Kodun",
+                            text = stringResource(Res.string.student_reservations_code_title),
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = SlateGray
                         )
                         Text(
                             text = reservation.code,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = DarkBlue,
+                            color = InkBlack,
                             letterSpacing = 4.sp
                         )
                         if (reservation.remainingTime.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Kalan süre: ${reservation.remainingTime}",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AccessTime,
+                                    contentDescription = null,
+                                    tint = SlateGray,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(Res.string.student_reservations_remaining_prefix) +
+                                            reservation.remainingTime,
+                                    fontSize = 12.sp,
+                                    color = SlateGray
+                                )
+                            }
                         }
                     }
                 }
@@ -206,14 +325,26 @@ private fun ReservationCard(
 @Composable
 private fun StatusBadge(
     modifier: Modifier = Modifier,
-    status: String
+    status: CodeStatus
 ) {
     val (backgroundColor, textColor, text) = when (status) {
-        "pending" -> Triple(LightGreen.copy(alpha = 0.2f), PrimaryGreen, "Bekliyor")
-        "completed" -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "Tamamlandı")
-        "expired" -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), "Süresi Doldu")
-        "cancelled" -> Triple(Color(0xFFF5F5F5), Color.Gray, "İptal Edildi")
-        else -> Triple(Color.LightGray, Color.Gray, status)
+        CodeStatus.PENDING -> Triple(
+            MintGreen,
+            InkBlack,
+            stringResource(Res.string.reservation_status_pending)
+        )
+
+        CodeStatus.USED -> Triple(
+            SoftGray,
+            InkBlack,
+            stringResource(Res.string.reservation_status_completed)
+        )
+
+        CodeStatus.EXPIRED -> Triple(
+            Color(0xFFFFE3E0),
+            Color(0xFF9E3B30),
+            stringResource(Res.string.reservation_status_expired)
+        )
     }
 
     Box(
@@ -245,7 +376,36 @@ data class ReservationUiModel(
 @Composable
 fun StudentReservationsScreenPreview() {
     MaterialTheme {
-        // Preview
+        val productName = stringResource(Res.string.preview_product_name)
+        val businessName = stringResource(Res.string.preview_business_name)
+        val codeValue = stringResource(Res.string.verify_code_placeholder)
+        val minuteSuffix = stringResource(Res.string.time_minute_suffix)
+        val secondSuffix = stringResource(Res.string.time_second_suffix)
+        val remainingTime = "12${minuteSuffix} 30${secondSuffix}"
+        val sampleReservations = listOf(
+            ReservationUiModel(
+                id = "preview_1",
+                code = codeValue,
+                productName = productName,
+                businessName = businessName,
+                status = CodeStatus.PENDING.value,
+                remainingTime = remainingTime
+            ),
+            ReservationUiModel(
+                id = "preview_2",
+                code = codeValue,
+                productName = productName,
+                businessName = businessName,
+                status = CodeStatus.USED.value,
+                remainingTime = stringResource(Res.string.reservation_expired_short)
+            )
+        )
+        StudentReservationsContent(
+            state = StudentReservationsState(
+                reservations = sampleReservations,
+                remainingCredit = 2,
+                creditResetIntervalDays = 7
+            )
+        )
     }
 }
-

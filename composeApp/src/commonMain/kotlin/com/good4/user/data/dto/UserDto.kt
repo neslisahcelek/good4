@@ -24,8 +24,11 @@ data class UserDto(
     val educationLevel: String? = null,
     @SerialName("credit")
     val credit: Int? = null,
+    @SerialName("weeklyCreditOverride")
+    val weeklyCreditOverride: Int? = null,
+    @SerialName("lastCreditResetAt")
+    val lastCreditResetAt: Instant? = null,
     @SerialName("registrationDate")
     val registrationDate: Instant? = null
 )
-
 
