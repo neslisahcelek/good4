@@ -22,30 +22,25 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.BrickRed
-import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.logout
 import org.jetbrains.compose.resources.stringResource
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreenScaffold(
     title: String,
@@ -53,21 +48,10 @@ fun ProfileScreenScaffold(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
-            )
+            Good4TopBar(title = title)
         }
     ) { paddingValues ->
         if (isLoading) {
@@ -77,7 +61,7 @@ fun ProfileScreenScaffold(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = InkBlack)
+                CircularProgressIndicator(color = TextPrimary)
             }
         } else {
             Column(
@@ -103,7 +87,7 @@ fun ProfileInfoCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = SurfaceDefault
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
@@ -118,13 +102,13 @@ fun ProfileInfoCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MintGreen.copy(alpha = 0.2f)),
+                    .background(PistachioGreen.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = InkBlack
+                    tint = TextPrimary
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
@@ -132,13 +116,13 @@ fun ProfileInfoCard(
                 Text(
                     text = title,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = TextSecondary
                 )
                 Text(
                     text = value,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = InkBlack
+                    color = TextPrimary
                 )
             }
         }
@@ -156,7 +140,7 @@ fun ProfileLogoutButton(
             .fillMaxWidth()
             .height(56.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = BrickRed
+            containerColor = ErrorRed
         ),
         shape = RoundedCornerShape(12.dp)
     ) {

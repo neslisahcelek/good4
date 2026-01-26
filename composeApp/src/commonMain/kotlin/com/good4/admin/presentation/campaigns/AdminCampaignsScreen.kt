@@ -1,4 +1,4 @@
-package com.good4.admin.presentation.campaigns
+﻿package com.good4.admin.presentation.campaigns
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,10 +22,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,16 +31,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.campaign.domain.Campaign
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Surface
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ImagePreviewBox
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.add_campaign
+import good4.composeapp.generated.resources.admin_campaigns_empty
+import good4.composeapp.generated.resources.emoji_campaign_placeholder
+import good4.composeapp.generated.resources.emoji_campaigns_empty
+import good4.composeapp.generated.resources.manage_campaigns
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -57,35 +62,26 @@ fun AdminCampaignsScreen(
     var showAddSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
-    Scaffold(
-        modifier = modifier.background(Background),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Kampanya Yönetimi",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
-            )
-        },
+    Good4Scaffold(
+        modifier = modifier,
+        topBar = { Good4TopBar(title = stringResource(Res.string.manage_campaigns)) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddSheet = true },
-                containerColor = InkBlack,
-                contentColor = Color.White
+                containerColor = TextPrimary,
+                contentColor = SurfaceDefault
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Kampanya Ekle")
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = stringResource(Res.string.add_campaign)
+                )
             }
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Background)
+                .background(AppBackground)
                 .padding(paddingValues)
         ) {
             if (state.isLoading) {
@@ -93,7 +89,7 @@ fun AdminCampaignsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = InkBlack)
+                    CircularProgressIndicator(color = TextPrimary)
                 }
             } else if (state.campaigns.isEmpty()) {
                 Box(
@@ -102,14 +98,14 @@ fun AdminCampaignsScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "📢",
+                            text = stringResource(Res.string.emoji_campaigns_empty),
                             fontSize = 64.sp
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Henüz kampanya yok",
+                            text = stringResource(Res.string.admin_campaigns_empty),
                             fontSize = 18.sp,
-                            color = Color.Gray
+                            color = TextSecondary
                         )
                     }
                 }
@@ -154,13 +150,13 @@ private fun CampaignCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Surface),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
         ImagePreviewBox(
             imageUrl = campaign.imageUrl,
-            placeholderText = "📢",
+            placeholderText = stringResource(Res.string.emoji_campaign_placeholder),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp),

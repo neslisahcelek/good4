@@ -24,29 +24,28 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.good4.core.presentation.BrickRed
-import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
-import com.good4.core.presentation.Surface
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.discount_badge_prefix
+import good4.composeapp.generated.resources.discount_badge_suffix
 import good4.composeapp.generated.resources.ic_placeholder
-import good4.composeapp.generated.resources.product_image_description
 import good4.composeapp.generated.resources.preview_address
 import good4.composeapp.generated.resources.preview_business_name
 import good4.composeapp.generated.resources.preview_description
 import good4.composeapp.generated.resources.preview_price
 import good4.composeapp.generated.resources.preview_product_name
-import good4.composeapp.generated.resources.reserved
-import good4.composeapp.generated.resources.reserve_button_label
 import good4.composeapp.generated.resources.price_currency_suffix
-import good4.composeapp.generated.resources.discount_badge_prefix
-import good4.composeapp.generated.resources.discount_badge_suffix
-import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import good4.composeapp.generated.resources.product_image_description
+import good4.composeapp.generated.resources.reserve_button_label
+import good4.composeapp.generated.resources.reserved
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ProductItem(
@@ -61,7 +60,7 @@ fun ProductItem(
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Surface
+            containerColor = SurfaceDefault
         )
     ) {
         Column(
@@ -104,7 +103,7 @@ fun ProductItem(
                 Text(
                     text = product.storeName,
                     fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                    color = SlateGray,
+                    color = TextSecondary,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AddressRow(
@@ -182,31 +181,31 @@ private fun PriceRow(
             Text(
                 text = "${product.discountPrice} $currencySuffix",
                 fontWeight = FontWeight.Bold,
-                color = LimeGreen
+                color = DeepGreen
             )
         } else {
             Text(
                 text = "${product.price} $currencySuffix",
                 fontWeight = FontWeight.Bold,
-                color = LimeGreen
+                color = DeepGreen
             )
         }
         if (hasDiscount) {
             Text(
                 text = "${product.originalPrice} $currencySuffix",
-                color = SlateGray,
+                color = TextSecondary,
                 fontSize = 12.sp,
                 textDecoration = TextDecoration.LineThrough
             )
             product.discountPercentage?.let {
                 if (it > 0) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = BrickRed.copy(alpha = 0.12f)),
+                        colors = CardDefaults.cardColors(containerColor = ErrorRed.copy(alpha = 0.12f)),
                         shape = RoundedCornerShape(999.dp)
                     ) {
                         Text(
                             text = "$discountPrefix${product.discountPercentage}$discountSuffix",
-                            color = BrickRed,
+                            color = ErrorRed,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

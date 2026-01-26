@@ -1,14 +1,17 @@
-package com.good4.admin.presentation.campaigns
+﻿package com.good4.admin.presentation.campaigns
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.campaign.data.dto.CampaignDto
 import com.good4.campaign.data.repository.CampaignRepository
 import com.good4.core.domain.Result
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.error_campaign_image_required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 class AdminCampaignsViewModel(
     private val campaignRepository: CampaignRepository
@@ -53,7 +56,11 @@ class AdminCampaignsViewModel(
         val imageUrl = _state.value.campaignImageUrl
 
         if (imageUrl.isBlank()) {
-            _state.update { it.copy(errorMessage = "Resim URL'i gerekli") }
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_campaign_image_required))
+                }
+            }
             return
         }
 
@@ -94,4 +101,3 @@ class AdminCampaignsViewModel(
         }
     }
 }
-

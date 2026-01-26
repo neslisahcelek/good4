@@ -1,4 +1,4 @@
-package com.good4.admin.presentation.campaigns
+﻿package com.good4.admin.presentation.campaigns
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,12 +16,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.LimeGreen
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.add_campaign
+import good4.composeapp.generated.resources.admin_campaigns_add_title
+import good4.composeapp.generated.resources.admin_campaigns_image_url_helper
+import good4.composeapp.generated.resources.admin_campaigns_image_url_label
+import good4.composeapp.generated.resources.admin_campaigns_image_url_placeholder
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AddCampaignSheet(
@@ -42,10 +50,10 @@ fun AddCampaignSheet(
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "Yeni Kampanya Ekle",
+            text = stringResource(Res.string.admin_campaigns_add_title),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = InkBlack
+            color = TextPrimary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -54,12 +62,12 @@ fun AddCampaignSheet(
             value = state.campaignImageUrl,
             onValueChange = { viewModel.onImageUrlChange(it) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Kampanya Resim URL") },
-            placeholder = { Text("https://...") },
+            label = { Text(stringResource(Res.string.admin_campaigns_image_url_label)) },
+            placeholder = { Text(stringResource(Res.string.admin_campaigns_image_url_placeholder)) },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InkBlack,
-                focusedLabelColor = InkBlack,
-                cursorColor = InkBlack
+                focusedBorderColor = TextPrimary,
+                focusedLabelColor = TextPrimary,
+                cursorColor = TextPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -67,9 +75,9 @@ fun AddCampaignSheet(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Kampanya için bir resim URL'i girin. Resim ana sayfada gösterilecektir.",
+            text = stringResource(Res.string.admin_campaigns_image_url_helper),
             fontSize = 12.sp,
-            color = Color.Gray
+            color = TextSecondary
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -89,18 +97,18 @@ fun AddCampaignSheet(
                 .fillMaxWidth()
                 .height(56.dp),
             enabled = !state.isAddLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = LimeGreen),
+            colors = ButtonDefaults.buttonColors(containerColor = DeepGreen),
             shape = RoundedCornerShape(12.dp)
         ) {
             if (state.isAddLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.padding(4.dp),
-                    color = Color.White,
+                    color = SurfaceDefault,
                     strokeWidth = 2.dp
                 )
             } else {
                 Text(
-                    text = "Kampanya Ekle",
+                    text = stringResource(Res.string.add_campaign),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )

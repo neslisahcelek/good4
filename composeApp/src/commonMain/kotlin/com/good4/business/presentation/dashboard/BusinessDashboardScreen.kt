@@ -2,11 +2,9 @@ package com.good4.business.presentation.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import com.good4.code.domain.CodeStatus
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,27 +19,26 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.MintGreen
-import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.SlateGray
+import com.good4.code.domain.CodeStatus
+import com.good4.core.presentation.AccentYellow
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.StatCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.dashboard_code_prefix
@@ -65,22 +62,18 @@ fun BusinessDashboardScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
+            Good4TopBar(
+                titleContent = {
                     Text(
                         text = stringResource(Res.string.dashboard_welcome_prefix) + state.businessName,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = InkBlack
+                        color = TextPrimary
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
+                }
             )
         }
     ) { paddingValues ->
@@ -91,7 +84,7 @@ fun BusinessDashboardScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = InkBlack)
+                CircularProgressIndicator(color = TextPrimary)
             }
         } else {
             LazyColumn(
@@ -107,7 +100,7 @@ fun BusinessDashboardScreen(
                         title = stringResource(Res.string.dashboard_pending),
                         value = state.pendingCount.toString(),
                         icon = Icons.Filled.DateRange,
-                        color = Color(0xFFFF9800)
+                        color = AccentYellow
                     )
                 }
 
@@ -117,7 +110,7 @@ fun BusinessDashboardScreen(
                         title = stringResource(Res.string.dashboard_completed),
                         value = state.completedCount.toString(),
                         icon = Icons.Filled.Check,
-                        color = LimeGreen
+                        color = DeepGreen
                     )
                 }
 
@@ -127,7 +120,7 @@ fun BusinessDashboardScreen(
                         title = stringResource(Res.string.dashboard_total_products),
                         value = state.totalProducts.toString(),
                         icon = Icons.Filled.Star,
-                        color = InkBlack
+                        color = TextPrimary
                     )
                 }
 
@@ -136,7 +129,7 @@ fun BusinessDashboardScreen(
                         text = stringResource(Res.string.dashboard_recent_actions),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = InkBlack
+                        color = TextPrimary
                     )
                 }
 
@@ -150,7 +143,7 @@ fun BusinessDashboardScreen(
                         ) {
                             Text(
                                 text = stringResource(Res.string.dashboard_no_actions),
-                                color = SlateGray
+                                color = TextSecondary
                             )
                         }
                     }
@@ -172,7 +165,7 @@ private fun RecentCodeCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = SurfaceDefault
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(8.dp)
@@ -193,15 +186,15 @@ private fun RecentCodeCard(
                 Text(
                     text = stringResource(Res.string.dashboard_code_prefix) + code.codeValue,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = TextSecondary
                 )
             }
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
                     .background(
-                        if (code.statusEnum == CodeStatus.USED) LimeGreen.copy(alpha = 0.1f)
-                        else MintGreen.copy(alpha = 0.3f)
+                        if (code.statusEnum == CodeStatus.USED) DeepGreen.copy(alpha = 0.1f)
+                        else PistachioGreen.copy(alpha = 0.3f)
                     )
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             ) {
@@ -212,7 +205,7 @@ private fun RecentCodeCard(
                         stringResource(Res.string.dashboard_status_pending)
                     },
                     fontSize = 12.sp,
-                    color = if (code.statusEnum == CodeStatus.USED) LimeGreen else InkBlack
+                    color = if (code.statusEnum == CodeStatus.USED) DeepGreen else TextPrimary
                 )
             }
         }
@@ -233,3 +226,5 @@ fun BusinessDashboardScreenPreview() {
         BusinessDashboardScreen()
     }
 }
+
+

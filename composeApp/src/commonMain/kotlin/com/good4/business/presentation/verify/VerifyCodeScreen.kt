@@ -25,15 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -42,21 +38,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.BrickRed
-import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.emoji_ticket
 import good4.composeapp.generated.resources.enter_code
 import good4.composeapp.generated.resources.verify_code
 import good4.composeapp.generated.resources.verify_code_button
 import good4.composeapp.generated.resources.verify_code_input_label
 import good4.composeapp.generated.resources.verify_code_new
-import good4.composeapp.generated.resources.verify_code_placeholder
 import good4.composeapp.generated.resources.verify_code_product_prefix
 import good4.composeapp.generated.resources.verify_code_success
-import good4.composeapp.generated.resources.emoji_ticket
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,27 +68,14 @@ fun VerifyCodeScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(Res.string.verify_code),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
-            )
-        }
+        topBar = { Good4TopBar(title = stringResource(Res.string.verify_code)) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Background)
+                .background(AppBackground)
                 .padding(paddingValues)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -108,13 +93,13 @@ fun VerifyCodeScreen(
                 text = stringResource(Res.string.enter_code),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = InkBlack
+                color = TextPrimary
             )
 
             Text(
                 text = stringResource(Res.string.enter_code),
                 fontSize = 14.sp,
-                color = SlateGray,
+                color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -138,9 +123,9 @@ fun VerifyCodeScreen(
                     }
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
+                    focusedBorderColor = TextPrimary,
+                    focusedLabelColor = TextPrimary,
+                    cursorColor = TextPrimary
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -154,15 +139,15 @@ fun VerifyCodeScreen(
                     .height(56.dp),
                 enabled = !state.isLoading && state.codeInput.length == 6,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = InkBlack,
-                    disabledContainerColor = InkBlack.copy(alpha = 0.5f)
+                    containerColor = TextPrimary,
+                    disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White,
+                        color = SurfaceDefault,
                         strokeWidth = 2.dp
                     )
                 } else {
@@ -193,8 +178,8 @@ fun VerifyCodeScreen(
                             .fillMaxWidth()
                             .height(48.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = LimeGreen,
-                            disabledContainerColor = LimeGreen.copy(alpha = 0.5f)
+                            containerColor = DeepGreen,
+                            disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -228,7 +213,7 @@ private fun VerificationResultCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSuccess) LimeGreen.copy(alpha = 0.1f) else BrickRed.copy(alpha = 0.1f)
+            containerColor = if (isSuccess) DeepGreen.copy(alpha = 0.1f) else ErrorRed.copy(alpha = 0.1f)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -243,7 +228,7 @@ private fun VerificationResultCard(
                 imageVector = if (isSuccess) Icons.Filled.CheckCircle else Icons.Filled.Close,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = if (isSuccess) LimeGreen else BrickRed
+                tint = if (isSuccess) DeepGreen else ErrorRed
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -252,7 +237,7 @@ private fun VerificationResultCard(
                 text = message,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = if (isSuccess) LimeGreen else BrickRed,
+                color = if (isSuccess) DeepGreen else ErrorRed,
                 textAlign = TextAlign.Center
             )
 
@@ -261,7 +246,7 @@ private fun VerificationResultCard(
                 Text(
                     text = stringResource(Res.string.verify_code_product_prefix) + productName,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = TextSecondary
                 )
             }
         }
@@ -275,3 +260,7 @@ fun VerifyCodeScreenPreview() {
         VerifyCodeScreen()
     }
 }
+
+
+
+

@@ -18,8 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.good4.core.presentation.Surface
-import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.products
@@ -31,8 +31,8 @@ fun InfoCard(
     text: UiText,
     icon: Painter? = null,
     iconContentDescription: UiText? = null,
-    textColor: Color = SlateGray,
-    backgroundColor: Color = Surface,
+    textColor: Color = TextSecondary,
+    backgroundColor: Color = SurfaceDefault,
     onClick: (() -> Unit)? = null,
     isLoading: Boolean = false
 ) {

@@ -1,11 +1,9 @@
 package com.good4.business.presentation.products
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,12 +14,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,14 +27,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_content_desc
@@ -48,8 +43,8 @@ import good4.composeapp.generated.resources.business_products_empty
 import good4.composeapp.generated.resources.business_products_title
 import good4.composeapp.generated.resources.emoji_products_empty
 import good4.composeapp.generated.resources.price_currency_suffix
-import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -91,27 +86,14 @@ fun BusinessProductsScreenRoot(
         }
     }
 
-    Scaffold(
-        modifier = modifier.background(Background),
-        containerColor = Background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(Res.string.business_products_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
-            )
-        },
+    Good4Scaffold(
+        modifier = modifier,
+        topBar = { Good4TopBar(title = stringResource(Res.string.business_products_title)) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddSheet = true },
-                containerColor = InkBlack,
-                contentColor = Color.White
+                containerColor = TextPrimary,
+                contentColor = SurfaceDefault
             ) {
                 Icon(
                     Icons.Filled.Add,
@@ -128,7 +110,7 @@ fun BusinessProductsScreenRoot(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = InkBlack)
+                CircularProgressIndicator(color = TextPrimary)
             }
         } else if (state.products.isEmpty()) {
             Box(
@@ -148,7 +130,7 @@ fun BusinessProductsScreenRoot(
                     Text(
                         text = stringResource(Res.string.business_products_empty),
                         fontSize = 16.sp,
-                        color = SlateGray
+                        color = TextSecondary
                     )
                 }
             }
@@ -226,3 +208,9 @@ fun BusinessProductsScreenPreview() {
         BusinessProductsScreenRoot()
     }
 }
+
+
+
+
+
+

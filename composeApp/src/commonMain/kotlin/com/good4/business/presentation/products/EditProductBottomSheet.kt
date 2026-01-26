@@ -1,11 +1,12 @@
-package com.good4.business.presentation.products
+﻿package com.good4.business.presentation.products
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.ProductFormFields
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_edit_title
@@ -36,10 +37,10 @@ fun EditProductBottomSheet(
             title = stringResource(Res.string.business_products_edit_title),
             submitLabel = stringResource(Res.string.business_products_update_button),
             onSubmit = onUpdateProduct,
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
             isSubmitting = state.isEditLoading,
-            submitButtonColor = InkBlack,
-            submitButtonDisabledColor = InkBlack.copy(alpha = 0.5f),
+            submitButtonColor = TextPrimary,
+            submitButtonDisabledColor = TextPrimary.copy(alpha = 0.5f),
             productName = state.productName,
             onProductNameChange = onProductNameChange,
             productDescription = state.productDescription,

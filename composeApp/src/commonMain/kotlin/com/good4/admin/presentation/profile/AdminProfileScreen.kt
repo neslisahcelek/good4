@@ -1,4 +1,4 @@
-package com.good4.admin.presentation.profile
+﻿package com.good4.admin.presentation.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,18 +18,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.email
+import good4.composeapp.generated.resources.profile_role_label
+import good4.composeapp.generated.resources.profile_title_admin
+import good4.composeapp.generated.resources.role_admin
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -43,7 +46,7 @@ fun AdminProfileScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ProfileScreenScaffold(
-        title = "Admin Profili",
+        title = stringResource(Res.string.profile_title_admin),
         isLoading = state.isLoading,
         modifier = modifier
     ) {
@@ -51,14 +54,14 @@ fun AdminProfileScreen(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(MintGreen),
+                .background(PistachioGreen),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Filled.Settings,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = InkBlack
+                tint = TextPrimary
             )
         }
 
@@ -68,13 +71,13 @@ fun AdminProfileScreen(
             text = state.adminName,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = InkBlack
+            color = TextPrimary
         )
 
         Text(
             text = state.adminEmail,
             fontSize = 14.sp,
-            color = Color.Gray
+            color = TextSecondary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -89,8 +92,8 @@ fun AdminProfileScreen(
 
         ProfileInfoCard(
             icon = Icons.Filled.Settings,
-            title = "Rol",
-            value = "Admin"
+            title = stringResource(Res.string.profile_role_label),
+            value = stringResource(Res.string.role_admin)
         )
 
         Spacer(modifier = Modifier.height(32.dp))

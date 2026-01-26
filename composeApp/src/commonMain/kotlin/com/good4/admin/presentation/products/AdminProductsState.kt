@@ -8,6 +8,7 @@ data class AdminProductsState(
     val products: List<Product> = emptyList(),
     val businesses: List<Business> = emptyList(),
     val selectedBusinessId: String? = null,
+    val selectedProduct: Product? = null,
     val productName: String = "",
     val productDescription: String = "",
     val productOriginalPrice: String = "",
@@ -16,6 +17,8 @@ data class AdminProductsState(
     val productImageUrl: String = "",
     val isAddLoading: Boolean = false,
     val addSuccess: Boolean = false,
+    val isEditLoading: Boolean = false,
+    val editSuccess: Boolean = false,
     val errorMessage: String? = null
 )
 

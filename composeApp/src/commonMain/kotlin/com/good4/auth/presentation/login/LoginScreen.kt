@@ -27,17 +27,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -48,17 +44,34 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.BrickRed
-import com.good4.core.presentation.MintGreen
-import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.*
+import good4.composeapp.generated.resources.app_name
+import good4.composeapp.generated.resources.app_tagline
+import good4.composeapp.generated.resources.business_register
+import good4.composeapp.generated.resources.email
+import good4.composeapp.generated.resources.email_placeholder
+import good4.composeapp.generated.resources.forgot_password
+import good4.composeapp.generated.resources.login
+import good4.composeapp.generated.resources.no_account
+import good4.composeapp.generated.resources.or
+import good4.composeapp.generated.resources.password
+import good4.composeapp.generated.resources.password_placeholder
+import good4.composeapp.generated.resources.password_visibility_hide
+import good4.composeapp.generated.resources.password_visibility_show
+import good4.composeapp.generated.resources.student_register
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun LoginScreenRoot(
@@ -99,15 +112,14 @@ fun LoginScreen(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Background)
+                .background(AppBackground)
         ) {
             Column(
                 modifier = Modifier
@@ -122,13 +134,13 @@ fun LoginScreen(
                 text = stringResource(Res.string.app_name),
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
-                color = InkBlack
+                color = TextPrimary
             )
 
             Text(
                 text = stringResource(Res.string.app_tagline),
                 fontSize = 16.sp,
-                color = SlateGray,
+                color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp).padding(horizontal = 24.dp)
             )
@@ -147,9 +159,9 @@ fun LoginScreen(
                     imeAction = ImeAction.Next
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
+                    focusedBorderColor = TextPrimary,
+                    focusedLabelColor = TextPrimary,
+                    cursorColor = TextPrimary
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -196,9 +208,9 @@ fun LoginScreen(
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = InkBlack,
-                    focusedLabelColor = InkBlack,
-                    cursorColor = InkBlack
+                    focusedBorderColor = TextPrimary,
+                    focusedLabelColor = TextPrimary,
+                    cursorColor = TextPrimary
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -209,7 +221,7 @@ fun LoginScreen(
             ) {
                 Text(
                     text = stringResource(Res.string.forgot_password),
-                    color = InkBlack,
+                    color = TextPrimary,
                     fontSize = 14.sp
                 )
             }
@@ -223,7 +235,23 @@ fun LoginScreen(
                 }
                 Text(
                     text = error.asString(),
-                    color = BrickRed,
+                    color = ErrorRed,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
+
+                state.infoMessage?.let { info ->
+                    LaunchedEffect(info) {
+                        delay(3.seconds)
+                        onAction(LoginAction.OnClearInfo)
+                    }
+                    Text(
+                        text = info.asString(),
+                        color = DeepGreen,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -241,15 +269,15 @@ fun LoginScreen(
                     .height(56.dp),
                 enabled = !state.isLoading,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = InkBlack,
-                    disabledContainerColor = InkBlack.copy(alpha = 0.5f)
+                    containerColor = TextPrimary,
+                    disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White,
+                        color = SurfaceDefault,
                         strokeWidth = 2.dp
                     )
                 } else {
@@ -272,11 +300,11 @@ fun LoginScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(1.dp)
-                        .background(SlateGray.copy(alpha = 0.3f))
+                        .background(TextSecondary.copy(alpha = 0.3f))
                 )
                 Text(
                     text = stringResource(Res.string.or),
-                    color = SlateGray,
+                    color = TextSecondary,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -284,7 +312,7 @@ fun LoginScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(1.dp)
-                        .background(SlateGray.copy(alpha = 0.3f))
+                        .background(TextSecondary.copy(alpha = 0.3f))
                 )
             }
 
@@ -292,7 +320,7 @@ fun LoginScreen(
 
             Text(
                 text = stringResource(Res.string.no_account),
-                color = SlateGray,
+                color = TextSecondary,
                 fontSize = 14.sp
             )
 
@@ -304,7 +332,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LimeGreen
+                    containerColor = DeepGreen
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -323,7 +351,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MintGreen
+                    containerColor = PistachioGreen
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -331,7 +359,7 @@ fun LoginScreen(
                     text = stringResource(Res.string.business_register),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = InkBlack
+                    color = TextPrimary
                 )
             }
 
@@ -351,3 +379,5 @@ fun LoginScreenPreview() {
         )
     }
 }
+
+

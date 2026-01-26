@@ -11,6 +11,10 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.product.data.repository.FirestoreProductRepository
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.error_code_not_found
+import good4.composeapp.generated.resources.error_code_not_found_or_used
+import org.jetbrains.compose.resources.getString
 
 data class CodeWithDetails(
     val id: String,
@@ -225,7 +229,7 @@ class CodeRepository(
                         )
                     )
                 } else {
-                    Result.Error(com.good4.core.domain.NetworkError("Kod bulunamadı veya zaten kullanılmış"))
+                    Result.Error(com.good4.core.domain.NetworkError(getString(Res.string.error_code_not_found_or_used)))
                 }
             }
             is Result.Error -> result
@@ -256,7 +260,7 @@ class CodeRepository(
                 if (codeId != null) {
                     Result.Success(codeId)
                 } else {
-                    Result.Error(NetworkError("Code not found"))
+                    Result.Error(NetworkError(getString(Res.string.error_code_not_found)))
                 }
             }
             is Result.Error -> result

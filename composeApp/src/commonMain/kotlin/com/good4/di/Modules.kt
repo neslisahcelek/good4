@@ -1,5 +1,9 @@
 package com.good4.di
 
+import com.good4.admin.presentation.campaigns.AdminCampaignsViewModel
+import com.good4.admin.presentation.dashboard.AdminDashboardViewModel
+import com.good4.admin.presentation.products.AdminProductsViewModel
+import com.good4.admin.presentation.profile.AdminProfileViewModel
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
@@ -9,6 +13,7 @@ import com.good4.business.presentation.dashboard.BusinessDashboardViewModel
 import com.good4.business.presentation.products.BusinessProductsViewModel
 import com.good4.business.presentation.profile.BusinessProfileViewModel
 import com.good4.business.presentation.verify.VerifyCodeViewModel
+import com.good4.campaign.data.repository.CampaignRepository
 import com.good4.code.data.repository.CodeRepository
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.data.repository.FirestoreRepository
@@ -18,7 +23,7 @@ import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.student.presentation.profile.StudentProfileViewModel
 import com.good4.student.presentation.reservations.StudentReservationsViewModel
 import com.good4.user.data.repository.UserRepository
-import org.koin.core.module.dsl.*
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 expect val platformModule: org.koin.core.module.Module
@@ -31,6 +36,7 @@ val commonModule = module {
     single { FirestoreBusinessRepository(get<FirestoreRepository>()) }
     single { UserRepository(get<FirestoreRepository>(), get<AppConfigRepository>()) }
     single { FirestoreProductRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>()) }
+    single { CampaignRepository(get<FirestoreRepository>()) }
     single { CodeRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>(), get<AppConfigRepository>()) }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>()) }
@@ -51,4 +57,19 @@ val commonModule = module {
     }
     viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>(), get<UserRepository>()) }
     viewModel { BusinessProductsViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>()) }
+    viewModel {
+        AdminDashboardViewModel(
+            get<FirestoreProductRepository>(),
+            get<FirestoreBusinessRepository>(),
+            get<CampaignRepository>()
+        )
+    }
+    viewModel { AdminCampaignsViewModel(get<CampaignRepository>()) }
+    viewModel {
+        AdminProductsViewModel(
+            get<FirestoreProductRepository>(),
+            get<FirestoreBusinessRepository>()
+        )
+    }
+    viewModel { AdminProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
 }

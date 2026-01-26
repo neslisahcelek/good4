@@ -1,4 +1,4 @@
-package com.good4.admin.presentation.dashboard
+﻿package com.good4.admin.presentation.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,21 +20,32 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.LimeGreen
+import com.good4.core.presentation.AccentYellow
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.StatCard
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.admin_dashboard
+import good4.composeapp.generated.resources.admin_dashboard_businesses
+import good4.composeapp.generated.resources.admin_dashboard_campaigns
+import good4.composeapp.generated.resources.admin_dashboard_quick_actions_subtitle
+import good4.composeapp.generated.resources.admin_dashboard_quick_actions_title
+import good4.composeapp.generated.resources.admin_dashboard_summary_title
+import good4.composeapp.generated.resources.admin_dashboard_total_products
+import good4.composeapp.generated.resources.admin_dashboard_users
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -49,26 +60,15 @@ fun AdminDashboardScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Background)
+            .background(AppBackground)
     ) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = "Admin Panel",
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Background
-            )
-        )
-
+        Good4TopBar(title = stringResource(Res.string.admin_dashboard))
         if (state.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = InkBlack)
+                CircularProgressIndicator(color = TextPrimary)
             }
         } else {
             LazyColumn(
@@ -79,10 +79,10 @@ fun AdminDashboardScreen(
             ) {
                 item {
                     Text(
-                        text = "Özet",
+                        text = stringResource(Res.string.admin_dashboard_summary_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = InkBlack
+                        color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -94,17 +94,17 @@ fun AdminDashboardScreen(
                     ) {
                         StatCard(
                             modifier = Modifier.weight(1f),
-                            title = "Toplam Ürün",
+                            title = stringResource(Res.string.admin_dashboard_total_products),
                             value = state.totalProducts.toString(),
                             icon = Icons.Filled.Star,
-                            color = InkBlack
+                            color = TextPrimary
                         )
                         StatCard(
                             modifier = Modifier.weight(1f),
-                            title = "İşletmeler",
+                            title = stringResource(Res.string.admin_dashboard_businesses),
                             value = state.totalBusinesses.toString(),
                             icon = Icons.Filled.Home,
-                            color = LimeGreen
+                            color = DeepGreen
                         )
                     }
                 }
@@ -116,17 +116,17 @@ fun AdminDashboardScreen(
                     ) {
                         StatCard(
                             modifier = Modifier.weight(1f),
-                            title = "Kampanyalar",
+                            title = stringResource(Res.string.admin_dashboard_campaigns),
                             value = state.totalCampaigns.toString(),
                             icon = Icons.Filled.Check,
-                            color = Color(0xFFFF9800)
+                            color = AccentYellow
                         )
                         StatCard(
                             modifier = Modifier.weight(1f),
-                            title = "Kullanıcılar",
+                            title = stringResource(Res.string.admin_dashboard_users),
                             value = state.totalUsers.toString(),
                             icon = Icons.Filled.Person,
-                            color = Color(0xFF9C27B0)
+                            color = PistachioGreen
                         )
                     }
                 }
@@ -134,15 +134,15 @@ fun AdminDashboardScreen(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Hızlı İşlemler",
+                        text = stringResource(Res.string.admin_dashboard_quick_actions_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = InkBlack
+                        color = TextPrimary
                     )
                     Text(
-                        text = "Alt menüden ürün ve kampanya ekleyebilirsiniz",
+                        text = stringResource(Res.string.admin_dashboard_quick_actions_subtitle),
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = TextSecondary
                     )
                 }
             }

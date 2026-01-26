@@ -26,28 +26,30 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.MintGreen
-import com.good4.core.presentation.LimeGreen
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.placeholder_dash
 import good4.composeapp.generated.resources.profile_credit_label
 import good4.composeapp.generated.resources.profile_education_level_label
 import good4.composeapp.generated.resources.profile_major_label
 import good4.composeapp.generated.resources.profile_title_student
 import good4.composeapp.generated.resources.profile_university_label
-import good4.composeapp.generated.resources.placeholder_dash
 import good4.composeapp.generated.resources.unknown_initial
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
+
 @Composable
 fun StudentProfileScreen(
     modifier: Modifier = Modifier,
@@ -65,7 +67,7 @@ fun StudentProfileScreen(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(MintGreen),
+                .background(PistachioGreen),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -73,7 +75,7 @@ fun StudentProfileScreen(
                     ?: stringResource(Res.string.unknown_initial),
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
-                color = InkBlack
+                color = TextPrimary
             )
         }
 
@@ -83,13 +85,13 @@ fun StudentProfileScreen(
             text = state.user?.fullName ?: "",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = InkBlack
+            color = TextPrimary
         )
 
         Text(
             text = state.user?.email ?: "",
             fontSize = 14.sp,
-            color = Color.Gray
+            color = TextSecondary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -97,7 +99,7 @@ fun StudentProfileScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = LimeGreen
+                containerColor = DeepGreen
             ),
             shape = RoundedCornerShape(16.dp)
         ) {
@@ -112,20 +114,20 @@ fun StudentProfileScreen(
                     Text(
                         text = stringResource(Res.string.profile_credit_label),
                         fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = SurfaceDefault.copy(alpha = 0.8f)
                     )
                     Text(
                         text = "${state.user?.credit ?: 0}",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = SurfaceDefault
                     )
                 }
                 Icon(
                     imageVector = Icons.Filled.Star,
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
-                    tint = Color.White.copy(alpha = 0.5f)
+                    tint = SurfaceDefault.copy(alpha = 0.5f)
                 )
             }
         }

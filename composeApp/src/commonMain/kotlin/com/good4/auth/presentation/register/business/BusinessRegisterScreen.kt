@@ -28,16 +28,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -48,13 +44,36 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.BrickRed
-import com.good4.core.presentation.BorderGray
-import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.BorderMuted
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.*
+import good4.composeapp.generated.resources.address
+import good4.composeapp.generated.resources.back
+import good4.composeapp.generated.resources.business_emoji
+import good4.composeapp.generated.resources.business_information
+import good4.composeapp.generated.resources.business_name
+import good4.composeapp.generated.resources.business_phone
+import good4.composeapp.generated.resources.business_registration
+import good4.composeapp.generated.resources.city
+import good4.composeapp.generated.resources.create_business_account
+import good4.composeapp.generated.resources.district
+import good4.composeapp.generated.resources.email_required
+import good4.composeapp.generated.resources.full_name
+import good4.composeapp.generated.resources.password_confirm
+import good4.composeapp.generated.resources.password_required
+import good4.composeapp.generated.resources.password_visibility_hide
+import good4.composeapp.generated.resources.password_visibility_show
+import good4.composeapp.generated.resources.personal_information
+import good4.composeapp.generated.resources.phone
+import good4.composeapp.generated.resources.register
+import good4.composeapp.generated.resources.required_fields
+import good4.composeapp.generated.resources.security
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -94,16 +113,11 @@ fun BusinessRegisterScreen(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Scaffold(
-        containerColor = Background,
+    Good4Scaffold(
+        modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(Res.string.business_registration),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
+            Good4TopBar(
+                title = stringResource(Res.string.business_registration),
                 navigationIcon = {
                     IconButton(onClick = { onAction(BusinessRegisterAction.OnBackClick) }) {
                         Icon(
@@ -111,17 +125,14 @@ fun BusinessRegisterScreen(
                             contentDescription = stringResource(Res.string.back)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
+                }
             )
         }
     ) { paddingValues ->
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Background)
+                .background(AppBackground)
                 .padding(paddingValues)
         ) {
             Column(
@@ -142,7 +153,7 @@ fun BusinessRegisterScreen(
                     text = stringResource(Res.string.create_business_account),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = InkBlack
+                    color = TextPrimary
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -196,7 +207,7 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                HorizontalDivider(color = BorderGray)
+                HorizontalDivider(color = BorderMuted)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -273,7 +284,7 @@ fun BusinessRegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                HorizontalDivider(color = BorderGray)
+                HorizontalDivider(color = BorderMuted)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -349,7 +360,7 @@ fun BusinessRegisterScreen(
                 state.errorMessage?.let { error ->
                     Text(
                         text = error.asString(),
-                        color = BrickRed,
+                        color = ErrorRed,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -367,16 +378,16 @@ fun BusinessRegisterScreen(
                         .height(56.dp),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MintGreen,
-                        contentColor = InkBlack,
-                        disabledContainerColor = MintGreen.copy(alpha = 0.5f)
+                        containerColor = PistachioGreen,
+                        contentColor = TextPrimary,
+                        disabledContainerColor = PistachioGreen.copy(alpha = 0.5f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = InkBlack,
+                            color = TextPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -393,7 +404,7 @@ fun BusinessRegisterScreen(
                 Text(
                     text = stringResource(Res.string.required_fields),
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = TextSecondary
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -408,16 +419,16 @@ private fun SectionTitle(title: String) {
         text = title,
         fontSize = 18.sp,
         fontWeight = FontWeight.SemiBold,
-        color = InkBlack,
+        color = TextPrimary,
         modifier = Modifier.fillMaxWidth()
     )
 }
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = InkBlack,
-    focusedLabelColor = InkBlack,
-    cursorColor = InkBlack
+    focusedBorderColor = TextPrimary,
+    focusedLabelColor = TextPrimary,
+    cursorColor = TextPrimary
 )
 
 @Preview
@@ -430,3 +441,7 @@ fun BusinessRegisterScreenPreview() {
         )
     }
 }
+
+
+
+

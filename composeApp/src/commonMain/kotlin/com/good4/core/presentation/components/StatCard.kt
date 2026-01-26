@@ -22,9 +22,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.SlateGray
-import com.good4.core.presentation.Surface
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 
 @Composable
 fun StatCard(
@@ -36,7 +36,7 @@ fun StatCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Surface),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -65,13 +65,13 @@ fun StatCard(
                 Text(
                     text = title,
                     fontSize = 14.sp,
-                    color = SlateGray
+                    color = TextSecondary
                 )
                 Text(
                     text = value,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = InkBlack
+                    color = TextPrimary
                 )
             }
         }

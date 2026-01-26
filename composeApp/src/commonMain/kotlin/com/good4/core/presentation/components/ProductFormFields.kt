@@ -31,7 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.InkBlack
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.amount
 import good4.composeapp.generated.resources.business_name
@@ -86,7 +88,7 @@ fun ProductFormFields(
             text = title,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = InkBlack
+            color = TextPrimary
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -95,7 +97,7 @@ fun ProductFormFields(
             Text(
                 text = stringResource(Res.string.business_name),
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = TextSecondary,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Box {
@@ -108,9 +110,9 @@ fun ProductFormFields(
                     enabled = false,
                     placeholder = { Text(stringResource(Res.string.business_name)) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = InkBlack,
-                        disabledBorderColor = Color.Gray,
-                        disabledPlaceholderColor = Color.Gray
+                        disabledTextColor = TextPrimary,
+                        disabledBorderColor = TextSecondary,
+                        disabledPlaceholderColor = TextSecondary
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -139,9 +141,9 @@ fun ProductFormFields(
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(Res.string.product_name)) },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InkBlack,
-                focusedLabelColor = InkBlack,
-                cursorColor = InkBlack
+                focusedBorderColor = TextPrimary,
+                focusedLabelColor = TextPrimary,
+                cursorColor = TextPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -155,9 +157,9 @@ fun ProductFormFields(
             label = { Text(stringResource(Res.string.description)) },
             minLines = 3,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InkBlack,
-                focusedLabelColor = InkBlack,
-                cursorColor = InkBlack
+                focusedBorderColor = TextPrimary,
+                focusedLabelColor = TextPrimary,
+                cursorColor = TextPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -171,9 +173,9 @@ fun ProductFormFields(
             label = { Text(stringResource(Res.string.original_price)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InkBlack,
-                focusedLabelColor = InkBlack,
-                cursorColor = InkBlack
+                focusedBorderColor = TextPrimary,
+                focusedLabelColor = TextPrimary,
+                cursorColor = TextPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -187,9 +189,9 @@ fun ProductFormFields(
             label = { Text(stringResource(Res.string.discounted_price)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InkBlack,
-                focusedLabelColor = InkBlack,
-                cursorColor = InkBlack
+                focusedBorderColor = TextPrimary,
+                focusedLabelColor = TextPrimary,
+                cursorColor = TextPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -203,9 +205,9 @@ fun ProductFormFields(
             label = { Text(stringResource(Res.string.amount)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InkBlack,
-                focusedLabelColor = InkBlack,
-                cursorColor = InkBlack
+                focusedBorderColor = TextPrimary,
+                focusedLabelColor = TextPrimary,
+                cursorColor = TextPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -245,7 +247,7 @@ fun ProductFormFields(
             if (isSubmitting) {
                 CircularProgressIndicator(
                     modifier = Modifier.padding(4.dp),
-                    color = Color.White,
+                    color = SurfaceDefault,
                     strokeWidth = 2.dp
                 )
             } else {

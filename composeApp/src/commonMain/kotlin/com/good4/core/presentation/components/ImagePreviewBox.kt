@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.good4.core.presentation.SoftGray
+import com.good4.core.presentation.SurfaceMuted
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.product_image_description
 import org.jetbrains.compose.resources.stringResource
@@ -32,7 +32,7 @@ fun ImagePreviewBox(
     Box(
         modifier = modifier
             .clip(shape)
-            .background(SoftGray),
+            .background(SurfaceMuted),
         contentAlignment = Alignment.Center
     ) {
         if (imageUrl.isNotBlank()) {

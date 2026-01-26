@@ -1,4 +1,4 @@
-package com.good4.admin.presentation.home
+﻿package com.good4.admin.presentation.home
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,9 +29,16 @@ import com.good4.admin.presentation.campaigns.AdminCampaignsScreen
 import com.good4.admin.presentation.dashboard.AdminDashboardScreen
 import com.good4.admin.presentation.products.AdminProductsScreen
 import com.good4.admin.presentation.profile.AdminProfileScreen
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.components.Good4Scaffold
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.admin_nav_campaigns
+import good4.composeapp.generated.resources.admin_nav_dashboard
+import good4.composeapp.generated.resources.admin_nav_products
+import good4.composeapp.generated.resources.admin_nav_profile
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 data class AdminNavItem(
@@ -48,22 +54,22 @@ fun AdminHomeScreenRoot(
 ) {
     val navItems = listOf(
         AdminNavItem(
-            title = "Dashboard",
+            title = stringResource(Res.string.admin_nav_dashboard),
             selectedIcon = Icons.Filled.Home,
             unselectedIcon = Icons.Outlined.Home
         ),
         AdminNavItem(
-            title = "Ürünler",
+            title = stringResource(Res.string.admin_nav_products),
             selectedIcon = Icons.Filled.List,
             unselectedIcon = Icons.Outlined.List
         ),
         AdminNavItem(
-            title = "Kampanyalar",
+            title = stringResource(Res.string.admin_nav_campaigns),
             selectedIcon = Icons.Filled.Favorite,
             unselectedIcon = Icons.Outlined.Favorite
         ),
         AdminNavItem(
-            title = "Profil",
+            title = stringResource(Res.string.admin_nav_profile),
             selectedIcon = Icons.Filled.Person,
             unselectedIcon = Icons.Outlined.Person
         )
@@ -71,11 +77,11 @@ fun AdminHomeScreenRoot(
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
         bottomBar = {
             NavigationBar(
-                containerColor = Background
+                containerColor = AppBackground
             ) {
                 navItems.forEachIndexed { index, item ->
                     NavigationBarItem(
@@ -93,9 +99,9 @@ fun AdminHomeScreenRoot(
                         },
                         label = { Text(item.title) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = InkBlack,
-                            selectedTextColor = InkBlack,
-                            indicatorColor = MintGreen.copy(alpha = 0.3f)
+                            selectedIconColor = TextPrimary,
+                            selectedTextColor = TextPrimary,
+                            indicatorColor = PistachioGreen.copy(alpha = 0.3f)
                         )
                     )
                 }
@@ -124,4 +130,3 @@ fun AdminHomeScreenPreview() {
         AdminHomeScreenRoot(onLogout = {})
     }
 }
-

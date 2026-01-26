@@ -1,11 +1,12 @@
-package com.good4.business.presentation.products
+﻿package com.good4.business.presentation.products
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.good4.core.presentation.LimeGreen
+import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.components.ProductFormFields
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_button
@@ -36,10 +37,10 @@ fun AddProductBottomSheet(
             title = stringResource(Res.string.business_products_add_title),
             submitLabel = stringResource(Res.string.business_products_add_button),
             onSubmit = onAddProduct,
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
             isSubmitting = state.isAddLoading,
-            submitButtonColor = LimeGreen,
-            submitButtonDisabledColor = LimeGreen.copy(alpha = 0.5f),
+            submitButtonColor = DeepGreen,
+            submitButtonDisabledColor = DeepGreen.copy(alpha = 0.5f),
             productName = state.productName,
             onProductNameChange = onProductNameChange,
             productDescription = state.productDescription,

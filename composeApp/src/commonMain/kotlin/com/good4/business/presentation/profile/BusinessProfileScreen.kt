@@ -19,13 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
@@ -36,6 +36,7 @@ import good4.composeapp.generated.resources.profile_title_business
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
+
 @Composable
 fun BusinessProfileScreen(
     modifier: Modifier = Modifier,
@@ -53,14 +54,14 @@ fun BusinessProfileScreen(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(MintGreen),
+                .background(PistachioGreen),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Filled.Home,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = InkBlack
+                tint = TextPrimary
             )
         }
 
@@ -70,13 +71,13 @@ fun BusinessProfileScreen(
             text = state.businessName,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = InkBlack
+            color = TextPrimary
         )
 
         Text(
             text = state.ownerName,
             fontSize = 14.sp,
-            color = Color.Gray
+            color = TextSecondary
         )
 
         Spacer(modifier = Modifier.height(24.dp))

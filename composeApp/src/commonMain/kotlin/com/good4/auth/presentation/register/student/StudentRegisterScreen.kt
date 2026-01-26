@@ -30,10 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -53,11 +49,39 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.BrickRed
-import com.good4.core.presentation.LimeGreen
-import good4.composeapp.generated.resources.*
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.back
+import good4.composeapp.generated.resources.create_student_account
+import good4.composeapp.generated.resources.education_level
+import good4.composeapp.generated.resources.education_level_1
+import good4.composeapp.generated.resources.education_level_2
+import good4.composeapp.generated.resources.education_level_3
+import good4.composeapp.generated.resources.education_level_4
+import good4.composeapp.generated.resources.education_level_5
+import good4.composeapp.generated.resources.education_level_6
+import good4.composeapp.generated.resources.education_level_masters
+import good4.composeapp.generated.resources.education_level_phd
+import good4.composeapp.generated.resources.education_level_placeholder
+import good4.composeapp.generated.resources.email_required
+import good4.composeapp.generated.resources.full_name
+import good4.composeapp.generated.resources.major
+import good4.composeapp.generated.resources.password_confirm
+import good4.composeapp.generated.resources.password_required
+import good4.composeapp.generated.resources.password_visibility_hide
+import good4.composeapp.generated.resources.password_visibility_show
+import good4.composeapp.generated.resources.register
+import good4.composeapp.generated.resources.required_fields
+import good4.composeapp.generated.resources.student_emoji
+import good4.composeapp.generated.resources.student_registration
+import good4.composeapp.generated.resources.university
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -101,16 +125,11 @@ fun StudentRegisterScreen(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Scaffold(
-        containerColor = Background,
+    Good4Scaffold(
+        modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(Res.string.student_registration),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
+            Good4TopBar(
+                title = stringResource(Res.string.student_registration),
                 navigationIcon = {
                     IconButton(onClick = { onAction(StudentRegisterAction.OnBackClick) }) {
                         Icon(
@@ -118,17 +137,14 @@ fun StudentRegisterScreen(
                             contentDescription = stringResource(Res.string.back)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
+                }
             )
         }
     ) { paddingValues ->
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Background)
+                .background(AppBackground)
                 .padding(paddingValues)
         ) {
             Column(
@@ -149,7 +165,7 @@ fun StudentRegisterScreen(
                     text = stringResource(Res.string.create_student_account),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = InkBlack
+                    color = TextPrimary
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -286,7 +302,7 @@ fun StudentRegisterScreen(
                 state.errorMessage?.let { error ->
                     Text(
                         text = error.asString(),
-                        color = BrickRed,
+                        color = ErrorRed,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -304,15 +320,15 @@ fun StudentRegisterScreen(
                         .height(56.dp),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = LimeGreen,
-                        disabledContainerColor = LimeGreen.copy(alpha = 0.5f)
+                        containerColor = DeepGreen,
+                        disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = Color.White,
+                            color = SurfaceDefault,
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -329,7 +345,7 @@ fun StudentRegisterScreen(
                 Text(
                     text = stringResource(Res.string.required_fields),
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = TextSecondary
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -390,9 +406,9 @@ private fun EducationLevelDropdown(
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = InkBlack,
-    focusedLabelColor = InkBlack,
-    cursorColor = InkBlack
+    focusedBorderColor = TextPrimary,
+    focusedLabelColor = TextPrimary,
+    cursorColor = TextPrimary
 )
 
 @Preview
@@ -416,3 +432,7 @@ fun StudentRegisterScreenPreview() {
         )
     }
 }
+
+
+
+

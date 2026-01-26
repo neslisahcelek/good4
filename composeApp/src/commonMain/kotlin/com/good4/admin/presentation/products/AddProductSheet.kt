@@ -3,7 +3,7 @@ package com.good4.admin.presentation.products
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.good4.core.presentation.LimeGreen
+import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.components.ProductFormFields
 import com.good4.core.presentation.components.SelectOption
 import good4.composeapp.generated.resources.Res
@@ -33,7 +33,7 @@ fun AddProductSheet(
         onSubmit = viewModel::addProduct,
         modifier = modifier,
         isSubmitting = state.isAddLoading,
-        submitButtonColor = LimeGreen,
+        submitButtonColor = DeepGreen,
         errorMessage = state.errorMessage,
         showBusinessSelector = true,
         businessOptions = businessOptions,

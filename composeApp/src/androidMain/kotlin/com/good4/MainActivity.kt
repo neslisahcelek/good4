@@ -3,7 +3,6 @@ package com.good4
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,7 +11,6 @@ import androidx.compose.runtime.setValue
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
-import com.good4.navigation.Good4NavGraph
 import com.good4.navigation.Route
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
@@ -54,12 +52,10 @@ class MainActivity : ComponentActivity() {
             }
 
             startDestination?.let { destination ->
-                MaterialTheme {
-                    Good4NavGraph(
-                        startDestination = destination,
-                        currentUserRole = userRole
-                    )
-                }
+                App(
+                    startDestination = destination,
+                    currentUserRole = userRole
+                )
             }
         }
     }

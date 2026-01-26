@@ -1,6 +1,9 @@
 package com.good4.product.presentation.product_list.views
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,13 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,10 +31,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,19 +40,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.ErrorSnackbar
-import com.good4.core.presentation.Surface
-import com.good4.core.presentation.WarningSand
-import com.good4.core.presentation.WarningBrown
-import com.good4.core.presentation.SlateGray
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.WarningBackground
+import com.good4.core.presentation.WarningText
+import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.product.Product
 import com.good4.product.presentation.product_list.ProductListAction
 import com.good4.product.presentation.product_list.ProductListState
@@ -113,15 +113,14 @@ fun ProductListScreen(
             listState.animateScrollToItem(0)
         }
     }
-    
-    Scaffold(
+
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Background)
+                .background(AppBackground)
                 .padding(paddingValues)
         ) {
             when {
@@ -269,10 +268,10 @@ private fun ReservationDetailsCard(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = WarningSand
+                containerColor = WarningBackground
             ),
             shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, WarningBrown.copy(alpha = 0.15f))
+            border = BorderStroke(1.dp, WarningText.copy(alpha = 0.15f))
         ) {
             Column(
                 modifier = Modifier
@@ -284,13 +283,17 @@ private fun ReservationDetailsCard(
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .border(1.dp, WarningBrown.copy(alpha = 0.4f), RoundedCornerShape(999.dp)),
+                            .border(
+                                1.dp,
+                                WarningText.copy(alpha = 0.4f),
+                                RoundedCornerShape(999.dp)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Warning,
                             contentDescription = null,
-                            tint = WarningBrown,
+                            tint = WarningText,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -298,7 +301,7 @@ private fun ReservationDetailsCard(
                     Text(
                         text = stringResource(Res.string.active_reservation_warning),
                         fontSize = 13.sp,
-                        color = WarningBrown,
+                        color = WarningText,
                         lineHeight = 18.sp
                     )
                 }
@@ -306,14 +309,14 @@ private fun ReservationDetailsCard(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = WarningBrown.copy(alpha = 0.85f),
+                        tint = WarningText.copy(alpha = 0.85f),
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(Res.string.active_reservation_info),
                         fontSize = 12.sp,
-                        color = WarningBrown.copy(alpha = 0.85f),
+                        color = WarningText.copy(alpha = 0.85f),
                         lineHeight = 16.sp
                     )
                 }
@@ -325,11 +328,11 @@ private fun ReservationDetailsCard(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = Surface
+                containerColor = SurfaceDefault
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, SlateGray.copy(alpha = 0.12f))
+            border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.12f))
         ) {
             Column(
                 modifier = Modifier
@@ -340,7 +343,7 @@ private fun ReservationDetailsCard(
                     text = stringResource(Res.string.product_label_prefix) + product.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = InkBlack
+                    color = TextPrimary
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -352,7 +355,7 @@ private fun ReservationDetailsCard(
                     Icon(
                         imageVector = Icons.Filled.Store,
                         contentDescription = null,
-                        tint = InkBlack,
+                        tint = TextPrimary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -360,7 +363,7 @@ private fun ReservationDetailsCard(
                         text = stringResource(Res.string.business_label_prefix) + product.storeName,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        color = InkBlack
+                        color = TextPrimary
                     )
                 }
 
@@ -371,27 +374,27 @@ private fun ReservationDetailsCard(
                     Icon(
                         imageVector = Icons.Filled.LocationOn,
                         contentDescription = null,
-                        tint = SlateGray,
+                        tint = TextSecondary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = product.address,
                         fontSize = 12.sp,
-                        color = SlateGray,
+                        color = TextSecondary,
                         maxLines = 1
                     )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Divider(color = SlateGray.copy(alpha = 0.2f))
+                Divider(color = TextSecondary.copy(alpha = 0.2f))
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = stringResource(Res.string.reservation_code_label_prefix) + reservationCode,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = InkBlack
+                    color = TextPrimary
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -403,7 +406,7 @@ private fun ReservationDetailsCard(
                     Icon(
                         imageVector = Icons.Filled.AccessTime,
                         contentDescription = null,
-                        tint = if (remainingTime.startsWith("00:0")) Color.Red else InkBlack,
+                        tint = if (remainingTime.startsWith("00:0")) ErrorRed else TextPrimary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -411,10 +414,12 @@ private fun ReservationDetailsCard(
                         text = stringResource(Res.string.remaining_time_prefix) + remainingTime,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (remainingTime.startsWith("00:0")) Color.Red else InkBlack
+                        color = if (remainingTime.startsWith("00:0")) ErrorRed else TextPrimary
                     )
                 }
             }
         }
     }
 }
+
+

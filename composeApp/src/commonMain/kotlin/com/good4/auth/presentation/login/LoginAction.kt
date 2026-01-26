@@ -9,5 +9,6 @@ sealed interface LoginAction {
     data object OnBusinessRegisterClick : LoginAction
     data object OnForgotPasswordClick : LoginAction
     data object OnClearError : LoginAction
+    data object OnClearInfo : LoginAction
 }
 

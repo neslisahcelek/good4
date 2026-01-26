@@ -17,11 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -33,9 +32,10 @@ import com.good4.business.presentation.products.BusinessProductsScreenRoot
 import com.good4.business.presentation.products.BusinessProductsViewModel
 import com.good4.business.presentation.profile.BusinessProfileScreen
 import com.good4.business.presentation.verify.VerifyCodeScreen
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.MintGreen
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.components.Good4Scaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.nav_dashboard
 import good4.composeapp.generated.resources.nav_products
@@ -90,12 +90,11 @@ fun BusinessHomeScreenRoot(
         }
     }
 
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background,
         bottomBar = {
             NavigationBar(
-                containerColor = Background
+                containerColor = AppBackground
             ) {
                 navItems.forEachIndexed { index, item ->
                     NavigationBarItem(
@@ -113,9 +112,9 @@ fun BusinessHomeScreenRoot(
                         },
                         label = { Text(item.title) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = InkBlack,
-                            selectedTextColor = InkBlack,
-                            indicatorColor = MintGreen.copy(alpha = 0.3f)
+                            selectedIconColor = TextPrimary,
+                            selectedTextColor = TextPrimary,
+                            indicatorColor = PistachioGreen.copy(alpha = 0.3f)
                         )
                     )
                 }
@@ -144,3 +143,4 @@ fun BusinessHomeScreenPreview() {
         BusinessHomeScreenRoot(onLogout = {})
     }
 }
+

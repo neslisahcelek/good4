@@ -32,6 +32,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil3.compose.AsyncImage
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.TextPrimary
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import good4.composeapp.generated.resources.Res
@@ -44,8 +46,6 @@ import good4.composeapp.generated.resources.product_image_preview_desc
 import org.jetbrains.compose.resources.stringResource
 import java.io.File
 import java.util.UUID
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.LimeGreen
 
 @Composable
 actual fun ProductImagePicker(
@@ -131,7 +131,7 @@ actual fun ProductImagePicker(
                         )
                     )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = LimeGreen)
+                colors = ButtonDefaults.buttonColors(containerColor = DeepGreen)
             ) {
                 Text(text = galleryLabel)
             }
@@ -153,7 +153,7 @@ actual fun ProductImagePicker(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(18.dp),
-                    color = InkBlack,
+                    color = TextPrimary,
                     strokeWidth = 2.dp
                 )
                 Text(text = uploadingLabel)

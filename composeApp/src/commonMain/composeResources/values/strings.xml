@@ -17,8 +17,9 @@
     <string name="password_visibility_show">Şifreyi göster</string>
     <string name="password_visibility_hide">Şifreyi gizle</string>
     <string name="forgot_password">Şifremi unuttum</string>
+    <string name="forgot_password_email_sent">Şifre sıfırlama e-postası gönderildi</string>
     <string name="login">Giriş Yap</string>
-    <string name="no_account">Hesabın yok mu?</string>
+    <string name="no_account">Hesabın yok mu</string>
     <string name="student_register">🎓 Öğrenci Olarak Kayıt Ol</string>
     <string name="business_register">🏪 İşletme Olarak Kayıt Ol</string>
 
@@ -98,6 +99,30 @@
     <string name="manage_campaigns">Kampanya Yönetimi</string>
     <string name="add_product">Ürün Ekle</string>
     <string name="add_campaign">Kampanya Ekle</string>
+    <string name="admin_campaigns_add_title">Yeni Kampanya Ekle</string>
+    <string name="admin_campaigns_image_url_label">Kampanya Görsel URL</string>
+    <string name="admin_campaigns_image_url_placeholder">https://...</string>
+    <string name="admin_campaigns_image_url_helper">Kampanya için bir resim URL'si girin. Resim ana sayfada gösterilecektir.</string>
+    <string name="admin_campaigns_empty">Henüz kampanya yok</string>
+    <string name="emoji_campaigns_empty"></string>
+    <string name="emoji_campaign_placeholder"></string>
+    <string name="admin_dashboard_summary_title">Özet</string>
+    <string name="admin_dashboard_total_products">Toplam ürün</string>
+    <string name="admin_dashboard_businesses">İşletmeler</string>
+    <string name="admin_dashboard_campaigns">Kampanyalar</string>
+    <string name="admin_dashboard_users">Kullanıcılar</string>
+    <string name="admin_dashboard_quick_actions_title">Hızlı İşlemler</string>
+    <string name="admin_dashboard_quick_actions_subtitle">Alt menüden ürün ve kampanya ekleyebilirsiniz</string>
+    <string name="admin_nav_dashboard">Ana Sayfa</string>
+    <string name="admin_nav_products">Ürünler</string>
+    <string name="admin_nav_campaigns">Kampanyalar</string>
+    <string name="admin_nav_profile">Profil</string>
+    <string name="profile_title_admin">Admin Profili</string>
+    <string name="profile_role_label">Rol</string>
+    <string name="role_admin">Admin</string>
+    <string name="admin_products_empty">Henüz ürün yok</string>
+    <string name="admin_products_edit_title">Ürün Düzenle</string>
+    <string name="admin_products_update_button">Güncelle</string>
     <string name="product_name">Ürün Adı *</string>
     <string name="price">Fiyat *</string>
     <string name="amount">Adet *</string>
@@ -178,7 +203,7 @@
 
     <!-- Verify Code -->
     <string name="verify_code_input_label">Rezervasyon Kodu</string>
-    <string name="verify_code_placeholder">123456</string>
+    <string name="verify_code_placeholder">******</string>
     <string name="verify_code_button">Doğrula</string>
     <string name="verify_code_success">Kod başarıyla doğrulandı!</string>
     <string name="verify_code_product_prefix">Ürün: </string>
@@ -209,7 +234,7 @@
     <string name="emoji_product_placeholder">📦</string>
     <string name="emoji_ticket">🎫</string>
     <string name="placeholder_dash">-</string>
-    <string name="unknown_initial">?</string>
+    <string name="unknown_initial"></string>
 
     <!-- Product List -->
     <string name="error_no_credit_prefix">Üzgünüz, bu haftaki kredi hakkını doldurdun. Kredin </string>
@@ -228,6 +253,12 @@
     <string name="business_name_fallback">İşletme</string>
     <string name="product_name_fallback">Ürün</string>
     <string name="error_product_name_required">Ürün adı gerekli</string>
+    <string name="error_campaign_image_required">Resim URL'si gerekli</string>
+    <string name="error_code_not_found_or_used">Kod bulunamadı veya zaten kullanılmış</string>
+    <string name="error_code_not_found">Kod bulunamadı</string>
+    <string name="error_credit_reset_failed">Kredi sıfırlama başarısız</string>
+    <string name="error_business_required">İşletme seçiniz</string>
+    <string name="error_price_required">Fiyat gerekli</string>
 
     <!-- Auth Error Messages -->
     <string name="error_email_required">E-posta adresi gerekli</string>
@@ -242,12 +273,12 @@
     <string name="error_address_required">Adres gerekli</string>
     <string name="error_city_required">Şehir gerekli</string>
     <string name="error_please_register">Lütfen kayıt olun.</string>
-    <string name="error_network_connection">İnternet bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.</string>
+    <string name="error_network_connection">Lütfen internet bağlantınızı kontrol edin.</string>
     <string name="error_invalid_credentials">Geçersiz e-posta veya şifre. Lütfen tekrar deneyin.</string>
     <string name="error_user_not_found">Kullanıcı bulunamadı. Lütfen kayıt olun.</string>
     <string name="error_email_already_in_use">Bu e-posta adresi zaten kullanımda.</string>
     <string name="error_weak_password">Şifre çok zayıf.</string>
-    <string name="error_network_connection_short">Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.</string>
+    <string name="error_network_connection_short">Lütfen internet bağlantınızı kontrol edin.</string>
     <string name="error_user_info_save_failed_prefix">Kullanıcı bilgileri kaydedilemedi: </string>
     <string name="error_business_save_failed_prefix">İşletme kaydedilemedi: </string>
     <string name="already_have_reservation">Zaten aktif bir rezervasyonunuz var</string>

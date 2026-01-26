@@ -1,32 +1,31 @@
-package com.good4.auth.domain
+﻿package com.good4.auth.domain
 
 import com.good4.core.domain.Error
 
 sealed class AuthError : Error {
     data object InvalidCredentials : AuthError() {
-        override val message: String = "Geçersiz e-posta veya şifre"
+        override val message: String = ""
     }
 
     data object UserNotFound : AuthError() {
-        override val message: String = "Kullanıcı bulunamadı"
+        override val message: String = ""
     }
 
     data object EmailAlreadyInUse : AuthError() {
-        override val message: String = "Bu e-posta adresi zaten kullanılıyor"
+        override val message: String = ""
     }
 
     data object WeakPassword : AuthError() {
-        override val message: String = "Şifre en az 6 karakter olmalıdır"
+        override val message: String = ""
     }
 
     data object NetworkError : AuthError() {
-        override val message: String = "İnternet bağlantısı hatası"
+        override val message: String = ""
     }
 
     data object UserNotLoggedIn : AuthError() {
-        override val message: String = "Kullanıcı giriş yapmamış"
+        override val message: String = ""
     }
 
     data class Unknown(override val message: String) : AuthError()
 }
-

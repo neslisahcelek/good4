@@ -25,28 +25,27 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.code.domain.CodeStatus
-import com.good4.core.presentation.Background
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.MintGreen
-import com.good4.core.presentation.SlateGray
-import com.good4.core.presentation.SoftGray
-import com.good4.core.presentation.Surface
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.SurfaceMuted
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.emoji_ticket
 import good4.composeapp.generated.resources.preview_business_name
@@ -90,27 +89,14 @@ private fun StudentReservationsContent(
     modifier: Modifier = Modifier,
     state: StudentReservationsState
 ) {
-    Scaffold(
+    Good4Scaffold(
         modifier = modifier,
-        containerColor = Background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(Res.string.student_reservations_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                )
-            )
-        }
+        topBar = { Good4TopBar(title = stringResource(Res.string.student_reservations_title)) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Background)
+                .background(AppBackground)
                 .padding(paddingValues)
         ) {
             state.remainingCredit?.let { credit ->
@@ -119,7 +105,7 @@ private fun StudentReservationsContent(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MintGreen
+                        containerColor = PistachioGreen
                     ),
                     shape = RoundedCornerShape(18.dp)
                 ) {
@@ -133,13 +119,13 @@ private fun StudentReservationsContent(
                         Text(
                             text = stringResource(Res.string.student_reservations_credit_label),
                             fontSize = 14.sp,
-                            color = SlateGray
+                            color = TextSecondary
                         )
                         Text(
                             text = credit.toString(),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = InkBlack
+                            color = TextPrimary
                         )
                     }
                 }
@@ -154,7 +140,7 @@ private fun StudentReservationsContent(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                         fontSize = 12.sp,
-                        color = SlateGray,
+                        color = TextSecondary,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -166,7 +152,7 @@ private fun StudentReservationsContent(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = InkBlack)
+                        CircularProgressIndicator(color = TextPrimary)
                     }
                 }
 
@@ -186,14 +172,14 @@ private fun StudentReservationsContent(
                             Text(
                                 text = stringResource(Res.string.student_reservations_empty_title),
                                 fontSize = 18.sp,
-                                color = SlateGray,
+                                color = TextSecondary,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = stringResource(Res.string.student_reservations_empty_subtitle),
                                 fontSize = 14.sp,
-                                color = SlateGray,
+                                color = TextSecondary,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -227,11 +213,11 @@ private fun ReservationCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Surface
+            containerColor = SurfaceDefault
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, SlateGray.copy(alpha = 0.12f))
+        border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.12f))
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -245,7 +231,7 @@ private fun ReservationCard(
                     text = reservation.productName,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = InkBlack
+                    color = TextPrimary
                 )
                 StatusBadge(status = reservation.statusEnum)
             }
@@ -258,14 +244,14 @@ private fun ReservationCard(
                 Icon(
                     imageVector = Icons.Filled.Store,
                     contentDescription = null,
-                    tint = SlateGray,
+                    tint = TextSecondary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = reservation.businessName,
                     fontSize = 14.sp,
-                    color = SlateGray
+                    color = TextSecondary
                 )
             }
 
@@ -276,7 +262,7 @@ private fun ReservationCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SoftGray)
+                        .background(SurfaceMuted)
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -286,13 +272,13 @@ private fun ReservationCard(
                         Text(
                             text = stringResource(Res.string.student_reservations_code_title),
                             fontSize = 12.sp,
-                            color = SlateGray
+                            color = TextSecondary
                         )
                         Text(
                             text = reservation.code,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = InkBlack,
+                            color = TextPrimary,
                             letterSpacing = 4.sp
                         )
                         if (reservation.remainingTime.isNotEmpty()) {
@@ -303,7 +289,7 @@ private fun ReservationCard(
                                 Icon(
                                     imageVector = Icons.Filled.AccessTime,
                                     contentDescription = null,
-                                    tint = SlateGray,
+                                    tint = TextSecondary,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -311,7 +297,7 @@ private fun ReservationCard(
                                     text = stringResource(Res.string.student_reservations_remaining_prefix) +
                                             reservation.remainingTime,
                                     fontSize = 12.sp,
-                                    color = SlateGray
+                                    color = TextSecondary
                                 )
                             }
                         }
@@ -329,20 +315,20 @@ private fun StatusBadge(
 ) {
     val (backgroundColor, textColor, text) = when (status) {
         CodeStatus.PENDING -> Triple(
-            MintGreen,
-            InkBlack,
+            PistachioGreen,
+            TextPrimary,
             stringResource(Res.string.reservation_status_pending)
         )
 
         CodeStatus.USED -> Triple(
-            SoftGray,
-            InkBlack,
+            SurfaceMuted,
+            TextPrimary,
             stringResource(Res.string.reservation_status_completed)
         )
 
         CodeStatus.EXPIRED -> Triple(
-            Color(0xFFFFE3E0),
-            Color(0xFF9E3B30),
+            ErrorRed.copy(alpha = 0.12f),
+            ErrorRed,
             stringResource(Res.string.reservation_status_expired)
         )
     }
@@ -409,3 +395,7 @@ fun StudentReservationsScreenPreview() {
         )
     }
 }
+
+
+
+

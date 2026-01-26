@@ -1,14 +1,17 @@
 package com.good4.user.data.repository
 
+import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
 import com.good4.core.domain.UnknownError
-import com.good4.config.data.repository.AppConfigRepository
 import com.good4.user.User
 import com.good4.user.data.dto.UserDto
 import com.good4.user.domain.UserRole
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.error_credit_reset_failed
 import kotlinx.datetime.Clock
+import org.jetbrains.compose.resources.getString
 
 class UserRepository(
     private val firestoreRepository: FirestoreRepository,
@@ -170,7 +173,9 @@ class UserRepository(
                 }
 
                 if (hasError) {
-                    Result.Error(lastError ?: UnknownError("Credit reset failed"))
+                    Result.Error(
+                        lastError ?: UnknownError(getString(Res.string.error_credit_reset_failed))
+                    )
                 } else {
                     Result.Success(Unit)
                 }

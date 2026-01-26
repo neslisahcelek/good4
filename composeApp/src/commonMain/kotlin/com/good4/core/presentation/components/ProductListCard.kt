@@ -17,15 +17,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.InkBlack
-import com.good4.core.presentation.LimeGreen
-import com.good4.core.presentation.SlateGray
-import com.good4.core.presentation.Surface
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_price_unavailable
@@ -51,7 +51,7 @@ fun ProductListCard(
 
     Card(
         modifier = cardModifier,
-        colors = CardDefaults.cardColors(containerColor = Surface),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -74,7 +74,7 @@ fun ProductListCard(
                     text = product.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = InkBlack,
+                    color = TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -84,7 +84,7 @@ fun ProductListCard(
                     Text(
                         text = product.storeName,
                         fontSize = 12.sp,
-                        color = SlateGray,
+                        color = TextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -95,7 +95,7 @@ fun ProductListCard(
                     Text(
                         text = product.description,
                         fontSize = 12.sp,
-                        color = SlateGray,
+                        color = TextSecondary,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -113,12 +113,12 @@ fun ProductListCard(
                                 text = "${product.discountPrice} $currencySuffix",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = LimeGreen
+                                color = DeepGreen
                             )
                             Text(
                                 text = "${product.originalPrice} $currencySuffix",
                                 fontSize = 12.sp,
-                                color = SlateGray,
+                                color = TextSecondary,
                                 style = androidx.compose.ui.text.TextStyle(
                                     textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
                                 )
@@ -129,7 +129,7 @@ fun ProductListCard(
                                 text = "${product.discountPrice} $currencySuffix",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = InkBlack
+                                color = TextPrimary
                             )
                         }
                         product.originalPrice != null -> {
@@ -137,7 +137,7 @@ fun ProductListCard(
                                 text = "${product.originalPrice} $currencySuffix",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = InkBlack
+                                color = TextPrimary
                             )
                         }
                         else -> {
@@ -146,14 +146,14 @@ fun ProductListCard(
                                     text = "${product.price} $currencySuffix",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = InkBlack
+                                    color = TextPrimary
                                 )
                             } else {
                                 Text(
                                     text = stringResource(Res.string.business_products_price_unavailable),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = SlateGray
+                                    color = TextSecondary
                                 )
                             }
                         }
@@ -164,8 +164,8 @@ fun ProductListCard(
             Box(
                 modifier = Modifier
                     .background(
-                        if (product.amount > 0) LimeGreen.copy(alpha = 0.1f)
-                        else Color.Red.copy(alpha = 0.1f),
+                        if (product.amount > 0) DeepGreen.copy(alpha = 0.1f)
+                        else ErrorRed.copy(alpha = 0.1f),
                         RoundedCornerShape(8.dp)
                     )
                     .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -173,7 +173,7 @@ fun ProductListCard(
                 Text(
                     text = stringResource(Res.string.business_products_stock_prefix) + product.amount,
                     fontSize = 12.sp,
-                    color = if (product.amount > 0) LimeGreen else Color.Red,
+                    color = if (product.amount > 0) DeepGreen else ErrorRed,
                     fontWeight = FontWeight.Medium
                 )
             }
