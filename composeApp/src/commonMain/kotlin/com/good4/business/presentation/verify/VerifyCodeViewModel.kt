@@ -7,7 +7,6 @@ import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.code.data.repository.CodeRepository
 import com.good4.core.domain.Result
 import com.good4.product.data.repository.FirestoreProductRepository
-import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.verify_code_error_failed
 import good4.composeapp.generated.resources.verify_code_error_invalid
@@ -21,8 +20,7 @@ class VerifyCodeViewModel(
     private val authRepository: AuthRepository,
     private val businessRepository: FirestoreBusinessRepository,
     private val codeRepository: CodeRepository,
-    private val productRepository: FirestoreProductRepository,
-    private val userRepository: UserRepository
+    private val productRepository: FirestoreProductRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(VerifyCodeState())
@@ -82,9 +80,7 @@ class VerifyCodeViewModel(
                         is Result.Success -> {
                             viewModelScope.launch {
                                 val productId = result.data.productId
-                                val userId = result.data.userId
                                 productRepository.decrementProductCount(productId)
-                                userRepository.decrementUserCredit(userId)
                             }
                             _state.update {
                                 it.copy(

@@ -8,6 +8,7 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
+import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.business.presentation.dashboard.BusinessDashboardViewModel
 import com.good4.business.presentation.products.BusinessProductsViewModel
@@ -42,6 +43,7 @@ val commonModule = module {
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { StudentRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
     viewModel { BusinessRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<FirestoreBusinessRepository>()) }
+    viewModel { EmailVerificationViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { ProductListViewModel(get<FirestoreProductRepository>(), get<CodeRepository>(), get<AuthRepository>(), get<AppConfigRepository>(), get<UserRepository>()) }
     viewModel { StudentProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { StudentReservationsViewModel(get<AuthRepository>(), get<CodeRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
@@ -55,7 +57,7 @@ val commonModule = module {
             get<FirestoreProductRepository>()
         )
     }
-    viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>(), get<UserRepository>()) }
+    viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>()) }
     viewModel { BusinessProductsViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>()) }
     viewModel {
         AdminDashboardViewModel(

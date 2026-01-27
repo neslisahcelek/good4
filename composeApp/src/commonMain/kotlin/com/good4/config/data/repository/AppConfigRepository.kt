@@ -1,8 +1,8 @@
 package com.good4.config.data.repository
 
-import com.good4.code.data.dto.DEFAULT_EXPIRATION_MINUTES
 import com.good4.config.data.dto.AppConfigDto
 import com.good4.config.domain.AppConfig
+import com.good4.config.domain.AppDefaults
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Result
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +24,7 @@ class AppConfigRepository(
         )) {
             is Result.Success -> {
                 val dto = result.data
-                val expirationMinutes = dto.reservationExpirationMinutes ?: DEFAULT_EXPIRATION_MINUTES
+                val expirationMinutes = dto.reservationExpirationMinutes ?: AppDefaults.RESERVATION_EXPIRATION_MINUTES
                 val creditResetIntervalDays = dto.creditResetIntervalDays
                     ?: AppConfig.DEFAULT.creditResetIntervalDays
                 val studentWeeklyCredit = dto.studentWeeklyCredit

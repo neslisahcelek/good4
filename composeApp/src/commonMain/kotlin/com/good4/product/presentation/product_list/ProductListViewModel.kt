@@ -51,11 +51,17 @@ class ProductListViewModel(
         val userId = authRepository.currentUser?.uid ?: return
         
         viewModelScope.launch {
+            val expirationMinutes = configRepository.getExpirationDuration().inWholeMinutes
             when (val result = codeRepository.getPendingCodeByUserId(userId)) {
                 is Result.Success -> {
                     val pendingCode = result.data
                     if (pendingCode == null) {
-                        _state.update { it.copy(activeReservation = null) }
+                        _state.update {
+                            it.copy(
+                                activeReservation = null,
+                                reservationExpirationMinutes = expirationMinutes
+                            )
+                        }
                         return@launch
                     }
                     val expiryTime = pendingCode.expiresAt ?: return@launch
@@ -80,7 +86,8 @@ class ProductListViewModel(
                                 product = product,
                                 expiryTime = expiryTime,
                                 codeId = codeId
-                            )
+                            ),
+                            reservationExpirationMinutes = expirationMinutes
                         )
                     }
                 }
@@ -201,6 +208,8 @@ class ProductListViewModel(
 
                 when (val result = codeRepository.createCode(codeDto)) {
                     is Result.Success -> {
+                        userRepository.decrementUserCredit(userId)
+                        val expirationMinutes = configRepository.getExpirationDuration().inWholeMinutes
                         _state.update {
                             it.copy(
                                 isReserving = false,
@@ -209,7 +218,8 @@ class ProductListViewModel(
                                     product = product,
                                     expiryTime = expiryTime,
                                     codeId = result.data
-                                )
+                                ),
+                                reservationExpirationMinutes = expirationMinutes
                             )
                         }
                     }

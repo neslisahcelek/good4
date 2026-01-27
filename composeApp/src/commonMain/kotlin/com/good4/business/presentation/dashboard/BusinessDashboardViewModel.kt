@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.code.data.repository.CodeRepository
+import com.good4.code.data.repository.statusEnum
+import com.good4.code.domain.CodeStatus
 import com.good4.core.domain.Result
 import com.good4.user.data.repository.UserRepository
 import com.good4.product.data.repository.FirestoreProductRepository
@@ -80,17 +82,21 @@ class BusinessDashboardViewModel(
                             }
                         }
 
-                        when (val recentResult = codeRepository.getRecentCodesByBusinessId(businessId, limit = 10)) {
+                        when (val recentResult = codeRepository.getRecentCodesByBusinessId(businessId, limit = 20)) {
                             is Result.Success -> {
                                 val productFallback = getString(Res.string.product_name_fallback)
-                                val recentCodes = recentResult.data.map { code ->
-                                    RecentCodeUiModel(
-                                        id = code.id,
-                                        codeValue = code.value,
-                                        productName = code.productName ?: productFallback,
-                                        status = code.status
-                                    )
-                                }
+                                val recentCodes = recentResult.data
+                                    .filter { code -> code.statusEnum != CodeStatus.CANCELLED }
+                                    .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: "" }
+                                    .map { code ->
+                                        RecentCodeUiModel(
+                                            id = code.id,
+                                            codeValue = code.value,
+                                            productName = code.productName ?: productFallback,
+                                            status = code.status
+                                        )
+                                    }
+                                    .take(10)
                                 _state.update {
                                     it.copy(
                                         isLoading = false,

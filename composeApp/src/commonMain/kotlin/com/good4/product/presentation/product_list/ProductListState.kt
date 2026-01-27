@@ -10,7 +10,8 @@ data class ProductListState(
     val isLoading: Boolean = false,
     val isReserving: Boolean = false,
     val activeReservation: ReservationInfo? = null,
-    val errorMessage: UiText? = null
+    val errorMessage: UiText? = null,
+    val reservationExpirationMinutes: Long? = null
 )
 
 data class ReservationInfo(

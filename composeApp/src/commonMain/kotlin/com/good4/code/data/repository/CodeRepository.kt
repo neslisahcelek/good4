@@ -279,11 +279,23 @@ class CodeRepository(
         }
     }
 
+    suspend fun markCodeAsCancelled(codeId: String): Result<Unit, Error> {
+        return when (val result = firestoreRepository.getDocument("codes", codeId, CodeDto::class)) {
+            is Result.Success -> {
+                val updatedCode = result.data.copy(
+                    status = CodeStatus.CANCELLED.value
+                )
+                firestoreRepository.updateDocument("codes", codeId, updatedCode)
+            }
+            is Result.Error -> result
+        }
+    }
+
     suspend fun checkAndExpireCodes(): Result<Unit, Error> {
         return when (val result = firestoreRepository.getCollectionWithIds("codes", CodeDto::class)) {
             is Result.Success -> {
                 val now = kotlinx.datetime.Clock.System.now()
-                val expirationTime = kotlin.time.Duration.parse("PT45M")
+                val expirationTime = configRepository.getExpirationDuration()
 
                 result.data.forEach { documentWithId ->
                     val code = documentWithId.data

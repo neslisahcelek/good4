@@ -1,8 +1,6 @@
 package com.good4.product.presentation.product_list.views
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,23 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,32 +31,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.AppBackground
-import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.ErrorSnackbar
-import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.WarningBackground
-import com.good4.core.presentation.WarningText
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.ReservationCard
 import com.good4.product.Product
 import com.good4.product.presentation.product_list.ProductListAction
 import com.good4.product.presentation.product_list.ProductListState
 import com.good4.product.presentation.product_list.ProductListViewModel
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.active_reservation_info
-import good4.composeapp.generated.resources.active_reservation_warning
-import good4.composeapp.generated.resources.business_label_prefix
+import good4.composeapp.generated.resources.active_reservation_title
 import good4.composeapp.generated.resources.preview_address
 import good4.composeapp.generated.resources.preview_business_name
 import good4.composeapp.generated.resources.preview_description
 import good4.composeapp.generated.resources.preview_price
 import good4.composeapp.generated.resources.preview_product_name
-import good4.composeapp.generated.resources.product_label_prefix
 import good4.composeapp.generated.resources.products_load_error
-import good4.composeapp.generated.resources.remaining_time_prefix
-import good4.composeapp.generated.resources.reservation_code_label_prefix
+import good4.composeapp.generated.resources.time_minute_suffix
+import good4.composeapp.generated.resources.time_second_suffix
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -151,6 +132,7 @@ fun ProductListScreen(
                                     product = reservation.product,
                                     expiryTime = reservation.expiryTime,
                                     codeId = reservation.codeId,
+                                    expirationMinutes = state.reservationExpirationMinutes,
                                     onExpired = { codeId ->
                                         onAction(ProductListAction.OnReservationExpired(codeId))
                                     }
@@ -240,10 +222,13 @@ private fun ReservationDetailsCard(
     product: Product,
     expiryTime: Instant?,
     codeId: String,
+    expirationMinutes: Long?,
     onExpired: (String) -> Unit
 ) {
     var remainingTime by remember { mutableStateOf("") }
     var isExpired by remember { mutableStateOf(false) }
+    val minuteSuffix = stringResource(Res.string.time_minute_suffix)
+    val secondSuffix = stringResource(Res.string.time_second_suffix)
 
     LaunchedEffect(expiryTime) {
         while (expiryTime != null && !isExpired) {
@@ -258,167 +243,21 @@ private fun ReservationDetailsCard(
             
             val minutes = diff.inWholeMinutes
             val seconds = diff.inWholeSeconds % 60
-            remainingTime = String.format("%02d:%02d", minutes, seconds)
+            remainingTime = "${minutes}${minuteSuffix} ${seconds}${secondSuffix}"
             
             delay(1.seconds)
         }
     }
 
     Column(modifier = modifier.padding(12.dp)) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = WarningBackground
-            ),
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, WarningText.copy(alpha = 0.15f))
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .border(
-                                1.dp,
-                                WarningText.copy(alpha = 0.4f),
-                                RoundedCornerShape(999.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Warning,
-                            contentDescription = null,
-                            tint = WarningText,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(Res.string.active_reservation_warning),
-                        fontSize = 13.sp,
-                        color = WarningText,
-                        lineHeight = 18.sp
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Info,
-                        contentDescription = null,
-                        tint = WarningText.copy(alpha = 0.85f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(Res.string.active_reservation_info),
-                        fontSize = 12.sp,
-                        color = WarningText.copy(alpha = 0.85f),
-                        lineHeight = 16.sp
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = SurfaceDefault
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.12f))
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.product_label_prefix) + product.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Store,
-                        contentDescription = null,
-                        tint = TextPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(Res.string.business_label_prefix) + product.storeName,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextPrimary
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = product.address,
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                        maxLines = 1
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Divider(color = TextSecondary.copy(alpha = 0.2f))
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(Res.string.reservation_code_label_prefix) + reservationCode,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.AccessTime,
-                        contentDescription = null,
-                        tint = if (remainingTime.startsWith("00:0")) ErrorRed else TextPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(Res.string.remaining_time_prefix) + remainingTime,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (remainingTime.startsWith("00:0")) ErrorRed else TextPrimary
-                    )
-                }
-            }
-        }
+        ReservationCard(
+            title = stringResource(Res.string.active_reservation_title),
+            productName = product.name,
+            businessName = product.storeName,
+            status = CodeStatus.PENDING,
+            code = reservationCode,
+            remainingTime = remainingTime.ifBlank { null }
+        )
     }
 }
 

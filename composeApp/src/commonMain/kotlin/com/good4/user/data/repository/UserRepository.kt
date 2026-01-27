@@ -36,12 +36,46 @@ class UserRepository(
         return firestoreRepository.updateDocument("users", userId, userDto)
     }
 
+    suspend fun markUserVerified(userId: String): Result<Unit, Error> {
+        return when (val result = getUserDto(userId)) {
+            is Result.Success -> {
+                val current = result.data
+                if (current.verified == true) {
+                    Result.Success(Unit)
+                } else {
+                    updateUser(userId, current.copy(verified = true))
+                }
+            }
+            is Result.Error -> result
+        }
+    }
+
     suspend fun decrementUserCredit(userId: String): Result<Unit, Error> {
         return when (val result = getUserDto(userId)) {
             is Result.Success -> {
                 val currentCredit = result.data.credit ?: 0
                 val updatedCredit = (currentCredit - 1).coerceAtLeast(0)
                 val updatedDto = result.data.copy(credit = updatedCredit)
+                updateUser(userId, updatedDto)
+            }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun incrementUserCredit(userId: String): Result<Unit, Error> {
+        return when (val result = getUserDto(userId)) {
+            is Result.Success -> {
+                val userDto = result.data
+                val role = UserRole.fromValue(userDto.role)
+                if (role != UserRole.STUDENT) {
+                    return Result.Success(Unit)
+                }
+
+                val currentCredit = userDto.credit ?: 0
+                val maxCredit = userDto.weeklyCreditOverride
+                    ?: configRepository.getStudentWeeklyCredit()
+                val updatedCredit = (currentCredit + 1).coerceAtMost(maxCredit)
+                val updatedDto = userDto.copy(credit = updatedCredit)
                 updateUser(userId, updatedDto)
             }
             is Result.Error -> result

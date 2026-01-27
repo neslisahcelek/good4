@@ -10,5 +10,3 @@ fun CodeDto.isExpired(): Boolean {
     val expiryTime = this.expiresAt ?: return true
     return Clock.System.now() >= expiryTime
 }
-
-const val DEFAULT_EXPIRATION_MINUTES = 45L
