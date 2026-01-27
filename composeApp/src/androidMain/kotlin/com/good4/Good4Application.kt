@@ -2,6 +2,9 @@ package com.good4
 
 import android.app.Application
 import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.good4.core.data.repository.android.firebaseModule
 import com.good4.core.data.repository.android.firestoreModule
 import com.good4.di.commonModule
@@ -14,6 +17,13 @@ class Good4Application : Application() {
         super.onCreate()
         
         FirebaseApp.initializeApp(this)
+        FirebaseAppCheck.getInstance().apply {
+            if (BuildConfig.DEBUG) {
+                installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance())
+            } else {
+                installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())
+            }
+        }
         
         startKoin {
             androidContext(this@Good4Application)

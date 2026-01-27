@@ -21,6 +21,7 @@ kotlinx-datetime = "0.6.1"
 firebase-bom = "33.7.0"
 firebase-gitlive = "2.1.0"
 google-services = "4.4.2"
+firebase-crashlytics-gradle = "3.0.2"
 koin = "4.1.1"
 ktor = "3.0.0"
 coil3 = "3.0.4"
@@ -51,6 +52,10 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx" }
+firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
+firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
+firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }
+firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "google-services" }
 
 # GitLive Firebase SDK (Kotlin Multiplatform)
@@ -89,6 +94,7 @@ jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serializati
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-gradle" }
 
 [bundles]
 ktor = [

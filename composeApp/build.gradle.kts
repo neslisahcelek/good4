@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 kotlin {
@@ -47,6 +48,7 @@ kotlin {
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
             implementation(libs.firebase.storage.ktx)
+            implementation(libs.firebase.appcheck.playintegrity)
         }
         
         commonMain.dependencies {
@@ -105,6 +107,18 @@ android {
         versionName = "1.0.0"
     }
 
+    flavorDimensions += "env"
+    productFlavors {
+        create("staging") {
+            dimension = "env"
+            applicationIdSuffix = ".test"
+            versionNameSuffix = "-test"
+        }
+        create("prod") {
+            dimension = "env"
+        }
+    }
+
     signingConfigs {
         create("release") {
             if (hasReleaseSigning) {
@@ -142,4 +156,8 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+    debugImplementation(libs.firebase.appcheck.debug)
+    "prodImplementation"(platform(libs.firebase.bom))
+    "prodImplementation"(libs.firebase.analytics.ktx)
+    "prodImplementation"(libs.firebase.crashlytics.ktx)
 }
