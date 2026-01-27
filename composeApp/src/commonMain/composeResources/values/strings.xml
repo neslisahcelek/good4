@@ -18,6 +18,7 @@
     <string name="password_visibility_hide">Şifreyi gizle</string>
     <string name="forgot_password">Şifremi unuttum</string>
     <string name="forgot_password_email_sent">Şifre sıfırlama e-postası gönderildi</string>
+    <string name="verification_email_sent">Doğrulama e-postası gönderildi</string>
     <string name="login">Giriş Yap</string>
     <string name="no_account">Hesabın yok mu</string>
     <string name="student_register">🎓 Öğrenci Olarak Kayıt Ol</string>
@@ -33,7 +34,7 @@
     <string name="university">Üniversite *</string>
     <string name="major">Bölüm</string>
     <string name="education_level">Sınıf/Dönem</string>
-    <string name="education_level_placeholder">Sınıf/Dönem seçin</string>
+    <string name="education_level_placeholder">Sınıf/Dönem seç</string>
     <string name="education_level_1">1. Sınıf</string>
     <string name="education_level_2">2. Sınıf</string>
     <string name="education_level_3">3. Sınıf</string>
@@ -45,6 +46,12 @@
     <string name="password_required">Şifre *</string>
     <string name="password_confirm">Şifre Tekrar *</string>
     <string name="register">Kayıt Ol</string>
+
+    <!-- Email Verification -->
+    <string name="verify_email_title">E-posta Doğrulama</string>
+    <string name="verify_email_description">Kaydını tamamlamak için e-postana gönderdiğimiz doğrulama linkine tıkla.</string>
+    <string name="verify_email_check">E-postamı Doğruladım</string>
+    <string name="verify_email_resend">Doğrulama E-postasını Tekrar Gönder</string>
 
     <!-- Business Register -->
     <string name="business_registration">İşletme Kaydı</string>
@@ -77,8 +84,10 @@
     <string name="reservation_error">Rezervasyon yapılamadı. Lütfen tekrar dene.</string>
     <string name="product_out_of_stock">Ürün stokta yok</string>
     <string name="reserved">Rezerve Edildi</string>
-    <string name="active_reservation_warning">Aktif bir rezervasyonunuz bulunduğu için şu anda başka bir ürün ayıramazsınız. Aşağıda mevcut ürününüz ve teslim süresiyle ilgili bilgiler yer almaktadır.</string>
-    <string name="active_reservation_info">Rezervasyon kodunu işletmeye 45 dakika içinde göstermelisin.</string>
+    <string name="active_reservation_warning">Aktif bir rezervasyonun bulunduğu için şu anda başka bir ürün ayıramazsın. Aşağıda mevcut ürünün ve teslim süresiyle ilgili bilgiler yer almaktadır.</string>
+    <string name="active_reservation_info_prefix">Rezervasyon kodunu işletmeye </string>
+    <string name="active_reservation_info_suffix"> dakika içinde göstermelisin.</string>
+    <string name="active_reservation_title">Aktif Rezervasyon</string>
     <string name="product_label_prefix">Ürün: </string>
     <string name="discount_time_info">17.00 - 20.00 saatleri arasında indirim geçerlidir. Yakut Çarşısı</string>
     <string name="business_label_prefix">İşletme: </string>
@@ -145,7 +154,7 @@
     <string name="products">Ürünler</string>
     <string name="reservations">Rezervasyonlar</string>
     <string name="my_reservations">Rezervasyonlarım</string>
-    <string name="no_reservations">Henüz rezervasyonunuz yok</string>
+    <string name="no_reservations">Henüz rezervasyonun yok</string>
     <string name="reservation_active">Aktif</string>
     <string name="reservation_completed">Tamamlandı</string>
     <string name="reservation_cancelled">İptal Edildi</string>
@@ -237,7 +246,7 @@
     <string name="unknown_initial"></string>
 
     <!-- Product List -->
-    <string name="error_no_credit_prefix">Üzgünüz, bu haftaki kredi hakkını doldurdun. Kredin </string>
+    <string name="error_no_credit_prefix">Üzgünüz, kredi hakkını doldurdun. Kredin </string>
     <string name="error_no_credit_suffix"> günde bir yenilenir.</string>
     <string name="error_reservation_failed_prefix">Rezervasyon başarısız: </string>
     <string name="error_reservation_exception_prefix">Rezervasyon hatası: </string>
@@ -273,15 +282,16 @@
     <string name="error_address_required">Adres gerekli</string>
     <string name="error_city_required">Şehir gerekli</string>
     <string name="error_please_register">Lütfen kayıt olun.</string>
-    <string name="error_network_connection">Lütfen internet bağlantınızı kontrol edin.</string>
-    <string name="error_invalid_credentials">Geçersiz e-posta veya şifre. Lütfen tekrar deneyin.</string>
+    <string name="error_network_connection">Lütfen internet bağlantını kontrol et.</string>
+    <string name="error_invalid_credentials">Geçersiz e-posta veya şifre. Lütfen tekrar dene.</string>
     <string name="error_user_not_found">Kullanıcı bulunamadı. Lütfen kayıt olun.</string>
+    <string name="error_email_not_verified">E-posta doğrulanmadı. Lütfen doğrulayıp tekrar dene.</string>
     <string name="error_email_already_in_use">Bu e-posta adresi zaten kullanımda.</string>
     <string name="error_weak_password">Şifre çok zayıf.</string>
-    <string name="error_network_connection_short">Lütfen internet bağlantınızı kontrol edin.</string>
+    <string name="error_network_connection_short">Lütfen internet bağlantınızı kontrol et.</string>
     <string name="error_user_info_save_failed_prefix">Kullanıcı bilgileri kaydedilemedi: </string>
     <string name="error_business_save_failed_prefix">İşletme kaydedilemedi: </string>
-    <string name="already_have_reservation">Zaten aktif bir rezervasyonunuz var</string>
+    <string name="already_have_reservation">Zaten aktif bir rezervasyonun var</string>
     <string name="error_user_not_logged_in">Kullanıcı girişi yapılmamış</string>
     <string name="error_unknown">Bilinmeyen hata</string>
     <string name="error_image_upload_failed">Fotoğraf yüklenemedi</string>
