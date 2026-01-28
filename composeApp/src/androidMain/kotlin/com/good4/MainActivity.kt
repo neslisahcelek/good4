@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
+import com.good4.core.util.AppEnvironment
 import com.good4.navigation.Route
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
@@ -35,10 +36,32 @@ class MainActivity : ComponentActivity() {
                     when (val result = userRepository.refreshStudentCreditIfNeeded(currentUser.uid)) {
                         is Result.Success -> {
                             userRole = result.data.role
-                            startDestination = when (result.data.role) {
-                                UserRole.ADMIN -> Route.AdminHome
-                                UserRole.BUSINESS -> Route.BusinessHome
-                                UserRole.STUDENT -> Route.StudentHome
+                            val shouldCheckEmailVerification =
+                                AppEnvironment.isEmailVerificationRequired &&
+                                    result.data.role == UserRole.STUDENT
+                            val authUserForVerification = if (shouldCheckEmailVerification) {
+                                when (val reloadResult = authRepository.reloadCurrentUser()) {
+                                    is Result.Success -> reloadResult.data
+                                    is Result.Error -> currentUser
+                                }
+                            } else {
+                                currentUser
+                            }
+                            val isVerifiedByFirestore = result.data.verified
+                            startDestination = if (
+                                shouldCheckEmailVerification &&
+                                (
+                                    authUserForVerification.isEmailVerified.not() ||
+                                        isVerifiedByFirestore.not()
+                                )
+                            ) {
+                                Route.EmailVerification
+                            } else {
+                                when (result.data.role) {
+                                    UserRole.ADMIN -> Route.AdminHome
+                                    UserRole.BUSINESS -> Route.BusinessHome
+                                    UserRole.STUDENT -> Route.StudentHome
+                                }
                             }
                         }
 

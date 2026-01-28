@@ -13,6 +13,8 @@ import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterScreenRoot
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
+import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
+import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
 import com.good4.core.presentation.SplashScreen
 import com.good4.student.presentation.home.StudentHomeScreenRoot
@@ -49,6 +51,9 @@ fun Good4NavGraph(
                 },
                 onNavigateToBusinessRegister = {
                     navController.navigate(Route.BusinessRegister)
+                },
+                onNavigateToEmailVerification = {
+                    navController.navigate(Route.EmailVerification)
                 }
             )
         }
@@ -58,7 +63,7 @@ fun Good4NavGraph(
             StudentRegisterScreenRoot(
                 viewModel = viewModel,
                 onRegisterSuccess = {
-                    navController.navigateToHome(UserRole.STUDENT)
+                    navController.navigate(Route.EmailVerification)
                 },
                 onBackClick = {
                     navController.popBackStack()
@@ -75,6 +80,16 @@ fun Good4NavGraph(
                 },
                 onBackClick = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable<Route.EmailVerification> {
+            val viewModel: EmailVerificationViewModel = koinViewModel()
+            EmailVerificationScreenRoot(
+                viewModel = viewModel,
+                onVerified = { userRole ->
+                    navController.navigateToHome(userRole)
                 }
             )
         }

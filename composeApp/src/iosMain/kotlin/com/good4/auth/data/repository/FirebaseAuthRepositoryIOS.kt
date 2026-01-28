@@ -44,7 +44,7 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
                     Result.Error(AuthError.NetworkError)
                 }
                 else -> {
-                    Result.Error(AuthError.Unknown(e.message ?: "Bilinmeyen hata"))
+                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
                 }
             }
         }
@@ -57,7 +57,7 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
             if (user != null) {
                 Result.Success(user)
             } else {
-                Result.Error(AuthError.Unknown("Kullanıcı oluşturulamadı"))
+                Result.Error(AuthError.Unknown(""))
             }
         } catch (e: Exception) {
             val errorMessage = e.message ?: ""
@@ -72,7 +72,7 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
                     Result.Error(AuthError.NetworkError)
                 }
                 else -> {
-                    Result.Error(AuthError.Unknown(e.message ?: "Bilinmeyen hata"))
+                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
                 }
             }
         }
@@ -83,7 +83,53 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
             firebaseAuth.signOut()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(AuthError.Unknown(e.message ?: "Çıkış yapılamadı"))
+            Result.Error(AuthError.Unknown(e.message.orEmpty()))
+        }
+    }
+
+    override suspend fun deleteCurrentUser(): Result<Unit, AuthError> {
+        val user = firebaseAuth.currentUser ?: return Result.Error(AuthError.UserNotLoggedIn)
+        return try {
+            user.delete()
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            val errorMessage = e.message ?: ""
+            when {
+                errorMessage.contains("requires-recent-login") -> {
+                    Result.Error(AuthError.RequiresRecentLogin)
+                }
+                errorMessage.contains("network") -> {
+                    Result.Error(AuthError.NetworkError)
+                }
+                else -> {
+                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
+                }
+            }
+        }
+    }
+
+    override suspend fun sendEmailVerification(): Result<Unit, AuthError> {
+        val user = firebaseAuth.currentUser ?: return Result.Error(AuthError.UserNotLoggedIn)
+        return try {
+            user.sendEmailVerification()
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(AuthError.Unknown(e.message.orEmpty()))
+        }
+    }
+
+    override suspend fun reloadCurrentUser(): Result<AuthUser, AuthError> {
+        val user = firebaseAuth.currentUser ?: return Result.Error(AuthError.UserNotLoggedIn)
+        return try {
+            user.reload()
+            val refreshed = firebaseAuth.currentUser?.toAuthUser()
+            if (refreshed != null) {
+                Result.Success(refreshed)
+            } else {
+                Result.Error(AuthError.UserNotFound)
+            }
+        } catch (e: Exception) {
+            Result.Error(AuthError.Unknown(e.message.orEmpty()))
         }
     }
 
@@ -98,7 +144,7 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
                     Result.Error(AuthError.UserNotFound)
                 }
                 else -> {
-                    Result.Error(AuthError.Unknown(e.message ?: "Şifre sıfırlama e-postası gönderilemedi"))
+                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
                 }
             }
         }

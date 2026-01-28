@@ -11,6 +11,9 @@ data class LoginState(
     val errorMessage: UiText? = null,
     val infoMessage: UiText? = null,
     val isLoginSuccess: Boolean = false,
-    val userRole: UserRole? = null
+    val isEmailVerificationRequired: Boolean = false,
+    val userRole: UserRole? = null,
+    val canSendPasswordReset: Boolean = true,
+    val passwordResetCooldownSeconds: Int = 0
 )
 

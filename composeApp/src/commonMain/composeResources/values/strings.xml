@@ -17,7 +17,7 @@
     <string name="password_visibility_show">Şifreyi göster</string>
     <string name="password_visibility_hide">Şifreyi gizle</string>
     <string name="forgot_password">Şifremi unuttum</string>
-    <string name="forgot_password_email_sent">Şifre sıfırlama e-postası gönderildi</string>
+    <string name="forgot_password_email_sent">Şifre sıfırlama e-postası gönderildi. Gelen kutunuzu kontrol edin.</string>
     <string name="verification_email_sent">Doğrulama e-postası gönderildi</string>
     <string name="login">Giriş Yap</string>
     <string name="no_account">Hesabın yok mu</string>
@@ -162,6 +162,12 @@
     <!-- Profile -->
     <string name="profile">Profil</string>
     <string name="logout">Çıkış Yap</string>
+    <string name="delete_account">Hesabı sil</string>
+    <string name="delete_account_confirm_title">Hesabını silmek istediğine emin misin?</string>
+    <string name="delete_account_confirm_message">Bu işlem geri alınamaz. Hesabın ve verilerin kalıcı olarak silinir.</string>
+    <string name="delete_account_confirm_button">Hesabı Sil</string>
+    <string name="delete_account_cancel_button">Vazgeç</string>
+    <string name="delete_account_in_progress">Siliniyor…</string>
     <string name="account_info">Hesap Bilgileri</string>
     <string name="profile_title_student">Profilim</string>
     <string name="profile_title_business">İşletme Profili</string>
@@ -292,8 +298,11 @@
     <string name="error_user_info_save_failed_prefix">Kullanıcı bilgileri kaydedilemedi: </string>
     <string name="error_business_save_failed_prefix">İşletme kaydedilemedi: </string>
     <string name="already_have_reservation">Zaten aktif bir rezervasyonun var</string>
+    <string name="error_resend_wait_seconds">Tekrar göndermek için %1$d sn bekleyin.</string>
     <string name="error_user_not_logged_in">Kullanıcı girişi yapılmamış</string>
+    <string name="error_recent_login_required">Güvenlik nedeniyle lütfen tekrar giriş yapın ve yeniden deneyin.</string>
     <string name="error_unknown">Bilinmeyen hata</string>
+    <string name="error_delete_account_failed">Hesap silme işlemi başarısız oldu. Lütfen tekrar dene.</string>
     <string name="error_image_upload_failed">Fotoğraf yüklenemedi</string>
     <string name="dismiss">Kapat</string>
 </resources>

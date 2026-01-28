@@ -24,6 +24,7 @@ import good4.composeapp.generated.resources.error_network_connection_short
 import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
+import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_info_save_failed_prefix
 import good4.composeapp.generated.resources.error_weak_password
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -103,6 +104,7 @@ class BusinessRegisterViewModel(
 
     private fun register() {
         val state = _state.value
+        val email = state.email.trim()
 
         if (state.fullName.isBlank()) {
             _state.update {
@@ -110,14 +112,14 @@ class BusinessRegisterViewModel(
             }
             return
         }
-        if (state.email.isBlank()) {
+        if (email.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_email_required))
             }
             return
         }
 
-        val emailValidation = state.email.validateEmail()
+        val emailValidation = email.validateEmail()
         if (emailValidation != null) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(emailValidation))
@@ -165,7 +167,7 @@ class BusinessRegisterViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val authResult = authRepository.signUp(state.email, state.password)) {
+            when (val authResult = authRepository.signUp(email, state.password)) {
                 is Result.Success -> {
                     val userId = authResult.data.uid
 
@@ -181,7 +183,7 @@ class BusinessRegisterViewModel(
                     when (val businessResult = businessRepository.addBusiness(businessDto)) {
                         is Result.Success -> {
                             val userDto = UserDto(
-                                email = state.email,
+                                email = email,
                                 fullName = state.fullName,
                                 phoneNumber = state.phoneNumber.ifBlank { null },
                                 role = UserRole.BUSINESS.value,
@@ -237,7 +239,7 @@ class BusinessRegisterViewModel(
                         is AuthError.NetworkError ->
                             UiText.StringResourceId(Res.string.error_network_connection_short)
 
-                        else -> UiText.DynamicString(authResult.error.message)
+                        else -> UiText.StringResourceId(Res.string.error_unknown)
                     }
                     _state.update {
                         it.copy(

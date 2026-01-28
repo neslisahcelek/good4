@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -67,6 +69,7 @@ import good4.composeapp.generated.resources.password
 import good4.composeapp.generated.resources.password_placeholder
 import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
+import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.student_register
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -79,7 +82,8 @@ fun LoginScreenRoot(
     viewModel: LoginViewModel,
     onLoginSuccess: (UserRole) -> Unit,
     onNavigateToStudentRegister: () -> Unit,
-    onNavigateToBusinessRegister: () -> Unit
+    onNavigateToBusinessRegister: () -> Unit,
+    onNavigateToEmailVerification: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -88,6 +92,12 @@ fun LoginScreenRoot(
             if (state.isLoginSuccess) {
                 onLoginSuccess(role)
             }
+        }
+    }
+
+    LaunchedEffect(state.isEmailVerificationRequired) {
+        if (state.isEmailVerificationRequired) {
+            onNavigateToEmailVerification()
         }
     }
 
@@ -124,6 +134,8 @@ fun LoginScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .imePadding()
+                    .navigationBarsPadding()
                     .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -217,12 +229,26 @@ fun LoginScreen(
 
             TextButton(
                 onClick = { onAction(LoginAction.OnForgotPasswordClick) },
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier.align(Alignment.End),
+                enabled = !state.isLoading && state.canSendPasswordReset
             ) {
                 Text(
                     text = stringResource(Res.string.forgot_password),
                     color = TextPrimary,
                     fontSize = 14.sp
+                )
+            }
+
+            if (!state.canSendPasswordReset && state.passwordResetCooldownSeconds > 0) {
+                Text(
+                    text = stringResource(
+                        Res.string.error_resend_wait_seconds,
+                        state.passwordResetCooldownSeconds
+                    ),
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -244,14 +270,10 @@ fun LoginScreen(
                 )
             }
 
-                state.infoMessage?.let { info ->
-                    LaunchedEffect(info) {
-                        delay(3.seconds)
-                        onAction(LoginAction.OnClearInfo)
-                    }
-                    Text(
-                        text = info.asString(),
-                        color = DeepGreen,
+            state.infoMessage?.let { info ->
+                Text(
+                    text = info.asString(),
+                    color = DeepGreen,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier

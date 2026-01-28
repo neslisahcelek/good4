@@ -29,7 +29,7 @@ fun String.validateStudentEmail(): StringResource? {
     }
 
     val trimmedEmail = this.trim()
-    if (!trimmedEmail.endsWith("@edu.tr", ignoreCase = true)) {
+    if (!trimmedEmail.endsWith("edu.tr", ignoreCase = true)) {
         return Res.string.error_email_must_be_edu_tr
     }
 
