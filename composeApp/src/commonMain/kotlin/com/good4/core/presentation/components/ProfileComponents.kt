@@ -23,7 +23,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,12 +34,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.delete_account
+import good4.composeapp.generated.resources.delete_account_cancel_button
+import good4.composeapp.generated.resources.delete_account_confirm_button
+import good4.composeapp.generated.resources.delete_account_confirm_message
+import good4.composeapp.generated.resources.delete_account_confirm_title
+import good4.composeapp.generated.resources.delete_account_in_progress
 import good4.composeapp.generated.resources.logout
 import org.jetbrains.compose.resources.stringResource
 
@@ -46,6 +56,8 @@ fun ProfileScreenScaffold(
     title: String,
     isLoading: Boolean,
     modifier: Modifier = Modifier,
+    errorMessage: UiText? = null,
+    onDismissError: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     Good4Scaffold(
@@ -64,15 +76,26 @@ fun ProfileScreenScaffold(
                 CircularProgressIndicator(color = TextPrimary)
             }
         } else {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                content = content
-            )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    content = content
+                )
+
+                ErrorSnackbar(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    errorMessage = errorMessage,
+                    onDismiss = onDismissError
+                )
+            }
         }
     }
 }
@@ -155,4 +178,70 @@ fun ProfileLogoutButton(
             fontWeight = FontWeight.SemiBold
         )
     }
+}
+
+@Composable
+fun ProfileDeleteAccountButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = TextSecondary
+        )
+    ) {
+        Text(
+            text = stringResource(Res.string.delete_account),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+fun DeleteAccountConfirmDialog(
+    isDeleting: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(Res.string.delete_account_confirm_title),
+                color = TextPrimary
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(Res.string.delete_account_confirm_message),
+                color = TextSecondary
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = !isDeleting,
+                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(
+                    text = stringResource(
+                        if (isDeleting) Res.string.delete_account_in_progress
+                        else Res.string.delete_account_confirm_button
+                    )
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isDeleting
+            ) {
+                Text(text = stringResource(Res.string.delete_account_cancel_button))
+            }
+        }
+    )
 }

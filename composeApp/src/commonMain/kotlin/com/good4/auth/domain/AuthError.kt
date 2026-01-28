@@ -27,5 +27,9 @@ sealed class AuthError : Error {
         override val message: String = ""
     }
 
+    data object RequiresRecentLogin : AuthError() {
+        override val message: String = ""
+    }
+
     data class Unknown(override val message: String) : AuthError()
 }

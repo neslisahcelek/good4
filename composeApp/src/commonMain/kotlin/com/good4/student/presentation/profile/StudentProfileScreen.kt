@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,8 @@ import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.DeleteAccountConfirmDialog
+import com.good4.core.presentation.components.ProfileDeleteAccountButton
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
@@ -58,10 +61,26 @@ fun StudentProfileScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    LaunchedEffect(state.isAccountDeleted) {
+        if (state.isAccountDeleted) {
+            onLogout()
+        }
+    }
+
+    if (state.isDeleteDialogVisible) {
+        DeleteAccountConfirmDialog(
+            isDeleting = state.isDeleting,
+            onConfirm = viewModel::deleteAccount,
+            onDismiss = viewModel::hideDeleteAccountDialog
+        )
+    }
+
     ProfileScreenScaffold(
         title = stringResource(Res.string.profile_title_student),
         isLoading = state.isLoading,
-        modifier = modifier
+        modifier = modifier,
+        errorMessage = state.deleteErrorMessage,
+        onDismissError = viewModel::clearDeleteError
     ) {
         Box(
             modifier = Modifier
@@ -164,6 +183,12 @@ fun StudentProfileScreen(
                 onLogout()
             },
             modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        ProfileDeleteAccountButton(
+            onClick = viewModel::showDeleteAccountDialog
         )
 
         Spacer(modifier = Modifier.height(32.dp))

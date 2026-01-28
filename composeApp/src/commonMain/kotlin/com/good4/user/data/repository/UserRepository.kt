@@ -36,6 +36,10 @@ class UserRepository(
         return firestoreRepository.updateDocument("users", userId, userDto)
     }
 
+    suspend fun deleteUser(userId: String): Result<Unit, Error> {
+        return firestoreRepository.deleteDocument("users", userId)
+    }
+
     suspend fun markUserVerified(userId: String): Result<Unit, Error> {
         return when (val result = getUserDto(userId)) {
             is Result.Success -> {
@@ -130,15 +134,13 @@ class UserRepository(
                     val shouldReset = daysSinceRegistration != null && daysSinceRegistration >= intervalDays
                     val needsCreditInit = userDto.credit == null || registrationDate == null
 
-                    val updatedDto = when {
-                        shouldReset || needsCreditInit -> userDto.copy(
+                    val updatedDto = if (shouldReset || needsCreditInit) {
+                        userDto.copy(
                             credit = weeklyCredit,
                             lastCreditResetAt = now
                         )
-                        registrationDate != null -> userDto.copy(
-                            lastCreditResetAt = registrationDate
-                        )
-                        else -> userDto.copy(lastCreditResetAt = now)
+                    } else {
+                        userDto.copy(lastCreditResetAt = registrationDate)
                     }
 
                     return when (val updateResult = updateUser(userId, updatedDto)) {
