@@ -20,6 +20,7 @@ captures
 .konan/
 .kotlinc/
 .compose-cache/
+commonMain/dev/
 **/.cache/
 *.log
 
@@ -45,3 +46,11 @@ local.properties
 .vscode/
 .cursorrules
 AGENTS.md
+
+# CocoaPods
+iosApp/Pods/
+composeApp/*.podspec
+iosApp/iosApp.xcworkspace/
+
+# Firebase iOS config variants
+**/GoogleService-Info*.plist
