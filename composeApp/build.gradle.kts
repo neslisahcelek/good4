@@ -4,6 +4,7 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinNativeCocoapods)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.kotlin.serialization)
@@ -33,6 +34,19 @@ kotlin {
         }
     }
 
+    cocoapods {
+        name = "ComposeApp"
+        summary = "Good4 iOS App"
+        homepage = "https://example.com"
+        version = "1.0.0"
+        ios.deploymentTarget = "13.0"
+        podfile = project.file("../iosApp/Podfile")
+        framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+    }
+
     room {
         schemaDirectory("$projectDir/schemas")
     }
@@ -41,6 +55,7 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.core.splashscreen)
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
             implementation(libs.ktor.client.okhttp)
@@ -49,6 +64,8 @@ kotlin {
             implementation(libs.firebase.auth)
             implementation(libs.firebase.storage.ktx)
             implementation(libs.firebase.appcheck.playintegrity)
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
         
         commonMain.dependencies {
@@ -59,6 +76,9 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.jetbrains.compose.navigation)
@@ -66,9 +86,6 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
-            implementation(libs.koin.compose)
-            implementation(libs.koin.compose.viewmodel)
-            api(libs.koin.core)
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.coil)
         }

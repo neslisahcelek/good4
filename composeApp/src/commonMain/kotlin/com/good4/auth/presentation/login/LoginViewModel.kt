@@ -81,8 +81,14 @@ class LoginViewModel(
     }
 
     private fun login() {
-        val email = _state.value.email.trim()
-        val password = _state.value.password
+        val state = _state.value
+        
+        if (state.isLoading) {
+            return
+        }
+        
+        val email = state.email.trim()
+        val password = state.password
 
         if (email.isBlank()) {
             _state.update {
@@ -111,17 +117,17 @@ class LoginViewModel(
                             val shouldCheckEmailVerification =
                                 AppEnvironment.isEmailVerificationRequired && role == UserRole.STUDENT
                             if (shouldCheckEmailVerification && !authUser.isEmailVerified) {
-                                authRepository.sendEmailVerification()
-                                _state.update {
-                                    it.copy(
+                                val sendResult = authRepository.sendEmailVerification()
+                                _state.update { current ->
+                                    current.copy(
                                         isLoading = false,
                                         isEmailVerificationRequired = true,
-                                        infoMessage = UiText.StringResourceId(
-                                            Res.string.verification_email_sent
-                                        ),
-                                        errorMessage = UiText.StringResourceId(
-                                            Res.string.error_email_not_verified
-                                        )
+                                        infoMessage = if (sendResult is Result.Success) {
+                                            UiText.StringResourceId(Res.string.verification_email_sent)
+                                        } else {
+                                            null
+                                        },
+                                        errorMessage = UiText.StringResourceId(Res.string.error_email_not_verified)
                                     )
                                 }
                             } else {
@@ -148,7 +154,19 @@ class LoginViewModel(
                     }
                 }
                 is Result.Error -> {
-                    val errorMessage = when (result.error) {
+                    val authError = result.error
+                    if (authError is AuthError.Unknown) {
+                        println(
+                            "LoginViewModel.login unknown auth error: ${authError.message}, " +
+                                "email=$email"
+                        )
+                    } else {
+                        println(
+                            "LoginViewModel.login auth error: ${authError::class.simpleName}, " +
+                                "email=$email"
+                        )
+                    }
+                    val errorMessage = when (authError) {
                         is AuthError.NetworkError ->
                             UiText.StringResourceId(Res.string.error_network_connection)
                         is AuthError.InvalidCredentials ->
@@ -169,6 +187,12 @@ class LoginViewModel(
     }
 
     private fun sendPasswordResetEmail() {
+        val state = _state.value
+        
+        if (state.isLoading) {
+            return
+        }
+        
         val nowMillis = Clock.System.now().toEpochMilliseconds()
         if (nowMillis < passwordResetCooldownUntilMillis) {
             val remainingSeconds = ((passwordResetCooldownUntilMillis - nowMillis) / 1000L)

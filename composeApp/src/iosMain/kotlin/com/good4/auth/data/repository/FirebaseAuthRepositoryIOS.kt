@@ -114,7 +114,22 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
             user.sendEmailVerification()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(AuthError.Unknown(e.message.orEmpty()))
+            val errorMessage = e.message.orEmpty()
+            when {
+                errorMessage.contains("network", ignoreCase = true) ||
+                    errorMessage.contains("timeout", ignoreCase = true) ||
+                    errorMessage.contains("unreachable", ignoreCase = true) ||
+                    errorMessage.contains("recaptcha", ignoreCase = true) -> {
+                    Result.Error(AuthError.NetworkError)
+                }
+                errorMessage.contains("user-not-found", ignoreCase = true) ||
+                    errorMessage.contains("no user record", ignoreCase = true) -> {
+                    Result.Error(AuthError.UserNotFound)
+                }
+                else -> {
+                    Result.Error(AuthError.Unknown(errorMessage))
+                }
+            }
         }
     }
 

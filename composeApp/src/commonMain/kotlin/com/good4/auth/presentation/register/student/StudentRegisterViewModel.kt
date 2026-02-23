@@ -7,6 +7,7 @@ import com.good4.auth.domain.AuthError
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
 import com.good4.core.util.validateStudentEmail
@@ -95,6 +96,11 @@ class StudentRegisterViewModel(
 
     private fun register() {
         val state = _state.value
+        
+        if (state.isLoading) {
+            return
+        }
+        
         val email = state.email.trim()
 
         if (state.fullName.isBlank()) {
@@ -110,7 +116,7 @@ class StudentRegisterViewModel(
             return
         }
         
-        val emailValidation = email.validateStudentEmail()
+        val emailValidation = email.validateEmail()
         if (emailValidation != null) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(emailValidation))
@@ -168,7 +174,15 @@ class StudentRegisterViewModel(
 
                     when (val userResult = userRepository.createUser(userId, userDto)) {
                         is Result.Success -> {
-                            authRepository.sendEmailVerification()
+                            when (val sendResult = authRepository.sendEmailVerification()) {
+                                is Result.Success -> Unit
+                                is Result.Error -> {
+                                    println(
+                                        "StudentRegisterViewModel.register sendEmailVerification error: " +
+                                            sendResult.error::class.simpleName
+                                    )
+                                }
+                            }
                             _state.update {
                                 it.copy(
                                     isLoading = false,

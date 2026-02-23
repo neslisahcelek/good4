@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +32,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.util.singleClick
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_resend_wait_seconds
@@ -71,6 +73,9 @@ fun EmailVerificationScreen(
     state: EmailVerificationState,
     onAction: (EmailVerificationAction) -> Unit
 ) {
+    val onCheckClick = remember { singleClick { onAction(EmailVerificationAction.OnCheckClick) } }
+    val onResendClick = remember { singleClick { onAction(EmailVerificationAction.OnResendClick) } }
+
     Good4Scaffold(
         modifier = modifier,
         topBar = {
@@ -131,7 +136,7 @@ fun EmailVerificationScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { onAction(EmailVerificationAction.OnCheckClick) },
+                onClick = onCheckClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -159,7 +164,7 @@ fun EmailVerificationScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = { onAction(EmailVerificationAction.OnResendClick) },
+                onClick = onResendClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -172,7 +177,8 @@ fun EmailVerificationScreen(
                 Text(
                     text = stringResource(Res.string.verify_email_resend),
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
                 )
             }
 

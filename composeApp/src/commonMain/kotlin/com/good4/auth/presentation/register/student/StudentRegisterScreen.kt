@@ -60,6 +60,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.util.singleClick
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
 import good4.composeapp.generated.resources.create_student_account
@@ -127,6 +128,7 @@ fun StudentRegisterScreen(
     onAction: (StudentRegisterAction) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    val onRegisterClick = remember { singleClick { onAction(StudentRegisterAction.OnRegisterClick) } }
 
     Good4Scaffold(
         modifier = modifier,
@@ -319,7 +321,7 @@ fun StudentRegisterScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { onAction(StudentRegisterAction.OnRegisterClick) },
+                    onClick = onRegisterClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),

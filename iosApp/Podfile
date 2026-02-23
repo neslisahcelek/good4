@@ -1,0 +1,11 @@
+source 'https://cdn.cocoapods.org'
+platform :ios, '13.0'
+
+use_frameworks!
+
+target 'iosApp' do
+  pod 'ComposeApp', :path => '../composeApp'
+  pod 'Firebase/Core'
+  pod 'Firebase/Auth'
+  pod 'Firebase/Firestore'
+end

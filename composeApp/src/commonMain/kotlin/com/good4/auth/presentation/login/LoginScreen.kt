@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -54,6 +55,7 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.util.singleClick
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.app_name
@@ -121,6 +123,8 @@ fun LoginScreen(
     onAction: (LoginAction) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    val onLoginClick = remember { singleClick { onAction(LoginAction.OnLoginClick) } }
+    val onForgotPasswordClick = remember { singleClick { onAction(LoginAction.OnForgotPasswordClick) } }
 
     Good4Scaffold(
         modifier = modifier,
@@ -228,7 +232,7 @@ fun LoginScreen(
             )
 
             TextButton(
-                onClick = { onAction(LoginAction.OnForgotPasswordClick) },
+                onClick = onForgotPasswordClick,
                 modifier = Modifier.align(Alignment.End),
                 enabled = !state.isLoading && state.canSendPasswordReset
             ) {
@@ -285,7 +289,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { onAction(LoginAction.OnLoginClick) },
+                onClick = onLoginClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

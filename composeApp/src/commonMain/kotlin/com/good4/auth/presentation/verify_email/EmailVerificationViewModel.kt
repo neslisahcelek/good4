@@ -59,6 +59,12 @@ class EmailVerificationViewModel(
     }
 
     private fun resendVerificationEmail() {
+        val state = _state.value
+        
+        if (state.isLoading) {
+            return
+        }
+        
         val nowMillis = Clock.System.now().toEpochMilliseconds()
         if (nowMillis < verificationCooldownUntilMillis) {
             val remainingSeconds = ((verificationCooldownUntilMillis - nowMillis) / 1000L)

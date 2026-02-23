@@ -5,25 +5,19 @@ import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.Direction
+import dev.gitlive.firebase.firestore.Query
 import dev.gitlive.firebase.firestore.firestore
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
+import dev.gitlive.firebase.firestore.where
+import kotlinx.serialization.KSerializer
 import kotlin.reflect.KClass
 
 class FirestoreRepositoryIOSImpl : FirestoreRepository {
     private val firestore = Firebase.firestore
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-    }
-
     override suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error> {
         return try {
-            val documentReference = firestore.collection(collectionPath).add(data)
+            val serializer = serializerForData(data)
+            val documentReference = firestore.collection(collectionPath).add(serializer, data)
             Result.Success(documentReference.id)
         } catch (e: Exception) {
             Result.Error(NetworkError(e.message ?: "Unknown error"))
@@ -41,9 +35,8 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 .get()
 
             if (documentSnapshot.exists) {
-                val data: Map<String, Any?> = documentSnapshot.data() ?: emptyMap()
-                val jsonString = convertMapToJsonString(data)
-                val result = decodeFromJsonString(jsonString, clazz)
+                val serializer = serializerFor(clazz)
+                val result = documentSnapshot.data(serializer)
                 Result.Success(result)
             } else {
                 Result.Error(NetworkError("Document not found"))
@@ -59,9 +52,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         data: T
     ): Result<Unit, Error> {
         return try {
+            val serializer = serializerForData(data)
             firestore.collection(collectionPath)
                 .document(documentId)
-                .set(data)
+                .set(serializer, data)
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(NetworkError(e.message ?: "Unknown error"))
@@ -86,11 +80,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return try {
             val querySnapshot = firestore.collection(collectionPath).get()
 
+            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val data: Map<String, Any?> = document.data() ?: emptyMap()
-                    val jsonString = convertMapToJsonString(data)
-                    decodeFromJsonString(jsonString, clazz)
+                    document.data(serializer)
                 } catch (e: Exception) {
                     println("FirestoreRepositoryIOSImpl: Error decoding document: ${e.message}")
                     null
@@ -110,11 +103,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return try {
             val querySnapshot = firestore.collection(collectionPath).get()
 
+            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val data: Map<String, Any?> = document.data() ?: emptyMap()
-                    val jsonString = convertMapToJsonString(data)
-                    val decoded = decodeFromJsonString(jsonString, clazz)
+                    val decoded = document.data(serializer)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     println("FirestoreRepositoryIOSImpl: Error decoding document: ${e.message}")
@@ -136,14 +128,13 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     ): Result<List<DocumentWithId<T>>, Error> {
         return try {
             val querySnapshot = firestore.collection(collectionPath)
-                .whereEqualTo(field, value)
+                .where(field, equalTo = value)
                 .get()
 
+            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val data: Map<String, Any?> = document.data() ?: emptyMap()
-                    val jsonString = convertMapToJsonString(data)
-                    val decoded = decodeFromJsonString(jsonString, clazz)
+                    val decoded = document.data(serializer)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     println("FirestoreRepositoryIOSImpl: Error decoding document: ${e.message}")
@@ -163,19 +154,18 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         clazz: KClass<T>
     ): Result<List<DocumentWithId<T>>, Error> {
         return try {
-            var query = firestore.collection(collectionPath)
+            var query: Query = firestore.collection(collectionPath)
 
             conditions.forEach { (field, value) ->
-                query = query.whereEqualTo(field, value)
+                query = query.where(field, equalTo = value)
             }
 
             val querySnapshot = query.get()
 
+            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val data: Map<String, Any?> = document.data() ?: emptyMap()
-                    val jsonString = convertMapToJsonString(data)
-                    val decoded = decodeFromJsonString(jsonString, clazz)
+                    val decoded = document.data(serializer)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     println("FirestoreRepositoryIOSImpl: Error decoding document: ${e.message}")
@@ -198,10 +188,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         clazz: KClass<T>
     ): Result<List<DocumentWithId<T>>, Error> {
         return try {
-            var query = firestore.collection(collectionPath)
+            var query: Query = firestore.collection(collectionPath)
 
             conditions.forEach { (field, value) ->
-                query = query.whereEqualTo(field, value)
+                query = query.where(field, equalTo = value)
             }
 
             if (orderByField != null) {
@@ -211,11 +201,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
 
             val querySnapshot = query.limit(limit).get()
 
+            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val data: Map<String, Any?> = document.data() ?: emptyMap()
-                    val jsonString = convertMapToJsonString(data)
-                    val decoded = decodeFromJsonString(jsonString, clazz)
+                    val decoded = document.data(serializer)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     println("FirestoreRepositoryIOSImpl: Error decoding document: ${e.message}")
@@ -230,48 +219,27 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> decodeFromJsonString(jsonString: String, clazz: KClass<T>): T {
+    private fun <T : Any> serializerFor(clazz: KClass<T>): KSerializer<T> {
         return when (clazz.simpleName) {
-            "ProductDto" -> json.decodeFromString<com.good4.product.data.dto.ProductDto>(jsonString) as T
-            "BusinessDto" -> json.decodeFromString<com.good4.business.data.dto.BusinessDto>(jsonString) as T
-            "CampaignDto" -> json.decodeFromString<com.good4.campaign.data.dto.CampaignDto>(jsonString) as T
-            "CodeDto" -> json.decodeFromString<com.good4.code.data.dto.CodeDto>(jsonString) as T
-            "UserDto" -> json.decodeFromString<com.good4.user.data.dto.UserDto>(jsonString) as T
-            "ReservationDto" -> json.decodeFromString<com.good4.reservation.data.dto.ReservationDto>(jsonString) as T
+            "ProductDto" -> com.good4.product.data.dto.ProductDto.serializer() as KSerializer<T>
+            "BusinessDto" -> com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
+            "CampaignDto" -> com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
+            "CodeDto" -> com.good4.code.data.dto.CodeDto.serializer() as KSerializer<T>
+            "UserDto" -> com.good4.user.data.dto.UserDto.serializer() as KSerializer<T>
             else -> throw IllegalArgumentException("No serializer found for ${clazz.simpleName}")
         }
     }
 
-    private fun convertMapToJsonString(map: Map<String, Any?>): String {
-        val jsonObject = buildJsonObject {
-            map.forEach { (key, value) ->
-                put(key, convertValue(value))
-            }
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Any> serializerForData(data: T): KSerializer<T> {
+        return when (data) {
+            is com.good4.product.data.dto.ProductDto -> com.good4.product.data.dto.ProductDto.serializer() as KSerializer<T>
+            is com.good4.business.data.dto.BusinessDto -> com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
+            is com.good4.campaign.data.dto.CampaignDto -> com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
+            is com.good4.code.data.dto.CodeDto -> com.good4.code.data.dto.CodeDto.serializer() as KSerializer<T>
+            is com.good4.user.data.dto.UserDto -> com.good4.user.data.dto.UserDto.serializer() as KSerializer<T>
+            else -> throw IllegalArgumentException("No serializer found for ${data::class.simpleName}")
         }
-        return jsonObject.toString()
     }
 
-    private fun convertValue(value: Any?): kotlinx.serialization.json.JsonElement {
-        return when (value) {
-            is String -> JsonPrimitive(value)
-            is Number -> JsonPrimitive(value)
-            is Boolean -> JsonPrimitive(value)
-            is Map<*, *> -> {
-                @Suppress("UNCHECKED_CAST")
-                val map = value as Map<String, Any?>
-                buildJsonObject {
-                    map.forEach { (k, v) ->
-                        put(k, convertValue(v))
-                    }
-                }
-            }
-            is List<*> -> {
-                JsonArray(value.map { convertValue(it) })
-            }
-            null -> JsonNull
-            else -> {
-                JsonPrimitive(value.toString())
-            }
-        }
-    }
 }

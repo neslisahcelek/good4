@@ -16,7 +16,8 @@ import com.good4.auth.presentation.register.student.StudentRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
-import com.good4.core.presentation.SplashScreen
+import com.good4.core.presentation.SplashScreenRoot
+import com.good4.core.presentation.SplashViewModel
 import com.good4.student.presentation.home.StudentHomeScreenRoot
 import com.good4.user.domain.UserRole
 import org.koin.compose.viewmodel.koinViewModel
@@ -35,7 +36,21 @@ fun Good4NavGraph(
     ) {
         // Splash
         composable<Route.Splash> {
-            SplashScreen()
+            val viewModel: SplashViewModel = koinViewModel()
+            SplashScreenRoot(
+                viewModel = viewModel,
+                onNavigateToLogin = {
+                    navController.navigateToLogin()
+                },
+                onNavigateToHome = { userRole ->
+                    navController.navigateToHome(userRole)
+                },
+                onNavigateToEmailVerification = {
+                    navController.navigate(Route.EmailVerification) {
+                        popUpTo(Route.Splash) { inclusive = true }
+                    }
+                }
+            )
         }
         
         // Auth

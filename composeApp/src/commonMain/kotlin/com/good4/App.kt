@@ -8,7 +8,7 @@ import com.good4.user.domain.UserRole
 
 @Composable
 fun App(
-    startDestination: Route = Route.Login,
+    startDestination: Route = Route.Splash,
     currentUserRole: UserRole? = null
 ) {
     Good4Theme {
