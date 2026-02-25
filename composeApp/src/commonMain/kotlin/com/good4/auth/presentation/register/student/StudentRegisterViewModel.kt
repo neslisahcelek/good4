@@ -21,6 +21,7 @@ import good4.composeapp.generated.resources.education_level_5
 import good4.composeapp.generated.resources.education_level_6
 import good4.composeapp.generated.resources.education_level_masters
 import good4.composeapp.generated.resources.education_level_phd
+import good4.composeapp.generated.resources.error_terms_not_accepted
 import good4.composeapp.generated.resources.error_email_already_in_use
 import good4.composeapp.generated.resources.error_email_required
 import good4.composeapp.generated.resources.error_full_name_required
@@ -86,6 +87,9 @@ class StudentRegisterViewModel(
             is StudentRegisterAction.OnTogglePasswordVisibility -> {
                 _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             }
+            is StudentRegisterAction.OnToggleTermsAccepted -> {
+                _state.update { it.copy(isTermsAccepted = !it.isTermsAccepted, errorMessage = null) }
+            }
             is StudentRegisterAction.OnRegisterClick -> register()
             is StudentRegisterAction.OnClearError -> {
                 _state.update { it.copy(errorMessage = null) }
@@ -148,6 +152,12 @@ class StudentRegisterViewModel(
             }
             return
         }
+        if (!state.isTermsAccepted) {
+            _state.update {
+                it.copy(errorMessage = UiText.StringResourceId(Res.string.error_terms_not_accepted))
+            }
+            return
+        }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
@@ -176,12 +186,7 @@ class StudentRegisterViewModel(
                         is Result.Success -> {
                             when (val sendResult = authRepository.sendEmailVerification()) {
                                 is Result.Success -> Unit
-                                is Result.Error -> {
-                                    println(
-                                        "StudentRegisterViewModel.register sendEmailVerification error: " +
-                                            sendResult.error::class.simpleName
-                                    )
-                                }
+                                is Result.Error -> Unit
                             }
                             _state.update {
                                 it.copy(

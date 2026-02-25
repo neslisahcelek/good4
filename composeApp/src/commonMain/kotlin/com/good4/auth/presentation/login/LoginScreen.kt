@@ -144,7 +144,7 @@ fun LoginScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(70.dp))
 
             Text(
                 text = stringResource(Res.string.app_name),

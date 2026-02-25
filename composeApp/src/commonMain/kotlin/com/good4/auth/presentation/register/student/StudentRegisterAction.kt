@@ -9,6 +9,7 @@ sealed interface StudentRegisterAction {
     data class OnMajorChange(val major: String) : StudentRegisterAction
     data class OnEducationLevelChange(val educationLevel: String) : StudentRegisterAction
     data object OnTogglePasswordVisibility : StudentRegisterAction
+    data object OnToggleTermsAccepted : StudentRegisterAction
     data object OnRegisterClick : StudentRegisterAction
     data object OnBackClick : StudentRegisterAction
     data object OnClearError : StudentRegisterAction

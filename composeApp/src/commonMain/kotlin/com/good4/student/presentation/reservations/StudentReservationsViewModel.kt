@@ -125,18 +125,9 @@ class StudentReservationsViewModel(
                 it.copy(creditResetIntervalDays = configRepository.getCreditResetIntervalDays())
             }
 
-            val resetDays = configRepository.getCreditResetIntervalDays()
-            val weeklyCredit = configRepository.getStudentWeeklyCredit()
-            println("StudentReservations: creditResetIntervalDays=$resetDays, studentWeeklyCredit=$weeklyCredit")
-
             when (val userResult = userRepository.refreshStudentCreditIfNeeded(userId)) {
                 is Result.Success -> {
                     val user = userResult.data
-                    println(
-                        "StudentReservations: userCredit=${user.credit}, " +
-                            "weeklyCreditOverride=${user.weeklyCreditOverride}, " +
-                            "lastCreditResetAt=${user.lastCreditResetAt}"
-                    )
                     _state.update { it.copy(remainingCredit = user.credit) }
                 }
                 is Result.Error -> {}

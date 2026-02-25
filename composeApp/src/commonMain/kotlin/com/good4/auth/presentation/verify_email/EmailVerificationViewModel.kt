@@ -177,7 +177,6 @@ class EmailVerificationViewModel(
                         }
                     }
                     is Result.Error -> {
-                        println("EmailVerification getUser error: ${userResult.error.message}")
                         _state.update {
                             it.copy(
                                 isLoading = false,

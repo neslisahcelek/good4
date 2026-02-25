@@ -13,6 +13,7 @@ data class StudentRegisterState(
     val educationLevel: String = "",
     val educationLevels: List<StringResource> = emptyList(),
     val isPasswordVisible: Boolean = false,
+    val isTermsAccepted: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: UiText? = null,
     val isRegisterSuccess: Boolean = false

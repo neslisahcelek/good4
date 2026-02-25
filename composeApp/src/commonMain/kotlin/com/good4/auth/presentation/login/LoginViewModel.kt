@@ -155,17 +155,6 @@ class LoginViewModel(
                 }
                 is Result.Error -> {
                     val authError = result.error
-                    if (authError is AuthError.Unknown) {
-                        println(
-                            "LoginViewModel.login unknown auth error: ${authError.message}, " +
-                                "email=$email"
-                        )
-                    } else {
-                        println(
-                            "LoginViewModel.login auth error: ${authError::class.simpleName}, " +
-                                "email=$email"
-                        )
-                    }
                     val errorMessage = when (authError) {
                         is AuthError.NetworkError ->
                             UiText.StringResourceId(Res.string.error_network_connection)

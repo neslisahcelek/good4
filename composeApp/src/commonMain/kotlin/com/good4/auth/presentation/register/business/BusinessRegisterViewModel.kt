@@ -24,6 +24,7 @@ import good4.composeapp.generated.resources.error_network_connection_short
 import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
+import good4.composeapp.generated.resources.error_terms_not_accepted
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_info_save_failed_prefix
 import good4.composeapp.generated.resources.error_weak_password
@@ -93,6 +94,10 @@ class BusinessRegisterViewModel(
                 _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             }
 
+            is BusinessRegisterAction.OnToggleTermsAccepted -> {
+                _state.update { it.copy(isTermsAccepted = !it.isTermsAccepted, errorMessage = null) }
+            }
+
             is BusinessRegisterAction.OnRegisterClick -> register()
             is BusinessRegisterAction.OnClearError -> {
                 _state.update { it.copy(errorMessage = null) }
@@ -160,6 +165,12 @@ class BusinessRegisterViewModel(
         if (state.city.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_city_required))
+            }
+            return
+        }
+        if (!state.isTermsAccepted) {
+            _state.update {
+                it.copy(errorMessage = UiText.StringResourceId(Res.string.error_terms_not_accepted))
             }
             return
         }

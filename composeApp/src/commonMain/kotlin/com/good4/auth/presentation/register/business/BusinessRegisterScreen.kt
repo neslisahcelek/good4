@@ -52,6 +52,7 @@ import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.auth.presentation.register.student.TermsCheckbox
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
@@ -357,6 +358,13 @@ fun BusinessRegisterScreen(
                     ),
                     colors = textFieldColors(),
                     shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TermsCheckbox(
+                    isChecked = state.isTermsAccepted,
+                    onToggle = { onAction(BusinessRegisterAction.OnToggleTermsAccepted) }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

@@ -3,6 +3,7 @@ package com.good4.auth.presentation.register.student
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,8 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,12 +46,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +70,7 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.util.singleClick
+import config.LegalLinks
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
 import good4.composeapp.generated.resources.create_student_account
@@ -81,10 +91,14 @@ import good4.composeapp.generated.resources.password_confirm
 import good4.composeapp.generated.resources.password_required
 import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
+import good4.composeapp.generated.resources.privacy_policy
 import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.required_fields
 import good4.composeapp.generated.resources.student_emoji
 import good4.composeapp.generated.resources.student_registration
+import good4.composeapp.generated.resources.terms_accept_middle
+import good4.composeapp.generated.resources.terms_accept_suffix
+import good4.composeapp.generated.resources.terms_of_service
 import good4.composeapp.generated.resources.university
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -128,7 +142,8 @@ fun StudentRegisterScreen(
     onAction: (StudentRegisterAction) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
-    val onRegisterClick = remember { singleClick { onAction(StudentRegisterAction.OnRegisterClick) } }
+    val onRegisterClick =
+        remember { singleClick { onAction(StudentRegisterAction.OnRegisterClick) } }
 
     Good4Scaffold(
         modifier = modifier,
@@ -256,23 +271,23 @@ fun StudentRegisterScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next
                     ),
-                trailingIcon = {
-                    IconButton(onClick = { onAction(StudentRegisterAction.OnTogglePasswordVisibility) }) {
-                        val contentDescription = if (state.isPasswordVisible) {
-                            stringResource(Res.string.password_visibility_hide)
-                        } else {
-                            stringResource(Res.string.password_visibility_show)
-                        }
-                        Icon(
-                            imageVector = if (state.isPasswordVisible) {
-                                Icons.Filled.VisibilityOff
+                    trailingIcon = {
+                        IconButton(onClick = { onAction(StudentRegisterAction.OnTogglePasswordVisibility) }) {
+                            val contentDescription = if (state.isPasswordVisible) {
+                                stringResource(Res.string.password_visibility_hide)
                             } else {
-                                Icons.Filled.Visibility
-                            },
-                            contentDescription = contentDescription
-                        )
-                    }
-                },
+                                stringResource(Res.string.password_visibility_show)
+                            }
+                            Icon(
+                                imageVector = if (state.isPasswordVisible) {
+                                    Icons.Filled.VisibilityOff
+                                } else {
+                                    Icons.Filled.Visibility
+                                },
+                                contentDescription = contentDescription
+                            )
+                        }
+                    },
                     colors = textFieldColors(),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -302,6 +317,13 @@ fun StudentRegisterScreen(
                     ),
                     colors = textFieldColors(),
                     shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TermsCheckbox(
+                    isChecked = state.isTermsAccepted,
+                    onToggle = { onAction(StudentRegisterAction.OnToggleTermsAccepted) }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -412,6 +434,64 @@ private fun EducationLevelDropdown(
 }
 
 @Composable
+internal fun TermsCheckbox(
+    isChecked: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val termsText = stringResource(Res.string.terms_of_service)
+    val middle = stringResource(Res.string.terms_accept_middle)
+    val privacyText = stringResource(Res.string.privacy_policy)
+    val suffix = stringResource(Res.string.terms_accept_suffix)
+
+    val annotatedText = buildAnnotatedString {
+        withLink(
+            LinkAnnotation.Url(
+                url = LegalLinks.TERMS,
+                styles = TextLinkStyles(
+                    style = SpanStyle(color = DeepGreen, textDecoration = TextDecoration.Underline)
+                )
+            )
+        ) {
+            append(termsText)
+        }
+        append(middle)
+        withLink(
+            LinkAnnotation.Url(
+                url = LegalLinks.PRIVACY,
+                styles = TextLinkStyles(
+                    style = SpanStyle(color = DeepGreen, textDecoration = TextDecoration.Underline)
+                )
+            )
+        ) {
+            append(privacyText)
+        }
+        append(suffix)
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Checkbox(
+            checked = isChecked,
+            onCheckedChange = { onToggle() },
+            colors = CheckboxDefaults.colors(checkedColor = DeepGreen)
+        )
+        Text(
+            text = annotatedText,
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 13.sp,
+                color = TextSecondary
+            ),
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(end = 8.dp)
+        )
+    }
+}
+
+@Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = TextPrimary,
     focusedLabelColor = TextPrimary,
@@ -439,7 +519,5 @@ fun StudentRegisterScreenPreview() {
         )
     }
 }
-
-
 
 
