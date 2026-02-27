@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -46,12 +47,12 @@ fun BusinessProfileScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ProfileScreenScaffold(
-        title = stringResource(Res.string.profile_title_business),
         isLoading = state.isLoading,
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
+                .padding(top = 32.dp)
                 .size(100.dp)
                 .clip(CircleShape)
                 .background(PistachioGreen),

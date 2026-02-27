@@ -53,7 +53,6 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ProfileScreenScaffold(
-    title: String,
     isLoading: Boolean,
     modifier: Modifier = Modifier,
     errorMessage: UiText? = null,
@@ -62,9 +61,6 @@ fun ProfileScreenScaffold(
 ) {
     Good4Scaffold(
         modifier = modifier,
-        topBar = {
-            Good4TopBar(title = title)
-        }
     ) { paddingValues ->
         if (isLoading) {
             Box(

@@ -3,6 +3,10 @@
 import com.good4.core.domain.Error
 
 sealed class AuthError : Error {
+    data object InvalidEmail : AuthError() {
+        override val message: String = ""
+    }
+
     data object InvalidCredentials : AuthError() {
         override val message: String = ""
     }
@@ -20,6 +24,14 @@ sealed class AuthError : Error {
     }
 
     data object NetworkError : AuthError() {
+        override val message: String = ""
+    }
+
+    data object TooManyRequests : AuthError() {
+        override val message: String = ""
+    }
+
+    data object AccountDisabled : AuthError() {
         override val message: String = ""
     }
 
