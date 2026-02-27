@@ -141,21 +141,12 @@ fun ProductListCard(
                             )
                         }
                         else -> {
-                            if (product.price.isNotBlank()) {
-                                Text(
-                                    text = "${product.price} $currencySuffix",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            } else {
-                                Text(
-                                    text = stringResource(Res.string.business_products_price_unavailable),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = TextSecondary
-                                )
-                            }
+                            Text(
+                                text = "${product.price} $currencySuffix",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
                         }
                     }
                 }

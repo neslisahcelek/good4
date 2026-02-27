@@ -10,6 +10,7 @@ import com.good4.code.domain.CodeStatus
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.Logger
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.getString
+import kotlin.time.Duration.Companion.days
 
 class ProductListViewModel(
     private val productRepository: FirestoreProductRepository,
@@ -45,6 +47,39 @@ class ProductListViewModel(
         isLoaded = false
         loadProducts()
         loadActiveReservation()
+        loadStudentInfo()
+    }
+    
+    fun loadStudentInfo() {
+        val userId = authRepository.currentUser?.uid ?: return
+        
+        viewModelScope.launch {
+            val deliveryTimeMinutes = configRepository.getExpirationDuration().inWholeMinutes.toInt()
+            
+            when (val result = userRepository.getUser(userId)) {
+                is Result.Success -> {
+                    val user = result.data
+                    val now = Clock.System.now()
+                    val intervalDays = configRepository.getCreditResetIntervalDays()
+                    
+                    // Calculate renewal duration
+                    val lastReset = user.lastCreditResetAt ?: user.registrationDate ?: now
+                    val nextResetTime = lastReset + intervalDays.days
+                    val duration = nextResetTime - now
+                    val validDuration = if (duration.isPositive()) duration else kotlin.time.Duration.ZERO
+
+                    _state.update {
+                        it.copy(
+                            userName = user.fullName.split(" ").firstOrNull() ?: user.fullName,
+                            remainingCredits = user.credit,
+                            creditRenewalDuration = validDuration,
+                            deliveryTimeMinutes = deliveryTimeMinutes
+                        )
+                    }
+                }
+                is Result.Error -> { }
+            }
+        }
     }
     
     fun loadActiveReservation(): Unit {

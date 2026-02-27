@@ -7,7 +7,7 @@ data class Product(
     val description: String,
     val storeName: String,
     val businessId: String,
-    val price: String,
+    val price: Int,
     val originalPrice: Int?,
     val discountPrice: Int?,
     val discountPercentage: Int?,

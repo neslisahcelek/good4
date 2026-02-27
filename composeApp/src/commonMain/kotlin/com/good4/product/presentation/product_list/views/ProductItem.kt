@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.LocationCity
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -41,14 +40,15 @@ import coil3.compose.AsyncImage
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.util.Logger
 import com.good4.core.util.singleClick
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.amount_unit_label
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.product_image_description
@@ -73,6 +73,8 @@ fun ProductItem(
         border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.5f)),
         shadowElevation = 0.dp
     ) {
+        Logger.d("product:",  " product: ${product.name}, price: ${product.price}, discount: ${product.discountPrice}")
+
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -119,23 +121,6 @@ fun ProductItem(
                         )
                     }
                 }
-                Surface(
-                    color = SurfaceMuted,
-                    shape = RoundedCornerShape(topStart = 12.dp),
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${product.amount} ${stringResource(Res.string.amount_unit_label)}",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = TextSecondary
-                        )
-                    }
-                }
             }
 
             Column(
@@ -157,7 +142,7 @@ fun ProductItem(
                     Text(
                         text = product.storeName,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
+                        color = PrimaryGreen,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -176,7 +161,6 @@ fun ProductItem(
                         text = product.address,
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary,
-                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
@@ -193,55 +177,60 @@ fun ProductItem(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PriceColumn(product = product)
+                    val isFree = product.price == 0
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                singleClick {
-                                    if (!isReserving && !reservationSuccess) {
-                                        onReserveClick?.invoke()
-                                    }
+                    if (!isFree) {
+                        PriceColumn(product = product)
+                    }
+
+                    val buttonModifier = if (isFree) {
+                        Modifier.height(40.dp).fillMaxWidth()
+                    } else {
+                        Modifier.height(40.dp).widthIn(min = 120.dp)
+                    }
+
+                    Button(
+                        onClick = {
+                            singleClick {
+                                if (!isReserving && !reservationSuccess) {
+                                    onReserveClick?.invoke()
                                 }
-                            },
-                            enabled = !reservationSuccess,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (reservationSuccess) DeepGreen.copy(alpha = 0.8f) else DeepGreen,
-                                contentColor = Color.White,
-                                disabledContainerColor = DeepGreen.copy(alpha = 0.5f),
-                                disabledContentColor = Color.White
-                            ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                horizontal = 16.dp,
-                                vertical = 0.dp
-                            ),
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            if (isReserving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text(
-                                    text = if (reservationSuccess) stringResource(Res.string.reserved)
-                                    else stringResource(Res.string.reserve_button_label),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
                             }
+                        },
+                        enabled = !reservationSuccess,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (reservationSuccess) DeepGreen.copy(alpha = 0.8f) else PrimaryGreen,
+                            contentColor = Color.White,
+                            disabledContainerColor = DeepGreen.copy(alpha = 0.5f),
+                            disabledContentColor = Color.White
+                        ),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 0.dp
+                        ),
+                        modifier = buttonModifier
+                    ) {
+                        if (isReserving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = if (reservationSuccess) stringResource(Res.string.reserved)
+                                else stringResource(Res.string.reserve_button_label),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -275,6 +264,7 @@ private fun PriceColumn(product: Product) {
                 )
             }
         } else {
+
             Text(
                 text = "${product.price} $currencySuffix",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -304,7 +294,7 @@ fun ProductItemPreview(modifier: Modifier = Modifier) {
                     businessId = "preview_business",
                     address = "123 Green St, New York",
                     description = "Delicious gluten-free cake made with organic ingredients.",
-                    price = "120",
+                    price = 120,
                     imageUrl = "",
                     amount = 3,
                     originalPrice = 150,
@@ -323,7 +313,7 @@ fun ProductItemPreview(modifier: Modifier = Modifier) {
                     businessId = "preview_business",
                     address = "456 Market Ave",
                     description = "Crisp and sweet apples directly from the orchard.",
-                    price = "25",
+                    price = 0,
                     imageUrl = "",
                     amount = 10,
                     originalPrice = null,

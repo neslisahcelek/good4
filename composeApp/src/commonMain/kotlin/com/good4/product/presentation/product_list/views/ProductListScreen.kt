@@ -70,6 +70,7 @@ fun ProductListScreenRoot(
     LaunchedEffect(Unit) {
         viewModel.loadProductsIfNeeded()
         viewModel.loadActiveReservation()
+        viewModel.loadStudentInfo()
     }
     
     ProductListScreen(
@@ -125,6 +126,18 @@ fun ProductListScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 12.dp)
                     ) {
+                        if (state.userName != null && state.remainingCredits != null && state.deliveryTimeMinutes != null) {
+                            item {
+                                StudentStatusCard(
+                                    userName = state.userName,
+                                    remainingCredits = state.remainingCredits,
+                                    renewalDuration = state.creditRenewalDuration,
+                                    deliveryTimeMinutes = state.deliveryTimeMinutes
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+
                         state.activeReservation?.let { reservation ->
                             item {
                                 ReservationDetailsCard(
@@ -175,7 +188,7 @@ fun ProductListScreenPreview() {
         val businessName = stringResource(Res.string.preview_business_name)
         val address = stringResource(Res.string.preview_address)
         val description = stringResource(Res.string.preview_description)
-        val price = stringResource(Res.string.preview_price)
+
         val sample = listOf(
             Product(
                 id = 1,
@@ -185,7 +198,7 @@ fun ProductListScreenPreview() {
                 businessId = "preview_business",
                 address = address,
                 description = description,
-                price = price,
+                price = 120,
                 originalPrice = 100,
                 discountPrice = 80,
                 discountPercentage = 20,
@@ -200,8 +213,8 @@ fun ProductListScreenPreview() {
                 businessId = "preview_business",
                 address = address,
                 description = description,
-                price = price,
-                originalPrice = 140,
+                price = 0,
+                originalPrice = null,
                 discountPrice = null,
                 discountPercentage = null,
                 imageUrl = "",

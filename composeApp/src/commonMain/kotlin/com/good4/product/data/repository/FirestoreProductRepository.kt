@@ -136,7 +136,7 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         description = description ?: "",
         storeName = business?.name ?: "",
         businessId = businessId ?: "",
-        price = displayPrice.toString(),
+        price = displayPrice,
         originalPrice = originalPriceValue,
         discountPrice = discountPriceValue,
         discountPercentage = discountPercentageValue,

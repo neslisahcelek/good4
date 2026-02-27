@@ -57,14 +57,14 @@ fun StudentHomeScreenRoot(
 ) {
     val navItems = listOf(
         BottomNavItem(
-            title = stringResource(Res.string.products),
-            selectedIcon = Icons.Filled.Home,
-            unselectedIcon = Icons.Outlined.Home
-        ),
-        BottomNavItem(
             title = stringResource(Res.string.reservations),
             selectedIcon = Icons.Filled.ShoppingCart,
             unselectedIcon = Icons.Outlined.ShoppingCart
+        ),
+        BottomNavItem(
+            title = stringResource(Res.string.products),
+            selectedIcon = Icons.Filled.Home,
+            unselectedIcon = Icons.Outlined.Home
         ),
         BottomNavItem(
             title = stringResource(Res.string.profile),
@@ -73,14 +73,14 @@ fun StudentHomeScreenRoot(
         )
     )
 
-    var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+    var selectedItemIndex by rememberSaveable { mutableIntStateOf(1) }
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
 
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
-            0 -> productListViewModel.refresh()
-            1 -> reservationsViewModel.refresh()
+            0 -> reservationsViewModel.refresh()
+            1 -> productListViewModel.refresh()
         }
     }
 
@@ -128,13 +128,13 @@ fun StudentHomeScreenRoot(
         ) {
             when (selectedItemIndex) {
                 0 -> {
-                    ProductListScreenRoot(
-                        viewModel = productListViewModel
+                    StudentReservationsScreen(
+                        viewModel = reservationsViewModel
                     )
                 }
                 1 -> {
-                    StudentReservationsScreen(
-                        viewModel = reservationsViewModel
+                    ProductListScreenRoot(
+                        viewModel = productListViewModel
                     )
                 }
                 2 -> {

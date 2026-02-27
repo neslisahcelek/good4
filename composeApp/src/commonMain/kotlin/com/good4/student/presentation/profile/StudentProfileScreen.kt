@@ -76,7 +76,6 @@ fun StudentProfileScreen(
     }
 
     ProfileScreenScaffold(
-        title = stringResource(Res.string.profile_title_student),
         isLoading = state.isLoading,
         modifier = modifier,
         errorMessage = state.deleteErrorMessage,
@@ -84,6 +83,7 @@ fun StudentProfileScreen(
     ) {
         Box(
             modifier = Modifier
+                .padding(top = 32.dp)
                 .size(100.dp)
                 .clip(CircleShape)
                 .background(PistachioGreen),

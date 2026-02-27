@@ -58,7 +58,7 @@
     <string name="security">Güvenlik Ayarları</string>
     <string name="description">Açıklama</string>
     <string name="business_description_placeholder">İşletmeniz hakkında kısa bir bilgi veriniz</string>
-    <string name="products_load_error">Ürünler yüklenirken bir sorun oluştu. Lütfen tekrar deneyiniz.</string>
+    <string name="products_load_error">Şu anda askıda ürünümüz bulunmuyor. Daha sonra tekrar deneyin.</string>
     <string name="product_detail">Ürün Detayı</string>
     <string name="product_description">Ürün Açıklaması</string>
     <string name="store_info">Mağaza Bilgileri</string>
@@ -83,7 +83,7 @@
     <string name="address_icon_description">Adres simgesi</string>
     <string name="amount_icon_description">Miktar simgesi</string>
     <string name="lock_icon_description">Kilit simgesi</string>
-    <string name="reserve_button_label">Rezerve edin</string>
+    <string name="reserve_button_label">Benim İçin Ayır</string>
     <string name="amount_unit_label">Adet</string>
     <string name="admin_dashboard">Yönetici Paneli</string>
     <string name="manage_products">Ürün Yönetimi</string>
@@ -137,7 +137,7 @@
     <string name="reservation_completed">Tamamlandı</string>
     <string name="reservation_cancelled">İptal Edildi</string>
     <string name="profile">Profil</string>
-    <string name="logout">Çıkış Yapın</string>
+    <string name="logout">Çıkış Yap</string>
     <string name="delete_account">Hesabımı sil</string>
     <string name="delete_account_confirm_title">Hesabınızı silmek istediğinize emin misiniz?</string>
     <string name="delete_account_confirm_message">Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz kalıcı olarak silinecektir.</string>
@@ -146,7 +146,7 @@
     <string name="delete_account_in_progress">Hesabınız siliniyor…</string>
     <string name="account_info">Hesap Bilgileri</string>
     <string name="profile_title_student">Profilim</string>
-    <string name="profile_title_business">İşletme Profilimiz</string>
+    <string name="profile_title_business">İşletme Profiliniz</string>
     <string name="profile_credit_label">Mevcut Krediniz</string>
     <string name="profile_university_label">Üniversiteniz</string>
     <string name="profile_major_label">Bölümünüz</string>
@@ -198,7 +198,7 @@
     <string name="student_reservations_remaining_prefix">Kalan süreniz: </string>
     <string name="student_reservations_credit_label">Kalan Kullanım Hakkınız</string>
     <string name="student_reservations_credit_reset_prefix">Haklarınız </string>
-    <string name="student_reservations_credit_reset_suffix"> günde bir yenilenmektedir.</string>
+    <string name="student_reservations_credit_reset_suffix"> günde bir yenilenir.</string>
     <string name="reservation_status_pending">Bekliyor</string>
     <string name="reservation_status_completed">Tamamlandı</string>
     <string name="reservation_status_expired">Süresi Doldu</string>
@@ -252,6 +252,8 @@
     <string name="error_email_not_verified">E-posta adresiniz doğrulanmadı. Lütfen e-postanızı doğrulayıp tekrar deneyiniz.</string>
     <string name="error_email_already_in_use">Bu e-posta adresi zaten başka bir hesap tarafından kullanılmaktadır.</string>
     <string name="error_weak_password">Belirlediğiniz şifre çok zayıf. Lütfen daha güçlü bir şifre seçiniz.</string>
+    <string name="error_account_disabled">Hesabınız geçici olarak devre dışı bırakılmış. Destek ile iletişime geçiniz.</string>
+    <string name="error_too_many_login_attempts">Çok fazla başarısız giriş denemesi yapıldı. Lütfen daha sonra tekrar deneyiniz.</string>
     <string name="error_network_connection_short">Lütfen internet bağlantınızı kontrol ediniz.</string>
     <string name="error_user_info_save_failed_prefix">Kullanıcı bilgileri kaydedilirken bir hata oluştu: </string>
     <string name="error_business_save_failed_prefix">İşletme bilgileri kaydedilirken bir hata oluştu: </string>
@@ -263,6 +265,17 @@
     <string name="error_delete_account_failed">Hesap silme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.</string>
     <string name="error_image_upload_failed">Fotoğraf yükleme işlemi sırasında bir hata oluştu</string>
     <string name="dismiss">Kapat</string>
+    <string name="product_free">Ücretsiz</string>
+    <string name="product_list_greeting_prefix">Merhaba, </string>
+    <string name="product_list_greeting_suffix">! 👋</string>
+    <string name="product_list_subtitle">Ürünlerden birini seçerek ücretsiz yemek hakkınızı kullanabilirsiniz.</string>
+    <string name="product_list_credit_label">KALAN KREDİ</string>
+    <string name="product_list_renewal_prefix">Yenileme: </string>
+    <string name="product_list_renewal_soon">Yakında</string>
+    <string name="product_list_renewal_days_suffix"> gün </string>
+    <string name="product_list_renewal_hours_suffix"> saat</string>
+    <string name="product_list_delivery_suffix"> dk teslim süresi</string>
+    <string name="product_list_renewal_text_suffix"> sonra</string>
 
     <!-- Terms -->
     <string name="terms_of_service">Üyelik Sözleşmesi</string>
@@ -271,4 +284,3 @@
     <string name="terms_accept_suffix">'nı okudum ve kabul ediyorum.</string>
     <string name="error_terms_not_accepted">Devam etmek için Üyelik Sözleşmesi ve Gizlilik Politikası'nı kabul edin.</string>
 </resources>
-

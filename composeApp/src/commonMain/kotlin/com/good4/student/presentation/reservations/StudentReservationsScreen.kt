@@ -104,40 +104,39 @@ private fun StudentReservationsContent(
                     ),
                     shape = RoundedCornerShape(18.dp)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
                     ) {
-                        Text(
-                            text = stringResource(Res.string.student_reservations_credit_label),
-                            fontSize = 14.sp,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = credit.toString(),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.student_reservations_credit_label),
+                                fontSize = 14.sp,
+                                color = TextSecondary
+                            )
+                            Text(
+                                text = credit.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                        }
+                        if (state.creditResetIntervalDays != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(Res.string.student_reservations_credit_reset_prefix) +
+                                        state.creditResetIntervalDays +
+                                        stringResource(Res.string.student_reservations_credit_reset_suffix),
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
                     }
-                }
-                if (credit == 0 && state.creditResetIntervalDays != null) {
-                    val resetText =
-                        stringResource(Res.string.student_reservations_credit_reset_prefix) +
-                                state.creditResetIntervalDays +
-                                stringResource(Res.string.student_reservations_credit_reset_suffix)
-                    Text(
-                        text = resetText,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
 
