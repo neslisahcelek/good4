@@ -30,22 +30,11 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
                 Result.Error(AuthError.UserNotFound)
             }
         } catch (e: Exception) {
-            val errorMessage = e.message ?: ""
-            when {
-                errorMessage.contains("invalid-credential") ||
-                errorMessage.contains("wrong-password") ||
-                errorMessage.contains("invalid-email") -> {
-                    Result.Error(AuthError.InvalidCredentials)
-                }
-                errorMessage.contains("user-not-found") -> {
-                    Result.Error(AuthError.UserNotFound)
-                }
-                errorMessage.contains("network") -> {
-                    Result.Error(AuthError.NetworkError)
-                }
-                else -> {
-                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
-                }
+            val mappedError = mapFirebaseSignInError(message = e.message.orEmpty())
+            if (mappedError != null) {
+                Result.Error(mappedError)
+            } else {
+                Result.Error(AuthError.Unknown(e.message.orEmpty()))
             }
         }
     }
@@ -179,3 +168,44 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
     }
 }
 
+private fun mapFirebaseSignInError(message: String): AuthError? {
+    val normalizedMessage = message.lowercase()
+    return when {
+        normalizedMessage.contains("invalid-email") ||
+            normalizedMessage.contains("badly formatted") -> {
+            AuthError.InvalidEmail
+        }
+
+        normalizedMessage.contains("too-many-requests") ||
+            normalizedMessage.contains("too many requests") ||
+            normalizedMessage.contains("too many unsuccessful login attempts") ||
+            normalizedMessage.contains("temporarily disabled") -> {
+            AuthError.TooManyRequests
+        }
+
+        normalizedMessage.contains("user-disabled") ||
+            normalizedMessage.contains("account has been disabled") -> {
+            AuthError.AccountDisabled
+        }
+
+        normalizedMessage.contains("invalid-credential") ||
+            normalizedMessage.contains("wrong-password") ||
+            normalizedMessage.contains("invalid login credentials") -> {
+            AuthError.InvalidCredentials
+        }
+
+        normalizedMessage.contains("user-not-found") ||
+            normalizedMessage.contains("no user record") -> {
+            AuthError.UserNotFound
+        }
+
+        normalizedMessage.contains("network") ||
+            normalizedMessage.contains("timeout") ||
+            normalizedMessage.contains("unreachable") ||
+            normalizedMessage.contains("recaptcha") -> {
+            AuthError.NetworkError
+        }
+
+        else -> null
+    }
+}

@@ -1,12 +1,21 @@
 package com.good4.core.util
 
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.Platform
+import platform.Foundation.NSLog
+
+@OptIn(ExperimentalNativeApi::class)
 actual object Logger {
     actual fun d(tag: String, message: String) {
-        println("$tag: $message")
+        if (Platform.isDebugBinary) {
+            NSLog("D/$tag: $message")
+        }
     }
 
     actual fun e(tag: String, message: String, throwable: Throwable?) {
-        val details = throwable?.message?.let { " - $it" }.orEmpty()
-        println("$tag: $message$details")
+        if (Platform.isDebugBinary) {
+            val details = throwable?.message?.let { " | cause=$it" }.orEmpty()
+            NSLog("E/$tag: $message$details")
+        }
     }
 }

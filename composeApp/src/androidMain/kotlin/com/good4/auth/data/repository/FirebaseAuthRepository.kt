@@ -8,9 +8,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
-import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -42,34 +42,36 @@ class FirebaseAuthRepository : AuthRepository {
                 Result.Error(AuthError.UserNotFound)
             }
         } catch (e: FirebaseAuthInvalidCredentialsException) {
-            Result.Error(AuthError.InvalidCredentials)
+            Result.Error(
+                mapFirebaseSignInError(
+                    errorCode = null,
+                    errorMessage = e.message.orEmpty()
+                ) ?: AuthError.InvalidCredentials
+            )
         } catch (e: FirebaseAuthInvalidUserException) {
-            Result.Error(AuthError.UserNotFound)
+            Result.Error(
+                mapFirebaseSignInError(
+                    errorCode = null,
+                    errorMessage = e.message.orEmpty()
+                ) ?: AuthError.UserNotFound
+            )
         } catch (e: FirebaseAuthException) {
-            val errorCode = e.errorCode ?: ""
-            when {
-                errorCode.contains("NETWORK", ignoreCase = true) ||
-                errorCode.contains("INTERNAL", ignoreCase = true) ||
-                e.message?.contains("network", ignoreCase = true) == true ||
-                e.message?.contains("recaptcha", ignoreCase = true) == true ||
-                e.message?.contains("timeout", ignoreCase = true) == true -> {
-                    Result.Error(AuthError.NetworkError)
-                }
-                errorCode.contains("INVALID_CREDENTIAL", ignoreCase = true) ||
-                errorCode.contains("WRONG_PASSWORD", ignoreCase = true) -> {
-                    Result.Error(AuthError.InvalidCredentials)
-                }
-                errorCode.contains("USER_NOT_FOUND", ignoreCase = true) -> {
-                    Result.Error(AuthError.UserNotFound)
-                }
-                else -> Result.Error(AuthError.Unknown(e.message.orEmpty()))
+            val mappedError = mapFirebaseSignInError(
+                errorCode = e.errorCode,
+                errorMessage = e.message.orEmpty()
+            )
+            if (mappedError != null) {
+                Result.Error(mappedError)
+            } else {
+                Result.Error(AuthError.Unknown(e.message.orEmpty()))
             }
         } catch (e: FirebaseException) {
-            if (e.message?.contains("network", ignoreCase = true) == true ||
-                e.message?.contains("recaptcha", ignoreCase = true) == true ||
-                e.message?.contains("timeout", ignoreCase = true) == true
-            ) {
-                Result.Error(AuthError.NetworkError)
+            val mappedError = mapFirebaseSignInError(
+                errorCode = null,
+                errorMessage = e.message.orEmpty()
+            )
+            if (mappedError != null) {
+                Result.Error(mappedError)
             } else {
                 Result.Error(AuthError.Unknown(e.message.orEmpty()))
             }
@@ -78,12 +80,12 @@ class FirebaseAuthRepository : AuthRepository {
         } catch (e: SocketTimeoutException) {
             Result.Error(AuthError.NetworkError)
         } catch (e: Exception) {
-            if (e.message?.contains("network", ignoreCase = true) == true ||
-                e.message?.contains("timeout", ignoreCase = true) == true ||
-                e.message?.contains("unreachable", ignoreCase = true) == true ||
-                e.message?.contains("recaptcha", ignoreCase = true) == true
-            ) {
-                Result.Error(AuthError.NetworkError)
+            val mappedError = mapFirebaseSignInError(
+                errorCode = null,
+                errorMessage = e.message.orEmpty()
+            )
+            if (mappedError != null) {
+                Result.Error(mappedError)
             } else {
                 Result.Error(AuthError.Unknown(e.message.orEmpty()))
             }
@@ -107,10 +109,10 @@ class FirebaseAuthRepository : AuthRepository {
             val errorCode = e.errorCode
             when {
                 errorCode.contains("NETWORK", ignoreCase = true) ||
-                errorCode.contains("INTERNAL", ignoreCase = true) ||
-                e.message?.contains("network", ignoreCase = true) == true ||
-                e.message?.contains("recaptcha", ignoreCase = true) == true ||
-                e.message?.contains("timeout", ignoreCase = true) == true -> {
+                    errorCode.contains("INTERNAL", ignoreCase = true) ||
+                    e.message?.contains("network", ignoreCase = true) == true ||
+                    e.message?.contains("recaptcha", ignoreCase = true) == true ||
+                    e.message?.contains("timeout", ignoreCase = true) == true -> {
                     Result.Error(AuthError.NetworkError)
                 }
                 errorCode.contains("WEAK_PASSWORD", ignoreCase = true) -> {
@@ -167,10 +169,10 @@ class FirebaseAuthRepository : AuthRepository {
             val errorCode = e.errorCode ?: ""
             when {
                 errorCode.contains("NETWORK", ignoreCase = true) ||
-                errorCode.contains("INTERNAL", ignoreCase = true) ||
-                e.message?.contains("network", ignoreCase = true) == true ||
-                e.message?.contains("recaptcha", ignoreCase = true) == true ||
-                e.message?.contains("timeout", ignoreCase = true) == true -> {
+                    errorCode.contains("INTERNAL", ignoreCase = true) ||
+                    e.message?.contains("network", ignoreCase = true) == true ||
+                    e.message?.contains("recaptcha", ignoreCase = true) == true ||
+                    e.message?.contains("timeout", ignoreCase = true) == true -> {
                     Result.Error(AuthError.NetworkError)
                 }
                 else -> Result.Error(AuthError.Unknown(e.message.orEmpty()))
@@ -270,3 +272,54 @@ class FirebaseAuthRepository : AuthRepository {
     }
 }
 
+private fun mapFirebaseSignInError(errorCode: String?, errorMessage: String): AuthError? {
+    val normalizedCode = errorCode.orEmpty()
+    val normalizedMessage = errorMessage.lowercase()
+
+    return when {
+        normalizedCode.contains("INVALID_EMAIL", ignoreCase = true) ||
+            normalizedMessage.contains("invalid-email") ||
+            normalizedMessage.contains("badly formatted") -> {
+            AuthError.InvalidEmail
+        }
+
+        normalizedCode.contains("TOO_MANY_REQUESTS", ignoreCase = true) ||
+            normalizedMessage.contains("too-many-requests") ||
+            normalizedMessage.contains("too many requests") ||
+            normalizedMessage.contains("too many unsuccessful login attempts") ||
+            normalizedMessage.contains("temporarily disabled") -> {
+            AuthError.TooManyRequests
+        }
+
+        normalizedCode.contains("USER_DISABLED", ignoreCase = true) ||
+            normalizedMessage.contains("user-disabled") ||
+            normalizedMessage.contains("account has been disabled") -> {
+            AuthError.AccountDisabled
+        }
+
+        normalizedCode.contains("NETWORK", ignoreCase = true) ||
+            normalizedCode.contains("INTERNAL", ignoreCase = true) ||
+            normalizedMessage.contains("network") ||
+            normalizedMessage.contains("timeout") ||
+            normalizedMessage.contains("recaptcha") ||
+            normalizedMessage.contains("unreachable") -> {
+            AuthError.NetworkError
+        }
+
+        normalizedCode.contains("INVALID_CREDENTIAL", ignoreCase = true) ||
+            normalizedCode.contains("WRONG_PASSWORD", ignoreCase = true) ||
+            normalizedMessage.contains("invalid-credential") ||
+            normalizedMessage.contains("wrong-password") ||
+            normalizedMessage.contains("invalid login credentials") -> {
+            AuthError.InvalidCredentials
+        }
+
+        normalizedCode.contains("USER_NOT_FOUND", ignoreCase = true) ||
+            normalizedMessage.contains("user-not-found") ||
+            normalizedMessage.contains("no user record") -> {
+            AuthError.UserNotFound
+        }
+
+        else -> null
+    }
+}
