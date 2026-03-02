@@ -34,7 +34,7 @@ class AdminProductsViewModel(
     private fun loadProducts() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            when (val result = productRepository.getProducts()) {
+            when (val result = productRepository.getProducts(includeOutOfStock = true)) {
                 is Result.Success -> {
                     _state.update {
                         it.copy(
@@ -64,12 +64,12 @@ class AdminProductsViewModel(
                             businesses = result.data.map { docWithId ->
                                 Business(
                                     id = docWithId.id,
-                                    name = docWithId.data.name ?: "",
-                                    ownerId = docWithId.data.ownerId ?: "",
-                                    phone = docWithId.data.phone ?: "",
-                                    address = docWithId.data.address ?: "",
-                                    city = docWithId.data.city ?: "",
-                                    district = docWithId.data.district ?: ""
+                                    name = docWithId.data.name,
+                                    ownerId = docWithId.data.ownerId,
+                                    phone = docWithId.data.phone,
+                                    address = docWithId.data.address,
+                                    city = docWithId.data.city,
+                                    district = docWithId.data.district
                                 )
                             }
                         )
@@ -152,8 +152,8 @@ class AdminProductsViewModel(
                 originalPrice = state.productOriginalPrice.toIntOrNull() ?: 0,
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
                 count = state.productCount.toIntOrNull() ?: 0,
-                image = state.productImageUrl.ifBlank { null },
-                createdAt = Clock.System.now().toString()
+                imageUrl = state.productImageUrl.ifBlank { null },
+                createdAt = Clock.System.now().epochSeconds
             )
 
             when (val result = productRepository.addProduct(productDto)) {
@@ -232,8 +232,8 @@ class AdminProductsViewModel(
                 originalPrice = state.productOriginalPrice.toIntOrNull() ?: 0,
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
                 count = state.productCount.toIntOrNull() ?: 0,
-                image = state.productImageUrl.ifBlank { null },
-                createdAt = Clock.System.now().toString()
+                imageUrl = state.productImageUrl.ifBlank { null },
+                createdAt = product.createdAt
             )
 
             when (val result = productRepository.updateProduct(product.documentId, productDto)) {

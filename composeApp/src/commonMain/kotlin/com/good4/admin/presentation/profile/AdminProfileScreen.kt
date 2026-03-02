@@ -1,4 +1,4 @@
-﻿package com.good4.admin.presentation.profile
+package com.good4.admin.presentation.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
+import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.email
 import good4.composeapp.generated.resources.profile_role_label
@@ -42,13 +45,26 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AdminProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: AdminProfileViewModel = koinViewModel(),
+    onMenuClick: (() -> Unit)? = null,
     onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ProfileScreenScaffold(
         isLoading = state.isLoading,
-        modifier = modifier
+        modifier = modifier,
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.profile_title_admin),
+                navigationIcon = {
+                    if (onMenuClick != null) {
+                        IconButton(onClick = onMenuClick) {
+                            Icon(Icons.Filled.Menu, contentDescription = null)
+                        }
+                    }
+                }
+            )
+        }
     ) {
         Box(
             modifier = Modifier

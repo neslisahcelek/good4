@@ -1,4 +1,4 @@
-﻿package com.good4.admin.presentation.products
+package com.good4.admin.presentation.products
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,10 +11,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
@@ -55,7 +57,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun AdminProductsScreen(
     modifier: Modifier = Modifier,
-    viewModel: AdminProductsViewModel = koinViewModel()
+    viewModel: AdminProductsViewModel = koinViewModel(),
+    onMenuClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
@@ -69,7 +72,18 @@ fun AdminProductsScreen(
 
     Good4Scaffold(
         modifier = modifier,
-        topBar = { Good4TopBar(title = stringResource(Res.string.manage_products)) },
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.manage_products),
+                navigationIcon = {
+                    if (onMenuClick != null) {
+                        IconButton(onClick = onMenuClick) {
+                            Icon(Icons.Filled.Menu, contentDescription = null)
+                        }
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddSheet = true },
