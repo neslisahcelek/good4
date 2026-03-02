@@ -87,7 +87,7 @@ class BusinessDashboardViewModel(
                                 val productFallback = getString(Res.string.product_name_fallback)
                                 val recentCodes = recentResult.data
                                     .filter { code -> code.statusEnum != CodeStatus.CANCELLED }
-                                    .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: "" }
+                                    .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: 0L }
                                     .map { code ->
                                         RecentCodeUiModel(
                                             id = code.id,

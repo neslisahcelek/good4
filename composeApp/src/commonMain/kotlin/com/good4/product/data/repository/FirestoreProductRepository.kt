@@ -5,6 +5,7 @@ import com.good4.business.domain.Business
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
+import com.good4.core.util.Logger
 import com.good4.product.Product
 import com.good4.product.data.dto.ProductDto
 
@@ -40,6 +41,7 @@ class FirestoreProductRepository(
                         items.filter { product -> product.amount > 0 }
                     }
                 }
+                Logger.d("Admin", "Fetched ${products.size} products: $products")
                 
                 Result.Success(products)
             }
@@ -142,6 +144,7 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         discountPercentage = discountPercentageValue,
         imageUrl = imageUrl ?: "",
         address = business?.address ?: "",
-        amount = count ?: 0
+        amount = count ?: 0,
+        createdAt = createdAt
     )
 }

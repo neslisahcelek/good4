@@ -2,7 +2,6 @@ package com.good4.code.data.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.datetime.Instant
 
 @Serializable
 data class CodeDto(
@@ -17,11 +16,11 @@ data class CodeDto(
     @SerialName("status")
     val status: String? = null,
     @SerialName("createdAt")
-    val createdAt: Instant? = null,
+    val createdAt: Long? = null,
     @SerialName("expiresAt")
-    val expiresAt: Instant? = null,
+    val expiresAt: Long? = null,
     @SerialName("usedAt")
-    val usedAt: Instant? = null
+    val usedAt: Long? = null
 )
 
 

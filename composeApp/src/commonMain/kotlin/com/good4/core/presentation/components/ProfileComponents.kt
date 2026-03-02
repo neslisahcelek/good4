@@ -57,10 +57,12 @@ fun ProfileScreenScaffold(
     modifier: Modifier = Modifier,
     errorMessage: UiText? = null,
     onDismissError: () -> Unit = {},
+    topBar: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     Good4Scaffold(
         modifier = modifier,
+        topBar = topBar
     ) { paddingValues ->
         if (isLoading) {
             Box(

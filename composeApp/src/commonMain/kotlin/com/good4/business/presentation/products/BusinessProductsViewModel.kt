@@ -150,7 +150,7 @@ class BusinessProductsViewModel(
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
                 count = state.productAmount.toIntOrNull(),
                 imageUrl = state.productImageUrl.ifBlank { null },
-                createdAt = Clock.System.now().toString()
+                createdAt = Clock.System.now().epochSeconds
             )
 
             when (val result = productRepository.addProduct(productDto)) {
@@ -212,7 +212,7 @@ class BusinessProductsViewModel(
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
                 count = state.productAmount.toIntOrNull(),
                 imageUrl = state.productImageUrl.ifBlank { null },
-                createdAt = product.documentId
+                createdAt = product.createdAt
             )
 
             when (val result = productRepository.updateProduct(product.documentId, productDto)) {

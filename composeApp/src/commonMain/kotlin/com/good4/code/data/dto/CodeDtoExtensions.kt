@@ -7,6 +7,6 @@ val CodeDto.statusEnum: CodeStatus
     get() = CodeStatus.fromValue(status)
 
 fun CodeDto.isExpired(): Boolean {
-    val expiryTime = this.expiresAt ?: return true
-    return Clock.System.now() >= expiryTime
+    val expiresAtSecs = this.expiresAt ?: return true
+    return Clock.System.now().epochSeconds >= expiresAtSecs
 }

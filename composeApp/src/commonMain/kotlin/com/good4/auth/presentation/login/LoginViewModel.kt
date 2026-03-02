@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
+import com.good4.core.domain.Error
+import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.AppEnvironment
@@ -57,6 +59,7 @@ class LoginViewModel(
                     )
                 }
             }
+
             is LoginAction.OnPasswordChange -> {
                 _state.update {
                     it.copy(
@@ -67,16 +70,20 @@ class LoginViewModel(
                     )
                 }
             }
+
             is LoginAction.OnTogglePasswordVisibility -> {
                 _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             }
+
             is LoginAction.OnLoginClick -> login()
             is LoginAction.OnClearError -> {
                 _state.update { it.copy(errorMessage = null) }
             }
+
             is LoginAction.OnClearInfo -> {
                 _state.update { it.copy(infoMessage = null) }
             }
+
             is LoginAction.OnStudentRegisterClick,
             is LoginAction.OnBusinessRegisterClick,
             is LoginAction.OnForgotPasswordClick -> sendPasswordResetEmail()
@@ -143,19 +150,19 @@ class LoginViewModel(
                                 }
                             }
                         }
+
                         is Result.Error -> {
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = UiText.StringResourceId(
-                                        Res.string.error_please_register
-                                    )
+                                    errorMessage = userResult.error.toUserFetchErrorUiText()
                                 )
                             }
                             authRepository.signOut()
                         }
                     }
                 }
+
                 is Result.Error -> {
                     _state.update {
                         it.copy(
@@ -236,7 +243,8 @@ class LoginViewModel(
     }
 
     private fun startPasswordResetCooldown(seconds: Int) {
-        passwordResetCooldownUntilMillis = Clock.System.now().toEpochMilliseconds() + seconds * 1000L
+        passwordResetCooldownUntilMillis =
+            Clock.System.now().toEpochMilliseconds() + seconds * 1000L
         passwordResetCooldownJob?.cancel()
         passwordResetCooldownJob = viewModelScope.launch {
             for (remaining in seconds downTo 1) {
@@ -271,5 +279,12 @@ private fun AuthError.toLoginErrorUiText(): UiText {
         is AuthError.TooManyRequests -> UiText.StringResourceId(Res.string.error_too_many_login_attempts)
         is AuthError.AccountDisabled -> UiText.StringResourceId(Res.string.error_account_disabled)
         else -> UiText.StringResourceId(Res.string.error_unknown)
+    }
+}
+
+private fun Error.toUserFetchErrorUiText(): UiText {
+    return when (this) {
+        is NetworkError -> UiText.StringResourceId(Res.string.error_network_connection)
+        else -> UiText.StringResourceId(Res.string.error_please_register)
     }
 }

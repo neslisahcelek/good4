@@ -4,9 +4,12 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
+import com.good4.user.data.dto.UserDto
 import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Direction
 import dev.gitlive.firebase.firestore.Query
+import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.where
 import kotlinx.serialization.KSerializer
@@ -22,8 +25,14 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             detail = "dataType=${data::class.simpleName}"
         )
         return try {
-            val serializer = serializerForData(data)
-            val documentReference = firestore.collection(collectionPath).add(serializer, data)
+            val documentReference = if (data is UserDto) {
+                firestore.collection(collectionPath).add(userDtoToFirestoreMap(data))
+            } else {
+                firestore.collection(collectionPath).add(
+                    strategy = serializerForData(data),
+                    data = data
+                )
+            }
             FirebaseDebugLogger.success(
                 operation = "addDocument",
                 path = collectionPath,
@@ -52,8 +61,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 .get()
 
             if (documentSnapshot.exists) {
-                val serializer = serializerFor(clazz)
-                val result = documentSnapshot.data(serializer)
+                val result = decodeDocumentSnapshot(documentSnapshot, clazz)
                 FirebaseDebugLogger.success(
                     operation = "getDocument",
                     path = collectionPath,
@@ -90,10 +98,12 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             detail = "documentId=$documentId, dataType=${data::class.simpleName}"
         )
         return try {
-            val serializer = serializerForData(data)
-            firestore.collection(collectionPath)
-                .document(documentId)
-                .set(serializer, data)
+            val document = firestore.collection(collectionPath).document(documentId)
+            if (data is UserDto) {
+                document.set(userDtoToFirestoreMap(data))
+            } else {
+                document.set(serializerForData(data), data)
+            }
             FirebaseDebugLogger.success(
                 operation = "updateDocument",
                 path = collectionPath,
@@ -149,11 +159,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             val querySnapshot = firestore.collection(collectionPath).get()
-
             val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    document.data(serializer)
+                    decodeDocumentSnapshot(document, clazz)
                 } catch (e: Exception) {
                     FirebaseDebugLogger.error(
                         operation = "getCollectionDecode",
@@ -165,7 +174,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 }
             }
             val idsPreview = querySnapshot.documents.take(5).joinToString(",") { it.id }
-
             FirebaseDebugLogger.success(
                 operation = "getCollection",
                 path = collectionPath,
@@ -194,11 +202,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             val querySnapshot = firestore.collection(collectionPath).get()
-
             val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val decoded = document.data(serializer)
+                    val decoded = decodeDocumentSnapshot(document, clazz)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     FirebaseDebugLogger.error(
@@ -211,7 +218,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 }
             }
             val idsPreview = querySnapshot.documents.take(5).joinToString(",") { it.id }
-
             FirebaseDebugLogger.success(
                 operation = "getCollectionWithIds",
                 path = collectionPath,
@@ -244,11 +250,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             val querySnapshot = firestore.collection(collectionPath)
                 .where(field, equalTo = value)
                 .get()
-
             val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val decoded = document.data(serializer)
+                    val decoded = decodeDocumentSnapshot(document, clazz)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     FirebaseDebugLogger.error(
@@ -261,7 +266,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 }
             }
             val idsPreview = querySnapshot.documents.take(5).joinToString(",") { it.id }
-
             FirebaseDebugLogger.success(
                 operation = "queryCollectionWithIds",
                 path = collectionPath,
@@ -291,17 +295,14 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             var query: Query = firestore.collection(collectionPath)
-
             conditions.forEach { (field, value) ->
                 query = query.where(field, equalTo = value)
             }
-
             val querySnapshot = query.get()
-
             val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val decoded = document.data(serializer)
+                    val decoded = decodeDocumentSnapshot(document, clazz)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     FirebaseDebugLogger.error(
@@ -314,7 +315,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 }
             }
             val idsPreview = querySnapshot.documents.take(5).joinToString(",") { it.id }
-
             FirebaseDebugLogger.success(
                 operation = "queryCollectionWithMultipleConditions",
                 path = collectionPath,
@@ -347,22 +347,18 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             var query: Query = firestore.collection(collectionPath)
-
             conditions.forEach { (field, value) ->
                 query = query.where(field, equalTo = value)
             }
-
             if (orderByField != null) {
                 val direction = if (descending) Direction.DESCENDING else Direction.ASCENDING
                 query = query.orderBy(orderByField, direction)
             }
-
             val querySnapshot = query.limit(limit).get()
-
             val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
-                    val decoded = document.data(serializer)
+                    val decoded = decodeDocumentSnapshot(document, clazz)
                     DocumentWithId(id = document.id, data = decoded)
                 } catch (e: Exception) {
                     FirebaseDebugLogger.error(
@@ -375,7 +371,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 }
             }
             val idsPreview = querySnapshot.documents.take(5).joinToString(",") { it.id }
-
             FirebaseDebugLogger.success(
                 operation = "queryCollectionWithMultipleConditionsAndLimit",
                 path = collectionPath,
@@ -408,13 +403,97 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> serializerForData(data: T): KSerializer<T> {
         return when (data) {
-            is com.good4.product.data.dto.ProductDto -> com.good4.product.data.dto.ProductDto.serializer() as KSerializer<T>
-            is com.good4.business.data.dto.BusinessDto -> com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
-            is com.good4.campaign.data.dto.CampaignDto -> com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
-            is com.good4.code.data.dto.CodeDto -> com.good4.code.data.dto.CodeDto.serializer() as KSerializer<T>
-            is com.good4.user.data.dto.UserDto -> com.good4.user.data.dto.UserDto.serializer() as KSerializer<T>
+            is com.good4.product.data.dto.ProductDto ->
+                com.good4.product.data.dto.ProductDto.serializer() as KSerializer<T>
+            is com.good4.business.data.dto.BusinessDto ->
+                com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
+            is com.good4.campaign.data.dto.CampaignDto ->
+                com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
+            is com.good4.code.data.dto.CodeDto ->
+                com.good4.code.data.dto.CodeDto.serializer() as KSerializer<T>
+            is com.good4.user.data.dto.UserDto ->
+                com.good4.user.data.dto.UserDto.serializer() as KSerializer<T>
             else -> throw IllegalArgumentException("No serializer found for ${data::class.simpleName}")
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Any> decodeDocumentSnapshot(document: DocumentSnapshot, clazz: KClass<T>): T {
+        return if (clazz.simpleName == "UserDto") {
+            decodeUserDto(document) as T
+        } else {
+            document.data(serializerFor(clazz))
+        }
+    }
+
+    private fun decodeUserDto(document: DocumentSnapshot): UserDto {
+        return UserDto(
+            email = document.getOrNull("email"),
+            fullName = document.getOrNull("fullName"),
+            phoneNumber = document.getOrNull("phoneNumber"),
+            role = document.getOrNull("role"),
+            verified = document.getOrNull("verified"),
+            university = document.getOrNull("university"),
+            major = document.getOrNull("major"),
+            educationLevel = document.getOrNull("educationLevel"),
+            credit = document.getOrNull("credit"),
+            weeklyCreditOverride = document.getOrNull("weeklyCreditOverride"),
+            lastCreditResetAt = document.getEpochSeconds("lastCreditResetAt"),
+            registrationDate = document.getEpochSeconds("registrationDate")
+        )
+    }
+
+    private fun userDtoToFirestoreMap(userDto: UserDto): Map<String, Any?> {
+        return mapOf(
+            "email" to userDto.email,
+            "fullName" to userDto.fullName,
+            "phoneNumber" to userDto.phoneNumber,
+            "role" to userDto.role,
+            "verified" to userDto.verified,
+            "university" to userDto.university,
+            "major" to userDto.major,
+            "educationLevel" to userDto.educationLevel,
+            "credit" to userDto.credit,
+            "weeklyCreditOverride" to userDto.weeklyCreditOverride,
+            "lastCreditResetAt" to userDto.lastCreditResetAt?.let { Timestamp(it, 0) },
+            "registrationDate" to userDto.registrationDate?.let { Timestamp(it, 0) }
+        )
+    }
+
+    private inline fun <reified T> DocumentSnapshot.getOrNull(field: String): T? {
+        return try {
+            if (!contains(field)) return null
+            get(field)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Reads a timestamp field. Supports:
+     * - Long (epoch seconds)
+     * - Firestore Timestamp
+     * - Old Kotlin datetime format (map with epochSeconds or value$kotlinx_datetime.epochSecond)
+     */
+    private fun DocumentSnapshot.getEpochSeconds(field: String): Long? {
+        return try {
+            if (!contains(field)) return null
+            getOrNull<Long>(field)
+                ?: getOrNull<Timestamp>(field)?.seconds
+                ?: readEpochSecondsFromMap(getOrNull<Any>(field))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun readEpochSecondsFromMap(value: Any?): Long? {
+        if (value == null) return null
+        val map = value as? Map<*, *> ?: return null
+        return try {
+            (map["epochSeconds"] as? Number)?.toLong()
+                ?: ((map["value\$kotlinx_datetime"] as? Map<*, *>)?.get("epochSecond") as? Number)?.toLong()
+        } catch (_: Exception) {
+            null
+        }
+    }
 }

@@ -23,8 +23,8 @@ data class CodeWithDetails(
     val productId: String,
     val userId: String,
     val status: String,
-    val createdAt: String?,
-    val usedAt: String?,
+    val createdAt: Long?,
+    val usedAt: Long?,
     val productName: String?,
     val businessName: String?
 )
@@ -88,8 +88,8 @@ class CodeRepository(
                 productId = code.productId ?: "",
                 userId = code.userId ?: "",
                 status = code.status ?: CodeStatus.PENDING.value,
-                createdAt = code.createdAt?.toString(),
-                usedAt = code.usedAt?.toString(),
+                createdAt = code.createdAt,
+                usedAt = code.usedAt,
                 productName = productName,
                 businessName = businessName
             )
@@ -162,8 +162,8 @@ class CodeRepository(
                         productId = code.productId ?: "",
                         userId = code.userId ?: "",
                         status = code.status ?: CodeStatus.PENDING.value,
-                        createdAt = code.createdAt?.toString(),
-                        usedAt = code.usedAt?.toString(),
+                        createdAt = code.createdAt,
+                        usedAt = code.usedAt,
                         productName = productName,
                         businessName = null
                     )
@@ -222,8 +222,8 @@ class CodeRepository(
                             productId = code.productId ?: "",
                             userId = code.userId ?: "",
                             status = code.status ?: CodeStatus.PENDING.value,
-                            createdAt = code.createdAt?.toString(),
-                            usedAt = code.usedAt?.toString(),
+                            createdAt = code.createdAt,
+                            usedAt = code.usedAt,
                             productName = null,
                             businessName = null
                         )
@@ -241,7 +241,7 @@ class CodeRepository(
             is Result.Success -> {
                 val updatedCode = result.data.copy(
                     status = CodeStatus.USED.value,
-                    usedAt = kotlinx.datetime.Clock.System.now()
+                    usedAt = kotlinx.datetime.Clock.System.now().epochSeconds
                 )
                 firestoreRepository.updateDocument("codes", codeId, updatedCode)
             }
@@ -294,14 +294,14 @@ class CodeRepository(
     suspend fun checkAndExpireCodes(): Result<Unit, Error> {
         return when (val result = firestoreRepository.getCollectionWithIds("codes", CodeDto::class)) {
             is Result.Success -> {
-                val now = kotlinx.datetime.Clock.System.now()
-                val expirationTime = configRepository.getExpirationDuration()
+                val nowSecs = kotlinx.datetime.Clock.System.now().epochSeconds
+                val expirationSecs = configRepository.getExpirationDuration().inWholeSeconds
 
                 result.data.forEach { documentWithId ->
                     val code = documentWithId.data
                     if (code.statusEnum == CodeStatus.PENDING && code.createdAt != null) {
-                        val elapsed = now - code.createdAt
-                        if (elapsed >= expirationTime) {
+                        val elapsed = nowSecs - code.createdAt
+                        if (elapsed >= expirationSecs) {
                             markCodeAsExpired(documentWithId.id)
                         }
                     }

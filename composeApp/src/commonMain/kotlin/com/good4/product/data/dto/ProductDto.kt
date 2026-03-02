@@ -11,16 +11,22 @@ data class ProductDto(
     val description: String? = null,
     @SerialName("count")
     val count: Int? = null,
+    @SerialName("pendingCount")
+    val pendingCount: Int? = null,
     @SerialName("businessId")
     val businessId: String? = null,
     @SerialName("createdAt")
-    val createdAt: String? = null,
+    val createdAt: Long? = null,
     @SerialName("discountPrice")
     val discountPrice: Int? = null,
     @SerialName("originalPrice")
     val originalPrice: Int? = null,
     @SerialName("image")
-    val image: String? = null,
-    @SerialName("imageUrl")
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    @SerialName("foodType")
+    val foodType: String? = null,
+    @SerialName("totalDelivered")
+    val totalDelivered: Int? = null,
+    @SerialName("totalSuspended")
+    val totalSuspended: Int? = null
 )

@@ -13,6 +13,7 @@ data class Product(
     val discountPercentage: Int?,
     val imageUrl: String,
     val address: String,
-    val amount: Int
+    val amount: Int,
+    val createdAt: Long? = null
 )
 

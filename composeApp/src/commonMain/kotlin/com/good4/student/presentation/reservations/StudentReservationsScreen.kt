@@ -246,7 +246,7 @@ data class ReservationUiModel(
     val businessName: String,
     val status: String,
     val remainingTime: String,
-    val createdAt: String? = null
+    val createdAt: Long? = null
 )
 
 @Preview

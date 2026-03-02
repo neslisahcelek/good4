@@ -1,6 +1,5 @@
 package com.good4.user.data.dto
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -27,8 +26,8 @@ data class UserDto(
     @SerialName("weeklyCreditOverride")
     val weeklyCreditOverride: Int? = null,
     @SerialName("lastCreditResetAt")
-    val lastCreditResetAt: Instant? = null,
+    val lastCreditResetAt: Long? = null,
     @SerialName("registrationDate")
-    val registrationDate: Instant? = null
+    val registrationDate: Long? = null
 )
 

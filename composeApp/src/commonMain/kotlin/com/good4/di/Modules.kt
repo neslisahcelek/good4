@@ -4,6 +4,7 @@ import com.good4.admin.presentation.campaigns.AdminCampaignsViewModel
 import com.good4.admin.presentation.dashboard.AdminDashboardViewModel
 import com.good4.admin.presentation.products.AdminProductsViewModel
 import com.good4.admin.presentation.profile.AdminProfileViewModel
+import com.good4.admin.presentation.editstudentcredit.EditStudentCreditViewModel
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
@@ -64,7 +65,8 @@ val commonModule = module {
         AdminDashboardViewModel(
             get<FirestoreProductRepository>(),
             get<FirestoreBusinessRepository>(),
-            get<CampaignRepository>()
+            get<CampaignRepository>(),
+            get<UserRepository>()
         )
     }
     viewModel { AdminCampaignsViewModel(get<CampaignRepository>()) }
@@ -74,6 +76,7 @@ val commonModule = module {
             get<FirestoreBusinessRepository>()
         )
     }
+    viewModel { EditStudentCreditViewModel(get<UserRepository>()) }
     viewModel { AdminProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { SplashViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
 }

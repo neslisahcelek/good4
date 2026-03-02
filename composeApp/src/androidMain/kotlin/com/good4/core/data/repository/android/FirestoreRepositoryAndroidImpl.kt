@@ -11,10 +11,12 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.datetime.Instant
 import kotlin.reflect.KClass
 
 class FirestoreRepositoryAndroidImpl(
@@ -26,6 +28,147 @@ class FirestoreRepositoryAndroidImpl(
         coerceInputValues = true
     }
 
+    private val timestampFieldNames = setOf(
+        "createdAt", "expiresAt", "usedAt", "lastCreditResetAt", "registrationDate"
+    )
+
+    // --- Write helpers ---
+
+    private fun encodeToFirestoreMap(data: Any): Map<String, Any?> {
+        val jsonString = encodeToJsonString(data)
+        val jsonObject = json.parseToJsonElement(jsonString) as JsonObject
+        return jsonObject.entries.associate { (key, element) ->
+            key to encodeElementToFirestoreValue(key, element)
+        }
+    }
+
+    private fun encodeElementToFirestoreValue(fieldName: String, element: JsonElement): Any? {
+        return when {
+            element is JsonNull -> null
+            fieldName in timestampFieldNames && element is JsonPrimitive && !element.isString -> {
+                val epochSecs = element.content.toLongOrNull()
+                if (epochSecs != null) {
+                    com.google.firebase.Timestamp(epochSecs, 0)
+                } else null
+            }
+            element is JsonPrimitive -> when {
+                element.isString -> element.content
+                element.content == "true" || element.content == "false" ->
+                    element.content.toBooleanStrict()
+                else ->
+                    element.content.toLongOrNull()
+                        ?: element.content.toDoubleOrNull()
+                        ?: element.content
+            }
+            element is JsonObject -> element.entries.associate { (k, v) ->
+                k to encodeElementToFirestoreValue(k, v)
+            }
+            element is JsonArray -> element.map { encodeElementToFirestoreValue(fieldName, it) }
+            else -> null
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun encodeToJsonString(data: Any): String {
+        return when (data) {
+            is com.good4.product.data.dto.ProductDto ->
+                json.encodeToString(com.good4.product.data.dto.ProductDto.serializer(), data)
+            is com.good4.business.data.dto.BusinessDto ->
+                json.encodeToString(com.good4.business.data.dto.BusinessDto.serializer(), data)
+            is com.good4.campaign.data.dto.CampaignDto ->
+                json.encodeToString(com.good4.campaign.data.dto.CampaignDto.serializer(), data)
+            is com.good4.code.data.dto.CodeDto ->
+                json.encodeToString(com.good4.code.data.dto.CodeDto.serializer(), data)
+            is com.good4.user.data.dto.UserDto ->
+                json.encodeToString(com.good4.user.data.dto.UserDto.serializer(), data)
+            is com.good4.config.data.dto.AppConfigDto ->
+                json.encodeToString(com.good4.config.data.dto.AppConfigDto.serializer(), data)
+            else -> throw IllegalArgumentException("No serializer found for ${data::class.simpleName}")
+        }
+    }
+
+    // --- Read helpers ---
+
+    private fun convertMapToJsonString(map: Map<String, Any?>): String {
+        val jsonObject = buildJsonObject {
+            map.forEach { (key, value) ->
+                put(key, convertValue(key, value))
+            }
+        }
+        return jsonObject.toString()
+    }
+
+    private fun convertValue(fieldName: String, value: Any?): JsonElement {
+        return when (value) {
+            is String -> {
+                if (fieldName in timestampFieldNames) {
+                    val epochSeconds = value.toLongOrNull() ?: value.toEpochSecondsOrNull()
+                    if (epochSeconds != null) JsonPrimitive(epochSeconds) else JsonPrimitive(value)
+                } else {
+                    JsonPrimitive(value)
+                }
+            }
+            is Number -> JsonPrimitive(value)
+            is Boolean -> JsonPrimitive(value)
+            is com.google.firebase.Timestamp -> {
+                JsonPrimitive(value.seconds)
+            }
+            is java.util.Date -> {
+                JsonPrimitive(value.time / 1000L)
+            }
+            is Map<*, *> -> {
+                // Handle old Instant-as-map format stored by previous Android versions
+                if (value.containsKey("epochSeconds") || value.containsKey("value\$kotlinx_datetime")) {
+                    try {
+                        val epochSeconds = (value["epochSeconds"] as? Number)?.toLong()
+                            ?: ((value["value\$kotlinx_datetime"] as? Map<*, *>)
+                                ?.get("epochSecond") as? Number)
+                                ?.toLong()
+                        if (epochSeconds != null) {
+                            return JsonPrimitive(epochSeconds)
+                        }
+                    } catch (e: Exception) { }
+                }
+
+                buildJsonObject {
+                    value.forEach { (k, v) ->
+                        put(k as String, convertValue(k, v))
+                    }
+                }
+            }
+            is List<*> -> {
+                JsonArray(value.map { convertValue(fieldName, it) })
+            }
+            null -> JsonNull
+            else -> JsonPrimitive(value.toString())
+        }
+    }
+
+    private fun String.toEpochSecondsOrNull(): Long? {
+        return try {
+            Instant.parse(this).epochSeconds
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    // --- Decode helpers ---
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Any> decodeFromJsonString(jsonString: String, clazz: KClass<T>): T {
+        return when (clazz.simpleName) {
+            "ProductDto" -> json.decodeFromString<com.good4.product.data.dto.ProductDto>(jsonString) as T
+            "BusinessDto" -> json.decodeFromString<com.good4.business.data.dto.BusinessDto>(jsonString) as T
+            "CampaignDto" -> json.decodeFromString<com.good4.campaign.data.dto.CampaignDto>(jsonString) as T
+            "CodeDto" -> json.decodeFromString<com.good4.code.data.dto.CodeDto>(jsonString) as T
+            "UserDto" -> json.decodeFromString<com.good4.user.data.dto.UserDto>(jsonString) as T
+            "AppConfigDto" -> json.decodeFromString<com.good4.config.data.dto.AppConfigDto>(jsonString) as T
+            else -> throw IllegalArgumentException("No serializer found for ${clazz.simpleName}")
+        }
+    }
+
+    // --- FirestoreRepository implementation ---
+
     override suspend fun <T : Any> addDocument(
         collectionPath: String,
         data: T
@@ -36,8 +179,8 @@ class FirestoreRepositoryAndroidImpl(
             detail = "dataType=${data::class.simpleName}"
         )
         return try {
-            val convertedData = convertInstantToTimestamp(data)
-            val documentReference = firestore.collection(collectionPath).add(convertedData).await()
+            val firestoreMap = encodeToFirestoreMap(data)
+            val documentReference = firestore.collection(collectionPath).add(firestoreMap).await()
             FirebaseDebugLogger.success(
                 operation = "addDocument",
                 path = collectionPath,
@@ -47,26 +190,6 @@ class FirestoreRepositoryAndroidImpl(
         } catch (e: Exception) {
             FirebaseDebugLogger.error(operation = "addDocument", path = collectionPath, throwable = e)
             Result.Error(NetworkError(e.message ?: "Unknown error"))
-        }
-    }
-
-    private fun convertInstantToTimestamp(obj: Any): Any {
-        return when (obj) {
-            is kotlinx.datetime.Instant -> {
-                com.google.firebase.Timestamp(obj.epochSeconds, obj.nanosecondsOfSecond)
-            }
-
-            is Map<*, *> -> {
-                obj.mapValues { (_, value) ->
-                    if (value != null) convertInstantToTimestamp(value) else null
-                }
-            }
-
-            is List<*> -> {
-                obj.map { if (it != null) convertInstantToTimestamp(it) else null }
-            }
-
-            else -> obj
         }
     }
 
@@ -126,10 +249,10 @@ class FirestoreRepositoryAndroidImpl(
             detail = "documentId=$documentId, dataType=${data::class.simpleName}"
         )
         return try {
-            val convertedData = convertInstantToTimestamp(data)
+            val firestoreMap = encodeToFirestoreMap(data)
             firestore.collection(collectionPath)
                 .document(documentId)
-                .set(convertedData)
+                .set(firestoreMap)
                 .await()
             FirebaseDebugLogger.success(
                 operation = "updateDocument",
@@ -335,7 +458,7 @@ class FirestoreRepositoryAndroidImpl(
             detail = "conditions=$conditions, type=${clazz.simpleName}"
         )
         return try {
-            var query = firestore.collection(collectionPath) as com.google.firebase.firestore.Query
+            var query = firestore.collection(collectionPath) as Query
 
             conditions.forEach { (field, value) ->
                 query = query.whereEqualTo(field, value)
@@ -441,104 +564,6 @@ class FirestoreRepositoryAndroidImpl(
                 detail = "conditions=$conditions, orderBy=$orderByField, desc=$descending, limit=$limit, type=${clazz.simpleName}"
             )
             Result.Error(NetworkError(e.message ?: "Unknown error"))
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private inline fun <reified T : Any> decodeFromJsonString(jsonString: String): T {
-        return json.decodeFromString<T>(jsonString)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> decodeFromJsonString(jsonString: String, clazz: KClass<T>): T {
-        return when (clazz.simpleName) {
-            "ProductDto" -> json.decodeFromString<com.good4.product.data.dto.ProductDto>(jsonString) as T
-            "BusinessDto" -> json.decodeFromString<com.good4.business.data.dto.BusinessDto>(
-                jsonString
-            ) as T
-
-            "CampaignDto" -> json.decodeFromString<com.good4.campaign.data.dto.CampaignDto>(
-                jsonString
-            ) as T
-
-            "CodeDto" -> json.decodeFromString<com.good4.code.data.dto.CodeDto>(jsonString) as T
-            "UserDto" -> json.decodeFromString<com.good4.user.data.dto.UserDto>(jsonString) as T
-            "AppConfigDto" -> json.decodeFromString<com.good4.config.data.dto.AppConfigDto>(jsonString) as T
-            else -> throw IllegalArgumentException("No serializer found for ${clazz.simpleName}")
-        }
-    }
-
-    private fun convertMapToJsonString(map: Map<String, Any?>): String {
-        val jsonObject = buildJsonObject {
-            map.forEach { (key, value) ->
-                put(key, convertValue(value))
-            }
-        }
-        return jsonObject.toString()
-    }
-
-    private fun convertValue(value: Any?): kotlinx.serialization.json.JsonElement {
-        return when (value) {
-            is String -> JsonPrimitive(value)
-            is Number -> JsonPrimitive(value)
-            is Boolean -> JsonPrimitive(value)
-            is com.google.firebase.Timestamp -> {
-                val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(value.toDate().time)
-                JsonPrimitive(instant.toString())
-            }
-
-            is java.util.Date -> {
-                val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(value.time)
-                JsonPrimitive(instant.toString())
-            }
-
-            is Map<*, *> -> {
-                if (value.containsKey("epochSeconds") || value.containsKey("value\$kotlinx_datetime")) {
-                    try {
-                        val epochSeconds = (value["epochSeconds"] as? Number)?.toLong()
-                        val nanos = (value["nanosecondsOfSecond"] as? Number)?.toInt() ?: 0
-
-                        if (epochSeconds != null) {
-                            val instant = kotlinx.datetime.Instant.fromEpochSeconds(epochSeconds, nanos)
-                            return JsonPrimitive(instant.toString())
-                        }
-                    } catch (e: Exception) { }
-                }
-
-                buildJsonObject {
-                    value.forEach { (k, v) ->
-                        put(k as String, convertValue(v))
-                    }
-                }
-            }
-
-            is List<*> -> {
-                JsonArray(value.map { convertValue(it) })
-            }
-
-            null -> JsonNull
-            else -> JsonPrimitive(value.toString())
-        }
-    }
-
-    private fun toFirestoreMap(jsonObject: JsonObject): Map<String, Any?> {
-        return jsonObject.entries.associate { (key, value) ->
-            key to when (value) {
-                is JsonObject -> toFirestoreMap(value)
-                is JsonPrimitive -> {
-                    when {
-                        value.isString -> value.content
-                        else -> {
-                            value.content.toLongOrNull()
-                                ?: value.content.toDoubleOrNull()
-                                ?: value.content.toBooleanStrictOrNull()
-                                ?: value.content
-                        }
-                    }
-                }
-
-                else -> value.toString()
-            }
         }
     }
 }

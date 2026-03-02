@@ -165,7 +165,7 @@ class StudentRegisterViewModel(
             when (val authResult = authRepository.signUp(email, state.password)) {
                 is Result.Success -> {
                     val userId = authResult.data.uid
-                    val now = Clock.System.now()
+                    val nowSecs = Clock.System.now().epochSeconds
                     val weeklyCredit = configRepository.getStudentWeeklyCredit()
 
                     val userDto = UserDto(
@@ -178,8 +178,8 @@ class StudentRegisterViewModel(
                         major = state.major.ifBlank { null },
                         educationLevel = state.educationLevel.ifBlank { null },
                         credit = weeklyCredit,
-                        lastCreditResetAt = now,
-                        registrationDate = now
+                        lastCreditResetAt = nowSecs,
+                        registrationDate = nowSecs
                     )
 
                     when (val userResult = userRepository.createUser(userId, userDto)) {

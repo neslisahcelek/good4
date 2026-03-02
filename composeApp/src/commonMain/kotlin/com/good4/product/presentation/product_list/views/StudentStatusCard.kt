@@ -195,15 +195,14 @@ private fun formatRenewalDuration(
     soon: String,
     suffix: String
 ): String {
-    val days = duration.inWholeDays
-    val hours = duration.inWholeHours % 24
-
-    return buildString {
-        if (days > 0) append("$days$daysSuffix")
-        if (hours > 0) append("$hours$hoursSuffix")
-        if (days == 0L && hours == 0L) append(soon)
-        append(suffix)
-    }.trim()
+    return duration.toComponents { days, hours, _, _, _ ->
+        buildString {
+            if (days > 0L) append("$days$daysSuffix")
+            if (hours > 0) append("$hours$hoursSuffix")
+            if (days == 0L && hours == 0) append(soon)
+            append(suffix)
+        }.trim()
+    }
 }
 
 @Preview

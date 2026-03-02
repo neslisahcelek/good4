@@ -99,7 +99,9 @@ class ProductListViewModel(
                         }
                         return@launch
                     }
-                    val expiryTime = pendingCode.expiresAt ?: return@launch
+                    val expiryTime = pendingCode.expiresAt
+                        ?.let { kotlinx.datetime.Instant.fromEpochSeconds(it) }
+                        ?: return@launch
                     
                     val product = _state.value.products.firstOrNull { it.documentId == pendingCode.productId }
                         ?: run {
@@ -236,8 +238,8 @@ class ProductListViewModel(
                     productId = product.documentId,
                     userId = userId,
                     status = CodeStatus.PENDING.value,
-                    createdAt = now,
-                    expiresAt = expiryTime,
+                    createdAt = now.epochSeconds,
+                    expiresAt = expiryTime.epochSeconds,
                     usedAt = null
                 )
 

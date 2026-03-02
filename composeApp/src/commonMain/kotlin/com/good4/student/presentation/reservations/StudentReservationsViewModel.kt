@@ -86,11 +86,11 @@ class StudentReservationsViewModel(
         _state.update { it.copy(reservations = updated) }
     }
 
-    private fun calculateRemainingTime(createdAt: String?): String {
-        if (createdAt == null) return ""
+    private fun calculateRemainingTime(createdAtSecs: Long?): String {
+        if (createdAtSecs == null) return ""
 
         return try {
-            val createdInstant = Instant.parse(createdAt)
+            val createdInstant = Instant.fromEpochSeconds(createdAtSecs)
             val now = Clock.System.now()
             val elapsed = now - createdInstant
             val remaining = expirationDuration - elapsed
@@ -145,7 +145,7 @@ class StudentReservationsViewModel(
             val pendingCodes = allUserCodes.filter { it.statusEnum == CodeStatus.PENDING }
             val completedCodes = allUserCodes
                 .filter { it.statusEnum == CodeStatus.USED }
-                .sortedByDescending { code -> code.usedAt ?: "" }
+                .sortedByDescending { code -> code.usedAt ?: 0L }
                 .take(MAX_COMPLETED_RESERVATIONS.toInt())
             val expiredCodes = allUserCodes.filter { it.statusEnum == CodeStatus.EXPIRED }
             val cancelledCodes = allUserCodes.filter { it.statusEnum == CodeStatus.CANCELLED }
@@ -153,7 +153,7 @@ class StudentReservationsViewModel(
             val allCodes = pendingCodes + completedCodes + expiredCodes + cancelledCodes
 
             val sortedCodes = allCodes.sortedByDescending { code ->
-                code.usedAt ?: code.createdAt ?: ""
+                code.usedAt ?: code.createdAt ?: 0L
             }
 
             val productFallback = getString(Res.string.product_name_fallback)
