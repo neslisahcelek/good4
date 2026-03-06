@@ -44,6 +44,7 @@ firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appc
 # GitLive Firebase SDK (Kotlin Multiplatform)
 firebase-gitlive-auth = { group = "dev.gitlive", name = "firebase-auth", version.ref = "firebase-gitlive" }
 firebase-gitlive-firestore = { group = "dev.gitlive", name = "firebase-firestore", version.ref = "firebase-gitlive" }
+firebase-gitlive-storage = { group = "dev.gitlive", name = "firebase-storage", version.ref = "firebase-gitlive" }
 
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }

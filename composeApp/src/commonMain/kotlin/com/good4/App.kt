@@ -8,13 +8,11 @@ import com.good4.user.domain.UserRole
 
 @Composable
 fun App(
-    startDestination: Route = Route.Splash,
-    currentUserRole: UserRole? = null
+    startDestination: Route = Route.Splash
 ) {
     Good4Theme {
         Good4NavGraph(
-            startDestination = startDestination,
-            currentUserRole = currentUserRole
+            startDestination = startDestination
         )
     }
 }

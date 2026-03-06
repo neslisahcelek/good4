@@ -8,8 +8,6 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.kotlin.serialization)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.room)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
@@ -39,16 +37,12 @@ kotlin {
         summary = "Good4 iOS App"
         homepage = "https://example.com"
         version = "1.0.0"
-        ios.deploymentTarget = "13.0"
+        ios.deploymentTarget = "16.0"
         podfile = project.file("../iosApp/Podfile")
         framework {
             baseName = "ComposeApp"
             isStatic = true
         }
-    }
-
-    room {
-        schemaDirectory("$projectDir/schemas")
     }
 
     sourceSets {
@@ -64,8 +58,6 @@ kotlin {
             implementation(libs.firebase.auth)
             implementation(libs.firebase.storage.ktx)
             implementation(libs.firebase.appcheck.playintegrity)
-            implementation(libs.androidx.room.runtime)
-            implementation(libs.sqlite.bundled)
         }
         
         commonMain.dependencies {
@@ -84,8 +76,6 @@ kotlin {
             implementation(libs.jetbrains.compose.navigation)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.androidx.room.runtime)
-            implementation(libs.sqlite.bundled)
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.coil)
         }
@@ -93,6 +83,7 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.firebase.gitlive.auth)
             implementation(libs.firebase.gitlive.firestore)
+            implementation(libs.firebase.gitlive.storage)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)

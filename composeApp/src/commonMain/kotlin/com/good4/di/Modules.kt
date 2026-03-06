@@ -18,7 +18,7 @@ import com.good4.business.presentation.verify.VerifyCodeViewModel
 import com.good4.campaign.data.repository.CampaignRepository
 import com.good4.code.data.repository.CodeRepository
 import com.good4.config.data.repository.AppConfigRepository
-import com.good4.core.presentation.SplashViewModel
+import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.FirestoreRepositoryImpl
 import com.good4.product.data.repository.FirestoreProductRepository

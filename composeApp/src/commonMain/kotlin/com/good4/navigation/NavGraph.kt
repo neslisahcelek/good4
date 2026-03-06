@@ -16,8 +16,8 @@ import com.good4.auth.presentation.register.student.StudentRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
-import com.good4.core.presentation.SplashScreenRoot
-import com.good4.core.presentation.SplashViewModel
+import com.good4.core.presentation.splash.SplashScreenRoot
+import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.student.presentation.home.StudentHomeScreenRoot
 import com.good4.user.domain.UserRole
 import org.koin.compose.viewmodel.koinViewModel
@@ -26,8 +26,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun Good4NavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: Route = Route.Login,
-    currentUserRole: UserRole? = null
+    startDestination: Route = Route.Login
 ) {
     NavHost(
         navController = navController,
@@ -43,7 +42,7 @@ fun Good4NavGraph(
                     navController.navigateToLogin()
                 },
                 onNavigateToHome = { userRole ->
-                    navController.navigateToHome(userRole)
+                    navController.navigateToHomeFromSplash(userRole)
                 },
                 onNavigateToEmailVerification = {
                     navController.navigate(Route.EmailVerification) {
@@ -52,7 +51,7 @@ fun Good4NavGraph(
                 }
             )
         }
-        
+
         // Auth
         composable<Route.Login> {
             val viewModel: LoginViewModel = koinViewModel()
@@ -146,6 +145,17 @@ fun NavHostController.navigateToHome(userRole: UserRole) {
     }
     navigate(destination) {
         popUpTo(Route.Login) { inclusive = true }
+    }
+}
+
+fun NavHostController.navigateToHomeFromSplash(userRole: UserRole) {
+    val destination = when (userRole) {
+        UserRole.ADMIN -> Route.AdminHome
+        UserRole.BUSINESS -> Route.BusinessHome
+        UserRole.STUDENT -> Route.StudentHome
+    }
+    navigate(destination) {
+        popUpTo(Route.Splash) { inclusive = true }
     }
 }
 

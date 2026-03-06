@@ -1,30 +1,57 @@
-//
-//  iosAppApp.swift
-//  iosApp
-//
-//  Created by Neslişah Çelek on 2.02.2026.
-//
-
 import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
 
 @main
 struct IOSApp: App {
+    @State private var isComposeReady = false
+
     init() {
-#if DEBUG
+        #if DEBUG
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
-#endif
+        #endif
         FirebaseApp.configure()
-#if DEBUG
+        #if DEBUG
         Firestore.enableLogging(true)
-#endif
+        #endif
     }
-    
+
     var body: some Scene {
         WindowGroup {
-            ComposeAppView()
+            ZStack {
+                ComposeAppView(
+                    onComposeReady: {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            isComposeReady = true
+                        }
+                    }
+                )
                 .ignoresSafeArea(.all, edges: .all)
+
+                if !isComposeReady {
+                    NativeLaunchPlaceholderView()
+                        .transition(.opacity)
+                }
+            }
+        }
+    }
+}
+
+private struct NativeLaunchPlaceholderView: View {
+    var body: some View {
+        ZStack {
+            Color(red: 248.0 / 255.0, green: 247.0 / 255.0, blue: 244.0 / 255.0)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Image("SplashLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 120, height: 120)
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(Color.black)
+            }
         }
     }
 }

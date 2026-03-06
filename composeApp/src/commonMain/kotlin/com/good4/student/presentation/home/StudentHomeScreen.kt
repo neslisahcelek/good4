@@ -11,7 +11,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -37,9 +36,9 @@ import com.good4.student.presentation.profile.StudentProfileScreen
 import com.good4.student.presentation.reservations.StudentReservationsScreen
 import com.good4.student.presentation.reservations.StudentReservationsViewModel
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.products
-import good4.composeapp.generated.resources.profile
-import good4.composeapp.generated.resources.reservations
+import good4.composeapp.generated.resources.student_profile
+import good4.composeapp.generated.resources.student_reservations
+import good4.composeapp.generated.resources.student_home
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -57,17 +56,17 @@ fun StudentHomeScreenRoot(
 ) {
     val navItems = listOf(
         BottomNavItem(
-            title = stringResource(Res.string.reservations),
+            title = stringResource(Res.string.student_reservations),
             selectedIcon = Icons.Filled.ShoppingCart,
             unselectedIcon = Icons.Outlined.ShoppingCart
         ),
         BottomNavItem(
-            title = stringResource(Res.string.products),
+            title = stringResource(Res.string.student_home),
             selectedIcon = Icons.Filled.Home,
             unselectedIcon = Icons.Outlined.Home
         ),
         BottomNavItem(
-            title = stringResource(Res.string.profile),
+            title = stringResource(Res.string.student_profile),
             selectedIcon = Icons.Filled.Person,
             unselectedIcon = Icons.Outlined.Person
         )

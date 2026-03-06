@@ -150,14 +150,14 @@
     <string name="verify">Doğrula</string>
     <string name="code_verified">Kod başarıyla doğrulandı!</string>
     <string name="invalid_code">Girdiğiniz kod geçersizdir</string>
-    <string name="products">Ürünler</string>
-    <string name="reservations">Rezervasyonlar</string>
+    <string name="student_home">Ana Sayfa</string>
+    <string name="student_reservations">Rezervasyonlar</string>
     <string name="my_reservations">Rezervasyonlarım</string>
     <string name="no_reservations">Henüz bir rezervasyonunuz bulunmuyor</string>
     <string name="reservation_active">Aktif</string>
     <string name="reservation_completed">Tamamlandı</string>
     <string name="reservation_cancelled">İptal Edildi</string>
-    <string name="profile">Profil</string>
+    <string name="student_profile">Profil</string>
     <string name="logout">Çıkış Yap</string>
     <string name="delete_account">Hesabımı sil</string>
     <string name="delete_account_confirm_title">Hesabınızı silmek istediğinize emin misiniz?</string>
@@ -218,8 +218,7 @@
     <string name="student_reservations_code_title">Rezervasyon Kodunuz</string>
     <string name="student_reservations_remaining_prefix">Kalan süreniz: </string>
     <string name="student_reservations_credit_label">Kalan Kullanım Hakkınız</string>
-    <string name="student_reservations_credit_reset_prefix">Haklarınız </string>
-    <string name="student_reservations_credit_reset_suffix"> günde bir yenilenir.</string>
+    <string name="student_reservations_credit_reset_text">Haklarınız her Pazartesi yenilenir.</string>
     <string name="reservation_status_pending">Bekliyor</string>
     <string name="reservation_status_completed">Tamamlandı</string>
     <string name="reservation_status_expired">Süresi Doldu</string>
@@ -235,8 +234,7 @@
     <string name="emoji_ticket">🎫</string>
     <string name="placeholder_dash">-</string>
     <string name="unknown_initial"></string>
-    <string name="error_no_credit_prefix">Üzgünüz, kredi hakkınız dolmuştur. Krediniz </string>
-    <string name="error_no_credit_suffix"> günde bir yenilenmektedir.</string>
+    <string name="error_no_credit">Üzgünüz, kredi hakkınız dolmuştur. Krediniz her Pazartesi yenilenmektedir.</string>
     <string name="error_reservation_failed_prefix">Rezervasyon gerçekleştirilemedi: </string>
     <string name="error_reservation_exception_prefix">Rezervasyon sırasında bir hata oluştu: </string>
     <string name="error_user_info_fetch_failed">Kullanıcı bilgileri alınamadı. Lütfen tekrar deneyiniz.</string>

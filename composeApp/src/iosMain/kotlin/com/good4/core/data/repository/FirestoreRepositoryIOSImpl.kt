@@ -4,6 +4,8 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
+import com.good4.code.data.dto.CodeDto
+import com.good4.product.data.dto.ProductDto
 import com.good4.user.data.dto.UserDto
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.DocumentSnapshot
@@ -391,11 +393,12 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> serializerFor(clazz: KClass<T>): KSerializer<T> {
         return when (clazz.simpleName) {
-            "ProductDto" -> com.good4.product.data.dto.ProductDto.serializer() as KSerializer<T>
+            "ProductDto" -> ProductDto.serializer() as KSerializer<T>
             "BusinessDto" -> com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
             "CampaignDto" -> com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
-            "CodeDto" -> com.good4.code.data.dto.CodeDto.serializer() as KSerializer<T>
-            "UserDto" -> com.good4.user.data.dto.UserDto.serializer() as KSerializer<T>
+            "CodeDto" -> CodeDto.serializer() as KSerializer<T>
+            "UserDto" -> UserDto.serializer() as KSerializer<T>
+            "AppConfigDto" -> com.good4.config.data.dto.AppConfigDto.serializer() as KSerializer<T>
             else -> throw IllegalArgumentException("No serializer found for ${clazz.simpleName}")
         }
     }
@@ -419,11 +422,42 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> decodeDocumentSnapshot(document: DocumentSnapshot, clazz: KClass<T>): T {
-        return if (clazz.simpleName == "UserDto") {
-            decodeUserDto(document) as T
-        } else {
-            document.data(serializerFor(clazz))
+        return when (clazz.simpleName) {
+            "UserDto" -> decodeUserDto(document) as T
+            "ProductDto" -> decodeProductDto(document) as T
+            "CodeDto" -> decodeCodeDto(document) as T
+            else -> document.data(serializerFor(clazz))
         }
+    }
+
+    private fun decodeProductDto(document: DocumentSnapshot): ProductDto {
+        return ProductDto(
+            name = document.getOrNull("name"),
+            description = document.getOrNull("description"),
+            count = document.getOrNull("count"),
+            pendingCount = document.getOrNull("pendingCount"),
+            businessId = document.getOrNull("businessId"),
+            createdAt = document.getEpochSeconds("createdAt"),
+            discountPrice = document.getOrNull("discountPrice"),
+            originalPrice = document.getOrNull("originalPrice"),
+            imageUrl = document.getOrNull("image"),
+            foodType = document.getOrNull("foodType"),
+            totalDelivered = document.getOrNull("totalDelivered"),
+            totalSuspended = document.getOrNull("totalSuspended")
+        )
+    }
+
+    private fun decodeCodeDto(document: DocumentSnapshot): CodeDto {
+        return CodeDto(
+            value = document.getOrNull("value"),
+            businessId = document.getOrNull("businessId"),
+            productId = document.getOrNull("productId"),
+            userId = document.getOrNull("userId"),
+            status = document.getOrNull("status"),
+            createdAt = document.getEpochSeconds("createdAt"),
+            expiresAt = document.getEpochSeconds("expiresAt"),
+            usedAt = document.getEpochSeconds("usedAt")
+        )
     }
 
     private fun decodeUserDto(document: DocumentSnapshot): UserDto {
