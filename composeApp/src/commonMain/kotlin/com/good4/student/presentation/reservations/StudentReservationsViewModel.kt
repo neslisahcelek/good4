@@ -121,9 +121,6 @@ class StudentReservationsViewModel(
             _state.update { it.copy(isLoading = true) }
 
             expirationDuration = configRepository.getExpirationDuration()
-            _state.update {
-                it.copy(creditResetIntervalDays = configRepository.getCreditResetIntervalDays())
-            }
 
             when (val userResult = userRepository.refreshStudentCreditIfNeeded(userId)) {
                 is Result.Success -> {

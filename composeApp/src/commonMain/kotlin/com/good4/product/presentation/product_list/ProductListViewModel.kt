@@ -5,22 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.code.data.dto.CodeDto
 import com.good4.code.data.repository.CodeRepository
-import com.good4.code.data.repository.statusEnum
 import com.good4.code.domain.CodeStatus
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
-import com.good4.core.util.Logger
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.already_have_reservation
-import good4.composeapp.generated.resources.error_no_credit_prefix
-import good4.composeapp.generated.resources.error_no_credit_suffix
+import good4.composeapp.generated.resources.error_no_credit
 import good4.composeapp.generated.resources.error_reservation_exception_prefix
 import good4.composeapp.generated.resources.error_reservation_failed_prefix
 import good4.composeapp.generated.resources.error_user_info_fetch_failed
-import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_logged_in
 import good4.composeapp.generated.resources.product_out_of_stock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +24,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
-import kotlin.time.Duration.Companion.days
 
 class ProductListViewModel(
     private val productRepository: FirestoreProductRepository,
@@ -40,7 +41,7 @@ class ProductListViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProductListState())
     val state = _state.asStateFlow()
-    
+
     private var isLoaded: Boolean = false
 
     fun refresh() {
@@ -49,24 +50,22 @@ class ProductListViewModel(
         loadActiveReservation()
         loadStudentInfo()
     }
-    
+
     fun loadStudentInfo() {
         val userId = authRepository.currentUser?.uid ?: return
-        
+
         viewModelScope.launch {
-            val deliveryTimeMinutes = configRepository.getExpirationDuration().inWholeMinutes.toInt()
-            
+            val deliveryTimeMinutes =
+                configRepository.getExpirationDuration().inWholeMinutes.toInt()
+
             when (val result = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     val user = result.data
                     val now = Clock.System.now()
-                    val intervalDays = configRepository.getCreditResetIntervalDays()
-                    
-                    // Calculate renewal duration
-                    val lastReset = user.lastCreditResetAt ?: user.registrationDate ?: now
-                    val nextResetTime = lastReset + intervalDays.days
-                    val duration = nextResetTime - now
-                    val validDuration = if (duration.isPositive()) duration else kotlin.time.Duration.ZERO
+                    val nextMondayMidnight = nextMondayMidnightInstant()
+                    val duration = nextMondayMidnight - now
+                    val validDuration =
+                        if (duration.isPositive()) duration else kotlin.time.Duration.ZERO
 
                     _state.update {
                         it.copy(
@@ -77,14 +76,15 @@ class ProductListViewModel(
                         )
                     }
                 }
-                is Result.Error -> { }
+
+                is Result.Error -> {}
             }
         }
     }
-    
+
     fun loadActiveReservation(): Unit {
         val userId = authRepository.currentUser?.uid ?: return
-        
+
         viewModelScope.launch {
             val expirationMinutes = configRepository.getExpirationDuration().inWholeMinutes
             when (val result = codeRepository.getPendingCodeByUserId(userId)) {
@@ -102,20 +102,23 @@ class ProductListViewModel(
                     val expiryTime = pendingCode.expiresAt
                         ?.let { kotlinx.datetime.Instant.fromEpochSeconds(it) }
                         ?: return@launch
-                    
-                    val product = _state.value.products.firstOrNull { it.documentId == pendingCode.productId }
-                        ?: run {
-                            when (val productResult = productRepository.getProductById(pendingCode.productId ?: "")) {
-                                is Result.Success -> productResult.data
-                                is Result.Error -> return@launch
+
+                    val product =
+                        _state.value.products.firstOrNull { it.documentId == pendingCode.productId }
+                            ?: run {
+                                when (val productResult =
+                                    productRepository.getProductById(pendingCode.productId ?: "")) {
+                                    is Result.Success -> productResult.data
+                                    is Result.Error -> return@launch
+                                }
                             }
-                        }
-                    
-                    val codeId = when (val idResult = codeRepository.getCodeIdByValue(pendingCode.value ?: "")) {
+
+                    val codeId = when (val idResult =
+                        codeRepository.getCodeIdByValue(pendingCode.value ?: "")) {
                         is Result.Success -> idResult.data
                         is Result.Error -> return@launch
                     }
-                    
+
                     _state.update {
                         it.copy(
                             activeReservation = ReservationInfo(
@@ -128,7 +131,8 @@ class ProductListViewModel(
                         )
                     }
                 }
-                is Result.Error -> { }
+
+                is Result.Error -> {}
             }
         }
     }
@@ -142,6 +146,7 @@ class ProductListViewModel(
                     )
                 }
             }
+
             is ProductListAction.OnReserveProduct -> {
                 if (_state.value.activeReservation != null) {
                     _state.update {
@@ -153,15 +158,17 @@ class ProductListViewModel(
                     reserveProduct(action.product)
                 }
             }
+
             is ProductListAction.OnDismissError -> {
                 _state.update {
                     it.copy(errorMessage = null)
                 }
             }
+
             is ProductListAction.OnReservationExpired -> {
                 viewModelScope.launch {
                     codeRepository.markCodeAsExpired(action.codeId)
-                    
+
                     _state.update {
                         it.copy(activeReservation = null)
                     }
@@ -169,7 +176,7 @@ class ProductListViewModel(
             }
         }
     }
-    
+
     private fun reserveProduct(product: com.good4.product.Product) {
         val userId = authRepository.currentUser?.uid
         if (userId == null) {
@@ -187,20 +194,16 @@ class ProductListViewModel(
                 is Result.Success -> {
                     val credit = userResult.data.credit ?: 0
                     if (credit <= 0) {
-                        val resetDays = configRepository.getCreditResetIntervalDays()
-                        val prefix = getString(Res.string.error_no_credit_prefix)
-                        val suffix = getString(Res.string.error_no_credit_suffix)
                         _state.update {
                             it.copy(
                                 isReserving = false,
-                                errorMessage = UiText.DynamicString(
-                                    prefix + resetDays + suffix
-                                )
+                                errorMessage = UiText.StringResourceId(Res.string.error_no_credit)
                             )
                         }
                         return@launch
                     }
                 }
+
                 is Result.Error -> {
                     _state.update {
                         it.copy(
@@ -246,7 +249,8 @@ class ProductListViewModel(
                 when (val result = codeRepository.createCode(codeDto)) {
                     is Result.Success -> {
                         userRepository.decrementUserCredit(userId)
-                        val expirationMinutes = configRepository.getExpirationDuration().inWholeMinutes
+                        val expirationMinutes =
+                            configRepository.getExpirationDuration().inWholeMinutes
                         _state.update {
                             it.copy(
                                 isReserving = false,
@@ -260,6 +264,7 @@ class ProductListViewModel(
                             )
                         }
                     }
+
                     is Result.Error -> {
                         val prefix = getString(Res.string.error_reservation_failed_prefix)
                         _state.update {
@@ -285,7 +290,7 @@ class ProductListViewModel(
             }
         }
     }
-    
+
     fun loadProductsIfNeeded() {
         if (!isLoaded && !_state.value.isLoading) {
             loadProducts()
@@ -312,6 +317,7 @@ class ProductListViewModel(
                         )
                     }
                 }
+
                 is Result.Error -> {
                     isLoaded = true
                     _state.update {
@@ -325,4 +331,15 @@ class ProductListViewModel(
             }
         }
     }
+}
+
+private fun nextMondayMidnightInstant(): kotlinx.datetime.Instant {
+    val now = Clock.System.now()
+    val todayUtc = now.toLocalDateTime(TimeZone.UTC)
+    val daysSinceMonday = todayUtc.dayOfWeek.ordinal // MONDAY=0, ..., SUNDAY=6
+    val lastMonday = todayUtc.date.minus(daysSinceMonday, DateTimeUnit.DAY)
+    val lastMondayMidnightSecs = LocalDateTime(
+        lastMonday.year, lastMonday.monthNumber, lastMonday.dayOfMonth, 0, 0, 0
+    ).toInstant(TimeZone.UTC).epochSeconds
+    return kotlinx.datetime.Instant.fromEpochSeconds(lastMondayMidnightSecs + 7 * 86_400L)
 }

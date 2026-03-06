@@ -22,7 +22,7 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.products
+import good4.composeapp.generated.resources.price_currency_suffix
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -77,7 +77,7 @@ fun InfoCard(
 fun InfoCardPreview() {
     MaterialTheme {
         InfoCard(
-            text = UiText.StringResourceId(Res.string.products)
+            text = UiText.StringResourceId(Res.string.price_currency_suffix)
         )
     }
 }

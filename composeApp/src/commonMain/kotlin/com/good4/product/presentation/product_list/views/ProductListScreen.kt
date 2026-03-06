@@ -134,7 +134,7 @@ fun ProductListScreen(
                                     renewalDuration = state.creditRenewalDuration,
                                     deliveryTimeMinutes = state.deliveryTimeMinutes
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
                             }
                         }
 

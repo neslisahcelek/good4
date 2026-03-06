@@ -14,6 +14,7 @@ data class Product(
     val imageUrl: String,
     val address: String,
     val amount: Int,
+    val pendingCount: Int = 0,
     val createdAt: Long? = null
 )
 

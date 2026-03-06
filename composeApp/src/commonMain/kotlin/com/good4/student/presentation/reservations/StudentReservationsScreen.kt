@@ -13,20 +13,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,11 +47,9 @@ import good4.composeapp.generated.resources.preview_business_name
 import good4.composeapp.generated.resources.preview_product_name
 import good4.composeapp.generated.resources.reservation_expired_short
 import good4.composeapp.generated.resources.student_reservations_credit_label
-import good4.composeapp.generated.resources.student_reservations_credit_reset_prefix
-import good4.composeapp.generated.resources.student_reservations_credit_reset_suffix
+import good4.composeapp.generated.resources.student_reservations_credit_reset_text
 import good4.composeapp.generated.resources.student_reservations_empty_subtitle
 import good4.composeapp.generated.resources.student_reservations_empty_title
-import good4.composeapp.generated.resources.student_reservations_remaining_prefix
 import good4.composeapp.generated.resources.student_reservations_title
 import good4.composeapp.generated.resources.time_minute_suffix
 import good4.composeapp.generated.resources.time_second_suffix
@@ -126,16 +122,12 @@ private fun StudentReservationsContent(
                                 color = TextPrimary
                             )
                         }
-                        if (state.creditResetIntervalDays != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(Res.string.student_reservations_credit_reset_prefix) +
-                                        state.creditResetIntervalDays +
-                                        stringResource(Res.string.student_reservations_credit_reset_suffix),
-                                fontSize = 12.sp,
-                                color = TextSecondary
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(Res.string.student_reservations_credit_reset_text),
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
                     }
                 }
             }
@@ -187,9 +179,9 @@ private fun StudentReservationsContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
-                        items = state.reservations,
-                        key = { it.id }
-                    ) { reservation ->
+                            items = state.reservations,
+                            key = { it.id }
+                        ) { reservation ->
                             ReservationItem(
                                 reservation = reservation,
                                 onCancelReservation = onCancelReservation
@@ -280,8 +272,7 @@ fun StudentReservationsScreenPreview() {
         StudentReservationsContent(
             state = StudentReservationsState(
                 reservations = sampleReservations,
-                remainingCredit = 2,
-                creditResetIntervalDays = 7
+                remainingCredit = 2
             ),
             onCancelReservation = {}
         )

@@ -12,7 +12,13 @@ import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_credit_reset_failed
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 class UserRepository(
@@ -24,7 +30,8 @@ class UserRepository(
     }
 
     suspend fun getUser(userId: String): Result<User, Error> {
-        return when (val result = firestoreRepository.getDocument("users", userId, UserDto::class)) {
+        return when (val result =
+            firestoreRepository.getDocument("users", userId, UserDto::class)) {
             is Result.Success -> Result.Success(result.data.toUser(userId))
             is Result.Error -> result
         }
@@ -57,6 +64,7 @@ class UserRepository(
                 )
                 updateUser(userId, updatedDto)
             }
+
             is Result.Error -> result
         }
     }
@@ -74,6 +82,7 @@ class UserRepository(
                     is Result.Error -> return result
                 }
             }
+
             else -> return Result.Error(ValidationError("User id or email is required"))
         }
 
@@ -110,6 +119,7 @@ class UserRepository(
                         return Result.Success(match.id)
                     }
                 }
+
                 is Result.Error -> {
                     // Continue with other normalized candidate before returning an error.
                 }
@@ -133,6 +143,7 @@ class UserRepository(
                     updateUser(userId, current.copy(verified = true))
                 }
             }
+
             is Result.Error -> result
         }
     }
@@ -145,6 +156,7 @@ class UserRepository(
                 val updatedDto = result.data.copy(credit = updatedCredit)
                 updateUser(userId, updatedDto)
             }
+
             is Result.Error -> result
         }
     }
@@ -165,23 +177,27 @@ class UserRepository(
                 val updatedDto = userDto.copy(credit = updatedCredit)
                 updateUser(userId, updatedDto)
             }
+
             is Result.Error -> result
         }
     }
 
     suspend fun getUserRole(userId: String): Result<UserRole, Error> {
-        return when (val result = firestoreRepository.getDocument("users", userId, UserDto::class)) {
+        return when (val result =
+            firestoreRepository.getDocument("users", userId, UserDto::class)) {
             is Result.Success -> Result.Success(UserRole.fromValue(result.data.role))
             is Result.Error -> result
         }
     }
 
     suspend fun getAllUsers(): Result<List<User>, Error> {
-        return when (val result = firestoreRepository.getCollectionWithIds("users", UserDto::class)) {
+        return when (val result =
+            firestoreRepository.getCollectionWithIds("users", UserDto::class)) {
             is Result.Success -> {
                 val users = result.data.map { it.data.toUser(it.id) }
                 Result.Success(users)
             }
+
             is Result.Error -> result
         }
     }
@@ -192,6 +208,7 @@ class UserRepository(
                 val filtered = result.data.filter { it.role == role }
                 Result.Success(filtered)
             }
+
             is Result.Error -> result
         }
     }
@@ -205,49 +222,17 @@ class UserRepository(
                     return Result.Success(userDto.toUser(userId))
                 }
 
-                val nowSecs = Clock.System.now().epochSeconds
-                val intervalDays = configRepository.getCreditResetIntervalDays()
-                val intervalSecs = intervalDays.coerceAtLeast(1) * 86_400L
                 val weeklyCredit = userDto.weeklyCreditOverride
                     ?: configRepository.getStudentWeeklyCredit()
                 val lastResetAtSecs = userDto.lastCreditResetAt
-                val registrationDateSecs = userDto.registrationDate
+                val lastMondayMidnightSecs = lastMondayMidnightEpochSeconds()
+                val shouldReset =
+                    lastResetAtSecs == null || lastResetAtSecs < lastMondayMidnightSecs
 
-                if (lastResetAtSecs == null) {
-                    val elapsedSinceRegistrationSecs = registrationDateSecs?.let {
-                        (nowSecs - it).coerceAtLeast(0L)
-                    }
-                    val periodsPassedSinceRegistration = elapsedSinceRegistrationSecs?.let {
-                        it / intervalSecs
-                    } ?: 0L
-                    val shouldReset = periodsPassedSinceRegistration > 0L
-                    val needsCreditInit = userDto.credit == null || registrationDateSecs == null
-
-                    val updatedDto = if (shouldReset || needsCreditInit) {
-                        val catchUpResetAt = registrationDateSecs?.let {
-                            it + periodsPassedSinceRegistration * intervalSecs
-                        } ?: nowSecs
-                        userDto.copy(
-                            credit = weeklyCredit,
-                            lastCreditResetAt = catchUpResetAt
-                        )
-                    } else {
-                        userDto.copy(lastCreditResetAt = registrationDateSecs)
-                    }
-
-                    return when (val updateResult = updateUser(userId, updatedDto)) {
-                        is Result.Success -> Result.Success(updatedDto.toUser(userId))
-                        is Result.Error -> updateResult
-                    }
-                }
-
-                val elapsedSinceResetSecs = (nowSecs - lastResetAtSecs).coerceAtLeast(0L)
-                val periodsPassed = elapsedSinceResetSecs / intervalSecs
-                if (periodsPassed > 0L) {
-                    val scheduledResetAt = lastResetAtSecs + periodsPassed * intervalSecs
+                if (shouldReset) {
                     val updatedDto = userDto.copy(
                         credit = weeklyCredit,
-                        lastCreditResetAt = scheduledResetAt
+                        lastCreditResetAt = lastMondayMidnightSecs
                     )
                     when (val updateResult = updateUser(userId, updatedDto)) {
                         is Result.Success -> Result.Success(updatedDto.toUser(userId))
@@ -257,6 +242,7 @@ class UserRepository(
                     Result.Success(userDto.toUser(userId))
                 }
             }
+
             is Result.Error -> result
         }
     }
@@ -265,24 +251,18 @@ class UserRepository(
         return when (val studentsResult = getUsersByRole(UserRole.STUDENT)) {
             is Result.Success -> {
                 val students = studentsResult.data
-                val nowSecs = Clock.System.now().epochSeconds
-                val intervalDays = configRepository.getCreditResetIntervalDays()
-                val intervalSecs = intervalDays.coerceAtLeast(1) * 86_400L
+                val lastMondayMidnightSecs = lastMondayMidnightEpochSeconds()
                 val weeklyCredit = configRepository.getStudentWeeklyCredit()
                 var hasError = false
                 var lastError: Error? = null
 
                 students.forEach { student ->
                     val lastResetSecs = student.lastCreditResetAt?.epochSeconds
-                        ?: student.registrationDate?.epochSeconds
-                    val elapsedSinceResetSecs = lastResetSecs?.let {
-                        (nowSecs - it).coerceAtLeast(0L)
-                    } ?: 0L
-                    val periodsPassed = elapsedSinceResetSecs / intervalSecs
+                    val shouldReset =
+                        lastResetSecs == null || lastResetSecs < lastMondayMidnightSecs
                     val targetCredit = student.weeklyCreditOverride ?: weeklyCredit
 
-                    if (periodsPassed > 0L && lastResetSecs != null) {
-                        val scheduledResetAt = lastResetSecs + periodsPassed * intervalSecs
+                    if (shouldReset) {
                         val updatedDto = UserDto(
                             email = student.email,
                             fullName = student.fullName,
@@ -294,7 +274,7 @@ class UserRepository(
                             educationLevel = student.educationLevel,
                             credit = targetCredit,
                             weeklyCreditOverride = student.weeklyCreditOverride,
-                            lastCreditResetAt = scheduledResetAt,
+                            lastCreditResetAt = lastMondayMidnightSecs,
                             registrationDate = student.registrationDate?.epochSeconds
                         )
 
@@ -303,6 +283,7 @@ class UserRepository(
                                 hasError = true
                                 lastError = updateResult.error
                             }
+
                             is Result.Success -> Unit
                         }
                     }
@@ -316,9 +297,20 @@ class UserRepository(
                     Result.Success(Unit)
                 }
             }
+
             is Result.Error -> studentsResult
         }
     }
+}
+
+private fun lastMondayMidnightEpochSeconds(): Long {
+    val now = Clock.System.now()
+    val todayUtc = now.toLocalDateTime(TimeZone.UTC)
+    val daysSinceMonday = todayUtc.dayOfWeek.ordinal // MONDAY=0, ..., SUNDAY=6
+    val lastMonday = todayUtc.date.minus(daysSinceMonday, DateTimeUnit.DAY)
+    return LocalDateTime(lastMonday.year, lastMonday.monthNumber, lastMonday.dayOfMonth, 0, 0, 0)
+        .toInstant(TimeZone.UTC)
+        .epochSeconds
 }
 
 private fun UserDto.toUser(userId: String): User {

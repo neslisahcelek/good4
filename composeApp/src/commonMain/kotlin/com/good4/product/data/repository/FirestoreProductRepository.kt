@@ -38,10 +38,9 @@ class FirestoreProductRepository(
                     if (includeOutOfStock) {
                         items
                     } else {
-                        items.filter { product -> product.amount > 0 }
+                        items.filter { product -> product.pendingCount > 0 }
                     }
                 }
-                Logger.d("Admin", "Fetched ${products.size} products: $products")
                 
                 Result.Success(products)
             }
@@ -145,6 +144,7 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         imageUrl = imageUrl ?: "",
         address = business?.address ?: "",
         amount = count ?: 0,
+        pendingCount = pendingCount ?: 0,
         createdAt = createdAt
     )
 }

@@ -7,14 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Place
@@ -32,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,12 +41,10 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.util.Logger
 import com.good4.core.util.singleClick
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_placeholder
-import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.product_image_description
 import good4.composeapp.generated.resources.reserve_button_label
 import good4.composeapp.generated.resources.reserved
@@ -73,15 +67,13 @@ fun ProductItem(
         border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.5f)),
         shadowElevation = 0.dp
     ) {
-        Logger.d("product:",  " product: ${product.name}, price: ${product.price}, discount: ${product.discountPrice}")
-
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1.5f)
+                    .height(180.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(SurfaceMuted)
             ) {
@@ -147,6 +139,18 @@ fun ProductItem(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                if (product.description.isNotBlank()) {
+                    Text(
+                        text = product.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary.copy(alpha = 0.8f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 18.sp
+                    )
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -166,113 +170,44 @@ fun ProductItem(
 
                 }
 
-                if (product.description.isNotBlank()) {
-                    Text(
-                        text = product.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary.copy(alpha = 0.8f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        lineHeight = 18.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val isFree = product.price == 0
-
-                    if (!isFree) {
-                        PriceColumn(product = product)
-                    }
-
-                    val buttonModifier = if (isFree) {
-                        Modifier.height(40.dp).fillMaxWidth()
-                    } else {
-                        Modifier.height(40.dp).widthIn(min = 120.dp)
-                    }
-
-                    Button(
-                        onClick = {
-                            singleClick {
-                                if (!isReserving && !reservationSuccess) {
-                                    onReserveClick?.invoke()
-                                }
+                Button(
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    onClick = {
+                        singleClick {
+                            if (!isReserving && !reservationSuccess) {
+                                onReserveClick?.invoke()
                             }
-                        },
-                        enabled = !reservationSuccess,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (reservationSuccess) DeepGreen.copy(alpha = 0.8f) else PrimaryGreen,
-                            contentColor = Color.White,
-                            disabledContainerColor = DeepGreen.copy(alpha = 0.5f),
-                            disabledContentColor = Color.White
-                        ),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = 16.dp,
-                            vertical = 0.dp
-                        ),
-                        modifier = buttonModifier
-                    ) {
-                        if (isReserving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                text = if (reservationSuccess) stringResource(Res.string.reserved)
-                                else stringResource(Res.string.reserve_button_label),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
+                    },
+                    enabled = !reservationSuccess,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (reservationSuccess) DeepGreen.copy(alpha = 0.8f) else PrimaryGreen,
+                        contentColor = Color.White,
+                        disabledContainerColor = DeepGreen.copy(alpha = 0.5f),
+                        disabledContentColor = Color.White
+                    ),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 16.dp,
+                        vertical = 0.dp
+                    )
+                ) {
+                    if (isReserving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = if (reservationSuccess) stringResource(Res.string.reserved)
+                            else stringResource(Res.string.reserve_button_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PriceColumn(product: Product) {
-    val currencySuffix = stringResource(Res.string.price_currency_suffix)
-    Column(
-        verticalArrangement = Arrangement.Center
-    ) {
-        if (product.discountPrice != null) {
-            Text(
-                text = "${product.discountPrice} $currencySuffix",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                ),
-                color = TextPrimary
-            )
-            if (product.originalPrice != null) {
-                Text(
-                    text = "${product.originalPrice} $currencySuffix",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        textDecoration = TextDecoration.LineThrough
-                    ),
-                    color = TextSecondary
-                )
-            }
-        } else {
-
-            Text(
-                text = "${product.price} $currencySuffix",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                ),
-                color = TextPrimary
-            )
         }
     }
 }

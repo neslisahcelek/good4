@@ -1,24 +1,16 @@
 package com.good4.student.presentation.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,9 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.PistachioGreen
-import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.DeleteAccountConfirmDialog
@@ -43,10 +33,8 @@ import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.placeholder_dash
-import good4.composeapp.generated.resources.profile_credit_label
 import good4.composeapp.generated.resources.profile_education_level_label
 import good4.composeapp.generated.resources.profile_major_label
-import good4.composeapp.generated.resources.profile_title_student
 import good4.composeapp.generated.resources.profile_university_label
 import good4.composeapp.generated.resources.unknown_initial
 import org.jetbrains.compose.resources.stringResource
@@ -112,44 +100,6 @@ fun StudentProfileScreen(
             fontSize = 14.sp,
             color = TextSecondary
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = DeepGreen
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = stringResource(Res.string.profile_credit_label),
-                        fontSize = 14.sp,
-                        color = SurfaceDefault.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = "${state.user?.credit ?: 0}",
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = SurfaceDefault
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = SurfaceDefault.copy(alpha = 0.5f)
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
 

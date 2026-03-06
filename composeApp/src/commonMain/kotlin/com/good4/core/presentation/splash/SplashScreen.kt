@@ -1,4 +1,4 @@
-package com.good4.core.presentation
+package com.good4.core.presentation.splash
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.TextPrimary
 import com.good4.navigation.Route
 import com.good4.user.domain.UserRole
 
@@ -20,8 +22,8 @@ fun SplashScreenRoot(
     onNavigateToHome: (UserRole) -> Unit,
     onNavigateToEmailVerification: () -> Unit
 ) {
-    val startDestination by viewModel.startDestination.collectAsState()
-    val userRole by viewModel.userRole.collectAsState()
+    val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
+    val userRole by viewModel.userRole.collectAsStateWithLifecycle()
 
     LaunchedEffect(startDestination, userRole) {
         startDestination?.let { destination ->
@@ -32,6 +34,7 @@ fun SplashScreenRoot(
                         onNavigateToHome(role)
                     } ?: onNavigateToLogin()
                 }
+
                 Route.EmailVerification -> onNavigateToEmailVerification()
                 else -> Unit
             }
