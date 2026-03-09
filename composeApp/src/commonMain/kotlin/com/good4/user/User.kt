@@ -16,5 +16,8 @@ data class User(
     val credit: Int? = null,
     val weeklyCreditOverride: Int? = null,
     val lastCreditResetAt: Instant? = null,
-    val registrationDate: Instant? = null
+    val registrationDate: Instant? = null,
+    val createdAt: Instant? = null,
+    val totalDonations: Int = 0,
+    val totalMeals: Int = 0
 )

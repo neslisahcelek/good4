@@ -275,7 +275,10 @@ class UserRepository(
                             credit = targetCredit,
                             weeklyCreditOverride = student.weeklyCreditOverride,
                             lastCreditResetAt = lastMondayMidnightSecs,
-                            registrationDate = student.registrationDate?.epochSeconds
+                            registrationDate = student.registrationDate?.epochSeconds,
+                            createdAt = student.createdAt?.epochSeconds,
+                            totalDonations = student.totalDonations,
+                            totalMeals = student.totalMeals
                         )
 
                         when (val updateResult = updateUser(student.id, updatedDto)) {
@@ -327,6 +330,9 @@ private fun UserDto.toUser(userId: String): User {
         credit = credit,
         weeklyCreditOverride = weeklyCreditOverride,
         lastCreditResetAt = lastCreditResetAt?.let { Instant.fromEpochSeconds(it) },
-        registrationDate = registrationDate?.let { Instant.fromEpochSeconds(it) }
+        registrationDate = registrationDate?.let { Instant.fromEpochSeconds(it) },
+        createdAt = createdAt?.let { Instant.fromEpochSeconds(it) },
+        totalDonations = totalDonations ?: 0,
+        totalMeals = totalMeals ?: 0
     )
 }

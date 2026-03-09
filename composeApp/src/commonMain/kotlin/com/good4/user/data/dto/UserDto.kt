@@ -28,6 +28,12 @@ data class UserDto(
     @SerialName("lastCreditResetAt")
     val lastCreditResetAt: Long? = null,
     @SerialName("registrationDate")
-    val registrationDate: Long? = null
+    val registrationDate: Long? = null,
+    @SerialName("createdAt")
+    val createdAt: Long? = null,
+    @SerialName("totalDonations")
+    val totalDonations: Int? = null,
+    @SerialName("totalMeals")
+    val totalMeals: Int? = null
 )
 
