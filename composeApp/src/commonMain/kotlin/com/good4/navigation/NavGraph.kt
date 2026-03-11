@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.good4.admin.presentation.home.AdminHomeScreenRoot
 import com.good4.auth.presentation.login.LoginScreenRoot
 import com.good4.auth.presentation.login.LoginViewModel
@@ -13,12 +14,17 @@ import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterScreenRoot
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
+import com.good4.auth.presentation.register.supporter.SupporterRegisterScreenRoot
+import com.good4.auth.presentation.register.supporter.SupporterRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
 import com.good4.core.presentation.splash.SplashScreenRoot
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.student.presentation.home.StudentHomeScreenRoot
+import com.good4.supporter.presentation.home.SupporterHomeScreenRoot
+import com.good4.supporter.presentation.ordercode.SupporterOrderCodeScreenRoot
+import com.good4.supporter.presentation.ordercode.SupporterOrderCodeViewModel
 import com.good4.user.domain.UserRole
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -26,7 +32,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun Good4NavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: Route = Route.Login
+    startDestination: Route = Route.Login,
+    onSplashReady: (() -> Unit)? = null
 ) {
     NavHost(
         navController = navController,
@@ -39,12 +46,15 @@ fun Good4NavGraph(
             SplashScreenRoot(
                 viewModel = viewModel,
                 onNavigateToLogin = {
+                    onSplashReady?.invoke()
                     navController.navigateToLogin()
                 },
                 onNavigateToHome = { userRole ->
+                    onSplashReady?.invoke()
                     navController.navigateToHomeFromSplash(userRole)
                 },
                 onNavigateToEmailVerification = {
+                    onSplashReady?.invoke()
                     navController.navigate(Route.EmailVerification) {
                         popUpTo(Route.Splash) { inclusive = true }
                     }
@@ -65,6 +75,9 @@ fun Good4NavGraph(
                 },
                 onNavigateToBusinessRegister = {
                     navController.navigate(Route.BusinessRegister)
+                },
+                onNavigateToSupporterRegister = {
+                    navController.navigate(Route.SupporterRegister)
                 },
                 onNavigateToEmailVerification = {
                     navController.navigate(Route.EmailVerification)
@@ -134,6 +147,43 @@ fun Good4NavGraph(
                 }
             )
         }
+
+        // Supporter Routes
+        composable<Route.SupporterRegister> {
+            val viewModel: SupporterRegisterViewModel = koinViewModel()
+            SupporterRegisterScreenRoot(
+                viewModel = viewModel,
+                onRegisterSuccess = {
+                    navController.navigate(Route.EmailVerification)
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<Route.SupporterHome> {
+            SupporterHomeScreenRoot(
+                onLogout = { navController.navigateToLogin() },
+                onNavigateToOrderCode = { orderId ->
+                    navController.navigate(Route.SupporterOrderCode(orderId))
+                }
+            )
+        }
+
+        composable<Route.SupporterOrderCode> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.SupporterOrderCode>()
+            val viewModel: SupporterOrderCodeViewModel = koinViewModel()
+            SupporterOrderCodeScreenRoot(
+                orderId = route.orderId,
+                viewModel = viewModel,
+                onBackToHome = {
+                    navController.navigate(Route.SupporterHome) {
+                        popUpTo(Route.SupporterHome) { inclusive = true }
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -142,6 +192,7 @@ fun NavHostController.navigateToHome(userRole: UserRole) {
         UserRole.ADMIN -> Route.AdminHome
         UserRole.BUSINESS -> Route.BusinessHome
         UserRole.STUDENT -> Route.StudentHome
+        UserRole.SUPPORTER -> Route.SupporterHome
     }
     navigate(destination) {
         popUpTo(Route.Login) { inclusive = true }
@@ -153,6 +204,7 @@ fun NavHostController.navigateToHomeFromSplash(userRole: UserRole) {
         UserRole.ADMIN -> Route.AdminHome
         UserRole.BUSINESS -> Route.BusinessHome
         UserRole.STUDENT -> Route.StudentHome
+        UserRole.SUPPORTER -> Route.SupporterHome
     }
     navigate(destination) {
         popUpTo(Route.Splash) { inclusive = true }

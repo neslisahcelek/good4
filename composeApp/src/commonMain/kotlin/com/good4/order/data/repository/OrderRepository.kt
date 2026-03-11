@@ -79,6 +79,24 @@ class OrderRepository(
         }
     }
 
+    suspend fun getOrderByCodeAndBusiness(code: String, businessId: String): Result<Order?, Error> {
+        return when (val result = firestoreRepository.queryCollectionWithMultipleConditions(
+            collectionPath = COLLECTION,
+            conditions = mapOf(
+                "code" to code,
+                "businessId" to businessId,
+                "status" to OrderStatus.PENDING.value
+            ),
+            clazz = OrderDto::class
+        )) {
+            is Result.Success -> {
+                val item = result.data.firstOrNull()
+                Result.Success(item?.data?.toOrder(item.id))
+            }
+            is Result.Error -> result
+        }
+    }
+
     suspend fun createOrder(dto: OrderDto): Result<String, Error> {
         return firestoreRepository.addDocument(COLLECTION, dto)
     }

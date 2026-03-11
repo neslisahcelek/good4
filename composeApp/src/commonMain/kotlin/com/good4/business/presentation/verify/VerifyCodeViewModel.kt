@@ -6,10 +6,15 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.code.data.repository.CodeRepository
 import com.good4.core.domain.Result
+import com.good4.order.data.repository.OrderRepository
+import com.good4.order.domain.OrderStatus
 import com.good4.product.data.repository.FirestoreProductRepository
+import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.verify_code_error_failed
 import good4.composeapp.generated.resources.verify_code_error_invalid
+import good4.composeapp.generated.resources.verify_code_order_error_confirm
+import good4.composeapp.generated.resources.verify_code_order_not_found
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,7 +25,9 @@ class VerifyCodeViewModel(
     private val authRepository: AuthRepository,
     private val businessRepository: FirestoreBusinessRepository,
     private val codeRepository: CodeRepository,
-    private val productRepository: FirestoreProductRepository
+    private val productRepository: FirestoreProductRepository,
+    private val orderRepository: OrderRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(VerifyCodeState())
@@ -40,6 +47,7 @@ class VerifyCodeViewModel(
                 is Result.Success -> {
                     businessId = result.data.find { it.data.ownerId == userId }?.id
                 }
+
                 is Result.Error -> {}
             }
         }
@@ -47,12 +55,13 @@ class VerifyCodeViewModel(
 
     fun onCodeInputChange(code: String) {
         if (code.length <= 6 && code.all { it.isDigit() }) {
-            _state.update { 
+            _state.update {
                 it.copy(
-                    codeInput = code, 
+                    codeInput = code,
                     errorMessage = null,
-                    verificationSuccess = false
-                ) 
+                    verificationSuccess = false,
+                    pendingOrder = null
+                )
             }
         }
     }
@@ -61,55 +70,119 @@ class VerifyCodeViewModel(
         val code = _state.value.codeInput
         if (code.length != 6) {
             viewModelScope.launch {
-                _state.update {
-                    it.copy(errorMessage = getString(Res.string.verify_code_error_invalid))
-                }
+                _state.update { it.copy(errorMessage = getString(Res.string.verify_code_error_invalid)) }
             }
             return
         }
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null, verificationSuccess = false) }
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    verificationSuccess = false,
+                    pendingOrder = null
+                )
+            }
 
-            // For now, we'll verify against all pending codes for this business
-            // In production, you'd want to scope this to the specific business
-            when (val result = codeRepository.verifyCode(code, businessId ?: "")) {
+            val bid = businessId ?: ""
+
+            when (val studentResult = codeRepository.verifyCode(code, bid)) {
                 is Result.Success -> {
-                    // Mark code as used
-                    when (codeRepository.markCodeAsUsed(result.data.id)) {
+                    when (codeRepository.markCodeAsUsed(studentResult.data.id)) {
                         is Result.Success -> {
-                            viewModelScope.launch {
-                                val productId = result.data.productId
-                                productRepository.decrementProductCount(productId)
-                            }
+                            launch { productRepository.decrementProductCount(studentResult.data.productId) }
                             _state.update {
                                 it.copy(
                                     isLoading = false,
                                     verificationSuccess = true,
-                                    verifiedProductName = result.data.productName,
+                                    verifiedProductName = studentResult.data.productName,
                                     codeInput = ""
                                 )
                             }
                         }
+
                         is Result.Error -> {
-                            val message = getString(Res.string.verify_code_error_failed)
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = message
+                                    errorMessage = getString(Res.string.verify_code_error_failed)
                                 )
                             }
                         }
                     }
                 }
+
                 is Result.Error -> {
+                    // Öğrenci kodu olarak bulunamadı — destekçi siparişi olarak dene
+                    tryVerifyAsOrder(code, bid)
+                }
+            }
+        }
+    }
+
+    private suspend fun tryVerifyAsOrder(code: String, bid: String) {
+        when (val orderResult = orderRepository.getOrderByCodeAndBusiness(code, bid)) {
+            is Result.Success -> {
+                val order = orderResult.data
+                if (order != null) {
+                    _state.update { it.copy(isLoading = false, pendingOrder = order) }
+                } else {
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.error.message
+                            errorMessage = getString(Res.string.verify_code_order_not_found)
                         )
                     }
                 }
+            }
+
+            is Result.Error -> {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = getString(Res.string.verify_code_order_not_found)
+                    )
+                }
+            }
+        }
+    }
+
+    fun confirmOrder() {
+        val order = _state.value.pendingOrder ?: return
+        if (_state.value.isConfirmingOrder) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isConfirmingOrder = true, errorMessage = null) }
+
+            when (orderRepository.updateOrderStatus(order.id, OrderStatus.CONFIRMED)) {
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isConfirmingOrder = false,
+                            errorMessage = getString(Res.string.verify_code_order_error_confirm)
+                        )
+                    }
+                    return@launch
+                }
+
+                is Result.Success -> Unit
+            }
+
+            order.items.forEach { item ->
+                productRepository.incrementProductPendingCount(item.productId, item.quantity)
+            }
+
+            val totalMeals = order.items.sumOf { it.quantity }
+            userRepository.incrementUserDonations(order.supporterId, totalMeals)
+
+            _state.update {
+                it.copy(
+                    isConfirmingOrder = false,
+                    orderConfirmedSuccess = true,
+                    pendingOrder = null,
+                    codeInput = ""
+                )
             }
         }
     }

@@ -19,9 +19,13 @@
     <string name="no_account">Henüz bir hesabınız yok mu?</string>
     <string name="student_register">🎓 Öğrenci Olarak Kayıt Olun</string>
     <string name="business_register">🏪 İşletme Olarak Kayıt Olun</string>
+    <string name="supporter_register">💚 Destekçi Olarak Kayıt Olun</string>
     <string name="student_registration">Öğrenci Kaydı</string>
     <string name="student_emoji">🎓</string>
     <string name="create_student_account">Öğrenci hesabı oluşturun</string>
+    <string name="supporter_registration">Destekçi Kaydı</string>
+    <string name="supporter_emoji">💚</string>
+    <string name="create_supporter_account">Destekçi hesabı oluşturun</string>
     <string name="full_name">Ad Soyad *</string>
     <string name="email_required">E-posta Adresi *</string>
     <string name="phone">Telefon Numaranız</string>
@@ -81,6 +85,7 @@
     <string name="remaining_time_prefix">Kalan Süreniz: </string>
     <string name="product_image_description">Ürün görseli</string>
     <string name="address_icon_description">Adres simgesi</string>
+    <string name="product_address_maps_hint">Haritada Aç</string>
     <string name="amount_icon_description">Miktar simgesi</string>
     <string name="lock_icon_description">Kilit simgesi</string>
     <string name="reserve_button_label">Benim İçin Ayır</string>
@@ -212,6 +217,15 @@
     <string name="verify_code_new">Yeni bir kod doğrulayın</string>
     <string name="verify_code_error_invalid">Rezervasyon kodu 6 haneli olmalıdır</string>
     <string name="verify_code_error_failed">Kod doğrulanırken bir hata oluştu</string>
+    <string name="verify_code_order_title">Destekçi Siparişi</string>
+    <string name="verify_code_order_supporter_label">Destekçi</string>
+    <string name="verify_code_order_items_label">Ürünler</string>
+    <string name="verify_code_order_total_label">Toplam</string>
+    <string name="verify_code_order_confirm">Ödemeyi Onayla</string>
+    <string name="verify_code_order_confirming">Onaylanıyor…</string>
+    <string name="verify_code_order_confirmed">Ödeme onaylandı! Ürünler askıya alındı.</string>
+    <string name="verify_code_order_not_found">Sipariş bulunamadı veya süresi dolmuş</string>
+    <string name="verify_code_order_error_confirm">Onaylama sırasında bir hata oluştu</string>
     <string name="student_reservations_title">Rezervasyonlarım</string>
     <string name="student_reservations_empty_title">Henüz bir rezervasyonunuz bulunmuyor</string>
     <string name="student_reservations_empty_subtitle">Bir ürün rezerve ettiğinizde\nbilgileri burada görüntüleyebilirsiniz</string>
@@ -295,6 +309,47 @@
     <string name="product_list_renewal_hours_suffix"> saat</string>
     <string name="product_list_delivery_suffix"> dk teslim süresi</string>
     <string name="product_list_renewal_text_suffix"> sonra yenilenecektir.</string>
+
+    <!-- Supporter Product List -->
+    <string name="supporter_product_list_empty">Şu anda satın alınabilecek ürün bulunmuyor.</string>
+    <string name="add_to_cart">Sepete Ekle</string>
+    <string name="in_cart_label">Sepette</string>
+
+    <!-- Supporter Cart -->
+    <string name="supporter_cart">Sepet</string>
+    <string name="supporter_cart_empty">Sepetiniz boş.</string>
+    <string name="supporter_cart_empty_subtitle">Ürünler sekmesinden ürün ekleyebilirsiniz.</string>
+    <string name="supporter_cart_total">Toplam</string>
+    <string name="supporter_cart_create_order">Sipariş Oluştur</string>
+    <string name="supporter_cart_item_remove">Kaldır</string>
+    <string name="supporter_cart_creating_order">Sipariş oluşturuluyor…</string>
+    <string name="supporter_products_tab">Ürünler</string>
+    <string name="supporter_cart_single_business_error">Sepet yalnızca tek bir işletmenin ürünlerini içerebilir.</string>
+    <string name="supporter_cart_no_session_error">Kullanıcı oturumu bulunamadı.</string>
+    <string name="supporter_cart_empty_error">Sepetiniz boş.</string>
+    <string name="supporter_cart_order_failed">Sipariş oluşturulamadı.</string>
+
+    <!-- Supporter Home & Profile -->
+    <string name="supporter_home_tab_products">Ürünler</string>
+    <string name="supporter_home_tab_cart">Sepet</string>
+    <string name="supporter_home_tab_profile">Profil</string>
+    <string name="profile_title_supporter">Destekçi Profilim</string>
+    <string name="profile_total_donations_label">Toplam Bağış</string>
+    <string name="profile_total_meals_label">Bağışlanan Öğün</string>
+    <string name="profile_donations_unit">bağış</string>
+    <string name="profile_meals_unit">öğün</string>
+
+    <!-- Supporter Order Code -->
+    <string name="order_code_title">Sipariş Kodunuz</string>
+    <string name="order_code_subtitle">Bu kodu kasaya gösterin veya okutun</string>
+    <string name="order_code_store">İşletme</string>
+    <string name="order_code_items_title">Sipariş Özeti</string>
+    <string name="order_code_total">Toplam Tutar</string>
+    <string name="order_code_expires">Son geçerlilik</string>
+    <string name="order_code_status_pending">Onay bekleniyor</string>
+    <string name="order_code_back_to_home">Ana Sayfaya Dön</string>
+    <string name="order_code_loading_error">Sipariş yüklenemedi.</string>
+    <string name="order_code_piece_suffix"> adet</string>
 
     <!-- Terms -->
     <string name="terms_of_service">Üyelik Sözleşmesi</string>

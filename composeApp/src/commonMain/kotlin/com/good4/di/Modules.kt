@@ -9,7 +9,12 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
+import com.good4.auth.presentation.register.supporter.SupporterRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
+import com.good4.supporter.presentation.cart.SupporterCartViewModel
+import com.good4.supporter.presentation.ordercode.SupporterOrderCodeViewModel
+import com.good4.supporter.presentation.products.SupporterProductListViewModel
+import com.good4.supporter.presentation.profile.SupporterProfileViewModel
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.business.presentation.dashboard.BusinessDashboardViewModel
 import com.good4.business.presentation.products.BusinessProductsViewModel
@@ -17,6 +22,8 @@ import com.good4.business.presentation.profile.BusinessProfileViewModel
 import com.good4.business.presentation.verify.VerifyCodeViewModel
 import com.good4.campaign.data.repository.CampaignRepository
 import com.good4.code.data.repository.CodeRepository
+import com.good4.order.data.repository.OrderRepository
+import com.good4.supportactivity.data.repository.SupportActivityRepository
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.core.data.repository.FirestoreRepository
@@ -41,10 +48,13 @@ val commonModule = module {
     single { FirestoreProductRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>()) }
     single { CampaignRepository(get<FirestoreRepository>()) }
     single { CodeRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>(), get<AppConfigRepository>()) }
+    single { SupportActivityRepository(get<FirestoreRepository>()) }
+    single { OrderRepository(get<FirestoreRepository>()) }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { StudentRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
     viewModel { BusinessRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<FirestoreBusinessRepository>()) }
+    viewModel { SupporterRegisterViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { EmailVerificationViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { ProductListViewModel(get<FirestoreProductRepository>(), get<CodeRepository>(), get<AuthRepository>(), get<AppConfigRepository>(), get<UserRepository>()) }
     viewModel { StudentProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
@@ -59,7 +69,7 @@ val commonModule = module {
             get<FirestoreProductRepository>()
         )
     }
-    viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>()) }
+    viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>(), get<OrderRepository>(), get<UserRepository>()) }
     viewModel { BusinessProductsViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>()) }
     viewModel {
         AdminDashboardViewModel(
@@ -79,4 +89,8 @@ val commonModule = module {
     viewModel { EditStudentCreditViewModel(get<UserRepository>()) }
     viewModel { AdminProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { SplashViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
+    viewModel { SupporterProductListViewModel(get<FirestoreProductRepository>()) }
+    viewModel { SupporterCartViewModel(get<AuthRepository>(), get<UserRepository>(), get<OrderRepository>()) }
+    viewModel { SupporterOrderCodeViewModel(get<OrderRepository>()) }
+    viewModel { SupporterProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
 }

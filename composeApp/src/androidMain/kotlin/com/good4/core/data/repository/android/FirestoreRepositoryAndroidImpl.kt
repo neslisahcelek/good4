@@ -9,6 +9,7 @@ import com.good4.core.util.FirebaseDebugLogger
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -16,6 +17,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.serializer
 import kotlinx.datetime.Instant
 import kotlin.reflect.KClass
 
@@ -70,21 +72,8 @@ class FirestoreRepositoryAndroidImpl(
 
     @Suppress("UNCHECKED_CAST")
     private fun encodeToJsonString(data: Any): String {
-        return when (data) {
-            is com.good4.product.data.dto.ProductDto ->
-                json.encodeToString(com.good4.product.data.dto.ProductDto.serializer(), data)
-            is com.good4.business.data.dto.BusinessDto ->
-                json.encodeToString(com.good4.business.data.dto.BusinessDto.serializer(), data)
-            is com.good4.campaign.data.dto.CampaignDto ->
-                json.encodeToString(com.good4.campaign.data.dto.CampaignDto.serializer(), data)
-            is com.good4.code.data.dto.CodeDto ->
-                json.encodeToString(com.good4.code.data.dto.CodeDto.serializer(), data)
-            is com.good4.user.data.dto.UserDto ->
-                json.encodeToString(com.good4.user.data.dto.UserDto.serializer(), data)
-            is com.good4.config.data.dto.AppConfigDto ->
-                json.encodeToString(com.good4.config.data.dto.AppConfigDto.serializer(), data)
-            else -> throw IllegalArgumentException("No serializer found for ${data::class.simpleName}")
-        }
+        val ser = serializer(data::class.java) as KSerializer<Any>
+        return json.encodeToString(ser, data)
     }
 
     // --- Read helpers ---
@@ -156,15 +145,8 @@ class FirestoreRepositoryAndroidImpl(
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> decodeFromJsonString(jsonString: String, clazz: KClass<T>): T {
-        return when (clazz.simpleName) {
-            "ProductDto" -> json.decodeFromString<com.good4.product.data.dto.ProductDto>(jsonString) as T
-            "BusinessDto" -> json.decodeFromString<com.good4.business.data.dto.BusinessDto>(jsonString) as T
-            "CampaignDto" -> json.decodeFromString<com.good4.campaign.data.dto.CampaignDto>(jsonString) as T
-            "CodeDto" -> json.decodeFromString<com.good4.code.data.dto.CodeDto>(jsonString) as T
-            "UserDto" -> json.decodeFromString<com.good4.user.data.dto.UserDto>(jsonString) as T
-            "AppConfigDto" -> json.decodeFromString<com.good4.config.data.dto.AppConfigDto>(jsonString) as T
-            else -> throw IllegalArgumentException("No serializer found for ${clazz.simpleName}")
-        }
+        val ser = serializer(clazz.java) as KSerializer<T>
+        return json.decodeFromString(ser, jsonString)
     }
 
     // --- FirestoreRepository implementation ---

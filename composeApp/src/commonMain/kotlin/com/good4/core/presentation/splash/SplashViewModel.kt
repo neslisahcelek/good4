@@ -12,6 +12,7 @@ import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
@@ -69,13 +70,13 @@ class SplashViewModel(
     }
 
     private suspend fun resolveStartupDecision(): StartupDecision {
-        val currentUser = authRepository.currentUser ?: return StartupDecision(route = Route.Login)
+        val currentUser = authRepository.authStateFlow.first() ?: return StartupDecision(route = Route.Login)
         return when (val result = userRepository.getUser(currentUser.uid)) {
             is Result.Success -> {
                 val user = result.data
                 val shouldCheckEmailVerification =
                     AppEnvironment.isEmailVerificationRequired &&
-                            user.role == UserRole.STUDENT
+                            (user.role == UserRole.STUDENT || user.role == UserRole.SUPPORTER)
 
                 val isAuthVerified = if (shouldCheckEmailVerification) {
                     withTimeoutOrNull(AUTH_RELOAD_TIMEOUT_MS) {
@@ -103,7 +104,10 @@ class SplashViewModel(
                 }
             }
 
-            is Result.Error -> StartupDecision(route = Route.Login)
+            is Result.Error -> {
+                Logger.e(TAG, "getUser failed for uid=${currentUser.uid}, error=${result.error}")
+                StartupDecision(route = Route.Login)
+            }
         }
     }
 
@@ -132,6 +136,7 @@ class SplashViewModel(
             UserRole.ADMIN -> Route.AdminHome
             UserRole.BUSINESS -> Route.BusinessHome
             UserRole.STUDENT -> Route.StudentHome
+            UserRole.SUPPORTER -> Route.SupporterHome
         }
     }
 }

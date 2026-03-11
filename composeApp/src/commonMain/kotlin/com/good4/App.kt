@@ -4,15 +4,16 @@ import androidx.compose.runtime.Composable
 import com.good4.core.presentation.Good4Theme
 import com.good4.navigation.Good4NavGraph
 import com.good4.navigation.Route
-import com.good4.user.domain.UserRole
 
 @Composable
 fun App(
-    startDestination: Route = Route.Splash
+    startDestination: Route = Route.Splash,
+    onSplashReady: (() -> Unit)? = null
 ) {
     Good4Theme {
         Good4NavGraph(
-            startDestination = startDestination
+            startDestination = startDestination,
+            onSplashReady = onSplashReady
         )
     }
 }

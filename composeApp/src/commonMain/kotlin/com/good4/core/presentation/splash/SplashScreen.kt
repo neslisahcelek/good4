@@ -3,15 +3,12 @@ package com.good4.core.presentation.splash
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.AppBackground
-import com.good4.core.presentation.TextPrimary
 import com.good4.navigation.Route
 import com.good4.user.domain.UserRole
 
@@ -29,7 +26,7 @@ fun SplashScreenRoot(
         startDestination?.let { destination ->
             when (destination) {
                 Route.Login -> onNavigateToLogin()
-                Route.AdminHome, Route.BusinessHome, Route.StudentHome -> {
+                Route.AdminHome, Route.BusinessHome, Route.StudentHome, Route.SupporterHome -> {
                     userRole?.let { role ->
                         onNavigateToHome(role)
                     } ?: onNavigateToLogin()
@@ -51,9 +48,6 @@ fun SplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(AppBackground),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(color = TextPrimary)
-    }
+            .background(AppBackground)
+    )
 }

@@ -86,6 +86,8 @@ class LoginViewModel(
 
             is LoginAction.OnStudentRegisterClick,
             is LoginAction.OnBusinessRegisterClick,
+            is LoginAction.OnSupporterRegisterClick -> Unit
+
             is LoginAction.OnForgotPasswordClick -> sendPasswordResetEmail()
         }
     }
@@ -125,7 +127,8 @@ class LoginViewModel(
                         is Result.Success -> {
                             val role = userResult.data.role
                             val shouldCheckEmailVerification =
-                                AppEnvironment.isEmailVerificationRequired && role == UserRole.STUDENT
+                                AppEnvironment.isEmailVerificationRequired &&
+                                        (role == UserRole.STUDENT || role == UserRole.SUPPORTER)
                             if (shouldCheckEmailVerification && !authUser.isEmailVerified) {
                                 val sendResult = authRepository.sendEmailVerification()
                                 _state.update { current ->

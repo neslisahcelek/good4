@@ -115,6 +115,17 @@ class FirestoreProductRepository(
             is Result.Error -> result
         }
     }
+
+    suspend fun incrementProductPendingCount(id: String, amount: Int): Result<Unit, Error> {
+        return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
+            is Result.Success -> {
+                val current = result.data.pendingCount ?: 0
+                val updated = result.data.copy(pendingCount = current + amount)
+                updateProduct(id, updated)
+            }
+            is Result.Error -> result
+        }
+    }
     
     suspend fun deleteProduct(id: String): Result<Unit, Error> {
         return firestoreRepository.deleteDocument("products", id)

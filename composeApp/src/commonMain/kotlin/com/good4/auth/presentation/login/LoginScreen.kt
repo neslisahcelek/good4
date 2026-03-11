@@ -73,6 +73,7 @@ import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
 import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.student_register
+import good4.composeapp.generated.resources.supporter_register
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -85,6 +86,7 @@ fun LoginScreenRoot(
     onLoginSuccess: (UserRole) -> Unit,
     onNavigateToStudentRegister: () -> Unit,
     onNavigateToBusinessRegister: () -> Unit,
+    onNavigateToSupporterRegister: () -> Unit,
     onNavigateToEmailVerification: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,6 +112,7 @@ fun LoginScreenRoot(
             when (action) {
                 is LoginAction.OnStudentRegisterClick -> onNavigateToStudentRegister()
                 is LoginAction.OnBusinessRegisterClick -> onNavigateToBusinessRegister()
+                is LoginAction.OnSupporterRegisterClick -> onNavigateToSupporterRegister()
                 else -> viewModel.onAction(action)
             }
         }
@@ -386,6 +389,26 @@ fun LoginScreen(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { onAction(LoginAction.OnSupporterRegisterClick) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DeepGreen.copy(alpha = 0.15f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = stringResource(Res.string.supporter_register),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DeepGreen
                 )
             }
 

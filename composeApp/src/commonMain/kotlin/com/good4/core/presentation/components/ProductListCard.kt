@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,12 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.util.openMaps
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.business_products_price_unavailable
+import good4.composeapp.generated.resources.address_icon_description
 import good4.composeapp.generated.resources.business_products_stock_prefix
 import good4.composeapp.generated.resources.emoji_product_placeholder
 import org.jetbrains.compose.resources.stringResource
@@ -101,6 +106,31 @@ fun ProductListCard(
                     )
                 }
 
+                if (product.address.isNotBlank()) {
+                    Spacer(modifier = Modifier.padding(top = 4.dp))
+                    Row(
+                        modifier = Modifier
+                            .clickable { openMaps(product.address) }
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.LocationOn,
+                            contentDescription = stringResource(Res.string.address_icon_description),
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = product.address,
+                            fontSize = 11.sp,
+                            color = PrimaryGreen,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.padding(top = 8.dp))
 
                 Row(
@@ -124,6 +154,7 @@ fun ProductListCard(
                                 )
                             )
                         }
+
                         product.discountPrice != null -> {
                             Text(
                                 text = "${product.discountPrice} $currencySuffix",
@@ -132,6 +163,7 @@ fun ProductListCard(
                                 color = TextPrimary
                             )
                         }
+
                         product.originalPrice != null -> {
                             Text(
                                 text = "${product.originalPrice} $currencySuffix",
@@ -140,6 +172,7 @@ fun ProductListCard(
                                 color = TextPrimary
                             )
                         }
+
                         else -> {
                             Text(
                                 text = "${product.price} $currencySuffix",
