@@ -8,6 +8,7 @@ import com.good4.business.data.dto.BusinessDto
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
@@ -109,7 +110,7 @@ class BusinessRegisterViewModel(
 
     private fun register() {
         val state = _state.value
-        val email = state.email.trim()
+        val email = state.email.normalizeForEmail()
 
         if (state.fullName.isBlank()) {
             _state.update {

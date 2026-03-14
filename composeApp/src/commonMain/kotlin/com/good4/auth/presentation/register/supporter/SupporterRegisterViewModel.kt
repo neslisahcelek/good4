@@ -6,6 +6,7 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
@@ -68,13 +69,13 @@ class SupporterRegisterViewModel(
             return
         }
 
-        val trimmedEmail = state.email.trim()
-        if (trimmedEmail.isBlank()) {
+        val email = state.email.normalizeForEmail()
+        if (email.isBlank()) {
             _state.update { it.copy(errorMessage = UiText.StringResourceId(Res.string.error_email_required)) }
             return
         }
 
-        val emailValidation = trimmedEmail.validateEmail()
+        val emailValidation = email.validateEmail()
         if (emailValidation != null) {
             _state.update { it.copy(errorMessage = UiText.StringResourceId(emailValidation)) }
             return
@@ -100,13 +101,13 @@ class SupporterRegisterViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val authResult = authRepository.signUp(trimmedEmail, state.password)) {
+            when (val authResult = authRepository.signUp(email, state.password)) {
                 is Result.Success -> {
                     val userId = authResult.data.uid
                     val nowSecs = Clock.System.now().epochSeconds
 
                     val userDto = UserDto(
-                        email = trimmedEmail,
+                        email = email,
                         fullName = state.fullName,
                         role = UserRole.SUPPORTER.value,
                         verified = false,

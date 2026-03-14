@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +37,7 @@ import com.good4.core.util.singleClick
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_resend_wait_seconds
+import good4.composeapp.generated.resources.logout
 import good4.composeapp.generated.resources.verify_email_check
 import good4.composeapp.generated.resources.verify_email_description
 import good4.composeapp.generated.resources.verify_email_resend
@@ -49,7 +51,8 @@ import kotlin.time.Duration.Companion.seconds
 fun EmailVerificationScreenRoot(
     modifier: Modifier = Modifier,
     viewModel: EmailVerificationViewModel,
-    onVerified: (UserRole) -> Unit
+    onVerified: (UserRole) -> Unit,
+    onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -63,7 +66,12 @@ fun EmailVerificationScreenRoot(
     EmailVerificationScreen(
         modifier = modifier,
         state = state,
-        onAction = viewModel::onAction
+        onAction = { action ->
+            if (action is EmailVerificationAction.OnLogoutClick) {
+                onLogout()
+            }
+            viewModel.onAction(action)
+        }
     )
 }
 
@@ -75,6 +83,7 @@ fun EmailVerificationScreen(
 ) {
     val onCheckClick = remember { singleClick { onAction(EmailVerificationAction.OnCheckClick) } }
     val onResendClick = remember { singleClick { onAction(EmailVerificationAction.OnResendClick) } }
+    val onLogoutClick = remember { singleClick { onAction(EmailVerificationAction.OnLogoutClick) } }
 
     Good4Scaffold(
         modifier = modifier,
@@ -142,8 +151,8 @@ fun EmailVerificationScreen(
                     .height(56.dp),
                 enabled = !state.isLoading,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = TextPrimary,
-                    disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
+                    containerColor = DeepGreen,
+                    disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
                 )
             ) {
                 if (state.isLoading) {
@@ -170,8 +179,8 @@ fun EmailVerificationScreen(
                     .height(56.dp),
                 enabled = !state.isLoading && state.canResendEmail,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DeepGreen,
-                    disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
+                    containerColor = TextPrimary,
+                    disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
                 )
             ) {
                 Text(
@@ -194,6 +203,25 @@ fun EmailVerificationScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            OutlinedButton(
+                onClick = onLogoutClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp),
+                enabled = !state.isLoading,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = TextPrimary
+                )
+            ) {
+                Text(
+                    text = stringResource(Res.string.logout),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }

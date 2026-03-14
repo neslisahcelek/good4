@@ -9,6 +9,7 @@ import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.AppEnvironment
+import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
@@ -99,7 +100,7 @@ class LoginViewModel(
             return
         }
 
-        val email = state.email.trim()
+        val email = state.email.normalizeForEmail()
         val password = state.password
 
         if (email.isBlank()) {
@@ -201,7 +202,7 @@ class LoginViewModel(
             return
         }
 
-        val email = _state.value.email.trim()
+        val email = _state.value.email.normalizeForEmail()
         val emailValidation = email.validateEmail()
         if (emailValidation != null) {
             _state.update {

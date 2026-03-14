@@ -7,6 +7,7 @@ import com.good4.auth.domain.AuthError
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
@@ -105,7 +106,7 @@ class StudentRegisterViewModel(
             return
         }
         
-        val email = state.email.trim()
+        val email = state.email.normalizeForEmail()
 
         if (state.fullName.isBlank()) {
             _state.update {

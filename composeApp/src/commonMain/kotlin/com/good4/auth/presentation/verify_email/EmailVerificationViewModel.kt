@@ -17,13 +17,12 @@ import good4.composeapp.generated.resources.error_user_not_logged_in
 import good4.composeapp.generated.resources.verification_email_sent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlin.time.Duration.Companion.seconds
-
 class EmailVerificationViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
@@ -55,7 +54,18 @@ class EmailVerificationViewModel(
             EmailVerificationAction.OnClearInfo -> {
                 _state.update { it.copy(infoMessage = null) }
             }
+            EmailVerificationAction.OnLogoutClick -> {
+                viewModelScope.launch {
+                    logout()
+                }
+            }
         }
+    }
+
+    private suspend fun logout() {
+        _state.update { it.copy(isLoading = true) }
+        authRepository.signOut()
+        _state.update { it.copy(isLoading = false) }
     }
 
     private fun resendVerificationEmail() {
@@ -115,7 +125,8 @@ class EmailVerificationViewModel(
 
     private suspend fun checkVerification(
         showErrorIfNotVerified: Boolean,
-        showLoading: Boolean
+        showLoading: Boolean,
+        retryCount: Int = 0
     ) {
         if (showLoading) {
             _state.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
@@ -127,6 +138,11 @@ class EmailVerificationViewModel(
             is Result.Success -> {
                 val authUser = result.data
                 if (!authUser.isEmailVerified) {
+                    if (showErrorIfNotVerified && retryCount < MAX_VERIFICATION_RETRIES) {
+                        delay(VERIFICATION_RETRY_DELAY_SECONDS.seconds)
+                        checkVerification(showErrorIfNotVerified, showLoading, retryCount + 1)
+                        return
+                    }
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -230,5 +246,7 @@ class EmailVerificationViewModel(
 
     companion object {
         private const val VERIFICATION_COOLDOWN_SECONDS = 60
+        private const val MAX_VERIFICATION_RETRIES = 2
+        private const val VERIFICATION_RETRY_DELAY_SECONDS = 2
     }
 }

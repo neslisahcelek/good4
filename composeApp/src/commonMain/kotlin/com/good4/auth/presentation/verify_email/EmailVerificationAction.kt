@@ -5,4 +5,5 @@ sealed interface EmailVerificationAction {
     data object OnCheckClick : EmailVerificationAction
     data object OnClearError : EmailVerificationAction
     data object OnClearInfo : EmailVerificationAction
+    data object OnLogoutClick : EmailVerificationAction
 }

@@ -8,14 +8,21 @@ import org.jetbrains.compose.resources.StringResource
 
 private const val EMAIL_REGEX_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$"
 
+fun String.normalizeForEmail(): String {
+    return this
+        .replace("\u00A0", "") // non-breaking space
+        .replace(Regex("[\u200B-\u200D\u2060\uFEFF]"), "") // zero-width chars
+        .trim()
+}
+
 fun String.validateEmail(): StringResource? {
-    val trimmedEmail = this.trim()
-    
-    if (trimmedEmail.isBlank()) {
+    val normalizedEmail = this.normalizeForEmail()
+
+    if (normalizedEmail.isBlank()) {
         return Res.string.error_email_required
     }
 
-    if (!trimmedEmail.matches(EMAIL_REGEX_PATTERN.toRegex())) {
+    if (!normalizedEmail.matches(EMAIL_REGEX_PATTERN.toRegex())) {
         return Res.string.error_email_invalid_format
     }
 
@@ -28,8 +35,8 @@ fun String.validateStudentEmail(): StringResource? {
         return emailValidation
     }
 
-    val trimmedEmail = this.trim()
-    if (!trimmedEmail.endsWith("edu.tr", ignoreCase = true)) {
+    val normalizedEmail = this.normalizeForEmail()
+    if (!normalizedEmail.endsWith("edu.tr", ignoreCase = true)) {
         return Res.string.error_email_must_be_edu_tr
     }
 
