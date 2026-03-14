@@ -4,8 +4,14 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
+import com.good4.business.data.dto.BusinessDto
+import com.good4.campaign.data.dto.CampaignDto
+import com.good4.config.data.dto.AppConfigDto
 import com.good4.code.data.dto.CodeDto
+import com.good4.order.data.dto.OrderDto
+import com.good4.order.data.dto.OrderItemDto
 import com.good4.product.data.dto.ProductDto
+import com.good4.supportactivity.data.dto.SupportActivityDto
 import com.good4.user.data.dto.UserDto
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.DocumentSnapshot
@@ -390,34 +396,34 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         }
     }
 
+    /**
+     * Tek kaynak: Yeni Firestore DTO eklendiğinde sadece bu map'e bir satır ekle.
+     * serializerFor ve serializerForData bu map'i kullanır.
+     */
+    private val dtoSerializers: Map<String, KSerializer<*>> = mapOf(
+        "ProductDto" to ProductDto.serializer(),
+        "BusinessDto" to BusinessDto.serializer(),
+        "CampaignDto" to CampaignDto.serializer(),
+        "CodeDto" to CodeDto.serializer(),
+        "UserDto" to UserDto.serializer(),
+        "AppConfigDto" to AppConfigDto.serializer(),
+        "OrderDto" to OrderDto.serializer(),
+        "OrderItemDto" to OrderItemDto.serializer(),
+        "SupportActivityDto" to SupportActivityDto.serializer()
+    )
+
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> serializerFor(clazz: KClass<T>): KSerializer<T> {
-        return when (clazz.simpleName) {
-            "ProductDto" -> ProductDto.serializer() as KSerializer<T>
-            "BusinessDto" -> com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
-            "CampaignDto" -> com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
-            "CodeDto" -> CodeDto.serializer() as KSerializer<T>
-            "UserDto" -> UserDto.serializer() as KSerializer<T>
-            "AppConfigDto" -> com.good4.config.data.dto.AppConfigDto.serializer() as KSerializer<T>
-            else -> throw IllegalArgumentException("No serializer found for ${clazz.simpleName}")
-        }
+        val ser = dtoSerializers[clazz.simpleName]
+            ?: throw IllegalArgumentException("No serializer for ${clazz.simpleName}. Add to dtoSerializers in FirestoreRepositoryIOSImpl.")
+        return ser as KSerializer<T>
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> serializerForData(data: T): KSerializer<T> {
-        return when (data) {
-            is com.good4.product.data.dto.ProductDto ->
-                com.good4.product.data.dto.ProductDto.serializer() as KSerializer<T>
-            is com.good4.business.data.dto.BusinessDto ->
-                com.good4.business.data.dto.BusinessDto.serializer() as KSerializer<T>
-            is com.good4.campaign.data.dto.CampaignDto ->
-                com.good4.campaign.data.dto.CampaignDto.serializer() as KSerializer<T>
-            is com.good4.code.data.dto.CodeDto ->
-                com.good4.code.data.dto.CodeDto.serializer() as KSerializer<T>
-            is com.good4.user.data.dto.UserDto ->
-                com.good4.user.data.dto.UserDto.serializer() as KSerializer<T>
-            else -> throw IllegalArgumentException("No serializer found for ${data::class.simpleName}")
-        }
+        val ser = dtoSerializers[data::class.simpleName]
+            ?: throw IllegalArgumentException("No serializer for ${data::class.simpleName}. Add to dtoSerializers in FirestoreRepositoryIOSImpl.")
+        return ser as KSerializer<T>
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -426,6 +432,8 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             "UserDto" -> decodeUserDto(document) as T
             "ProductDto" -> decodeProductDto(document) as T
             "CodeDto" -> decodeCodeDto(document) as T
+            "OrderDto" -> decodeOrderDto(document) as T
+            "SupportActivityDto" -> decodeSupportActivityDto(document) as T
             else -> document.data(serializerFor(clazz))
         }
     }
@@ -460,6 +468,56 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
     }
 
+    private fun decodeOrderDto(document: DocumentSnapshot): OrderDto {
+        val itemsList = try {
+            document.getOrNull<List<*>>("items")?.mapNotNull { item ->
+                val m = item as? Map<*, *> ?: return@mapNotNull null
+                OrderItemDto(
+                    businessId = m["businessId"] as? String,
+                    businessName = m["businessName"] as? String,
+                    productId = m["productId"] as? String,
+                    productName = m["productName"] as? String,
+                    quantity = (m["quantity"] as? Number)?.toInt(),
+                    unitPrice = (m["unitPrice"] as? Number)?.toDouble(),
+                    totalPrice = (m["totalPrice"] as? Number)?.toDouble()
+                )
+            }
+        } catch (_: Exception) { null }
+
+        return OrderDto(
+            businessId = document.getOrNull("businessId"),
+            businessName = document.getOrNull("businessName"),
+            code = document.getOrNull("code"),
+            createdAt = document.getEpochSeconds("createdAt"),
+            expiresAt = document.getEpochSeconds("expiresAt"),
+            grandTotal = document.getAsDouble("grandTotal"),
+            totalAmount = document.getAsDouble("totalAmount"),
+            platformDonation = document.getAsDouble("platformDonation"),
+            status = document.getOrNull("status"),
+            supporterId = document.getOrNull("supporterId"),
+            supporterName = document.getOrNull("supporterName"),
+            items = itemsList
+        )
+    }
+
+    private fun decodeSupportActivityDto(document: DocumentSnapshot): SupportActivityDto {
+        return SupportActivityDto(
+            createdAt = document.getEpochSeconds("createdAt"),
+            creatorId = document.getOrNull("creatorId"),
+            currentCount = document.getAsInt("currentCount"),
+            description = document.getOrNull("description"),
+            endDate = document.getEpochSeconds("endDate"),
+            shareId = document.getOrNull("shareId"),
+            shareLink = document.getOrNull("shareLink"),
+            startDate = document.getEpochSeconds("startDate"),
+            status = document.getOrNull("status"),
+            targetBusinessId = document.getOrNull("targetBusinessId"),
+            targetCount = document.getAsInt("targetCount"),
+            title = document.getOrNull("title"),
+            type = document.getOrNull("type")
+        )
+    }
+
     private fun decodeUserDto(document: DocumentSnapshot): UserDto {
         return UserDto(
             email = document.getOrNull("email"),
@@ -470,10 +528,13 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             university = document.getOrNull("university"),
             major = document.getOrNull("major"),
             educationLevel = document.getOrNull("educationLevel"),
-            credit = document.getOrNull("credit"),
-            weeklyCreditOverride = document.getOrNull("weeklyCreditOverride"),
+            credit = document.getAsInt("credit"),
+            weeklyCreditOverride = document.getAsInt("weeklyCreditOverride"),
             lastCreditResetAt = document.getEpochSeconds("lastCreditResetAt"),
-            registrationDate = document.getEpochSeconds("registrationDate")
+            registrationDate = document.getEpochSeconds("registrationDate"),
+            createdAt = document.getEpochSeconds("createdAt"),
+            totalDonations = document.getAsInt("totalDonations"),
+            totalMeals = document.getAsInt("totalMeals")
         )
     }
 
@@ -490,9 +551,18 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             "credit" to userDto.credit,
             "weeklyCreditOverride" to userDto.weeklyCreditOverride,
             "lastCreditResetAt" to userDto.lastCreditResetAt?.let { Timestamp(it, 0) },
-            "registrationDate" to userDto.registrationDate?.let { Timestamp(it, 0) }
+            "registrationDate" to userDto.registrationDate?.let { Timestamp(it, 0) },
+            "createdAt" to userDto.createdAt?.let { Timestamp(it, 0) },
+            "totalDonations" to userDto.totalDonations,
+            "totalMeals" to userDto.totalMeals
         )
     }
+
+    private fun DocumentSnapshot.getAsDouble(field: String): Double? =
+        (getOrNull<Any>(field) as? Number)?.toDouble()
+
+    private fun DocumentSnapshot.getAsInt(field: String): Int? =
+        (getOrNull<Any>(field) as? Number)?.toInt()
 
     private inline fun <reified T> DocumentSnapshot.getOrNull(field: String): T? {
         return try {

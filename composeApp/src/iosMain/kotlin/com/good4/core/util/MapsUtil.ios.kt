@@ -1,9 +1,6 @@
 package com.good4.core.util
 
-import platform.Foundation.NSCharacterSet
 import platform.Foundation.NSURL
-import platform.Foundation.URLQueryAllowedCharacterSet
-import platform.Foundation.addingPercentEncodingWithAllowedCharacters
 import platform.UIKit.UIAlertAction
 import platform.UIKit.UIAlertActionStyleCancel
 import platform.UIKit.UIAlertActionStyleDefault
@@ -11,10 +8,20 @@ import platform.UIKit.UIAlertController
 import platform.UIKit.UIAlertControllerStyleActionSheet
 import platform.UIKit.UIApplication
 
+private fun String.encodeToUrlQuery(): String = buildString {
+    for (c in this@encodeToUrlQuery) {
+        when {
+            c.isLetterOrDigit() || c in "-_.~" -> append(c)
+            else -> c.toString().encodeToByteArray().forEach { b ->
+                append('%')
+                append((b.toInt() and 0xFF).toString(16).uppercase().padStart(2, '0'))
+            }
+        }
+    }
+}
+
 actual fun openMaps(address: String) {
-    val encodedAddress = address.addingPercentEncodingWithAllowedCharacters(
-        NSCharacterSet.URLQueryAllowedCharacterSet
-    ) ?: address
+    val encodedAddress = address.encodeToUrlQuery()
 
     val appleMapsUrl = NSURL.URLWithString("maps://?q=$encodedAddress")
     val googleMapsUrl = NSURL.URLWithString("comgooglemaps://?q=$encodedAddress")

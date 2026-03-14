@@ -31,7 +31,8 @@ class FirestoreRepositoryAndroidImpl(
     }
 
     private val timestampFieldNames = setOf(
-        "createdAt", "expiresAt", "usedAt", "lastCreditResetAt", "registrationDate"
+        "createdAt", "expiresAt", "usedAt", "lastCreditResetAt", "registrationDate",
+        "startDate", "endDate"
     )
 
     // --- Write helpers ---
