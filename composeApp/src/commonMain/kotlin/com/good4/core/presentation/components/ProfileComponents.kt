@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.ErrorRed
@@ -63,7 +64,7 @@ fun ProfileScreenScaffold(
     topBar: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         topBar = topBar
     ) { paddingValues ->
@@ -106,7 +107,8 @@ fun ProfileInfoCard(
     modifier: Modifier = Modifier,
     icon: ImageVector,
     title: String,
-    value: String
+    value: String,
+    isValueUnderlined: Boolean = false
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -146,7 +148,8 @@ fun ProfileInfoCard(
                     text = value,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = TextPrimary
+                    color = TextPrimary,
+                    textDecoration = if (isValueUnderlined) TextDecoration.Underline else null
                 )
             }
         }

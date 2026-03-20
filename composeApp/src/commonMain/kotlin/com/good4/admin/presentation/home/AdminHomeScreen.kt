@@ -40,7 +40,7 @@ import com.good4.admin.presentation.editstudentcredit.EditStudentCreditScreen
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.admin_drawer_edit_student_credit
 import good4.composeapp.generated.resources.admin_drawer_profile
@@ -120,7 +120,7 @@ fun AdminHomeScreenRoot(
             }
         }
     ) {
-        Good4Scaffold(
+        Good4NestedScaffold(
             modifier = modifier,
             bottomBar = {
                 Good4NavigationBar {

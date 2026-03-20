@@ -86,7 +86,8 @@ fun BusinessProfileScreen(
         ProfileInfoCard(
             icon = Icons.Filled.LocationOn,
             title = stringResource(Res.string.profile_address_label),
-            value = state.address
+            value = state.address,
+            isValueUnderlined = true
         )
 
         Spacer(modifier = Modifier.height(12.dp))

@@ -1,14 +1,13 @@
 package com.good4.auth.presentation.register.supporter
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -35,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -58,7 +58,6 @@ import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.util.singleClick
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
-import good4.composeapp.generated.resources.create_supporter_account
 import good4.composeapp.generated.resources.email_required
 import good4.composeapp.generated.resources.full_name
 import good4.composeapp.generated.resources.password_confirm
@@ -67,7 +66,6 @@ import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
 import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.required_fields
-import good4.composeapp.generated.resources.supporter_emoji
 import good4.composeapp.generated.resources.supporter_registration
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -127,37 +125,25 @@ fun SupporterRegisterScreen(
                 .fillMaxSize()
                 .background(AppBackground)
                 .padding(paddingValues)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .imePadding()
-                    .navigationBarsPadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = stringResource(Res.string.supporter_emoji), fontSize = 64.sp)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(Res.string.create_supporter_account),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                SupporterRegisterFormFields(
-                    state = state,
-                    onAction = onAction,
-                    onDone = {
-                        focusManager.clearFocus()
-                        onAction(SupporterRegisterAction.OnRegisterClick)
-                    }
-                )
+                    SupporterRegisterFormFields(
+                        state = state,
+                        onAction = onAction,
+                        onDone = {
+                            focusManager.clearFocus()
+                            onAction(SupporterRegisterAction.OnRegisterClick)
+                        }
+                    )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -181,7 +167,6 @@ fun SupporterRegisterScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
                 RegisterSubmitButton(
                     isLoading = state.isLoading,
                     onClick = onRegisterClick

@@ -50,7 +50,7 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.util.singleClick
 import com.good4.order.domain.Order
@@ -93,7 +93,7 @@ fun VerifyCodeScreen(
         }
     }
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         topBar = { Good4TopBar(title = stringResource(Res.string.verify_code)) }
     ) { paddingValues ->

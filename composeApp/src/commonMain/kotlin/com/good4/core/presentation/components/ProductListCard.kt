@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,11 +32,13 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.util.openMaps
+import com.good4.core.util.toDisplayAddress
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.address_icon_description
 import good4.composeapp.generated.resources.business_products_stock_prefix
 import good4.composeapp.generated.resources.emoji_product_placeholder
+import good4.composeapp.generated.resources.product_address_maps_hint
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -107,6 +110,10 @@ fun ProductListCard(
                 }
 
                 if (product.address.isNotBlank()) {
+                    val displayAddress = toDisplayAddress(
+                        rawAddress = product.address,
+                        mapsFallbackLabel = stringResource(Res.string.product_address_maps_hint)
+                    )
                     Spacer(modifier = Modifier.padding(top = 4.dp))
                     Row(
                         modifier = Modifier
@@ -122,9 +129,10 @@ fun ProductListCard(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = product.address,
+                            text = displayAddress,
                             fontSize = 11.sp,
                             color = PrimaryGreen,
+                            textDecoration = TextDecoration.Underline,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

@@ -33,7 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
@@ -86,7 +86,7 @@ fun BusinessProductsScreenRoot(
         }
     }
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         topBar = { Good4TopBar(title = stringResource(Res.string.business_products_title)) },
         floatingActionButton = {

@@ -1,17 +1,21 @@
 package com.good4.auth.presentation.register.student
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,6 +23,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -26,17 +33,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,7 +81,6 @@ import com.good4.core.util.singleClick
 import config.LegalLinks
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
-import good4.composeapp.generated.resources.create_student_account
 import good4.composeapp.generated.resources.education_level
 import good4.composeapp.generated.resources.education_level_1
 import good4.composeapp.generated.resources.education_level_2
@@ -95,12 +101,13 @@ import good4.composeapp.generated.resources.password_visibility_show
 import good4.composeapp.generated.resources.privacy_policy
 import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.required_fields
-import good4.composeapp.generated.resources.student_emoji
 import good4.composeapp.generated.resources.student_registration
 import good4.composeapp.generated.resources.terms_accept_middle
 import good4.composeapp.generated.resources.terms_accept_suffix
 import good4.composeapp.generated.resources.terms_of_service
 import good4.composeapp.generated.resources.university
+import good4.composeapp.generated.resources.university_dropdown_empty
+import good4.composeapp.generated.resources.university_placeholder
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -124,6 +131,7 @@ fun StudentRegisterScreenRoot(
     StudentRegisterScreen(
         modifier = modifier,
         state = state,
+        universities = state.universities,
         educationLevels = educationLevels,
         onAction = { action ->
             when (action) {
@@ -139,6 +147,7 @@ fun StudentRegisterScreenRoot(
 fun StudentRegisterScreen(
     modifier: Modifier = Modifier,
     state: StudentRegisterState,
+    universities: List<String>,
     educationLevels: List<String>,
     onAction: (StudentRegisterAction) -> Unit
 ) {
@@ -171,28 +180,10 @@ fun StudentRegisterScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .imePadding()
-                    .navigationBarsPadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = stringResource(Res.string.student_emoji),
-                    fontSize = 64.sp
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(Res.string.create_student_account),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
                 OutlinedTextField(
                     value = state.fullName,
                     onValueChange = { onAction(StudentRegisterAction.OnFullNameChange(it)) },
@@ -224,15 +215,14 @@ fun StudentRegisterScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = state.university,
+                SelectionDropdown(
+                    selectedValue = state.university,
                     onValueChange = { onAction(StudentRegisterAction.OnUniversityChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.university)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
+                    options = universities,
+                    label = stringResource(Res.string.university),
+                    placeholder = stringResource(Res.string.university_placeholder),
+                    emptyText = stringResource(Res.string.university_dropdown_empty),
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -344,7 +334,6 @@ fun StudentRegisterScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Button(
                     onClick = onRegisterClick,
                     modifier = Modifier
@@ -394,42 +383,123 @@ private fun EducationLevelDropdown(
     educationLevels: List<String>,
     modifier: Modifier = Modifier
 ) {
-
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+    SelectionDropdown(
+        selectedValue = selectedValue,
+        onValueChange = onValueChange,
+        options = educationLevels,
+        label = stringResource(Res.string.education_level),
+        placeholder = stringResource(Res.string.education_level_placeholder),
         modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SelectionDropdown(
+    selectedValue: String,
+    onValueChange: (String) -> Unit,
+    options: List<String>,
+    label: String,
+    placeholder: String,
+    emptyText: String? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    var showSheet by remember { mutableStateOf(false) }
+    val hasOptions = options.isNotEmpty()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    Box(
+        modifier = modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
             value = selectedValue,
             onValueChange = {},
             readOnly = true,
-            label = { Text(stringResource(Res.string.education_level)) },
-            placeholder = { Text(stringResource(Res.string.education_level_placeholder)) },
+            enabled = true,
+            label = { Text(label) },
+            placeholder = { Text(placeholder) },
+            leadingIcon = leadingIcon,
             trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = null
+                )
             },
             colors = textFieldColors(),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+            modifier = Modifier.fillMaxWidth()
         )
 
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clickable(
+                    enabled = true,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { showSheet = true }
+        )
+    }
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            sheetState = sheetState,
+            containerColor = SurfaceDefault
         ) {
-            educationLevels.forEach { level ->
-                DropdownMenuItem(
-                    text = { Text(level) },
-                    onClick = {
-                        onValueChange(level)
-                        expanded = false
+            Text(
+                text = label,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+
+            if (hasOptions) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.8f),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(
+                        items = options,
+                        key = { it }
+                    ) { option ->
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = option,
+                                    color = TextPrimary,
+                                    fontWeight = if (option == selectedValue) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            },
+                            trailingContent = {
+                                if (option == selectedValue) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        tint = DeepGreen
+                                    )
+                                }
+                            },
+                            modifier = Modifier.clickable {
+                                onValueChange(option)
+                                showSheet = false
+                            }
+                        )
+                        HorizontalDivider(color = TextSecondary.copy(alpha = 0.15f))
                     }
+                }
+            } else {
+                Text(
+                    text = emptyText ?: placeholder,
+                    color = TextSecondary,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                 )
             }
         }
@@ -517,10 +587,9 @@ fun StudentRegisterScreenPreview() {
         )
         StudentRegisterScreen(
             state = StudentRegisterState(),
+            universities = emptyList(),
             educationLevels = educationLevels,
             onAction = {}
         )
     }
 }
-
-

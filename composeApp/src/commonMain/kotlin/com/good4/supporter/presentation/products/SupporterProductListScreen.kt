@@ -52,7 +52,7 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.util.openMaps
 import com.good4.core.util.toDisplayAddress
 import com.good4.product.Product
@@ -98,7 +98,9 @@ fun SupporterProductListScreen(
     onAddToCart: (Product) -> Unit = {},
     onAction: (SupporterProductListAction) -> Unit = {}
 ) {
-    Good4Scaffold(modifier = modifier) { paddingValues ->
+    Good4NestedScaffold(
+        modifier = modifier,
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()

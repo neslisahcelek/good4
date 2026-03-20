@@ -29,7 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.ErrorSnackbar
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.ReservationCard
 import com.good4.product.Product
 import com.good4.product.presentation.product_list.ProductListAction
@@ -88,7 +88,7 @@ fun ProductListScreen(
         }
     }
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
     ) { paddingValues ->
         Box(

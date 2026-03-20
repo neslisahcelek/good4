@@ -37,7 +37,7 @@ import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.StatCard
 import good4.composeapp.generated.resources.Res
@@ -62,7 +62,7 @@ fun BusinessDashboardScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         topBar = {
             Good4TopBar(

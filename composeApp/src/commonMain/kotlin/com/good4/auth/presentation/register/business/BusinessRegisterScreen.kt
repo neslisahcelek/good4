@@ -1,14 +1,13 @@
 package com.good4.auth.presentation.register.business
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -36,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -59,13 +59,11 @@ import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.address
 import good4.composeapp.generated.resources.back
-import good4.composeapp.generated.resources.business_emoji
 import good4.composeapp.generated.resources.business_information
 import good4.composeapp.generated.resources.business_name
 import good4.composeapp.generated.resources.business_phone
 import good4.composeapp.generated.resources.business_registration
 import good4.composeapp.generated.resources.city
-import good4.composeapp.generated.resources.create_business_account
 import good4.composeapp.generated.resources.district
 import good4.composeapp.generated.resources.email_required
 import good4.composeapp.generated.resources.full_name
@@ -138,33 +136,18 @@ fun BusinessRegisterScreen(
                 .fillMaxSize()
                 .background(AppBackground)
                 .padding(paddingValues)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .imePadding()
-                    .navigationBarsPadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = stringResource(Res.string.business_emoji),
-                    fontSize = 64.sp
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(Res.string.create_business_account),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SectionTitle(stringResource(Res.string.personal_information))
+                    SectionTitle(stringResource(Res.string.personal_information))
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -385,7 +368,6 @@ fun BusinessRegisterScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Button(
                     onClick = { onAction(BusinessRegisterAction.OnRegisterClick) },
                     modifier = Modifier
@@ -456,7 +438,3 @@ fun BusinessRegisterScreenPreview() {
         )
     }
 }
-
-
-
-

@@ -33,7 +33,7 @@ import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ReservationCard
 import good4.composeapp.generated.resources.Res
@@ -77,7 +77,7 @@ private fun StudentReservationsContent(
     state: StudentReservationsState,
     onCancelReservation: (String) -> Unit
 ) {
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         topBar = { Good4TopBar(title = stringResource(Res.string.student_reservations_title)) }
     ) { paddingValues ->

@@ -1,6 +1,8 @@
 package com.good4.auth.presentation.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,8 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -64,6 +65,7 @@ import good4.composeapp.generated.resources.app_tagline
 import good4.composeapp.generated.resources.business_register
 import good4.composeapp.generated.resources.email
 import good4.composeapp.generated.resources.email_placeholder
+import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.forgot_password
 import good4.composeapp.generated.resources.login
 import good4.composeapp.generated.resources.no_account
@@ -72,10 +74,11 @@ import good4.composeapp.generated.resources.password
 import good4.composeapp.generated.resources.password_placeholder
 import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
-import good4.composeapp.generated.resources.error_resend_wait_seconds
+import good4.composeapp.generated.resources.splash_logo
 import good4.composeapp.generated.resources.student_register
 import good4.composeapp.generated.resources.supporter_register
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.time.Duration.Companion.seconds
@@ -128,7 +131,8 @@ fun LoginScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val onLoginClick = remember { singleClick { onAction(LoginAction.OnLoginClick) } }
-    val onForgotPasswordClick = remember { singleClick { onAction(LoginAction.OnForgotPasswordClick) } }
+    val onForgotPasswordClick =
+        remember { singleClick { onAction(LoginAction.OnForgotPasswordClick) } }
 
     Good4Scaffold(
         modifier = modifier,
@@ -138,285 +142,287 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(AppBackground)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .imePadding()
-                    .navigationBarsPadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            Spacer(modifier = Modifier.height(70.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-            Text(
-                text = stringResource(Res.string.app_name),
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
+                Image(
+                    painter = painterResource(Res.drawable.splash_logo),
+                    contentDescription = stringResource(Res.string.app_name),
+                    modifier = Modifier
+                        .size(96.dp)
+                )
 
-            Text(
-                text = stringResource(Res.string.app_tagline),
-                fontSize = 16.sp,
-                color = TextSecondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp).padding(horizontal = 24.dp)
-            )
+                Spacer(modifier = Modifier.height(14.dp))
 
-            Spacer(modifier = Modifier.height(60.dp))
+                Text(
+                    text = stringResource(Res.string.app_tagline),
+                    fontSize = 16.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
 
-            OutlinedTextField(
-                value = state.email,
-                onValueChange = { onAction(LoginAction.OnEmailChange(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.email)) },
-                placeholder = { Text(stringResource(Res.string.email_placeholder)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Next
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = TextPrimary,
-                    focusedLabelColor = TextPrimary,
-                    cursorColor = TextPrimary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+                Spacer(modifier = Modifier.height(20.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = state.email,
+                    onValueChange = { onAction(LoginAction.OnEmailChange(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(Res.string.email)) },
+                    placeholder = { Text(stringResource(Res.string.email_placeholder)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Next
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TextPrimary,
+                        focusedLabelColor = TextPrimary,
+                        cursorColor = TextPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
 
-            OutlinedTextField(
-                value = state.password,
-                onValueChange = { onAction(LoginAction.OnPasswordChange(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.password)) },
-                placeholder = { Text(stringResource(Res.string.password_placeholder)) },
-                singleLine = true,
-                visualTransformation = if (state.isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        onAction(LoginAction.OnLoginClick)
-                    }
-                ),
-                trailingIcon = {
-                    IconButton(onClick = { onAction(LoginAction.OnTogglePasswordVisibility) }) {
-                        val contentDescription = if (state.isPasswordVisible) {
-                            stringResource(Res.string.password_visibility_hide)
-                        } else {
-                            stringResource(Res.string.password_visibility_show)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = state.password,
+                    onValueChange = { onAction(LoginAction.OnPasswordChange(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(Res.string.password)) },
+                    placeholder = { Text(stringResource(Res.string.password_placeholder)) },
+                    singleLine = true,
+                    visualTransformation = if (state.isPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            onAction(LoginAction.OnLoginClick)
                         }
-                        Icon(
-                            imageVector = if (state.isPasswordVisible) {
-                                Icons.Filled.VisibilityOff
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = { onAction(LoginAction.OnTogglePasswordVisibility) }) {
+                            val contentDescription = if (state.isPasswordVisible) {
+                                stringResource(Res.string.password_visibility_hide)
                             } else {
-                                Icons.Filled.Visibility
-                            },
-                            contentDescription = contentDescription
+                                stringResource(Res.string.password_visibility_show)
+                            }
+                            Icon(
+                                imageVector = if (state.isPasswordVisible) {
+                                    Icons.Filled.VisibilityOff
+                                } else {
+                                    Icons.Filled.Visibility
+                                },
+                                contentDescription = contentDescription
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TextPrimary,
+                        focusedLabelColor = TextPrimary,
+                        cursorColor = TextPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                TextButton(
+                    onClick = onForgotPasswordClick,
+                    modifier = Modifier.align(Alignment.End),
+                    enabled = !state.isLoading && state.canSendPasswordReset
+                ) {
+                    Text(
+                        text = stringResource(Res.string.forgot_password),
+                        color = TextPrimary,
+                        fontSize = 14.sp
+                    )
+                }
+
+                if (!state.canSendPasswordReset && state.passwordResetCooldownSeconds > 0) {
+                    Text(
+                        text = stringResource(
+                            Res.string.error_resend_wait_seconds,
+                            state.passwordResetCooldownSeconds
+                        ),
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                state.errorMessage?.let { error ->
+                    LaunchedEffect(error) {
+                        delay(3.seconds)
+                        onAction(LoginAction.OnClearError)
+                    }
+                    Text(
+                        text = error.asString(),
+                        color = ErrorRed,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+                }
+
+                state.infoMessage?.let { info ->
+                    Text(
+                        text = info.asString(),
+                        color = DeepGreen,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onLoginClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = !state.isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TextPrimary,
+                        disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = SurfaceDefault,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(Res.string.login),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = TextPrimary,
-                    focusedLabelColor = TextPrimary,
-                    cursorColor = TextPrimary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+                }
 
-            TextButton(
-                onClick = onForgotPasswordClick,
-                modifier = Modifier.align(Alignment.End),
-                enabled = !state.isLoading && state.canSendPasswordReset
-            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(1.dp)
+                            .background(TextSecondary.copy(alpha = 0.3f))
+                    )
+                    Text(
+                        text = stringResource(Res.string.or),
+                        color = TextSecondary,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(1.dp)
+                            .background(TextSecondary.copy(alpha = 0.3f))
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
-                    text = stringResource(Res.string.forgot_password),
-                    color = TextPrimary,
+                    text = stringResource(Res.string.no_account),
+                    color = TextSecondary,
                     fontSize = 14.sp
                 )
-            }
 
-            if (!state.canSendPasswordReset && state.passwordResetCooldownSeconds > 0) {
-                Text(
-                    text = stringResource(
-                        Res.string.error_resend_wait_seconds,
-                        state.passwordResetCooldownSeconds
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { onAction(LoginAction.OnStudentRegisterClick) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DeepGreen
                     ),
-                    color = TextSecondary,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            state.errorMessage?.let { error ->
-                LaunchedEffect(error) {
-                    delay(3.seconds)
-                    onAction(LoginAction.OnClearError)
-                }
-                Text(
-                    text = error.asString(),
-                    color = ErrorRed,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
-
-            state.infoMessage?.let { info ->
-                Text(
-                    text = info.asString(),
-                    color = DeepGreen,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onLoginClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = !state.isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = TextPrimary,
-                    disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = SurfaceDefault,
-                        strokeWidth = 2.dp
-                    )
-                } else {
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Text(
-                        text = stringResource(Res.string.login),
+                        text = stringResource(Res.string.student_register),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
+                Button(
+                    onClick = { onAction(LoginAction.OnBusinessRegisterClick) },
                     modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .background(TextSecondary.copy(alpha = 0.3f))
-                )
-                Text(
-                    text = stringResource(Res.string.or),
-                    color = TextSecondary,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Box(
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PistachioGreen
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.business_register),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = { onAction(LoginAction.OnSupporterRegisterClick) },
                     modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .background(TextSecondary.copy(alpha = 0.3f))
-                )
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DeepGreen.copy(alpha = 0.15f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.supporter_register),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DeepGreen
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = stringResource(Res.string.no_account),
-                color = TextSecondary,
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { onAction(LoginAction.OnStudentRegisterClick) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DeepGreen
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.student_register),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = { onAction(LoginAction.OnBusinessRegisterClick) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PistachioGreen
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.business_register),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = { onAction(LoginAction.OnSupporterRegisterClick) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DeepGreen.copy(alpha = 0.15f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.supporter_register),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DeepGreen
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-            }
         }
     }
 }
@@ -431,5 +437,3 @@ fun LoginScreenPreview() {
         )
     }
 }
-
-

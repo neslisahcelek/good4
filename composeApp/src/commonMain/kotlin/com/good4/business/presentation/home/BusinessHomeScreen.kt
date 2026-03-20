@@ -38,7 +38,7 @@ import com.good4.business.presentation.verify.VerifyCodeScreen
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.nav_dashboard
 import good4.composeapp.generated.resources.nav_products
@@ -93,7 +93,7 @@ fun BusinessHomeScreenRoot(
         }
     }
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         bottomBar = {
             Good4NavigationBar {
@@ -152,4 +152,3 @@ fun BusinessHomeScreenPreview() {
         BusinessHomeScreenRoot(onLogout = {})
     }
 }
-

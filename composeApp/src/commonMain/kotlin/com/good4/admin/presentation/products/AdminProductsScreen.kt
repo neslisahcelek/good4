@@ -39,7 +39,7 @@ import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
@@ -70,7 +70,7 @@ fun AdminProductsScreen(
     val currencySuffix = stringResource(Res.string.price_currency_suffix)
     val addProductLabel = stringResource(Res.string.add_product)
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         topBar = {
             Good4TopBar(

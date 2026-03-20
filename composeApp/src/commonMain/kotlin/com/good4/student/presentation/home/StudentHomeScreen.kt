@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.product.presentation.product_list.views.ProductListScreenRoot
 import com.good4.student.presentation.profile.StudentProfileScreen
@@ -56,14 +56,14 @@ fun StudentHomeScreenRoot(
 ) {
     val navItems = listOf(
         BottomNavItem(
-            title = stringResource(Res.string.student_reservations),
-            selectedIcon = Icons.Filled.ShoppingCart,
-            unselectedIcon = Icons.Outlined.ShoppingCart
-        ),
-        BottomNavItem(
             title = stringResource(Res.string.student_home),
             selectedIcon = Icons.Filled.Home,
             unselectedIcon = Icons.Outlined.Home
+        ),
+        BottomNavItem(
+            title = stringResource(Res.string.student_reservations),
+            selectedIcon = Icons.Filled.ShoppingCart,
+            unselectedIcon = Icons.Outlined.ShoppingCart
         ),
         BottomNavItem(
             title = stringResource(Res.string.student_profile),
@@ -72,7 +72,7 @@ fun StudentHomeScreenRoot(
         )
     )
 
-    var selectedItemIndex by rememberSaveable { mutableIntStateOf(1) }
+    var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
 
@@ -83,7 +83,7 @@ fun StudentHomeScreenRoot(
         }
     }
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         bottomBar = {
             Good4NavigationBar {
@@ -127,13 +127,13 @@ fun StudentHomeScreenRoot(
         ) {
             when (selectedItemIndex) {
                 0 -> {
-                    StudentReservationsScreen(
-                        viewModel = reservationsViewModel
+                    ProductListScreenRoot(
+                        viewModel = productListViewModel
                     )
                 }
                 1 -> {
-                    ProductListScreenRoot(
-                        viewModel = productListViewModel
+                    StudentReservationsScreen(
+                        viewModel = reservationsViewModel
                     )
                 }
                 2 -> {
@@ -155,4 +155,3 @@ fun StudentHomeScreenPreview() {
         )
     }
 }
-

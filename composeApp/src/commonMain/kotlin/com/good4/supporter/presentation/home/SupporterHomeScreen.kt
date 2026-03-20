@@ -33,7 +33,7 @@ import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
-import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.supporter.presentation.cart.SupporterCartAction
 import com.good4.supporter.presentation.cart.SupporterCartScreen
 import com.good4.supporter.presentation.cart.SupporterCartViewModel
@@ -112,7 +112,7 @@ fun SupporterHomeScreen(
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    Good4Scaffold(
+    Good4NestedScaffold(
         modifier = modifier,
         bottomBar = {
             Good4NavigationBar {

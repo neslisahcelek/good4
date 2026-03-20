@@ -1,22 +1,25 @@
 package com.good4.core.presentation.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +33,7 @@ import com.good4.core.presentation.TextPrimary
 @Composable
 fun Good4Scaffold(
     modifier: Modifier = Modifier,
+    contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
     topBar: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
@@ -39,6 +43,26 @@ fun Good4Scaffold(
     Scaffold(
         modifier = modifier,
         containerColor = AppBackground,
+        contentWindowInsets = contentWindowInsets,
+        topBar = topBar,
+        bottomBar = bottomBar,
+        snackbarHost = snackbarHost,
+        floatingActionButton = floatingActionButton,
+        content = content
+    )
+}
+
+@Composable
+fun Good4NestedScaffold(
+    modifier: Modifier = Modifier,
+    topBar: @Composable () -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
+    floatingActionButton: @Composable () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit
+) {
+    Good4Scaffold(
+        modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = topBar,
         bottomBar = bottomBar,
@@ -86,23 +110,29 @@ fun Good4NavigationBar(
     containerColor: Color = SurfaceDefault.copy(alpha = 0.95f),
     contentColor: Color = contentColorFor(containerColor),
     tonalElevation: Dp = 0.dp,
+    windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
+    bottomInsetFraction: Float = 0.5f,
     content: @Composable RowScope.() -> Unit
 ) {
-    Box(modifier = modifier) {
-        Box(
+    val clampedBottomInsetFraction = bottomInsetFraction.coerceIn(0f, 1f)
+    val defaultBottomInset =
+        windowInsets.asPaddingValues().calculateBottomPadding() * clampedBottomInsetFraction
+
+    Column(modifier = modifier) {
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = 1.dp,
+            color = BorderMuted.copy(alpha = 0.35f)
+        )
+
+        NavigationBar(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(0.5.dp)
-                .background(BorderMuted)
-                .align(Alignment.TopCenter)
-        )
-        
-        NavigationBar(
-            modifier = Modifier.fillMaxWidth(),
+                .padding(bottom = defaultBottomInset),
             containerColor = containerColor,
             contentColor = contentColor,
             tonalElevation = tonalElevation,
-            windowInsets = WindowInsets(0, 0, 0, 0),
+            windowInsets = windowInsets.only(WindowInsetsSides.Horizontal),
             content = content
         )
     }
