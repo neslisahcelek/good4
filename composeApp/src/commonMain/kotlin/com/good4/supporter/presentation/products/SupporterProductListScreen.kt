@@ -3,6 +3,7 @@ package com.good4.supporter.presentation.products
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,12 +53,15 @@ import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.util.openMaps
+import com.good4.core.util.toDisplayAddress
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_to_cart
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.in_cart_label
 import good4.composeapp.generated.resources.price_currency_suffix
+import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.product_image_description
 import good4.composeapp.generated.resources.supporter_product_list_empty
 import org.jetbrains.compose.resources.painterResource
@@ -318,22 +322,30 @@ private fun ProductInfoSection(
             currencySuffix = currencySuffix
         )
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Place,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(16.dp)
+        if (product.address.isNotBlank()) {
+            val displayAddress = toDisplayAddress(
+                rawAddress = product.address,
+                mapsFallbackLabel = stringResource(Res.string.product_address_maps_hint)
             )
-            Text(
-                text = product.address,
-                style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                modifier = Modifier.clickable { openMaps(product.address) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Place,
+                    contentDescription = null,
+                    tint = TextSecondary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = displayAddress,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary,
+                    textDecoration = TextDecoration.Underline,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
         Button(

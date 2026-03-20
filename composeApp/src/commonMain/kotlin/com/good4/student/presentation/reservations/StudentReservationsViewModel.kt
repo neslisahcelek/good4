@@ -76,14 +76,33 @@ class StudentReservationsViewModel(
 
         val updated = currentReservations.map { reservation ->
             if (reservation.statusEnum == CodeStatus.PENDING) {
-                val remainingTime = calculateRemainingTime(reservation.createdAt)
-                reservation.copy(remainingTime = remainingTime)
+                if (isReservationExpired(reservation.createdAt)) {
+                    reservation.copy(
+                        status = CodeStatus.EXPIRED.value,
+                        remainingTime = expiredLabel
+                    )
+                } else {
+                    val remainingTime = calculateRemainingTime(reservation.createdAt)
+                    reservation.copy(remainingTime = remainingTime)
+                }
             } else {
                 reservation
             }
         }
 
         _state.update { it.copy(reservations = updated) }
+    }
+
+    private fun isReservationExpired(createdAtSecs: Long?): Boolean {
+        if (createdAtSecs == null) return false
+        return try {
+            val createdInstant = Instant.fromEpochSeconds(createdAtSecs)
+            val now = Clock.System.now()
+            val elapsed = now - createdInstant
+            elapsed >= expirationDuration
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun calculateRemainingTime(createdAtSecs: Long?): String {
@@ -139,13 +158,27 @@ class StudentReservationsViewModel(
             }
 
             val allUserCodes = (codesResult as Result.Success).data
-            val pendingCodes = allUserCodes.filter { it.statusEnum == CodeStatus.PENDING }
-            val completedCodes = allUserCodes
+            val normalizedCodes = allUserCodes.map { code ->
+                if (code.statusEnum == CodeStatus.PENDING && isReservationExpired(code.createdAt)) {
+                    when (codeRepository.markCodeAsExpired(code.id)) {
+                        is Result.Success -> {
+                            userRepository.incrementUserCredit(userId)
+                            code.copy(status = CodeStatus.EXPIRED.value)
+                        }
+                        is Result.Error -> code
+                    }
+                } else {
+                    code
+                }
+            }
+
+            val pendingCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.PENDING }
+            val completedCodes = normalizedCodes
                 .filter { it.statusEnum == CodeStatus.USED }
                 .sortedByDescending { code -> code.usedAt ?: 0L }
                 .take(MAX_COMPLETED_RESERVATIONS.toInt())
-            val expiredCodes = allUserCodes.filter { it.statusEnum == CodeStatus.EXPIRED }
-            val cancelledCodes = allUserCodes.filter { it.statusEnum == CodeStatus.CANCELLED }
+            val expiredCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.EXPIRED }
+            val cancelledCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.CANCELLED }
 
             val allCodes = pendingCodes + completedCodes + expiredCodes + cancelledCodes
 
@@ -167,6 +200,7 @@ class StudentReservationsViewModel(
                     code = code.value,
                     productName = code.productName ?: productFallback,
                     businessName = code.businessName ?: businessFallback,
+                    businessAddress = code.businessAddress ?: "",
                     status = code.status,
                     remainingTime = remainingTime,
                     createdAt = code.createdAt

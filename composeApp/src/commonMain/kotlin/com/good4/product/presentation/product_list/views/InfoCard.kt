@@ -13,6 +13,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
+import com.good4.core.util.singleClick
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.price_currency_suffix
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -36,9 +38,15 @@ fun InfoCard(
     onClick: (() -> Unit)? = null,
     isLoading: Boolean = false
 ) {
+    val clickHandler = remember(onClick) {
+        onClick?.let { callback ->
+            singleClick { callback() }
+        }
+    }
+
     Card(
-        modifier = if (onClick != null) {
-            modifier.clickable { onClick() }
+        modifier = if (clickHandler != null) {
+            modifier.clickable { clickHandler() }
         } else modifier,
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)

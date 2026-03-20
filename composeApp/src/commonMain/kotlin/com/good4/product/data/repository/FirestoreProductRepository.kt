@@ -68,7 +68,7 @@ class FirestoreProductRepository(
                     val productDto = documentWithId.data
                     productDto.toProduct(documentWithId.id, business)
                 }.let { items ->
-                    if (includeOutOfStock) items else items.filter { it.amount > 0 }
+                    if (includeOutOfStock) items else items.filter { it.pendingCount > 0 }
                 }
 
                 Result.Success(products)
@@ -104,12 +104,12 @@ class FirestoreProductRepository(
         return firestoreRepository.updateDocument("products", id, product)
     }
 
-    suspend fun decrementProductCount(id: String): Result<Unit, Error> {
+    suspend fun decrementProductPendingCount(id: String): Result<Unit, Error> {
         return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
             is Result.Success -> {
-                val currentCount = result.data.count ?: 0
+                val currentCount = result.data.pendingCount ?: 0
                 val updatedCount = (currentCount - 1).coerceAtLeast(0)
-                val updatedProduct = result.data.copy(count = updatedCount)
+                val updatedProduct = result.data.copy(pendingCount = updatedCount)
                 updateProduct(id, updatedProduct)
             }
             is Result.Error -> result
@@ -121,6 +121,28 @@ class FirestoreProductRepository(
             is Result.Success -> {
                 val current = result.data.pendingCount ?: 0
                 val updated = result.data.copy(pendingCount = current + amount)
+                updateProduct(id, updated)
+            }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun incrementProductDeliveredCount(id: String, amount: Int): Result<Unit, Error> {
+        return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
+            is Result.Success -> {
+                val current = result.data.totalDelivered ?: 0
+                val updated = result.data.copy(totalDelivered = current + amount)
+                updateProduct(id, updated)
+            }
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun incrementProductSuspendedCount(id: String, amount: Int): Result<Unit, Error> {
+        return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
+            is Result.Success -> {
+                val current = result.data.totalSuspended ?: 0
+                val updated = result.data.copy(totalSuspended = current + amount)
                 updateProduct(id, updated)
             }
             is Result.Error -> result
@@ -154,8 +176,10 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         discountPercentage = discountPercentageValue,
         imageUrl = imageUrl ?: "",
         address = business?.address ?: "",
-        amount = count ?: 0,
+        amount = pendingCount ?: 0,
         pendingCount = pendingCount ?: 0,
+        totalDelivered = totalDelivered ?: 0,
+        totalSuspended = totalSuspended ?: 0,
         createdAt = createdAt
     )
 }

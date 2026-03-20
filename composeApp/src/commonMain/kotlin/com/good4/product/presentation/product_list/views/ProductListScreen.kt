@@ -1,11 +1,9 @@
 package com.good4.product.presentation.product_list.views
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,16 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.ErrorSnackbar
-import com.good4.core.presentation.TextPrimary
-import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.ReservationCard
 import com.good4.product.Product
@@ -47,7 +40,6 @@ import good4.composeapp.generated.resources.active_reservation_title
 import good4.composeapp.generated.resources.preview_address
 import good4.composeapp.generated.resources.preview_business_name
 import good4.composeapp.generated.resources.preview_description
-import good4.composeapp.generated.resources.preview_price
 import good4.composeapp.generated.resources.preview_product_name
 import good4.composeapp.generated.resources.products_load_error
 import good4.composeapp.generated.resources.time_minute_suffix
@@ -66,13 +58,13 @@ fun ProductListScreenRoot(
     viewModel: ProductListViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    
+
     LaunchedEffect(Unit) {
         viewModel.loadProductsIfNeeded()
         viewModel.loadActiveReservation()
         viewModel.loadStudentInfo()
     }
-    
+
     ProductListScreen(
         modifier = modifier,
         state = state,
@@ -89,7 +81,7 @@ fun ProductListScreen(
     onAction: (ProductListAction) -> Unit
 ) {
     val listState = rememberLazyListState()
-    
+
     LaunchedEffect(state.activeReservation) {
         if (state.activeReservation != null) {
             listState.animateScrollToItem(0)
@@ -111,6 +103,7 @@ fun ProductListScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+
                 state.products.isEmpty() -> {
                     Text(
                         text = stringResource(Res.string.products_load_error),
@@ -120,6 +113,7 @@ fun ProductListScreen(
                         textAlign = TextAlign.Center
                     )
                 }
+
                 else -> {
                     LazyColumn(
                         state = listState,
@@ -145,7 +139,6 @@ fun ProductListScreen(
                                     product = reservation.product,
                                     expiryTime = reservation.expiryTime,
                                     codeId = reservation.codeId,
-                                    expirationMinutes = state.reservationExpirationMinutes,
                                     onExpired = { codeId ->
                                         onAction(ProductListAction.OnReservationExpired(codeId))
                                     }
@@ -157,14 +150,27 @@ fun ProductListScreen(
                             items = state.products,
                             key = { it.documentId }
                         ) { product ->
+                            val isReservedProduct =
+                                state.activeReservation?.product?.documentId == product.documentId
+                            val canReserve =
+                                state.activeReservation == null && !state.isReserving
+
                             ProductItem(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                                 product = product,
-                                onReserveClick = { onAction(ProductListAction.OnReserveProduct(product)) },
-                                isReserving = state.isReserving && state.activeReservation?.product?.documentId == product.documentId,
-                                reservationSuccess = state.activeReservation?.product?.documentId == product.documentId
+                                onReserveClick = {
+                                    onAction(
+                                        ProductListAction.OnReserveProduct(
+                                            product
+                                        )
+                                    )
+                                },
+                                isReserving = state.isReserving &&
+                                        state.reservingProductId == product.documentId,
+                                reservationSuccess = isReservedProduct,
+                                isReserveEnabled = canReserve
                             )
                         }
                     }
@@ -235,7 +241,6 @@ private fun ReservationDetailsCard(
     product: Product,
     expiryTime: Instant?,
     codeId: String,
-    expirationMinutes: Long?,
     onExpired: (String) -> Unit
 ) {
     var remainingTime by remember { mutableStateOf("") }
@@ -247,17 +252,17 @@ private fun ReservationDetailsCard(
         while (expiryTime != null && !isExpired) {
             val now = Clock.System.now()
             val diff = expiryTime - now
-            
+
             if (diff.inWholeSeconds <= 0) {
                 isExpired = true
                 onExpired(codeId)
                 break
             }
-            
+
             val minutes = diff.inWholeMinutes
             val seconds = diff.inWholeSeconds % 60
             remainingTime = "${minutes}${minuteSuffix} ${seconds}${secondSuffix}"
-            
+
             delay(1.seconds)
         }
     }
@@ -267,11 +272,11 @@ private fun ReservationDetailsCard(
             title = stringResource(Res.string.active_reservation_title),
             productName = product.name,
             businessName = product.storeName,
+            businessAddress = product.address.ifBlank { null },
             status = CodeStatus.PENDING,
             code = reservationCode,
-            remainingTime = remainingTime.ifBlank { null }
+            remainingTime = remainingTime.ifBlank { null },
+            showCancelButton = false
         )
     }
 }
-
-

@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -51,6 +52,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.util.singleClick
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
 import good4.composeapp.generated.resources.Res
@@ -62,9 +64,11 @@ import good4.composeapp.generated.resources.verify_code
 import good4.composeapp.generated.resources.verify_code_button
 import good4.composeapp.generated.resources.verify_code_input_label
 import good4.composeapp.generated.resources.verify_code_new
+import good4.composeapp.generated.resources.verify_code_order_cancel
+import good4.composeapp.generated.resources.verify_code_order_canceling
+import good4.composeapp.generated.resources.verify_code_order_cancelled
 import good4.composeapp.generated.resources.verify_code_order_confirm
 import good4.composeapp.generated.resources.verify_code_order_confirmed
-import good4.composeapp.generated.resources.verify_code_order_confirming
 import good4.composeapp.generated.resources.verify_code_order_items_label
 import good4.composeapp.generated.resources.verify_code_order_supporter_label
 import good4.composeapp.generated.resources.verify_code_order_title
@@ -82,6 +86,12 @@ fun VerifyCodeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
+    val onVerifyClick = remember {
+        singleClick {
+            focusManager.clearFocus()
+            viewModel.verifyCode()
+        }
+    }
 
     Good4Scaffold(
         modifier = modifier,
@@ -103,18 +113,11 @@ fun VerifyCodeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 text = stringResource(Res.string.enter_code),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-
-            Text(
-                text = stringResource(Res.string.enter_code),
-                fontSize = 14.sp,
-                color = TextSecondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp)
+                fontSize = 22.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -146,17 +149,14 @@ fun VerifyCodeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    focusManager.clearFocus()
-                    viewModel.verifyCode()
-                },
+                onClick = onVerifyClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 enabled = !state.isLoading && state.codeInput.length == 6,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = TextPrimary,
-                    disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
+                    disabledContainerColor = TextPrimary.copy(alpha = 0.1f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -228,12 +228,39 @@ fun VerifyCodeScreen(
                     }
                 }
 
+                state.orderCancelledSuccess -> {
+                    VerificationResultCard(
+                        isSuccess = true,
+                        productName = null,
+                        message = stringResource(Res.string.verify_code_order_cancelled)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { viewModel.resetState() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = DeepGreen),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.verify_code_new),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
                 state.pendingOrder != null -> {
                     state.pendingOrder?.let { order ->
                         OrderConfirmCard(
                             order = order,
                             isConfirming = state.isConfirmingOrder,
-                            onConfirm = { viewModel.confirmOrder() }
+                            isCancelling = state.isCancellingOrder,
+                            onConfirm = { viewModel.confirmOrder() },
+                            onCancel = { viewModel.cancelOrder() }
                         )
                     }
                 }
@@ -255,7 +282,9 @@ private fun OrderConfirmCard(
     modifier: Modifier = Modifier,
     order: Order,
     isConfirming: Boolean,
-    onConfirm: () -> Unit
+    isCancelling: Boolean,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
 ) {
     val currencySuffix = stringResource(Res.string.price_currency_suffix)
     val pieceSuffix = stringResource(Res.string.order_code_piece_suffix)
@@ -323,31 +352,71 @@ private fun OrderConfirmCard(
                 )
             }
 
-            Button(
-                onClick = onConfirm,
-                enabled = !isConfirming,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DeepGreen,
-                    disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                if (isConfirming) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = SurfaceDefault,
-                        strokeWidth = 2.dp
+                Button(
+                    onClick = onCancel,
+                    enabled = !isConfirming && !isCancelling,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ErrorRed,
+                        disabledContainerColor = ErrorRed.copy(alpha = 0.5f)
                     )
-                } else {
-                    Text(
-                        text = stringResource(Res.string.verify_code_order_confirm),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                ) {
+                    if (isCancelling) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = SurfaceDefault,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(Res.string.verify_code_order_cancel),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
+
+                Button(
+                    onClick = onConfirm,
+                    enabled = !isConfirming && !isCancelling,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DeepGreen,
+                        disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
+                    )
+                ) {
+                    if (isConfirming) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = SurfaceDefault,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(Res.string.verify_code_order_confirm),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            if (isCancelling) {
+                Text(
+                    text = stringResource(Res.string.verify_code_order_canceling),
+                    fontSize = 12.sp,
+                    color = TextSecondary
+                )
             }
         }
     }
@@ -377,7 +446,12 @@ private fun OrderConfirmItemRow(
         verticalAlignment = Alignment.Top
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = item.productName, fontSize = 13.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+            Text(
+                text = item.productName,
+                fontSize = 13.sp,
+                color = TextPrimary,
+                fontWeight = FontWeight.Medium
+            )
             Text(
                 text = "${item.quantity}$pieceSuffix × ${item.unitPrice.toInt()}$currencySuffix",
                 fontSize = 12.sp,

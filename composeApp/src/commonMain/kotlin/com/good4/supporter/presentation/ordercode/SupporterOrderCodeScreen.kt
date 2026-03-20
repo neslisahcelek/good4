@@ -2,6 +2,7 @@ package com.good4.supporter.presentation.ordercode
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,10 +32,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,11 +49,14 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.util.openMaps
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.order_code_back_to_home
+import good4.composeapp.generated.resources.order_code_address
 import good4.composeapp.generated.resources.order_code_expires
 import good4.composeapp.generated.resources.order_code_items_title
 import good4.composeapp.generated.resources.order_code_piece_suffix
@@ -59,6 +66,7 @@ import good4.composeapp.generated.resources.order_code_subtitle
 import good4.composeapp.generated.resources.order_code_title
 import good4.composeapp.generated.resources.order_code_total
 import good4.composeapp.generated.resources.price_currency_suffix
+import good4.composeapp.generated.resources.product_address_maps_hint
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -110,6 +118,7 @@ fun SupporterOrderCodeScreen(
                 state.order != null -> {
                     OrderCodeContent(
                         order = state.order,
+                        businessAddress = state.businessAddress,
                         currencySuffix = stringResource(Res.string.price_currency_suffix),
                         pieceSuffix = stringResource(Res.string.order_code_piece_suffix),
                         onBackToHome = onBackToHome
@@ -146,6 +155,7 @@ fun SupporterOrderCodeScreen(
 private fun OrderCodeContent(
     modifier: Modifier = Modifier,
     order: Order,
+    businessAddress: String,
     currencySuffix: String,
     pieceSuffix: String,
     onBackToHome: () -> Unit
@@ -167,6 +177,7 @@ private fun OrderCodeContent(
 
         OrderDetailCard(
             order = order,
+            businessAddress = businessAddress,
             currencySuffix = currencySuffix,
             pieceSuffix = pieceSuffix
         )
@@ -283,9 +294,12 @@ private fun OrderStatusBadge(modifier: Modifier = Modifier) {
 private fun OrderDetailCard(
     modifier: Modifier = Modifier,
     order: Order,
+    businessAddress: String,
     currencySuffix: String,
     pieceSuffix: String
 ) {
+    val displayAddress = toDisplayAddressOrNull(businessAddress)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -294,6 +308,14 @@ private fun OrderDetailCard(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         DetailRow(label = stringResource(Res.string.order_code_store), value = order.businessName)
+        if (displayAddress != null) {
+            ClickableDetailRow(
+                label = stringResource(Res.string.order_code_address),
+                value = displayAddress,
+                hint = stringResource(Res.string.product_address_maps_hint),
+                onClick = { openMaps(businessAddress) }
+            )
+        }
 
         HorizontalDivider(color = BorderMuted)
 
@@ -364,6 +386,57 @@ private fun DetailRow(
             color = valueColor,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f, fill = false)
+        )
+    }
+}
+
+@Composable
+private fun ClickableDetailRow(
+    label: String,
+    value: String,
+    hint: String,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = label, fontSize = 13.sp, color = TextSecondary)
+            Spacer(modifier = Modifier.width(8.dp))
+            Row(
+                modifier = Modifier.weight(1f, fill = false),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = value,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = PrimaryGreen,
+                    textAlign = TextAlign.End,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
+        }
+        Text(
+            text = hint,
+            fontSize = 12.sp,
+            color = PrimaryGreen,
+            modifier = Modifier.align(Alignment.End)
         )
     }
 }

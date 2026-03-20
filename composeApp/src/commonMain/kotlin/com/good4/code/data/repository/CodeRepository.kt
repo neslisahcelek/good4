@@ -26,7 +26,8 @@ data class CodeWithDetails(
     val createdAt: Long?,
     val usedAt: Long?,
     val productName: String?,
-    val businessName: String?
+    val businessName: String?,
+    val businessAddress: String?
 )
 
 data class CodeCounts(
@@ -74,9 +75,9 @@ class CodeRepository(
                 }
             }
 
-            val businessName = code.businessId?.let { businessId ->
+            val business = code.businessId?.let { businessId ->
                 when (val businessResult = businessRepository.getBusinessById(businessId)) {
-                    is Result.Success -> businessResult.data.name
+                    is Result.Success -> businessResult.data
                     is Result.Error -> null
                 }
             }
@@ -91,7 +92,8 @@ class CodeRepository(
                 createdAt = code.createdAt,
                 usedAt = code.usedAt,
                 productName = productName,
-                businessName = businessName
+                businessName = business?.name,
+                businessAddress = business?.fullAddress
             )
         }
     }
@@ -165,7 +167,8 @@ class CodeRepository(
                         createdAt = code.createdAt,
                         usedAt = code.usedAt,
                         productName = productName,
-                        businessName = null
+                        businessName = null,
+                        businessAddress = null
                     )
                 }
 
@@ -225,7 +228,8 @@ class CodeRepository(
                             createdAt = code.createdAt,
                             usedAt = code.usedAt,
                             productName = null,
-                            businessName = null
+                            businessName = null,
+                            businessAddress = null
                         )
                     )
                 } else {

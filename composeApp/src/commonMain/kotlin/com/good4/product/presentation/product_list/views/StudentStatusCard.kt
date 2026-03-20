@@ -53,7 +53,7 @@ fun StudentStatusCard(
             .background(
                 color = PrimaryGreen
             )
-            .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 28.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 14.dp)
     ) {
         Text(
             text = stringResource(Res.string.product_list_greeting_prefix) +

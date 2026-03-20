@@ -9,8 +9,6 @@ data class ProductDto(
     val name: String? = null,
     @SerialName("description")
     val description: String? = null,
-    @SerialName("count")
-    val count: Int? = null,
     @SerialName("pendingCount")
     val pendingCount: Int? = null,
     @SerialName("businessId")

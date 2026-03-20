@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,9 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.AppBackground
-import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
-import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
@@ -43,6 +39,7 @@ import com.good4.core.presentation.components.ReservationCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.cancel
 import good4.composeapp.generated.resources.emoji_ticket
+import good4.composeapp.generated.resources.preview_address
 import good4.composeapp.generated.resources.preview_business_name
 import good4.composeapp.generated.resources.preview_product_name
 import good4.composeapp.generated.resources.reservation_expired_short
@@ -205,29 +202,14 @@ private fun ReservationItem(
             title = null,
             productName = reservation.productName,
             businessName = reservation.businessName,
+            businessAddress = reservation.businessAddress.ifBlank { null },
             status = reservation.statusEnum,
             code = reservation.code,
-            remainingTime = reservation.remainingTime.ifBlank { null }
+            remainingTime = reservation.remainingTime.ifBlank { null },
+            showCancelButton = reservation.statusEnum == CodeStatus.PENDING,
+            cancelButtonLabel = stringResource(Res.string.cancel),
+            onCancelClick = { onCancelReservation(reservation.id) }
         )
-        if (reservation.statusEnum == CodeStatus.PENDING) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { onCancelReservation(reservation.id) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ErrorRed,
-                    contentColor = SurfaceDefault
-                )
-            ) {
-                Text(
-                    text = stringResource(Res.string.cancel),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
     }
 }
 
@@ -236,6 +218,7 @@ data class ReservationUiModel(
     val code: String,
     val productName: String,
     val businessName: String,
+    val businessAddress: String = "",
     val status: String,
     val remainingTime: String,
     val createdAt: Long? = null
@@ -247,6 +230,7 @@ fun StudentReservationsScreenPreview() {
     MaterialTheme {
         val productName = stringResource(Res.string.preview_product_name)
         val businessName = stringResource(Res.string.preview_business_name)
+        val businessAddress = stringResource(Res.string.preview_address)
         val codeValue = stringResource(Res.string.verify_code_placeholder)
         val minuteSuffix = stringResource(Res.string.time_minute_suffix)
         val secondSuffix = stringResource(Res.string.time_second_suffix)
@@ -257,6 +241,7 @@ fun StudentReservationsScreenPreview() {
                 code = codeValue,
                 productName = productName,
                 businessName = businessName,
+                businessAddress = businessAddress,
                 status = CodeStatus.PENDING.value,
                 remainingTime = remainingTime
             ),
@@ -265,6 +250,7 @@ fun StudentReservationsScreenPreview() {
                 code = codeValue,
                 productName = productName,
                 businessName = businessName,
+                businessAddress = businessAddress,
                 status = CodeStatus.USED.value,
                 remainingTime = stringResource(Res.string.reservation_expired_short)
             )
@@ -278,7 +264,6 @@ fun StudentReservationsScreenPreview() {
         )
     }
 }
-
 
 
 

@@ -91,6 +91,6 @@ val commonModule = module {
     viewModel { SplashViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
     viewModel { SupporterProductListViewModel(get<FirestoreProductRepository>()) }
     viewModel { SupporterCartViewModel(get<AuthRepository>(), get<UserRepository>(), get<OrderRepository>()) }
-    viewModel { SupporterOrderCodeViewModel(get<OrderRepository>()) }
+    viewModel { SupporterOrderCodeViewModel(get<OrderRepository>(), get<FirestoreBusinessRepository>()) }
     viewModel { SupporterProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
 }

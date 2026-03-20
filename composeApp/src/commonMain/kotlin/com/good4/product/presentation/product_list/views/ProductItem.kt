@@ -3,6 +3,7 @@ package com.good4.product.presentation.product_list.views
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +24,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,11 +44,14 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.util.openMaps
+import com.good4.core.util.toDisplayAddress
 import com.good4.core.util.singleClick
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.product_image_description
+import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.reserve_button_label
 import good4.composeapp.generated.resources.reserved
 import org.jetbrains.compose.resources.painterResource
@@ -58,8 +64,23 @@ fun ProductItem(
     product: Product,
     onReserveClick: (() -> Unit)? = null,
     isReserving: Boolean = false,
-    reservationSuccess: Boolean = false
+    reservationSuccess: Boolean = false,
+    isReserveEnabled: Boolean = true
 ) {
+    val reserveClickHandler = remember(
+        product.documentId,
+        onReserveClick,
+        isReserveEnabled,
+        isReserving,
+        reservationSuccess
+    ) {
+        singleClick {
+            if (isReserveEnabled && !isReserving && !reservationSuccess) {
+                onReserveClick?.invoke()
+            }
+        }
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -151,35 +172,38 @@ fun ProductItem(
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Place,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
+                if (product.address.isNotBlank()) {
+                    val displayAddress = toDisplayAddress(
+                        rawAddress = product.address,
+                        mapsFallbackLabel = stringResource(Res.string.product_address_maps_hint)
                     )
-                    Text(
-                        text = product.address,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
+                    Row(
+                        modifier = Modifier.clickable {
+                            openMaps(product.address)
+                        },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Place,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = displayAddress,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            textDecoration = TextDecoration.Underline,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 Button(
                     modifier = Modifier.fillMaxWidth().height(40.dp),
-                    onClick = {
-                        singleClick {
-                            if (!isReserving && !reservationSuccess) {
-                                onReserveClick?.invoke()
-                            }
-                        }
-                    },
-                    enabled = !reservationSuccess,
+                    onClick = reserveClickHandler,
+                    enabled = isReserveEnabled && !reservationSuccess,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (reservationSuccess) DeepGreen.copy(alpha = 0.8f) else PrimaryGreen,

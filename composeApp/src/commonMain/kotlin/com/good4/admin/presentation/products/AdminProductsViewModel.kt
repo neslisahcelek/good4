@@ -151,8 +151,10 @@ class AdminProductsViewModel(
                 businessId = state.selectedBusinessId,
                 originalPrice = state.productOriginalPrice.toIntOrNull() ?: 0,
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
-                count = state.productCount.toIntOrNull() ?: 0,
+                pendingCount = state.productCount.toIntOrNull() ?: 0,
                 imageUrl = state.productImageUrl.ifBlank { null },
+                totalDelivered = 0,
+                totalSuspended = 0,
                 createdAt = Clock.System.now().epochSeconds
             )
 
@@ -187,7 +189,7 @@ class AdminProductsViewModel(
                 productDescription = product.description,
                 productOriginalPrice = product.originalPrice?.toString().orEmpty(),
                 productDiscountPrice = product.discountPrice?.toString().orEmpty(),
-                productCount = product.amount.toString(),
+                productCount = product.pendingCount.toString(),
                 productImageUrl = product.imageUrl
             )
         }
@@ -231,8 +233,10 @@ class AdminProductsViewModel(
                 businessId = state.selectedBusinessId,
                 originalPrice = state.productOriginalPrice.toIntOrNull() ?: 0,
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
-                count = state.productCount.toIntOrNull() ?: 0,
                 imageUrl = state.productImageUrl.ifBlank { null },
+                pendingCount = state.productCount.toIntOrNull() ?: product.pendingCount,
+                totalDelivered = product.totalDelivered,
+                totalSuspended = product.totalSuspended,
                 createdAt = product.createdAt
             )
 

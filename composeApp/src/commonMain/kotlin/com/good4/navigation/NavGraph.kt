@@ -117,6 +117,9 @@ fun Good4NavGraph(
                 viewModel = viewModel,
                 onVerified = { userRole ->
                     navController.navigateToHome(userRole)
+                },
+                onLogout = {
+                    navController.navigateToLogin()
                 }
             )
         }

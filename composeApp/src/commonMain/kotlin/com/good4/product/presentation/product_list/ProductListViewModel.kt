@@ -148,6 +148,8 @@ class ProductListViewModel(
             }
 
             is ProductListAction.OnReserveProduct -> {
+                if (_state.value.isReserving) return
+
                 if (_state.value.activeReservation != null) {
                     _state.update {
                         it.copy(
@@ -167,11 +169,19 @@ class ProductListViewModel(
 
             is ProductListAction.OnReservationExpired -> {
                 viewModelScope.launch {
-                    codeRepository.markCodeAsExpired(action.codeId)
+                    when (codeRepository.markCodeAsExpired(action.codeId)) {
+                        is Result.Success -> {
+                            authRepository.currentUser?.uid?.let { userId ->
+                                userRepository.incrementUserCredit(userId)
+                            }
+                        }
+                        is Result.Error -> Unit
+                    }
 
                     _state.update {
                         it.copy(activeReservation = null)
                     }
+                    loadStudentInfo()
                 }
             }
         }
@@ -183,6 +193,7 @@ class ProductListViewModel(
             _state.update {
                 it.copy(
                     isReserving = false,
+                    reservingProductId = null,
                     errorMessage = UiText.StringResourceId(Res.string.error_user_not_logged_in)
                 )
             }
@@ -190,6 +201,14 @@ class ProductListViewModel(
         }
 
         viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isReserving = true,
+                    reservingProductId = product.documentId,
+                    errorMessage = null
+                )
+            }
+
             when (val userResult = userRepository.refreshStudentCreditIfNeeded(userId)) {
                 is Result.Success -> {
                     val credit = userResult.data.credit ?: 0
@@ -197,6 +216,7 @@ class ProductListViewModel(
                         _state.update {
                             it.copy(
                                 isReserving = false,
+                                reservingProductId = null,
                                 errorMessage = UiText.StringResourceId(Res.string.error_no_credit)
                             )
                         }
@@ -208,6 +228,7 @@ class ProductListViewModel(
                     _state.update {
                         it.copy(
                             isReserving = false,
+                            reservingProductId = null,
                             errorMessage = UiText.StringResourceId(
                                 Res.string.error_user_info_fetch_failed
                             )
@@ -221,13 +242,12 @@ class ProductListViewModel(
                 _state.update {
                     it.copy(
                         isReserving = false,
+                        reservingProductId = null,
                         errorMessage = UiText.StringResourceId(Res.string.product_out_of_stock)
                     )
                 }
                 return@launch
             }
-
-            _state.update { it.copy(isReserving = true, errorMessage = null) }
 
             try {
                 val codeValue = (100000..999999).random().toString()
@@ -254,6 +274,7 @@ class ProductListViewModel(
                         _state.update {
                             it.copy(
                                 isReserving = false,
+                                reservingProductId = null,
                                 activeReservation = ReservationInfo(
                                     code = codeValue,
                                     product = product,
@@ -270,6 +291,7 @@ class ProductListViewModel(
                         _state.update {
                             it.copy(
                                 isReserving = false,
+                                reservingProductId = null,
                                 errorMessage = UiText.DynamicString(
                                     prefix + (result.error.message ?: "")
                                 )
@@ -282,6 +304,7 @@ class ProductListViewModel(
                 _state.update {
                     it.copy(
                         isReserving = false,
+                        reservingProductId = null,
                         errorMessage = UiText.DynamicString(
                             prefix + (e.message ?: "")
                         )

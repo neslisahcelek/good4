@@ -15,6 +15,7 @@ data class Product(
     val address: String,
     val amount: Int,
     val pendingCount: Int = 0,
+    val totalDelivered: Int = 0,
+    val totalSuspended: Int = 0,
     val createdAt: Long? = null
 )
-

@@ -10,6 +10,7 @@ data class ProductListState(
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val isReserving: Boolean = false,
+    val reservingProductId: String? = null,
     val activeReservation: ReservationInfo? = null,
     val errorMessage: UiText? = null,
     val reservationExpirationMinutes: Long? = null,

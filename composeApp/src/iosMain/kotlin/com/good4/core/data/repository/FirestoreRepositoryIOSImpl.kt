@@ -1,21 +1,22 @@
 package com.good4.core.data.repository
 
+import com.good4.business.data.dto.BusinessDto
+import com.good4.campaign.data.dto.CampaignDto
+import com.good4.code.data.dto.CodeDto
+import com.good4.config.data.dto.AppConfigDto
+import com.good4.config.data.dto.UniversitiesConfigDto
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
-import com.good4.business.data.dto.BusinessDto
-import com.good4.campaign.data.dto.CampaignDto
-import com.good4.config.data.dto.AppConfigDto
-import com.good4.code.data.dto.CodeDto
 import com.good4.order.data.dto.OrderDto
 import com.good4.order.data.dto.OrderItemDto
 import com.good4.product.data.dto.ProductDto
 import com.good4.supportactivity.data.dto.SupportActivityDto
 import com.good4.user.data.dto.UserDto
 import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Direction
+import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Query
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
@@ -26,7 +27,10 @@ import kotlin.reflect.KClass
 class FirestoreRepositoryIOSImpl : FirestoreRepository {
     private val firestore = Firebase.firestore
 
-    override suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error> {
+    override suspend fun <T : Any> addDocument(
+        collectionPath: String,
+        data: T
+    ): Result<String, Error> {
         FirebaseDebugLogger.request(
             operation = "addDocument",
             path = collectionPath,
@@ -48,7 +52,11 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             )
             Result.Success(documentReference.id)
         } catch (e: Exception) {
-            FirebaseDebugLogger.error(operation = "addDocument", path = collectionPath, throwable = e)
+            FirebaseDebugLogger.error(
+                operation = "addDocument",
+                path = collectionPath,
+                throwable = e
+            )
             Result.Error(NetworkError(e.message ?: "Unknown error"))
         }
     }
@@ -129,7 +137,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         }
     }
 
-    override suspend fun deleteDocument(collectionPath: String, documentId: String): Result<Unit, Error> {
+    override suspend fun deleteDocument(
+        collectionPath: String,
+        documentId: String
+    ): Result<Unit, Error> {
         FirebaseDebugLogger.request(
             operation = "deleteDocument",
             path = collectionPath,
@@ -407,6 +418,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "CodeDto" to CodeDto.serializer(),
         "UserDto" to UserDto.serializer(),
         "AppConfigDto" to AppConfigDto.serializer(),
+        "UniversitiesConfigDto" to UniversitiesConfigDto.serializer(),
         "OrderDto" to OrderDto.serializer(),
         "OrderItemDto" to OrderItemDto.serializer(),
         "SupportActivityDto" to SupportActivityDto.serializer()
@@ -442,7 +454,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return ProductDto(
             name = document.getOrNull("name"),
             description = document.getOrNull("description"),
-            count = document.getOrNull("count"),
             pendingCount = document.getOrNull("pendingCount"),
             businessId = document.getOrNull("businessId"),
             createdAt = document.getEpochSeconds("createdAt"),
@@ -482,7 +493,9 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                     totalPrice = (m["totalPrice"] as? Number)?.toDouble()
                 )
             }
-        } catch (_: Exception) { null }
+        } catch (_: Exception) {
+            null
+        }
 
         return OrderDto(
             businessId = document.getOrNull("businessId"),
@@ -559,14 +572,18 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     }
 
     private fun DocumentSnapshot.getAsDouble(field: String): Double? =
-        (getOrNull<Any>(field) as? Number)?.toDouble()
+        getOrNull<Double>(field) ?: getOrNull<Long>(field)?.toDouble()
 
-    private fun DocumentSnapshot.getAsInt(field: String): Int? =
-        (getOrNull<Any>(field) as? Number)?.toInt()
+    private fun DocumentSnapshot.getAsInt(field: String): Int? {
+        getOrNull<Int>(field)?.let { return it }
+        getOrNull<Long>(field)?.toInt()?.let { return it }
+        getOrNull<Double>(field)?.toInt()?.let { return it }
+        getOrNull<String>(field)?.toIntOrNull()?.let { return it }
+        return null
+    }
 
     private inline fun <reified T> DocumentSnapshot.getOrNull(field: String): T? {
         return try {
-            if (!contains(field)) return null
             get(field)
         } catch (_: Exception) {
             null
@@ -584,7 +601,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             if (!contains(field)) return null
             getOrNull<Long>(field)
                 ?: getOrNull<Timestamp>(field)?.seconds
-                ?: readEpochSecondsFromMap(getOrNull<Any>(field))
+                ?: null
         } catch (_: Exception) {
             null
         }

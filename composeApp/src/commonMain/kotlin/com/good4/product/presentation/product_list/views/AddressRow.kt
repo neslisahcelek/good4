@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
@@ -31,6 +32,7 @@ fun AddressRow(
         Text(
             text = address.asString(),
             color = TextSecondary,
+            textDecoration = TextDecoration.Underline,
             modifier = Modifier.padding(start = 4.dp).weight(1f)
         )
     }

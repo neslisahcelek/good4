@@ -2,6 +2,7 @@ package com.good4.core.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -25,15 +29,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.util.openMaps
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.reservation_status_cancelled
 import good4.composeapp.generated.resources.reservation_status_completed
@@ -49,10 +57,16 @@ fun ReservationCard(
     title: String?,
     productName: String,
     businessName: String,
+    businessAddress: String? = null,
     status: CodeStatus,
     code: String?,
-    remainingTime: String?
+    remainingTime: String?,
+    showCancelButton: Boolean = false,
+    cancelButtonLabel: String? = null,
+    onCancelClick: (() -> Unit)? = null
 ) {
+    val displayAddress = toDisplayAddressOrNull(businessAddress)
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -67,6 +81,8 @@ fun ReservationCard(
         ) {
             if (!title.isNullOrBlank()) {
                 Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
                     text = title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -106,6 +122,29 @@ fun ReservationCard(
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
+            }
+
+            if (displayAddress != null && !businessAddress.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { openMaps(businessAddress) }
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = displayAddress,
+                        fontSize = 14.sp,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
             }
 
             if (status == CodeStatus.PENDING && code != null) {
@@ -148,13 +187,38 @@ fun ReservationCard(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = stringResource(Res.string.student_reservations_remaining_prefix) +
-                                        remainingTime,
+                                            remainingTime,
                                     fontSize = 12.sp,
                                     color = TextSecondary
                                 )
                             }
                         }
                     }
+                }
+            }
+
+            if (
+                showCancelButton &&
+                status == CodeStatus.PENDING &&
+                !cancelButtonLabel.isNullOrBlank() &&
+                onCancelClick != null
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onCancelClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ErrorRed,
+                        contentColor = SurfaceDefault
+                    )
+                ) {
+                    Text(
+                        text = cancelButtonLabel,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }

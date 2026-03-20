@@ -8,6 +8,14 @@ import platform.UIKit.UIAlertController
 import platform.UIKit.UIAlertControllerStyleActionSheet
 import platform.UIKit.UIApplication
 
+private fun openUrl(url: NSURL) {
+    UIApplication.sharedApplication.openURL(
+        url = url,
+        options = emptyMap<Any?, Any>(),
+        completionHandler = null
+    )
+}
+
 private fun String.encodeToUrlQuery(): String = buildString {
     for (c in this@encodeToUrlQuery) {
         when {
@@ -21,48 +29,62 @@ private fun String.encodeToUrlQuery(): String = buildString {
 }
 
 actual fun openMaps(address: String) {
-    val encodedAddress = address.encodeToUrlQuery()
+    val normalized = address.trim()
+
+    if (isDirectMapUrl(normalized)) {
+        NSURL.URLWithString(normalized)?.let { directUrl ->
+            if (UIApplication.sharedApplication.canOpenURL(directUrl)) {
+                openUrl(directUrl)
+                return
+            }
+        }
+    }
+
+    val encodedAddress = normalized.encodeToUrlQuery()
 
     val appleMapsUrl = NSURL.URLWithString("maps://?q=$encodedAddress")
     val googleMapsUrl = NSURL.URLWithString("comgooglemaps://?q=$encodedAddress")
     val browserUrl = NSURL.URLWithString("https://maps.google.com/?q=$encodedAddress")
 
-    val hasAppleMaps = appleMapsUrl != null && UIApplication.sharedApplication.canOpenURL(appleMapsUrl)
-    val hasGoogleMaps = googleMapsUrl != null && UIApplication.sharedApplication.canOpenURL(googleMapsUrl)
+    val appleMapsOpenUrl = appleMapsUrl?.takeIf { UIApplication.sharedApplication.canOpenURL(it) }
+    val googleMapsOpenUrl = googleMapsUrl?.takeIf { UIApplication.sharedApplication.canOpenURL(it) }
+
+    val hasAppleMaps = appleMapsOpenUrl != null
+    val hasGoogleMaps = googleMapsOpenUrl != null
 
     val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
         ?: return
 
     if (!hasAppleMaps && !hasGoogleMaps) {
-        browserUrl?.let { UIApplication.sharedApplication.openURL(it) }
+        browserUrl?.let { openUrl(it) }
         return
     }
 
     if (hasAppleMaps && !hasGoogleMaps) {
-        UIApplication.sharedApplication.openURL(appleMapsUrl!!)
+        appleMapsOpenUrl?.let { openUrl(it) }
         return
     }
 
     if (!hasAppleMaps && hasGoogleMaps) {
-        UIApplication.sharedApplication.openURL(googleMapsUrl!!)
+        googleMapsOpenUrl?.let { openUrl(it) }
         return
     }
 
     val sheet = UIAlertController.alertControllerWithTitle(
         title = null,
-        message = address,
+        message = normalized,
         preferredStyle = UIAlertControllerStyleActionSheet
     )
 
     sheet.addAction(
         UIAlertAction.actionWithTitle("Apple Maps", style = UIAlertActionStyleDefault) {
-            UIApplication.sharedApplication.openURL(appleMapsUrl!!)
+            appleMapsOpenUrl?.let { openUrl(it) }
         }
     )
 
     sheet.addAction(
         UIAlertAction.actionWithTitle("Google Maps", style = UIAlertActionStyleDefault) {
-            UIApplication.sharedApplication.openURL(googleMapsUrl!!)
+            googleMapsOpenUrl?.let { openUrl(it) }
         }
     )
 

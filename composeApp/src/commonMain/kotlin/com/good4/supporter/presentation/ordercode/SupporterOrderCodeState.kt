@@ -5,6 +5,7 @@ import com.good4.order.domain.Order
 
 data class SupporterOrderCodeState(
     val order: Order? = null,
+    val businessAddress: String = "",
     val isLoading: Boolean = false,
     val errorMessage: UiText? = null
 )

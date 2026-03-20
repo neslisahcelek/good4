@@ -148,8 +148,10 @@ class BusinessProductsViewModel(
                 businessId = businessId,
                 originalPrice = state.productOriginalPrice.toIntOrNull(),
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
-                count = state.productAmount.toIntOrNull(),
+                pendingCount = state.productAmount.toIntOrNull(),
                 imageUrl = state.productImageUrl.ifBlank { null },
+                totalDelivered = 0,
+                totalSuspended = 0,
                 createdAt = Clock.System.now().epochSeconds
             )
 
@@ -210,8 +212,10 @@ class BusinessProductsViewModel(
                 businessId = businessId,
                 originalPrice = state.productOriginalPrice.toIntOrNull(),
                 discountPrice = state.productDiscountPrice.toIntOrNull(),
-                count = state.productAmount.toIntOrNull(),
+                pendingCount = state.productAmount.toIntOrNull(),
                 imageUrl = state.productImageUrl.ifBlank { null },
+                totalDelivered = product.totalDelivered,
+                totalSuspended = product.totalSuspended,
                 createdAt = product.createdAt
             )
 

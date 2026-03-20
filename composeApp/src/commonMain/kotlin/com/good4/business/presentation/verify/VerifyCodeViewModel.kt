@@ -13,6 +13,8 @@ import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.verify_code_error_failed
 import good4.composeapp.generated.resources.verify_code_error_invalid
+import good4.composeapp.generated.resources.verify_code_order_cancelled
+import good4.composeapp.generated.resources.verify_code_order_error_cancel
 import good4.composeapp.generated.resources.verify_code_order_error_confirm
 import good4.composeapp.generated.resources.verify_code_order_not_found
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +62,8 @@ class VerifyCodeViewModel(
                     codeInput = code,
                     errorMessage = null,
                     verificationSuccess = false,
+                    orderConfirmedSuccess = false,
+                    orderCancelledSuccess = false,
                     pendingOrder = null
                 )
             }
@@ -81,6 +85,8 @@ class VerifyCodeViewModel(
                     isLoading = true,
                     errorMessage = null,
                     verificationSuccess = false,
+                    orderConfirmedSuccess = false,
+                    orderCancelledSuccess = false,
                     pendingOrder = null
                 )
             }
@@ -91,7 +97,10 @@ class VerifyCodeViewModel(
                 is Result.Success -> {
                     when (codeRepository.markCodeAsUsed(studentResult.data.id)) {
                         is Result.Success -> {
-                            launch { productRepository.decrementProductCount(studentResult.data.productId) }
+                            launch {
+                                productRepository.decrementProductPendingCount(studentResult.data.productId)
+                                productRepository.incrementProductDeliveredCount(studentResult.data.productId, 1)
+                            }
                             _state.update {
                                 it.copy(
                                     isLoading = false,
@@ -126,7 +135,14 @@ class VerifyCodeViewModel(
             is Result.Success -> {
                 val order = orderResult.data
                 if (order != null) {
-                    _state.update { it.copy(isLoading = false, pendingOrder = order) }
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            pendingOrder = order,
+                            orderConfirmedSuccess = false,
+                            orderCancelledSuccess = false
+                        )
+                    }
                 } else {
                     _state.update {
                         it.copy(
@@ -150,7 +166,7 @@ class VerifyCodeViewModel(
 
     fun confirmOrder() {
         val order = _state.value.pendingOrder ?: return
-        if (_state.value.isConfirmingOrder) return
+        if (_state.value.isConfirmingOrder || _state.value.isCancellingOrder) return
 
         viewModelScope.launch {
             _state.update { it.copy(isConfirmingOrder = true, errorMessage = null) }
@@ -179,9 +195,51 @@ class VerifyCodeViewModel(
             _state.update {
                 it.copy(
                     isConfirmingOrder = false,
+                    isCancellingOrder = false,
                     orderConfirmedSuccess = true,
+                    orderCancelledSuccess = false,
                     pendingOrder = null,
                     codeInput = ""
+                )
+            }
+        }
+    }
+
+    fun cancelOrder() {
+        val order = _state.value.pendingOrder ?: return
+        if (_state.value.isCancellingOrder || _state.value.isConfirmingOrder) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isCancellingOrder = true, errorMessage = null) }
+
+            when (orderRepository.updateOrderStatus(order.id, OrderStatus.CANCELLED)) {
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isCancellingOrder = false,
+                            errorMessage = getString(Res.string.verify_code_order_error_cancel)
+                        )
+                    }
+                    return@launch
+                }
+
+                is Result.Success -> Unit
+            }
+
+            order.items.forEach { item ->
+                productRepository.incrementProductSuspendedCount(item.productId, item.quantity)
+            }
+
+            _state.update {
+                it.copy(
+                    isConfirmingOrder = false,
+                    isCancellingOrder = false,
+                    orderConfirmedSuccess = false,
+                    orderCancelledSuccess = true,
+                    verifiedProductName = null,
+                    pendingOrder = null,
+                    codeInput = "",
+                    errorMessage = getString(Res.string.verify_code_order_cancelled)
                 )
             }
         }

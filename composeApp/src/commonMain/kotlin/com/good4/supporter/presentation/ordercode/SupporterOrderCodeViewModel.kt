@@ -2,6 +2,7 @@ package com.good4.supporter.presentation.ordercode
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.order.data.repository.OrderRepository
@@ -13,7 +14,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SupporterOrderCodeViewModel(
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val businessRepository: FirestoreBusinessRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SupporterOrderCodeState())
@@ -27,7 +29,18 @@ class SupporterOrderCodeViewModel(
 
             when (val result = orderRepository.getOrder(orderId)) {
                 is Result.Success -> {
-                    _state.update { it.copy(order = result.data, isLoading = false) }
+                    val businessAddress = when (val businessResult = businessRepository.getBusinessById(result.data.businessId)) {
+                        is Result.Success -> businessResult.data.fullAddress
+                        is Result.Error -> ""
+                    }
+
+                    _state.update {
+                        it.copy(
+                            order = result.data,
+                            businessAddress = businessAddress,
+                            isLoading = false
+                        )
+                    }
                 }
                 is Result.Error -> {
                     _state.update {
