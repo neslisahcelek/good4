@@ -52,7 +52,7 @@ fun BusinessProfileScreen(
     ) {
         Box(
             modifier = Modifier
-                .padding(top = 32.dp)
+                .padding(top = 50.dp)
                 .size(100.dp)
                 .clip(CircleShape)
                 .background(PistachioGreen),

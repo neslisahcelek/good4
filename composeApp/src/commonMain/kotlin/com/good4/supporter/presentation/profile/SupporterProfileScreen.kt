@@ -110,7 +110,7 @@ fun SupporterProfileScreen(
 private fun SupporterAvatar(modifier: Modifier = Modifier, fullName: String?, unknownLabel: String) {
     Box(
         modifier = modifier
-            .padding(top = 32.dp)
+            .padding(top = 50.dp)
             .size(100.dp)
             .clip(CircleShape)
             .background(PistachioGreen),
