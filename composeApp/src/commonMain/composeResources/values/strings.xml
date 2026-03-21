@@ -59,6 +59,8 @@
     <string name="business_phone">İşletme Telefonu</string>
     <string name="tax_number">Vergi Numarası</string>
     <string name="address">Adres Bilgisi *</string>
+    <string name="open_address">Açık Adres *</string>
+    <string name="map_address_url_optional">Harita Adres URL\'si (Opsiyonel)</string>
     <string name="city">Şehir *</string>
     <string name="district">İlçe</string>
     <string name="security">Güvenlik</string>
@@ -217,7 +219,7 @@
     <string name="verify_code_success">Kod başarıyla doğrulandı!</string>
     <string name="verify_code_product_prefix">Ürün: </string>
     <string name="verify_code_new">Yeni bir kod doğrulayın</string>
-    <string name="verify_code_error_invalid">Rezervasyon kodu 6 haneli olmalıdır</string>
+    <string name="verify_code_error_invalid">Rezervasyon kodu 4 veya 6 haneli olmalıdır</string>
     <string name="verify_code_error_failed">Kod doğrulanırken bir hata oluştu</string>
     <string name="verify_code_order_title">Destekçi Siparişi</string>
     <string name="verify_code_order_supporter_label">Destekçi</string>
@@ -318,6 +320,10 @@
 
     <!-- Supporter Product List -->
     <string name="supporter_product_list_empty">Şu anda satın alınabilecek ürün bulunmuyor.</string>
+    <string name="supporter_products_greeting_prefix">Hoş geldin </string>
+    <string name="supporter_products_greeting_suffix">,</string>
+    <string name="supporter_products_prompt">Bugün öğrencilere ne hediye etmek istersin?</string>
+    <string name="supporter_products_name_fallback">Destekçi</string>
     <string name="add_to_cart">Sepete Ekle</string>
     <string name="in_cart_label">Sepette</string>
 
@@ -325,6 +331,7 @@
     <string name="supporter_cart">Sepet</string>
     <string name="supporter_cart_empty">Sepetiniz boş.</string>
     <string name="supporter_cart_empty_subtitle">Ürünler sekmesinden ürün ekleyebilirsiniz.</string>
+    <string name="supporter_cart_active_orders_title">Aktif Rezervasyonlar</string>
     <string name="supporter_cart_total">Toplam</string>
     <string name="supporter_cart_create_order">Sipariş Oluştur</string>
     <string name="supporter_cart_item_remove">Kaldır</string>
@@ -334,9 +341,18 @@
     <string name="supporter_cart_no_session_error">Kullanıcı oturumu bulunamadı.</string>
     <string name="supporter_cart_empty_error">Sepetiniz boş.</string>
     <string name="supporter_cart_order_failed">Sipariş oluşturulamadı.</string>
+    <string name="supporter_cart_order_canceling">Rezervasyon iptal ediliyor…</string>
+    <string name="supporter_cart_order_cancel_failed">Rezervasyon iptal edilemedi.</string>
+    <string name="supporter_order_summary_title">Sipariş Onayı</string>
+    <string name="supporter_order_summary_card_title">Sipariş Özeti</string>
+    <string name="supporter_order_summary_subtotal">Ara Toplam</string>
+    <string name="supporter_order_summary_info_title">Nasıl Çalışır?</string>
+    <string name="supporter_order_summary_info_text">Siparişinizi onayladığınızda 4 haneli kod alırsınız. Bu kodu kasadaki görevliye söyleyip ödemenizi yapabilirsiniz.</string>
+    <string name="supporter_order_summary_confirm">Siparişi Onayla</string>
+    <string name="supporter_order_summary_cancel">Vazgeç</string>
 
     <!-- Supporter Home & Profile -->
-    <string name="supporter_home_tab_products">Ürünler</string>
+    <string name="supporter_home_tab_dashboard">Ana Sayfa</string>
     <string name="supporter_home_tab_cart">Sepet</string>
     <string name="supporter_home_tab_profile">Profil</string>
     <string name="profile_title_supporter">Destekçi Profilim</string>
@@ -347,7 +363,7 @@
 
     <!-- Supporter Order Code -->
     <string name="order_code_title">Sipariş Kodunuz</string>
-    <string name="order_code_subtitle">Bu kodu kasaya gösterin veya okutun</string>
+    <string name="order_code_subtitle">Siparişinizin onaylanması için bu kodu kasadaki görevliye söylemelisiniz.</string>
     <string name="order_code_store">İşletme</string>
     <string name="order_code_address">Adres</string>
     <string name="order_code_items_title">Sipariş Özeti</string>

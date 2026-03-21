@@ -53,16 +53,19 @@ import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.openMaps
-import com.good4.core.util.toDisplayAddress
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_to_cart
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.in_cart_label
 import good4.composeapp.generated.resources.price_currency_suffix
-import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.product_image_description
+import good4.composeapp.generated.resources.supporter_products_greeting_prefix
+import good4.composeapp.generated.resources.supporter_products_greeting_suffix
+import good4.composeapp.generated.resources.supporter_products_name_fallback
+import good4.composeapp.generated.resources.supporter_products_prompt
 import good4.composeapp.generated.resources.supporter_product_list_empty
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -111,29 +114,39 @@ fun SupporterProductListScreen(
                 state.isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-                state.products.isEmpty() -> {
-                    Text(
-                        text = stringResource(Res.string.supporter_product_list_empty),
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp),
-                        color = TextSecondary,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(bottom = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(items = state.products, key = { it.documentId }) { product ->
-                            SupporterProductItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                product = product,
-                                cartCount = cartItemCounts[product.documentId] ?: 0,
-                                onAddToCart = { onAddToCart(product) }
+                        item {
+                            SupporterWelcomeCard(
+                                supporterName = state.supporterName
                             )
+                        }
+                        if (state.products.isEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(Res.string.supporter_product_list_empty),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                                    color = TextSecondary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        } else {
+                            items(items = state.products, key = { it.documentId }) { product ->
+                                SupporterProductItem(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 2.dp),
+                                    product = product,
+                                    cartCount = cartItemCounts[product.documentId] ?: 0,
+                                    onAddToCart = { onAddToCart(product) }
+                                )
+                            }
                         }
                     }
                 }
@@ -145,6 +158,38 @@ fun SupporterProductListScreen(
                 onDismiss = { onAction(SupporterProductListAction.OnDismissError) }
             )
         }
+    }
+}
+
+@Composable
+private fun SupporterWelcomeCard(
+    modifier: Modifier = Modifier,
+    supporterName: String
+) {
+    val displayName = supporterName.ifBlank {
+        stringResource(Res.string.supporter_products_name_fallback)
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(PrimaryGreen)
+            .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 18.dp)
+    ) {
+        Text(
+            text = stringResource(Res.string.supporter_products_greeting_prefix) +
+                displayName +
+                stringResource(Res.string.supporter_products_greeting_suffix),
+            color = SurfaceDefault,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = stringResource(Res.string.supporter_products_prompt),
+            color = SurfaceDefault.copy(alpha = 0.9f),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 6.dp)
+        )
     }
 }
 
@@ -324,13 +369,15 @@ private fun ProductInfoSection(
             currencySuffix = currencySuffix
         )
 
-        if (product.address.isNotBlank()) {
-            val displayAddress = toDisplayAddress(
-                rawAddress = product.address,
-                mapsFallbackLabel = stringResource(Res.string.product_address_maps_hint)
-            )
+        val displayAddress = toDisplayAddressOrNull(product.address)
+        val mapsAddress = product.addressUrl
+        if (displayAddress != null) {
             Row(
-                modifier = Modifier.clickable { openMaps(product.address) },
+                modifier = if (mapsAddress.isNotBlank()) {
+                    Modifier.clickable { openMaps(mapsAddress) }
+                } else {
+                    Modifier
+                },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -344,7 +391,7 @@ private fun ProductInfoSection(
                     text = displayAddress,
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary,
-                    textDecoration = TextDecoration.Underline,
+                    textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -430,6 +477,7 @@ fun SupporterProductListScreenPreview() {
                         storeName = "Yakut Lokantası",
                         businessId = "b1",
                         address = "Atatürk Mah. No:12",
+                        addressUrl = "",
                         description = "Günlük hazırlanan taze tavuk döner.",
                         price = 120,
                         originalPrice = 150,

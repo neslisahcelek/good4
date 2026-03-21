@@ -30,12 +30,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.DeepGreen
@@ -48,15 +50,23 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ReservationCard
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.cancel
 import good4.composeapp.generated.resources.price_currency_suffix
+import good4.composeapp.generated.resources.reservation_expired_short
 import good4.composeapp.generated.resources.supporter_cart
+import good4.composeapp.generated.resources.supporter_cart_active_orders_title
 import good4.composeapp.generated.resources.supporter_cart_create_order
 import good4.composeapp.generated.resources.supporter_cart_creating_order
+import good4.composeapp.generated.resources.supporter_cart_order_canceling
 import good4.composeapp.generated.resources.supporter_cart_empty
 import good4.composeapp.generated.resources.supporter_cart_empty_subtitle
 import good4.composeapp.generated.resources.supporter_cart_item_remove
 import good4.composeapp.generated.resources.supporter_cart_total
+import good4.composeapp.generated.resources.time_minute_suffix
+import good4.composeapp.generated.resources.time_second_suffix
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -66,6 +76,10 @@ fun SupporterCartScreen(
     state: SupporterCartState,
     onAction: (SupporterCartAction) -> Unit
 ) {
+    LaunchedEffect(Unit) {
+        onAction(SupporterCartAction.OnRefreshActiveOrders)
+    }
+
     Good4NestedScaffold(
         modifier = modifier,
         topBar = {
@@ -102,7 +116,7 @@ fun SupporterCartScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (state.items.isEmpty()) {
+            if (state.items.isEmpty() && state.activeOrders.isEmpty()) {
                 CartEmptyContent()
             } else {
                 Column(
@@ -116,33 +130,106 @@ fun SupporterCartScreen(
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        item { Spacer(modifier = Modifier.height(12.dp)) }
-                        items(state.items, key = { it.product.documentId }) { cartItem ->
-                            CartItemCard(
-                                cartItem = cartItem,
-                                currencySuffix = stringResource(Res.string.price_currency_suffix),
-                                onIncrease = { onAction(SupporterCartAction.OnIncreaseQuantity(cartItem.product.documentId)) },
-                                onDecrease = { onAction(SupporterCartAction.OnDecreaseQuantity(cartItem.product.documentId)) },
-                                onRemove = { onAction(SupporterCartAction.OnRemoveItem(cartItem.product.documentId)) }
-                            )
+                        if (state.items.isNotEmpty()) {
+                            items(state.items, key = { it.product.documentId }) { cartItem ->
+                                CartItemCard(
+                                    cartItem = cartItem,
+                                    currencySuffix = stringResource(Res.string.price_currency_suffix),
+                                    onIncrease = { onAction(SupporterCartAction.OnIncreaseQuantity(cartItem.product.documentId)) },
+                                    onDecrease = { onAction(SupporterCartAction.OnDecreaseQuantity(cartItem.product.documentId)) },
+                                    onRemove = { onAction(SupporterCartAction.OnRemoveItem(cartItem.product.documentId)) }
+                                )
+                            }
+                        } else {
+                            item {
+                                CartSectionEmptyHint()
+                            }
                         }
+                        item { Spacer(modifier = Modifier.height(12.dp)) }
+                        if (state.activeOrders.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(Res.string.supporter_cart_active_orders_title),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+                            items(state.activeOrders, key = { it.id }) { order ->
+                                val isCancelling = state.cancellingOrderIds.contains(order.id)
+                                ReservationCard(
+                                    title = null,
+                                    productName = order.productName,
+                                    businessName = order.businessName,
+                                    businessAddress = null,
+                                    status = CodeStatus.PENDING,
+                                    code = order.code,
+                                    remainingTime = formatRemainingTime(
+                                        expiresAtEpochSeconds = order.expiresAtEpochSeconds,
+                                        minuteSuffix = stringResource(Res.string.time_minute_suffix),
+                                        secondSuffix = stringResource(Res.string.time_second_suffix),
+                                        expiredLabel = stringResource(Res.string.reservation_expired_short)
+                                    ),
+                                    showCancelButton = true,
+                                    cancelButtonLabel = if (isCancelling) {
+                                        stringResource(Res.string.supporter_cart_order_canceling)
+                                    } else {
+                                        stringResource(Res.string.cancel)
+                                    },
+                                    onCancelClick = {
+                                        onAction(SupporterCartAction.OnCancelActiveOrder(order.id))
+                                    }
+                                )
+                            }
+                            item { Spacer(modifier = Modifier.height(8.dp)) }
+                        }
+
                         item { Spacer(modifier = Modifier.height(8.dp)) }
                     }
 
-                    CartBottomBar(
-                        state = state,
-                        currencySuffix = stringResource(Res.string.price_currency_suffix),
-                        onCreateOrder = { onAction(SupporterCartAction.OnCreateOrder) }
-                    )
+                    if (state.items.isNotEmpty()) {
+                        CartBottomBar(
+                            state = state,
+                            currencySuffix = stringResource(Res.string.price_currency_suffix),
+                            onCreateOrder = { onAction(SupporterCartAction.OnCreateOrder) }
+                        )
+                    }
                 }
             }
 
             ErrorSnackbar(
                 modifier = Modifier.align(Alignment.TopCenter),
                 errorMessage = state.errorMessage,
-                onDismiss = { onAction(SupporterCartAction.OnDismissError) }
+                onDismiss = { onAction(SupporterCartAction.OnDismissError) },
+                addTopSafeArea = false
             )
         }
+    }
+}
+
+@Composable
+private fun CartSectionEmptyHint(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(SurfaceDefault, RoundedCornerShape(12.dp))
+            .border(1.dp, BorderMuted, RoundedCornerShape(12.dp))
+            .padding(vertical = 16.dp, horizontal = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(Res.string.supporter_cart_empty),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = stringResource(Res.string.supporter_cart_empty_subtitle),
+            fontSize = 12.sp,
+            color = TextSecondary
+        )
     }
 }
 
@@ -349,4 +436,20 @@ fun SupporterCartScreenPreview() {
             onAction = {}
         )
     }
+}
+
+private fun formatRemainingTime(
+    expiresAtEpochSeconds: Long?,
+    minuteSuffix: String,
+    secondSuffix: String,
+    expiredLabel: String
+): String? {
+    if (expiresAtEpochSeconds == null) return null
+
+    val remainingSeconds = expiresAtEpochSeconds - Clock.System.now().epochSeconds
+    if (remainingSeconds <= 0) return expiredLabel
+
+    val minutes = remainingSeconds / 60
+    val seconds = remainingSeconds % 60
+    return "${minutes}${minuteSuffix} ${seconds}${secondSuffix}"
 }

@@ -181,6 +181,14 @@ class FirestoreRepositoryAndroidImpl(
         documentId: String,
         clazz: KClass<T>
     ): Result<T, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "getDocument",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
         FirebaseDebugLogger.request(
             operation = "getDocument",
             path = collectionPath,
@@ -226,6 +234,14 @@ class FirestoreRepositoryAndroidImpl(
         documentId: String,
         data: T
     ): Result<Unit, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "updateDocument",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
         FirebaseDebugLogger.request(
             operation = "updateDocument",
             path = collectionPath,
@@ -258,6 +274,14 @@ class FirestoreRepositoryAndroidImpl(
         collectionPath: String,
         documentId: String
     ): Result<Unit, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "deleteDocument",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
         FirebaseDebugLogger.request(
             operation = "deleteDocument",
             path = collectionPath,

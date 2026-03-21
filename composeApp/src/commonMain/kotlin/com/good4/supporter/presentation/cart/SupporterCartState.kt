@@ -8,8 +8,19 @@ data class CartItem(
     val quantity: Int
 )
 
+data class ActiveSupporterOrder(
+    val id: String,
+    val code: String,
+    val productName: String,
+    val businessName: String,
+    val expiresAtEpochSeconds: Long?
+)
+
 data class SupporterCartState(
     val items: List<CartItem> = emptyList(),
+    val activeOrders: List<ActiveSupporterOrder> = emptyList(),
+    val cancellingOrderIds: Set<String> = emptySet(),
+    val isReviewingOrder: Boolean = false,
     val isCreatingOrder: Boolean = false,
     val errorMessage: UiText? = null,
     val createdOrderId: String? = null

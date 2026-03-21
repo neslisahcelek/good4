@@ -29,15 +29,18 @@ class SupporterOrderCodeViewModel(
 
             when (val result = orderRepository.getOrder(orderId)) {
                 is Result.Success -> {
-                    val businessAddress = when (val businessResult = businessRepository.getBusinessById(result.data.businessId)) {
-                        is Result.Success -> businessResult.data.fullAddress
-                        is Result.Error -> ""
+                    val (businessAddress, businessAddressUrl) = when (
+                        val businessResult = businessRepository.getBusinessById(result.data.businessId)
+                    ) {
+                        is Result.Success -> businessResult.data.fullAddress to businessResult.data.addressUrl
+                        is Result.Error -> "" to ""
                     }
 
                     _state.update {
                         it.copy(
                             order = result.data,
                             businessAddress = businessAddress,
+                            businessAddressUrl = businessAddressUrl,
                             isLoading = false
                         )
                     }

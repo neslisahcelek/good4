@@ -66,6 +66,14 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         documentId: String,
         clazz: KClass<T>
     ): Result<T, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "getDocument",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
         FirebaseDebugLogger.request(
             operation = "getDocument",
             path = collectionPath,
@@ -108,6 +116,14 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         documentId: String,
         data: T
     ): Result<Unit, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "updateDocument",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
         FirebaseDebugLogger.request(
             operation = "updateDocument",
             path = collectionPath,
@@ -141,6 +157,14 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         collectionPath: String,
         documentId: String
     ): Result<Unit, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "deleteDocument",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
         FirebaseDebugLogger.request(
             operation = "deleteDocument",
             path = collectionPath,
@@ -480,22 +504,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     }
 
     private fun decodeOrderDto(document: DocumentSnapshot): OrderDto {
-        val itemsList = try {
-            document.getOrNull<List<*>>("items")?.mapNotNull { item ->
-                val m = item as? Map<*, *> ?: return@mapNotNull null
-                OrderItemDto(
-                    businessId = m["businessId"] as? String,
-                    businessName = m["businessName"] as? String,
-                    productId = m["productId"] as? String,
-                    productName = m["productName"] as? String,
-                    quantity = (m["quantity"] as? Number)?.toInt(),
-                    unitPrice = (m["unitPrice"] as? Number)?.toDouble(),
-                    totalPrice = (m["totalPrice"] as? Number)?.toDouble()
-                )
-            }
-        } catch (_: Exception) {
-            null
-        }
+        val itemsList = decodeOrderItems(document)
 
         return OrderDto(
             businessId = document.getOrNull("businessId"),
@@ -510,6 +519,41 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             supporterId = document.getOrNull("supporterId"),
             supporterName = document.getOrNull("supporterName"),
             items = itemsList
+        )
+    }
+
+    private fun decodeOrderItems(document: DocumentSnapshot): List<OrderItemDto>? {
+        val typedItems = try {
+            document.getOrNull<List<OrderItemDto>>("items")
+        } catch (_: Exception) {
+            null
+        }
+        if (!typedItems.isNullOrEmpty()) return typedItems
+
+        val rawItems = try {
+            document.getOrNull<List<*>>("items")
+        } catch (_: Exception) {
+            null
+        } ?: return typedItems
+
+        return rawItems.mapNotNull { item ->
+            when (item) {
+                is OrderItemDto -> item
+                is Map<*, *> -> mapToOrderItemDto(item)
+                else -> null
+            }
+        }
+    }
+
+    private fun mapToOrderItemDto(map: Map<*, *>): OrderItemDto {
+        return OrderItemDto(
+            businessId = map["businessId"] as? String,
+            businessName = map["businessName"] as? String,
+            productId = map["productId"] as? String,
+            productName = map["productName"] as? String,
+            quantity = toIntOrNull(map["quantity"]),
+            unitPrice = toDoubleOrNull(map["unitPrice"]),
+            totalPrice = toDoubleOrNull(map["totalPrice"])
         )
     }
 
@@ -615,6 +659,28 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 ?: ((map["value\$kotlinx_datetime"] as? Map<*, *>)?.get("epochSecond") as? Number)?.toLong()
         } catch (_: Exception) {
             null
+        }
+    }
+
+    private fun toIntOrNull(value: Any?): Int? {
+        return when (value) {
+            is Int -> value
+            is Long -> value.toInt()
+            is Double -> value.toInt()
+            is Float -> value.toInt()
+            is String -> value.toIntOrNull()
+            else -> null
+        }
+    }
+
+    private fun toDoubleOrNull(value: Any?): Double? {
+        return when (value) {
+            is Double -> value
+            is Float -> value.toDouble()
+            is Int -> value.toDouble()
+            is Long -> value.toDouble()
+            is String -> value.toDoubleOrNull()
+            else -> null
         }
     }
 }

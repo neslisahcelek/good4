@@ -33,3 +33,10 @@ fun singleClick(
  */
 @Composable
 expect fun Modifier.systemBarsPadding(): Modifier
+
+/**
+ * Platform-specific modifier for top safe area padding only.
+ * Pushes content below Dynamic Island on iOS and status bar on Android.
+ */
+@Composable
+expect fun Modifier.topSafeAreaPadding(): Modifier

@@ -95,7 +95,8 @@ fun ProfileScreenScaffold(
                 ErrorSnackbar(
                     modifier = Modifier.align(Alignment.TopCenter),
                     errorMessage = errorMessage,
-                    onDismiss = onDismissError
+                    onDismiss = onDismissError,
+                    addTopSafeArea = false
                 )
             }
         }

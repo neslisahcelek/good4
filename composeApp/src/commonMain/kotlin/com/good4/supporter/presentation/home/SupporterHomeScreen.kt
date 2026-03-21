@@ -4,12 +4,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -37,13 +37,14 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.supporter.presentation.cart.SupporterCartAction
 import com.good4.supporter.presentation.cart.SupporterCartScreen
 import com.good4.supporter.presentation.cart.SupporterCartViewModel
+import com.good4.supporter.presentation.cart.SupporterOrderSummaryScreen
 import com.good4.supporter.presentation.cart.totalItemCount
 import com.good4.supporter.presentation.products.SupporterProductListScreenRoot
 import com.good4.supporter.presentation.products.SupporterProductListViewModel
 import com.good4.supporter.presentation.profile.SupporterProfileScreen
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.supporter_home_tab_cart
-import good4.composeapp.generated.resources.supporter_home_tab_products
+import good4.composeapp.generated.resources.supporter_home_tab_dashboard
 import good4.composeapp.generated.resources.supporter_home_tab_profile
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -94,9 +95,9 @@ fun SupporterHomeScreen(
 
     val navItems = listOf(
         SupporterNavItem(
-            title = stringResource(Res.string.supporter_home_tab_products),
-            selectedIcon = Icons.Filled.Star,
-            unselectedIcon = Icons.Outlined.Star
+            title = stringResource(Res.string.supporter_home_tab_dashboard),
+            selectedIcon = Icons.Filled.Home,
+            unselectedIcon = Icons.Outlined.Home
         ),
         SupporterNavItem(
             title = stringResource(Res.string.supporter_home_tab_cart),
@@ -157,10 +158,19 @@ fun SupporterHomeScreen(
                     cartItemCounts = cartItemCounts,
                     onAddToCart = { cartViewModel.onAction(SupporterCartAction.OnAddItem(it)) }
                 )
-                1 -> SupporterCartScreen(
-                    state = cartState,
-                    onAction = cartViewModel::onAction
-                )
+                1 -> {
+                    if (cartState.isReviewingOrder) {
+                        SupporterOrderSummaryScreen(
+                            state = cartState,
+                            onAction = cartViewModel::onAction
+                        )
+                    } else {
+                        SupporterCartScreen(
+                            state = cartState,
+                            onAction = cartViewModel::onAction
+                        )
+                    }
+                }
                 2 -> SupporterProfileScreen(onLogout = onLogout)
             }
         }

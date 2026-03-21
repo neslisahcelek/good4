@@ -78,8 +78,8 @@ fun StudentHomeScreenRoot(
 
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
-            0 -> reservationsViewModel.refresh()
-            1 -> productListViewModel.refresh()
+            0 -> productListViewModel.refresh()
+            1 -> reservationsViewModel.refresh()
         }
     }
 

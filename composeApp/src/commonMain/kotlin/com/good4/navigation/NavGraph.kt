@@ -181,8 +181,11 @@ fun Good4NavGraph(
                 orderId = route.orderId,
                 viewModel = viewModel,
                 onBackToHome = {
-                    navController.navigate(Route.SupporterHome) {
-                        popUpTo(Route.SupporterHome) { inclusive = true }
+                    val popped = navController.popBackStack()
+                    if (!popped) {
+                        navController.navigate(Route.SupporterHome) {
+                            launchSingleTop = true
+                        }
                     }
                 }
             )

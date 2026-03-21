@@ -12,6 +12,7 @@ import com.good4.auth.presentation.register.student.StudentRegisterViewModel
 import com.good4.auth.presentation.register.supporter.SupporterRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.supporter.presentation.cart.SupporterCartViewModel
+import com.good4.supporter.data.local.SupporterCartStorage
 import com.good4.supporter.presentation.ordercode.SupporterOrderCodeViewModel
 import com.good4.supporter.presentation.products.SupporterProductListViewModel
 import com.good4.supporter.presentation.profile.SupporterProfileViewModel
@@ -89,8 +90,16 @@ val commonModule = module {
     viewModel { EditStudentCreditViewModel(get<UserRepository>()) }
     viewModel { AdminProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { SplashViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
-    viewModel { SupporterProductListViewModel(get<FirestoreProductRepository>()) }
-    viewModel { SupporterCartViewModel(get<AuthRepository>(), get<UserRepository>(), get<OrderRepository>()) }
+    viewModel { SupporterProductListViewModel(get<FirestoreProductRepository>(), get<AuthRepository>(), get<UserRepository>()) }
+    viewModel {
+        SupporterCartViewModel(
+            get<AuthRepository>(),
+            get<UserRepository>(),
+            get<OrderRepository>(),
+            get<SupporterCartStorage>(),
+            get<AppConfigRepository>()
+        )
+    }
     viewModel { SupporterOrderCodeViewModel(get<OrderRepository>(), get<FirestoreBusinessRepository>()) }
     viewModel { SupporterProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
 }

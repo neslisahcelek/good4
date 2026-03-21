@@ -1,4 +1,4 @@
-﻿package com.good4.core.presentation
+package com.good4.core.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.good4.core.util.topSafeAreaPadding
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.dismiss
 import kotlinx.coroutines.delay
@@ -33,7 +34,8 @@ fun ErrorSnackbar(
     modifier: Modifier = Modifier,
     errorMessage: UiText?,
     onDismiss: () -> Unit,
-    autoDismissMillis: Long = 3000L
+    autoDismissMillis: Long = 3000L,
+    addTopSafeArea: Boolean = true
 ) {
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
@@ -48,7 +50,7 @@ fun ErrorSnackbar(
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
     ) {
         Card(
-            modifier = modifier
+            modifier = (if (addTopSafeArea) modifier.topSafeAreaPadding() else modifier)
                 .fillMaxWidth()
                 .padding(16.dp),
             colors = CardDefaults.cardColors(

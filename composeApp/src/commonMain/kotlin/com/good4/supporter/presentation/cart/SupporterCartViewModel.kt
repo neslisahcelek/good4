@@ -3,6 +3,7 @@ package com.good4.supporter.presentation.cart
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
+import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.order.data.dto.OrderDto
@@ -10,9 +11,14 @@ import com.good4.order.data.dto.OrderItemDto
 import com.good4.order.data.repository.OrderRepository
 import com.good4.order.domain.OrderStatus
 import com.good4.product.Product
+import com.good4.supporter.data.local.SupporterCartStorage
+import com.good4.supporter.data.local.SupporterCartStoredItem
+import com.good4.supporter.data.local.toProduct
+import com.good4.supporter.data.local.toStoredProduct
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.supporter_cart_empty_error
+import good4.composeapp.generated.resources.supporter_cart_order_cancel_failed
 import good4.composeapp.generated.resources.supporter_cart_no_session_error
 import good4.composeapp.generated.resources.supporter_cart_order_failed
 import good4.composeapp.generated.resources.supporter_cart_single_business_error
@@ -25,11 +31,18 @@ import kotlinx.datetime.Clock
 class SupporterCartViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val cartStorage: SupporterCartStorage,
+    private val configRepository: AppConfigRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SupporterCartState())
     val state = _state.asStateFlow()
+
+    init {
+        restoreCart()
+        refreshActiveOrders()
+    }
 
     fun onAction(action: SupporterCartAction) {
         when (action) {
@@ -37,9 +50,13 @@ class SupporterCartViewModel(
             is SupporterCartAction.OnRemoveItem -> removeItem(action.productId)
             is SupporterCartAction.OnIncreaseQuantity -> changeQuantity(action.productId, +1)
             is SupporterCartAction.OnDecreaseQuantity -> changeQuantity(action.productId, -1)
-            is SupporterCartAction.OnCreateOrder -> createOrder()
+            is SupporterCartAction.OnCancelActiveOrder -> cancelActiveOrder(action.orderId)
+            is SupporterCartAction.OnCreateOrder -> startOrderReview()
+            is SupporterCartAction.OnConfirmCreateOrder -> createOrder()
+            is SupporterCartAction.OnCancelOrderReview -> cancelOrderReview()
+            is SupporterCartAction.OnRefreshActiveOrders -> refreshActiveOrders()
             is SupporterCartAction.OnDismissError -> _state.update { it.copy(errorMessage = null) }
-            is SupporterCartAction.OnOrderNavigated -> _state.update { it.copy(createdOrderId = null) }
+            is SupporterCartAction.OnOrderNavigated -> _state.update { it.copy(createdOrderId = null, isReviewingOrder = false) }
         }
     }
 
@@ -55,10 +72,12 @@ class SupporterCartViewModel(
                 current.copy(items = current.items + CartItem(product, 1))
             }
         }
+        persistCart()
     }
 
     private fun removeItem(productId: String) {
         _state.update { it.copy(items = it.items.filter { item -> item.product.documentId != productId }) }
+        persistCart()
     }
 
     private fun changeQuantity(productId: String, delta: Int) {
@@ -73,6 +92,7 @@ class SupporterCartViewModel(
             }
             current.copy(items = updated)
         }
+        persistCart()
     }
 
     private fun createOrder() {
@@ -104,8 +124,18 @@ class SupporterCartViewModel(
             val businessId = firstItem.product.businessId
             val businessName = firstItem.product.storeName
             val nowSecs = Clock.System.now().epochSeconds
-            val expiresAtSecs = nowSecs + 24 * 60 * 60
-            val code = (100000..999999).random().toString()
+            val expiresAtSecs = nowSecs + configRepository
+                .getSupporterOrderCodeExpirationDuration()
+                .inWholeSeconds
+            val code = generateUniqueOrderCode(businessId) ?: run {
+                _state.update {
+                    it.copy(
+                        isCreatingOrder = false,
+                        errorMessage = UiText.StringResourceId(Res.string.supporter_cart_order_failed)
+                    )
+                }
+                return@launch
+            }
 
             val orderItems = items.map { cartItem ->
                 val unitPrice = (cartItem.product.discountPrice
@@ -143,11 +173,14 @@ class SupporterCartViewModel(
                 is Result.Success -> {
                     _state.update {
                         it.copy(
+                            isReviewingOrder = false,
                             isCreatingOrder = false,
                             items = emptyList(),
                             createdOrderId = result.data
                         )
                     }
+                    clearPersistedCart()
+                    refreshActiveOrders()
                 }
                 is Result.Error -> {
                     _state.update {
@@ -157,6 +190,137 @@ class SupporterCartViewModel(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun startOrderReview() {
+        if (_state.value.items.isEmpty()) {
+            _state.update { it.copy(errorMessage = UiText.StringResourceId(Res.string.supporter_cart_empty_error)) }
+            return
+        }
+        _state.update { it.copy(isReviewingOrder = true, errorMessage = null) }
+    }
+
+    private fun cancelOrderReview() {
+        _state.update { it.copy(isReviewingOrder = false, errorMessage = null) }
+    }
+
+    private suspend fun generateUniqueOrderCode(
+        businessId: String,
+        maxAttempts: Int = 20
+    ): String? {
+        repeat(maxAttempts) {
+            val candidate = (1000..9999).random().toString()
+            when (val result = orderRepository.getOrderByCodeAndBusiness(candidate, businessId)) {
+                is Result.Success -> if (result.data == null) return candidate
+                is Result.Error -> return null
+            }
+        }
+        return null
+    }
+
+    private fun restoreCart() {
+        val userId = authRepository.currentUser?.uid ?: return
+        viewModelScope.launch {
+            val storedItems = cartStorage.loadItems(userId)
+            if (storedItems.isEmpty()) return@launch
+
+            _state.update { current ->
+                current.copy(
+                    items = storedItems.mapNotNull { stored ->
+                        val quantity = stored.quantity
+                        if (quantity <= 0) null
+                        else CartItem(product = stored.product.toProduct(), quantity = quantity)
+                    }
+                )
+            }
+        }
+    }
+
+    private fun persistCart() {
+        val userId = authRepository.currentUser?.uid ?: return
+        val itemsToPersist = _state.value.items.map {
+            SupporterCartStoredItem(
+                product = it.product.toStoredProduct(),
+                quantity = it.quantity
+            )
+        }
+
+        viewModelScope.launch {
+            if (itemsToPersist.isEmpty()) {
+                cartStorage.clear(userId)
+            } else {
+                cartStorage.saveItems(userId, itemsToPersist)
+            }
+        }
+    }
+
+    private fun clearPersistedCart() {
+        val userId = authRepository.currentUser?.uid ?: return
+        viewModelScope.launch {
+            cartStorage.clear(userId)
+        }
+    }
+
+    private fun refreshActiveOrders() {
+        val userId = authRepository.currentUser?.uid ?: run {
+            _state.update { it.copy(activeOrders = emptyList()) }
+            return
+        }
+
+        viewModelScope.launch {
+            when (val result = orderRepository.getOrdersBySupporter(userId)) {
+                is Result.Success -> {
+                    val now = Clock.System.now()
+                    val activeOrders = result.data
+                        .asSequence()
+                        .filter { order ->
+                            order.status == OrderStatus.PENDING &&
+                                (order.expiresAt == null || order.expiresAt > now)
+                        }
+                        .sortedByDescending { it.createdAt?.epochSeconds ?: 0L }
+                        .map { order ->
+                            ActiveSupporterOrder(
+                                id = order.id,
+                                code = order.code,
+                                productName = order.items.firstOrNull()?.productName?.ifBlank { order.businessName }
+                                    ?: order.businessName,
+                                businessName = order.businessName,
+                                expiresAtEpochSeconds = order.expiresAt?.epochSeconds
+                            )
+                        }
+                        .toList()
+
+                    _state.update { it.copy(activeOrders = activeOrders) }
+                }
+                is Result.Error -> Unit
+            }
+        }
+    }
+
+    private fun cancelActiveOrder(orderId: String) {
+        if (_state.value.cancellingOrderIds.contains(orderId)) return
+
+        viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    cancellingOrderIds = it.cancellingOrderIds + orderId,
+                    errorMessage = null
+                )
+            }
+
+            when (orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELLED)) {
+                is Result.Success -> refreshActiveOrders()
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(errorMessage = UiText.StringResourceId(Res.string.supporter_cart_order_cancel_failed))
+                    }
+                }
+            }
+
+            _state.update {
+                it.copy(cancellingOrderIds = it.cancellingOrderIds - orderId)
             }
         }
     }

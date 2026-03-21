@@ -1,6 +1,5 @@
 package com.good4.supporter.presentation.ordercode
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +66,6 @@ import good4.composeapp.generated.resources.order_code_title
 import good4.composeapp.generated.resources.order_code_total
 import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.product_address_maps_hint
-import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
@@ -119,6 +117,7 @@ fun SupporterOrderCodeScreen(
                     OrderCodeContent(
                         order = state.order,
                         businessAddress = state.businessAddress,
+                        businessAddressUrl = state.businessAddressUrl,
                         currencySuffix = stringResource(Res.string.price_currency_suffix),
                         pieceSuffix = stringResource(Res.string.order_code_piece_suffix),
                         onBackToHome = onBackToHome
@@ -156,6 +155,7 @@ private fun OrderCodeContent(
     modifier: Modifier = Modifier,
     order: Order,
     businessAddress: String,
+    businessAddressUrl: String,
     currencySuffix: String,
     pieceSuffix: String,
     onBackToHome: () -> Unit
@@ -171,13 +171,14 @@ private fun OrderCodeContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        QrCodeSection(code = order.code)
+        CodeSection(code = order.code)
 
         Spacer(modifier = Modifier.height(24.dp))
 
         OrderDetailCard(
             order = order,
             businessAddress = businessAddress,
+            businessAddressUrl = businessAddressUrl,
             currencySuffix = currencySuffix,
             pieceSuffix = pieceSuffix
         )
@@ -226,24 +227,8 @@ private fun OrderCodeHeader(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun QrCodeSection(modifier: Modifier = Modifier, code: String) {
+private fun CodeSection(modifier: Modifier = Modifier, code: String) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .background(SurfaceDefault, RoundedCornerShape(20.dp))
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = rememberQrCodePainter(code),
-                contentDescription = code,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
         Box(
             modifier = Modifier
                 .background(SurfaceDefault, RoundedCornerShape(16.dp))
@@ -251,7 +236,7 @@ private fun QrCodeSection(modifier: Modifier = Modifier, code: String) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = code.chunked(3).joinToString(" "),
+                text = code,
                 fontSize = 40.sp,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace,
@@ -295,10 +280,12 @@ private fun OrderDetailCard(
     modifier: Modifier = Modifier,
     order: Order,
     businessAddress: String,
+    businessAddressUrl: String,
     currencySuffix: String,
     pieceSuffix: String
 ) {
     val displayAddress = toDisplayAddressOrNull(businessAddress)
+    val mapsAddress = businessAddressUrl
 
     Column(
         modifier = modifier
@@ -313,7 +300,8 @@ private fun OrderDetailCard(
                 label = stringResource(Res.string.order_code_address),
                 value = displayAddress,
                 hint = stringResource(Res.string.product_address_maps_hint),
-                onClick = { openMaps(businessAddress) }
+                isClickable = mapsAddress.isNotBlank(),
+                onClick = { if (mapsAddress.isNotBlank()) openMaps(mapsAddress) }
             )
         }
 
@@ -395,13 +383,20 @@ private fun ClickableDetailRow(
     label: String,
     value: String,
     hint: String,
+    isClickable: Boolean,
     onClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
+            .then(
+                if (isClickable) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
             .padding(vertical = 2.dp)
     ) {
         Row(
@@ -428,16 +423,18 @@ private fun ClickableDetailRow(
                     fontWeight = FontWeight.Medium,
                     color = PrimaryGreen,
                     textAlign = TextAlign.End,
-                    textDecoration = TextDecoration.Underline
+                    textDecoration = if (isClickable) TextDecoration.Underline else null
                 )
             }
         }
-        Text(
-            text = hint,
-            fontSize = 12.sp,
-            color = PrimaryGreen,
-            modifier = Modifier.align(Alignment.End)
-        )
+        if (isClickable) {
+            Text(
+                text = hint,
+                fontSize = 12.sp,
+                color = PrimaryGreen,
+                modifier = Modifier.align(Alignment.End)
+            )
+        }
     }
 }
 
