@@ -201,6 +201,7 @@ class StudentReservationsViewModel(
                     productName = code.productName ?: productFallback,
                     businessName = code.businessName ?: businessFallback,
                     businessAddress = code.businessAddress ?: "",
+                    businessAddressUrl = code.businessAddressUrl ?: "",
                     status = code.status,
                     remainingTime = remainingTime,
                     createdAt = code.createdAt

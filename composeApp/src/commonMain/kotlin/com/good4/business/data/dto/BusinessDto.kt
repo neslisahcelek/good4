@@ -14,6 +14,8 @@ data class BusinessDto(
     val phone: String? = null,
     @SerialName("address")
     val address: String? = null,
+    @SerialName("addressUrl")
+    val addressUrl: String? = null,
     @SerialName("city")
     val city: String? = null,
     @SerialName("district")
@@ -27,6 +29,7 @@ fun BusinessDto.toBusiness(id: String): Business {
         ownerId = ownerId.orEmpty(),
         phone = phone.orEmpty(),
         address = address.orEmpty(),
+        addressUrl = addressUrl.orEmpty(),
         city = city.orEmpty(),
         district = district.orEmpty()
     )
@@ -38,8 +41,8 @@ fun Business.toDto(): BusinessDto {
         ownerId = ownerId,
         phone = phone,
         address = address,
+        addressUrl = addressUrl,
         city = city,
         district = district
     )
 }
-

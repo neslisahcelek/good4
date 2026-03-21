@@ -57,7 +57,6 @@ import com.good4.auth.presentation.register.student.TermsCheckbox
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.address
 import good4.composeapp.generated.resources.back
 import good4.composeapp.generated.resources.business_information
 import good4.composeapp.generated.resources.business_name
@@ -67,6 +66,8 @@ import good4.composeapp.generated.resources.city
 import good4.composeapp.generated.resources.district
 import good4.composeapp.generated.resources.email_required
 import good4.composeapp.generated.resources.full_name
+import good4.composeapp.generated.resources.map_address_url_optional
+import good4.composeapp.generated.resources.open_address
 import good4.composeapp.generated.resources.password_confirm
 import good4.composeapp.generated.resources.password_required
 import good4.composeapp.generated.resources.password_visibility_hide
@@ -239,10 +240,28 @@ fun BusinessRegisterScreen(
                     value = state.address,
                     onValueChange = { onAction(BusinessRegisterAction.OnAddressChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.address)) },
+                    label = { Text(stringResource(Res.string.open_address)) },
                     singleLine = false,
                     minLines = 2,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    colors = textFieldColors(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = state.addressUrl,
+                    onValueChange = { onAction(BusinessRegisterAction.OnAddressUrlChange(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(Res.string.map_address_url_optional)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Next
+                    ),
                     colors = textFieldColors(),
                     shape = RoundedCornerShape(12.dp)
                 )

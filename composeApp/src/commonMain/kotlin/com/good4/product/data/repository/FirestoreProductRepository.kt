@@ -176,6 +176,7 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         discountPercentage = discountPercentageValue,
         imageUrl = imageUrl ?: "",
         address = business?.address ?: "",
+        addressUrl = business?.addressUrl ?: "",
         amount = pendingCount ?: 0,
         pendingCount = pendingCount ?: 0,
         totalDelivered = totalDelivered ?: 0,

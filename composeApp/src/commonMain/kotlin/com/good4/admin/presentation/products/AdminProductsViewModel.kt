@@ -68,6 +68,7 @@ class AdminProductsViewModel(
                                     ownerId = docWithId.data.ownerId,
                                     phone = docWithId.data.phone,
                                     address = docWithId.data.address,
+                                    addressUrl = docWithId.data.addressUrl,
                                     city = docWithId.data.city,
                                     district = docWithId.data.district
                                 )

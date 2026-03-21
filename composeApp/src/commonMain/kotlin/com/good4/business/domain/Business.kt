@@ -6,10 +6,7 @@ data class Business(
     val ownerId: String,
     val phone: String,
     val address: String,
+    val addressUrl: String = "",
     val city: String,
     val district: String
-) {
-    val fullAddress: String
-        get() = "$address, $district/$city"
-}
-
+)

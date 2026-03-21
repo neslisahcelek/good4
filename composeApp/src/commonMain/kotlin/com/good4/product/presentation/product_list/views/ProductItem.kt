@@ -44,14 +44,13 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.openMaps
-import com.good4.core.util.toDisplayAddress
 import com.good4.core.util.singleClick
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.product_image_description
-import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.reserve_button_label
 import good4.composeapp.generated.resources.reserved
 import org.jetbrains.compose.resources.painterResource
@@ -172,14 +171,14 @@ fun ProductItem(
                     )
                 }
 
-                if (product.address.isNotBlank()) {
-                    val displayAddress = toDisplayAddress(
-                        rawAddress = product.address,
-                        mapsFallbackLabel = stringResource(Res.string.product_address_maps_hint)
-                    )
+                val displayAddress = toDisplayAddressOrNull(product.address)
+                val mapsAddress = product.addressUrl
+                if (displayAddress != null) {
                     Row(
-                        modifier = Modifier.clickable {
-                            openMaps(product.address)
+                        modifier = if (mapsAddress.isNotBlank()) {
+                            Modifier.clickable { openMaps(mapsAddress) }
+                        } else {
+                            Modifier
                         },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -194,7 +193,7 @@ fun ProductItem(
                             text = displayAddress,
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary,
-                            textDecoration = TextDecoration.Underline,
+                            textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -252,6 +251,7 @@ fun ProductItemPreview(modifier: Modifier = Modifier) {
                     storeName = "Healthy Bakery",
                     businessId = "preview_business",
                     address = "123 Green St, New York",
+                    addressUrl = "",
                     description = "Delicious gluten-free cake made with organic ingredients.",
                     price = 120,
                     imageUrl = "",
@@ -271,6 +271,7 @@ fun ProductItemPreview(modifier: Modifier = Modifier) {
                     storeName = "Farm Fresh",
                     businessId = "preview_business",
                     address = "456 Market Ave",
+                    addressUrl = "",
                     description = "Crisp and sweet apples directly from the orchard.",
                     price = 0,
                     imageUrl = "",

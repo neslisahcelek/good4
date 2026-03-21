@@ -83,6 +83,10 @@ class BusinessRegisterViewModel(
                 _state.update { it.copy(address = action.address, errorMessage = null) }
             }
 
+            is BusinessRegisterAction.OnAddressUrlChange -> {
+                _state.update { it.copy(addressUrl = action.addressUrl, errorMessage = null) }
+            }
+
             is BusinessRegisterAction.OnCityChange -> {
                 _state.update { it.copy(city = action.city, errorMessage = null) }
             }
@@ -188,6 +192,7 @@ class BusinessRegisterViewModel(
                         ownerId = userId,
                         phone = state.businessPhone.ifBlank { state.phoneNumber },
                         address = state.address,
+                        addressUrl = state.addressUrl.ifBlank { null },
                         city = state.city,
                         district = state.district.ifBlank { null }
                     )

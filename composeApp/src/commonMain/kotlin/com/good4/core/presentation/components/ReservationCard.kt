@@ -58,6 +58,7 @@ fun ReservationCard(
     productName: String,
     businessName: String,
     businessAddress: String? = null,
+    businessAddressUrl: String? = null,
     status: CodeStatus,
     code: String?,
     remainingTime: String?,
@@ -66,6 +67,7 @@ fun ReservationCard(
     onCancelClick: (() -> Unit)? = null
 ) {
     val displayAddress = toDisplayAddressOrNull(businessAddress)
+    val mapsAddress = businessAddressUrl?.takeIf { it.isNotBlank() }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -124,12 +126,18 @@ fun ReservationCard(
                 )
             }
 
-            if (displayAddress != null && !businessAddress.isNullOrBlank()) {
+            if (displayAddress != null) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { openMaps(businessAddress) }
+                        .then(
+                            if (mapsAddress != null) {
+                                Modifier.clickable { openMaps(mapsAddress) }
+                            } else {
+                                Modifier
+                            }
+                        )
                         .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -142,7 +150,7 @@ fun ReservationCard(
                     Text(
                         text = displayAddress,
                         fontSize = 14.sp,
-                        textDecoration = TextDecoration.Underline
+                        textDecoration = if (mapsAddress != null) TextDecoration.Underline else null
                     )
                 }
             }

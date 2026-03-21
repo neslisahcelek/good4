@@ -32,7 +32,7 @@ class SupporterOrderCodeViewModel(
                     val (businessAddress, businessAddressUrl) = when (
                         val businessResult = businessRepository.getBusinessById(result.data.businessId)
                     ) {
-                        is Result.Success -> businessResult.data.fullAddress to businessResult.data.addressUrl
+                        is Result.Success -> businessResult.data.address to businessResult.data.addressUrl
                         is Result.Error -> "" to ""
                     }
 

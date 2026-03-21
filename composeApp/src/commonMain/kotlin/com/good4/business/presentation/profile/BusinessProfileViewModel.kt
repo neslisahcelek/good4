@@ -50,7 +50,8 @@ class BusinessProfileViewModel(
                             it.copy(
                                 isLoading = false,
                                 businessName = business.name,
-                                address = business.fullAddress,
+                                address = business.address,
+                                addressUrl = business.addressUrl,
                                 phone = business.phone
                             )
                         }

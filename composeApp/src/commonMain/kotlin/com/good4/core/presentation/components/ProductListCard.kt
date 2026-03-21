@@ -32,13 +32,11 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.util.openMaps
-import com.good4.core.util.toDisplayAddress
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.address_icon_description
-import good4.composeapp.generated.resources.business_products_stock_prefix
 import good4.composeapp.generated.resources.emoji_product_placeholder
-import good4.composeapp.generated.resources.product_address_maps_hint
+import good4.composeapp.generated.resources.business_products_stock_prefix
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -109,15 +107,19 @@ fun ProductListCard(
                     )
                 }
 
-                if (product.address.isNotBlank()) {
-                    val displayAddress = toDisplayAddress(
-                        rawAddress = product.address,
-                        mapsFallbackLabel = stringResource(Res.string.product_address_maps_hint)
-                    )
+                val displayAddress = toDisplayAddressOrNull(product.address)
+                val mapsAddress = product.addressUrl
+                if (displayAddress != null) {
                     Spacer(modifier = Modifier.padding(top = 4.dp))
                     Row(
                         modifier = Modifier
-                            .clickable { openMaps(product.address) }
+                            .then(
+                                if (mapsAddress.isNotBlank()) {
+                                    Modifier.clickable { openMaps(mapsAddress) }
+                                } else {
+                                    Modifier
+                                }
+                            )
                             .padding(vertical = 2.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -132,7 +134,7 @@ fun ProductListCard(
                             text = displayAddress,
                             fontSize = 11.sp,
                             color = PrimaryGreen,
-                            textDecoration = TextDecoration.Underline,
+                            textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

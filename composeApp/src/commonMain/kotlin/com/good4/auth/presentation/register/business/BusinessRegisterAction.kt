@@ -10,6 +10,7 @@ sealed interface BusinessRegisterAction {
     data class OnBusinessNameChange(val businessName: String) : BusinessRegisterAction
     data class OnBusinessPhoneChange(val businessPhone: String) : BusinessRegisterAction
     data class OnAddressChange(val address: String) : BusinessRegisterAction
+    data class OnAddressUrlChange(val addressUrl: String) : BusinessRegisterAction
     data class OnCityChange(val city: String) : BusinessRegisterAction
     data class OnDistrictChange(val district: String) : BusinessRegisterAction
 
@@ -19,4 +20,3 @@ sealed interface BusinessRegisterAction {
     data object OnBackClick : BusinessRegisterAction
     data object OnClearError : BusinessRegisterAction
 }
-

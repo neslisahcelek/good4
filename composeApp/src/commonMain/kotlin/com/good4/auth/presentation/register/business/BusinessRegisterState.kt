@@ -11,6 +11,7 @@ data class BusinessRegisterState(
     val businessName: String = "",
     val businessPhone: String = "",
     val address: String = "",
+    val addressUrl: String = "",
     val city: String = "",
     val district: String = "",
     val isPasswordVisible: Boolean = false,
@@ -19,4 +20,3 @@ data class BusinessRegisterState(
     val errorMessage: UiText? = null,
     val isRegisterSuccess: Boolean = false
 )
-

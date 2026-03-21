@@ -203,6 +203,7 @@ private fun ReservationItem(
             productName = reservation.productName,
             businessName = reservation.businessName,
             businessAddress = reservation.businessAddress.ifBlank { null },
+            businessAddressUrl = reservation.businessAddressUrl.ifBlank { null },
             status = reservation.statusEnum,
             code = reservation.code,
             remainingTime = reservation.remainingTime.ifBlank { null },
@@ -219,6 +220,7 @@ data class ReservationUiModel(
     val productName: String,
     val businessName: String,
     val businessAddress: String = "",
+    val businessAddressUrl: String = "",
     val status: String,
     val remainingTime: String,
     val createdAt: Long? = null
@@ -242,6 +244,7 @@ fun StudentReservationsScreenPreview() {
                 productName = productName,
                 businessName = businessName,
                 businessAddress = businessAddress,
+                businessAddressUrl = "",
                 status = CodeStatus.PENDING.value,
                 remainingTime = remainingTime
             ),
@@ -251,6 +254,7 @@ fun StudentReservationsScreenPreview() {
                 productName = productName,
                 businessName = businessName,
                 businessAddress = businessAddress,
+                businessAddressUrl = "",
                 status = CodeStatus.USED.value,
                 remainingTime = stringResource(Res.string.reservation_expired_short)
             )
@@ -264,6 +268,5 @@ fun StudentReservationsScreenPreview() {
         )
     }
 }
-
 
 
