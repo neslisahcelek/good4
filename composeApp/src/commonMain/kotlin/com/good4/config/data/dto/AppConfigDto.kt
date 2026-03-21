@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 data class AppConfigDto(
     @SerialName("reservationExpirationMinutes")
     val reservationExpirationMinutes: Long? = null,
+    @SerialName("supporterOrderCodeExpirationMinutes")
+    val supporterOrderCodeExpirationMinutes: Long? = null,
     @SerialName("studentWeeklyCredit")
     val studentWeeklyCredit: Int? = null
 )

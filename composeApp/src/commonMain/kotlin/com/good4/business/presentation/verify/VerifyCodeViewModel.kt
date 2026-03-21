@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.getString
 
 class VerifyCodeViewModel(
@@ -72,7 +73,7 @@ class VerifyCodeViewModel(
 
     fun verifyCode() {
         val code = _state.value.codeInput
-        if (code.length != 6) {
+        if (code.length != 6 && code.length != 4) {
             viewModelScope.launch {
                 _state.update { it.copy(errorMessage = getString(Res.string.verify_code_error_invalid)) }
             }
@@ -134,7 +135,8 @@ class VerifyCodeViewModel(
         when (val orderResult = orderRepository.getOrderByCodeAndBusiness(code, bid)) {
             is Result.Success -> {
                 val order = orderResult.data
-                if (order != null) {
+                val isExpired = order?.expiresAt?.let { it <= Clock.System.now() } == true
+                if (order != null && !isExpired) {
                     _state.update {
                         it.copy(
                             isLoading = false,
