@@ -27,21 +27,28 @@ class BusinessProfileViewModel(
         loadProfile()
     }
 
+    fun dismissError() {
+        _state.update { it.copy(errorMessage = null) }
+    }
+
     private fun loadProfile() {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // Get user info
             when (val userResult = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     _state.update { it.copy(ownerName = userResult.data.fullName) }
                 }
-                is Result.Error -> {}
+
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(errorMessage = userResult.error.message)
+                    }
+                }
             }
 
-            // Find business owned by this user
             when (val result = businessRepository.getBusinesses()) {
                 is Result.Success -> {
                     val business = result.data.find { it.ownerId == userId }

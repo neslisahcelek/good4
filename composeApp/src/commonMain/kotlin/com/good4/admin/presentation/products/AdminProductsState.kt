@@ -15,6 +15,7 @@ data class AdminProductsState(
     val productDiscountPrice: String = "",
     val productCount: String = "",
     val productImageUrl: String = "",
+    val isProductImageUploading: Boolean = false,
     val isAddLoading: Boolean = false,
     val addSuccess: Boolean = false,
     val isEditLoading: Boolean = false,

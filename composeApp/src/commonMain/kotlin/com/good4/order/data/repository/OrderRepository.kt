@@ -79,6 +79,26 @@ class OrderRepository(
         }
     }
 
+    /**
+     * İşletmeye ait siparişleri `createdAt` azalan sırada, sunucu tarafında [limit] ile döndürür.
+     * Bileşik indeks: `businessId` (Asc) + `createdAt` (Desc).
+     */
+    suspend fun getRecentOrdersByBusiness(businessId: String, limit: Long): Result<List<Order>, Error> {
+        return when (
+            val result = firestoreRepository.queryCollectionWithMultipleConditionsAndLimit(
+                collectionPath = COLLECTION,
+                conditions = mapOf("businessId" to businessId),
+                orderByField = "createdAt",
+                descending = true,
+                limit = limit,
+                clazz = OrderDto::class
+            )
+        ) {
+            is Result.Success -> Result.Success(result.data.map { it.data.toOrder(it.id) })
+            is Result.Error -> result
+        }
+    }
+
     suspend fun getOrderByCodeAndBusiness(code: String, businessId: String): Result<Order?, Error> {
         return when (val result = firestoreRepository.queryCollectionWithMultipleConditions(
             collectionPath = COLLECTION,

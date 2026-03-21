@@ -8,11 +8,14 @@ import com.good4.code.data.repository.CodeRepository
 import com.good4.code.data.repository.statusEnum
 import com.good4.code.domain.CodeStatus
 import com.good4.core.domain.Result
-import com.good4.user.data.repository.UserRepository
+import com.good4.core.util.userFriendlyErrorMessage
+import com.good4.order.data.repository.OrderRepository
+import com.good4.order.domain.OrderStatus
 import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name_fallback
 import good4.composeapp.generated.resources.error_business_not_found
+import good4.composeapp.generated.resources.error_data_load_failed
 import good4.composeapp.generated.resources.product_name_fallback
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,14 +25,16 @@ import org.jetbrains.compose.resources.getString
 
 class BusinessDashboardViewModel(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository,
     private val businessRepository: FirestoreBusinessRepository,
     private val codeRepository: CodeRepository,
-    private val productRepository: FirestoreProductRepository
+    private val productRepository: FirestoreProductRepository,
+    private val orderRepository: OrderRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BusinessDashboardState())
     val state = _state.asStateFlow()
+
+    private var cachedBusinessId: String? = null
 
     init {
         loadDashboard()
@@ -39,102 +44,49 @@ class BusinessDashboardViewModel(
         loadDashboard()
     }
 
-    private fun loadDashboard() {
-        val userId = authRepository.currentUser?.uid ?: return
+    fun dismissError() {
+        _state.update { it.copy(errorMessage = null) }
+    }
 
+    fun dismissOrderDetail() {
+        _state.update {
+            it.copy(
+                orderDetailSheetVisible = false,
+                orderDetailLoading = false,
+                orderDetail = null
+            )
+        }
+    }
+
+    fun startOrderDetail(orderId: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-
-            // Get user to find businessId
-            when (val userResult = userRepository.getUserDto(userId)) {
+            _state.update {
+                it.copy(
+                    orderDetailSheetVisible = true,
+                    orderDetailLoading = true,
+                    orderDetail = null
+                )
+            }
+            val loadErrorFallback = getString(Res.string.error_data_load_failed)
+            when (val result = orderRepository.getOrder(orderId)) {
                 is Result.Success -> {
-                    val businessId = findBusinessIdForUser(userId)
-                    
-                    if (businessId != null) {
-                        // Get business info
-                        when (val businessResult = businessRepository.getBusinessById(businessId)) {
-                            is Result.Success -> {
-                                val fallback = getString(Res.string.business_name_fallback)
-                                _state.update { 
-                                    it.copy(businessName = businessResult.data.name.ifBlank { fallback })
-                                }
-                            }
-                            is Result.Error -> {}
-                        }
-
-                        when (val countsResult = codeRepository.getCodeCountsByBusinessId(businessId)) {
-                            is Result.Success -> {
-                                _state.update {
-                                    it.copy(
-                                        pendingCount = countsResult.data.pending,
-                                        completedCount = countsResult.data.completed
-                                    )
-                                }
-                            }
-                            is Result.Error -> {
-                                _state.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        errorMessage = countsResult.error.message
-                                    )
-                                }
-                                return@launch
-                            }
-                        }
-
-                        when (val recentResult = codeRepository.getRecentCodesByBusinessId(businessId, limit = 20)) {
-                            is Result.Success -> {
-                                val productFallback = getString(Res.string.product_name_fallback)
-                                val recentCodes = recentResult.data
-                                    .filter { code -> code.statusEnum != CodeStatus.CANCELLED }
-                                    .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: 0L }
-                                    .map { code ->
-                                        RecentCodeUiModel(
-                                            id = code.id,
-                                            codeValue = code.value,
-                                            productName = code.productName ?: productFallback,
-                                            status = code.status
-                                        )
-                                    }
-                                    .take(10)
-                                _state.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        recentCodes = recentCodes
-                                    )
-                                }
-                            }
-                            is Result.Error -> {
-                                _state.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        errorMessage = recentResult.error.message
-                                    )
-                                }
-                            }
-                        }
-
-                        when (val productsResult = productRepository.getProducts(includeOutOfStock = true)) {
-                            is Result.Success -> {
-                                val totalProducts = productsResult.data.count { it.businessId == businessId }
-                                _state.update { it.copy(totalProducts = totalProducts) }
-                            }
-                            is Result.Error -> Unit
-                        }
-                    } else {
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = getString(Res.string.error_business_not_found)
-                            )
-                        }
+                    _state.update {
+                        it.copy(
+                            orderDetail = result.data,
+                            orderDetailLoading = false
+                        )
                     }
                 }
+
                 is Result.Error -> {
                     _state.update {
                         it.copy(
-                            isLoading = false,
-                            errorMessage = userResult.error.message
+                            orderDetailSheetVisible = false,
+                            orderDetailLoading = false,
+                            errorMessage = userFriendlyErrorMessage(
+                                result.error.message,
+                                loadErrorFallback
+                            )
                         )
                     }
                 }
@@ -142,12 +94,218 @@ class BusinessDashboardViewModel(
         }
     }
 
-    private suspend fun findBusinessIdForUser(userId: String): String? {
-        return when (val result = businessRepository.getBusinessesWithIds()) {
-            is Result.Success -> {
-                result.data.find { it.data.ownerId == userId }?.id
+    fun openFirstPendingOrderDetail() {
+        val businessId = cachedBusinessId ?: return
+        viewModelScope.launch {
+            when (val result = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
+                is Result.Success -> {
+                    val first = result.data.firstOrNull()
+                    if (first != null) {
+                        _state.update {
+                            it.copy(
+                                orderDetailSheetVisible = true,
+                                orderDetailLoading = false,
+                                orderDetail = first
+                            )
+                        }
+                    }
+                }
+
+                is Result.Error -> {
+                    val loadErrorFallback = getString(Res.string.error_data_load_failed)
+                    _state.update {
+                        it.copy(
+                            errorMessage = userFriendlyErrorMessage(
+                                result.error.message,
+                                loadErrorFallback
+                            )
+                        )
+                    }
+                }
             }
-            is Result.Error -> null
+        }
+    }
+
+    private fun loadDashboard() {
+        val userId = authRepository.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    orderDetailSheetVisible = false,
+                    orderDetailLoading = false,
+                    orderDetail = null
+                )
+            }
+            val loadErrorFallback = getString(Res.string.error_data_load_failed)
+
+            when (val ownedResult = businessRepository.getOwnedBusinessId(userId)) {
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = userFriendlyErrorMessage(
+                                ownedResult.error.message,
+                                loadErrorFallback
+                            )
+                        )
+                    }
+                    return@launch
+                }
+
+                is Result.Success -> {
+                    val businessId = ownedResult.data
+                    if (businessId == null) {
+                        cachedBusinessId = null
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = getString(Res.string.error_business_not_found)
+                            )
+                        }
+                        return@launch
+                    }
+
+                    cachedBusinessId = businessId
+
+                    val fallbackName = getString(Res.string.business_name_fallback)
+
+                    when (val businessResult = businessRepository.getBusinessById(businessId)) {
+                        is Result.Success -> {
+                            _state.update {
+                                it.copy(
+                                    businessName = businessResult.data.name.ifBlank { fallbackName }
+                                )
+                            }
+                        }
+
+                        is Result.Error -> {
+                            _state.update {
+                                it.copy(businessName = fallbackName)
+                            }
+                        }
+                    }
+
+                    when (val countsResult = codeRepository.getCodeCountsByBusinessId(businessId)) {
+                        is Result.Success -> {
+                            _state.update {
+                                it.copy(
+                                    pendingCount = countsResult.data.pending,
+                                    completedCount = countsResult.data.completed
+                                )
+                            }
+                        }
+
+                        is Result.Error -> {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = userFriendlyErrorMessage(
+                                        countsResult.error.message,
+                                        loadErrorFallback
+                                    )
+                                )
+                            }
+                            return@launch
+                        }
+                    }
+
+                    val recentCodes = when (val recentResult = codeRepository.getRecentCodesByBusinessId(businessId, limit = 20)) {
+                        is Result.Success -> {
+                            val productFallback = getString(Res.string.product_name_fallback)
+                            recentResult.data
+                                .filter { code -> code.statusEnum != CodeStatus.CANCELLED }
+                                .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: 0L }
+                                .map { code ->
+                                    RecentCodeUiModel(
+                                        id = code.id,
+                                        codeValue = code.value,
+                                        productName = code.productName ?: productFallback,
+                                        status = code.status
+                                    )
+                                }
+                                .take(10)
+                        }
+
+                        is Result.Error -> {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = userFriendlyErrorMessage(
+                                        recentResult.error.message,
+                                        loadErrorFallback
+                                    )
+                                )
+                            }
+                            return@launch
+                        }
+                    }
+
+                    var supporterPending = 0
+                    var supporterConfirmed = 0
+                    var recentOrdersUi = emptyList<RecentOrderUiModel>()
+
+                    when (val recentOrdersResult = orderRepository.getRecentOrdersByBusiness(businessId, limit = 5)) {
+                        is Result.Success -> {
+                            recentOrdersUi = recentOrdersResult.data.map { order ->
+                                RecentOrderUiModel(
+                                    id = order.id,
+                                    supporterName = order.supporterName,
+                                    code = order.code,
+                                    orderStatus = order.status
+                                )
+                            }
+                        }
+
+                        is Result.Error -> Unit
+                    }
+
+                    when (val pendingOrders = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
+                        is Result.Success -> supporterPending = pendingOrders.data.size
+                        is Result.Error -> Unit
+                    }
+
+                    when (val confirmedOrders = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.CONFIRMED)) {
+                        is Result.Success -> supporterConfirmed = confirmedOrders.data.size
+                        is Result.Error -> Unit
+                    }
+
+                    when (val productsResult = productRepository.getProductsByBusinessId(businessId, includeOutOfStock = true)) {
+                        is Result.Success -> {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    recentCodes = recentCodes,
+                                    totalProducts = productsResult.data.size,
+                                    supporterPendingCount = supporterPending,
+                                    supporterConfirmedCount = supporterConfirmed,
+                                    recentOrders = recentOrdersUi,
+                                    errorMessage = null
+                                )
+                            }
+                        }
+
+                        is Result.Error -> {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    recentCodes = recentCodes,
+                                    totalProducts = 0,
+                                    supporterPendingCount = supporterPending,
+                                    supporterConfirmedCount = supporterConfirmed,
+                                    recentOrders = recentOrdersUi,
+                                    errorMessage = userFriendlyErrorMessage(
+                                        productsResult.error.message,
+                                        loadErrorFallback
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

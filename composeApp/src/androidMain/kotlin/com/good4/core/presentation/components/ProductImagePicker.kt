@@ -2,47 +2,48 @@ package com.good4.core.presentation.components
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import coil3.compose.AsyncImage
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextPrimary
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_image_upload_failed
+import good4.composeapp.generated.resources.error_image_upload_permission_denied
 import good4.composeapp.generated.resources.image_picker_camera
 import good4.composeapp.generated.resources.image_picker_gallery
 import good4.composeapp.generated.resources.image_uploaded
 import good4.composeapp.generated.resources.image_uploading
-import good4.composeapp.generated.resources.product_image_preview_desc
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import java.io.File
 import java.util.UUID
@@ -51,19 +52,32 @@ import java.util.UUID
 actual fun ProductImagePicker(
     modifier: Modifier,
     currentImageUrl: String,
+    isUploading: Boolean,
     onImageUrlChange: (String) -> Unit,
     onUploadStateChange: (Boolean) -> Unit,
     onError: (String) -> Unit
 ) {
     val context = LocalContext.current
-    var isUploading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var lastUploadedUrl by remember { mutableStateOf("") }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(currentImageUrl) {
+        if (currentImageUrl.isBlank()) {
+            lastUploadedUrl = ""
+        } else if (lastUploadedUrl.isNotBlank() && currentImageUrl != lastUploadedUrl) {
+            lastUploadedUrl = ""
+        }
+    }
     val uploadFailedMessage = stringResource(Res.string.error_image_upload_failed)
+    val uploadPermissionDeniedMessage =
+        stringResource(Res.string.error_image_upload_permission_denied)
     val galleryLabel = stringResource(Res.string.image_picker_gallery)
     val cameraLabel = stringResource(Res.string.image_picker_camera)
     val uploadingLabel = stringResource(Res.string.image_uploading)
     val uploadedLabel = stringResource(Res.string.image_uploaded)
-    val previewDescription = stringResource(Res.string.product_image_preview_desc)
+
+    val displayUrl = lastUploadedUrl.ifBlank { currentImageUrl }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -71,19 +85,24 @@ actual fun ProductImagePicker(
         if (uri != null) {
             uploadImage(
                 uri = uri,
+                scope = scope,
                 onStart = {
-                    isUploading = true
                     onUploadStateChange(true)
                 },
                 onSuccess = { url ->
-                    isUploading = false
+                    lastUploadedUrl = url
                     onUploadStateChange(false)
                     onImageUrlChange(url)
                 },
                 onFailure = { error ->
-                    isUploading = false
                     onUploadStateChange(false)
-                    onError(error ?: uploadFailedMessage)
+                    onError(
+                        mapUploadErrorMessage(
+                            raw = error,
+                            fallback = uploadFailedMessage,
+                            permissionDenied = uploadPermissionDeniedMessage
+                        )
+                    )
                 }
             )
         }
@@ -96,19 +115,24 @@ actual fun ProductImagePicker(
         if (success && uri != null) {
             uploadImage(
                 uri = uri,
+                scope = scope,
                 onStart = {
-                    isUploading = true
                     onUploadStateChange(true)
                 },
                 onSuccess = { url ->
-                    isUploading = false
+                    lastUploadedUrl = url
                     onUploadStateChange(false)
                     onImageUrlChange(url)
                 },
                 onFailure = { error ->
-                    isUploading = false
                     onUploadStateChange(false)
-                    onError(error ?: uploadFailedMessage)
+                    onError(
+                        mapUploadErrorMessage(
+                            raw = error,
+                            fallback = uploadFailedMessage,
+                            permissionDenied = uploadPermissionDeniedMessage
+                        )
+                    )
                 }
             )
         }
@@ -160,20 +184,19 @@ actual fun ProductImagePicker(
             }
         }
 
-        if (!isUploading && currentImageUrl.isNotBlank()) {
-            Text(text = uploadedLabel)
-        }
-
-        if (currentImageUrl.isNotBlank()) {
-            AsyncImage(
-                model = currentImageUrl,
-                contentDescription = previewDescription,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .background(Color.LightGray, RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
+        if (!isUploading && displayUrl.isNotBlank()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = uploadedLabel,
+                    tint = DeepGreen,
+                    modifier = Modifier.size(22.dp)
+                )
+                Text(text = uploadedLabel)
+            }
         }
     }
 }
@@ -189,28 +212,48 @@ private fun createTempImageUri(context: Context): Uri {
 
 private fun uploadImage(
     uri: Uri,
+    scope: CoroutineScope,
     onStart: () -> Unit,
     onSuccess: (String) -> Unit,
     onFailure: (String?) -> Unit
 ) {
     onStart()
-    Log.d("ProductImagePicker", "Upload started for uri=$uri")
     val storage = Firebase.storage
     val imageRef = storage.reference.child("product_images/${UUID.randomUUID()}.jpg")
     imageRef.putFile(uri)
         .addOnSuccessListener {
             imageRef.downloadUrl
                 .addOnSuccessListener { url ->
-                    Log.d("ProductImagePicker", "Upload success, url=$url")
-                    onSuccess(url.toString())
+                    scope.launch(Dispatchers.Main.immediate) {
+                        onSuccess(url.toString())
+                    }
                 }
                 .addOnFailureListener { error ->
-                    Log.e("ProductImagePicker", "Download URL failed", error)
-                    onFailure(error.message)
+                    scope.launch(Dispatchers.Main.immediate) {
+                        onFailure(error.message)
+                    }
                 }
         }
         .addOnFailureListener { error ->
-            Log.e("ProductImagePicker", "Upload failed", error)
-            onFailure(error.message)
+            scope.launch(Dispatchers.Main.immediate) {
+                onFailure(error.message)
+            }
         }
+}
+
+private fun mapUploadErrorMessage(
+    raw: String?,
+    fallback: String,
+    permissionDenied: String
+): String {
+    val lower = raw?.lowercase().orEmpty()
+    if (
+        "permission denied" in lower ||
+        "unauthorized" in lower ||
+        "not authorized" in lower ||
+        "403" in lower
+    ) {
+        return permissionDenied
+    }
+    return raw?.takeIf { it.isNotBlank() } ?: fallback
 }

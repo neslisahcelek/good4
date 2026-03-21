@@ -74,6 +74,8 @@ fun ProductFormFields(
     onAmountChange: (String) -> Unit,
     imageUrl: String,
     onImageUrlChange: (String) -> Unit,
+    isImageUploading: Boolean = false,
+    onImageUploadStateChange: (Boolean) -> Unit = {},
     onImagePickerError: (String) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -215,10 +217,12 @@ fun ProductFormFields(
         Spacer(modifier = Modifier.height(12.dp))
 
         ProductImagePicker(
+            modifier = Modifier.fillMaxWidth(),
             currentImageUrl = imageUrl,
+            isUploading = isImageUploading,
             onImageUrlChange = onImageUrlChange,
-            onError = onImagePickerError,
-            modifier = Modifier.fillMaxWidth()
+            onUploadStateChange = onImageUploadStateChange,
+            onError = onImagePickerError
         )
 
         Spacer(modifier = Modifier.height(16.dp))

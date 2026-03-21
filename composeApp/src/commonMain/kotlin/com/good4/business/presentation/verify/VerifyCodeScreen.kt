@@ -3,6 +3,7 @@ package com.good4.business.presentation.verify
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -63,6 +64,7 @@ import good4.composeapp.generated.resources.enter_code
 import good4.composeapp.generated.resources.order_code_piece_suffix
 import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.verify_code
+import good4.composeapp.generated.resources.verify_code_business_loading
 import good4.composeapp.generated.resources.verify_code_button
 import good4.composeapp.generated.resources.verify_code_input_label
 import good4.composeapp.generated.resources.verify_code_new
@@ -95,42 +97,81 @@ fun VerifyCodeScreen(
         }
     }
 
+    val canVerifyCode =
+        !state.isLoading &&
+            state.businessContextError == null &&
+            !state.isBusinessContextLoading &&
+            (state.codeInput.length == 6 || state.codeInput.length == 4)
+
     Good4NestedScaffold(
         modifier = modifier,
         topBar = { Good4TopBar(title = stringResource(Res.string.verify_code)) }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AppBackground)
-                .padding(paddingValues)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = { focusManager.clearFocus() })
+        if (state.isBusinessContextLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppBackground)
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator(color = TextPrimary)
+                    Text(
+                        text = stringResource(Res.string.verify_code_business_loading),
+                        fontSize = 16.sp,
+                        color = TextSecondary
+                    )
                 }
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppBackground)
+                    .padding(paddingValues)
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { focusManager.clearFocus() })
+                    }
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Text(text = stringResource(Res.string.emoji_ticket), fontSize = 64.sp)
+                Text(text = stringResource(Res.string.emoji_ticket), fontSize = 64.sp)
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                text = stringResource(Res.string.enter_code),
-                fontSize = 22.sp,
-                color = TextPrimary,
-                textAlign = TextAlign.Center
-            )
+                Text(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    text = stringResource(Res.string.enter_code),
+                    fontSize = 22.sp,
+                    color = TextPrimary,
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                state.businessContextError?.let { message ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = message,
+                        fontSize = 14.sp,
+                        color = ErrorRed,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
-            OutlinedTextField(
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
                 value = state.codeInput,
                 onValueChange = { viewModel.onCodeInputChange(it) },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = state.businessContextError == null,
                 label = { Text(stringResource(Res.string.verify_code_input_label)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -158,7 +199,7 @@ fun VerifyCodeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = !state.isLoading && state.codeInput.length == 6,
+                enabled = canVerifyCode,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = TextPrimary,
                     disabledContainerColor = TextPrimary.copy(alpha = 0.1f)
@@ -277,6 +318,7 @@ fun VerifyCodeScreen(
                         message = state.errorMessage.orEmpty()
                     )
                 }
+            }
             }
         }
     }

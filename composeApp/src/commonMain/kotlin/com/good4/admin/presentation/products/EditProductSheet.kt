@@ -1,4 +1,4 @@
-﻿package com.good4.admin.presentation.products
+package com.good4.admin.presentation.products
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -27,6 +27,7 @@ fun EditProductSheet(
     onDiscountPriceChange: (String) -> Unit,
     onCountChange: (String) -> Unit,
     onImageUrlChange: (String) -> Unit,
+    onImageUploadStateChange: (Boolean) -> Unit,
     onImagePickerError: (String) -> Unit,
     onUpdateProduct: () -> Unit
 ) {
@@ -63,6 +64,8 @@ fun EditProductSheet(
             onAmountChange = onCountChange,
             imageUrl = state.productImageUrl,
             onImageUrlChange = onImageUrlChange,
+            isImageUploading = state.isProductImageUploading,
+            onImageUploadStateChange = onImageUploadStateChange,
             onImagePickerError = onImagePickerError
         )
     }

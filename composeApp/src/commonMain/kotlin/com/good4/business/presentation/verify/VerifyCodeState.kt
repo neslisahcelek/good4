@@ -4,6 +4,8 @@ import com.good4.order.domain.Order
 
 data class VerifyCodeState(
     val codeInput: String = "",
+    val isBusinessContextLoading: Boolean = true,
+    val businessContextError: String? = null,
     val isLoading: Boolean = false,
     val verificationSuccess: Boolean = false,
     val verifiedProductName: String? = null,

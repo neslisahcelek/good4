@@ -11,6 +11,7 @@ import com.good4.order.domain.OrderStatus
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.error_business_not_found
 import good4.composeapp.generated.resources.verify_code_error_failed
 import good4.composeapp.generated.resources.verify_code_error_invalid
 import good4.composeapp.generated.resources.verify_code_order_cancelled
@@ -43,15 +44,46 @@ class VerifyCodeViewModel(
     }
 
     private fun loadBusinessId() {
-        val userId = authRepository.currentUser?.uid ?: return
+        val userId = authRepository.currentUser?.uid
+        if (userId == null) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(
+                        isBusinessContextLoading = false,
+                        businessContextError = getString(Res.string.error_business_not_found)
+                    )
+                }
+            }
+            return
+        }
 
         viewModelScope.launch {
-            when (val result = businessRepository.getBusinessesWithIds()) {
+            _state.update {
+                it.copy(isBusinessContextLoading = true, businessContextError = null)
+            }
+            when (val result = businessRepository.getOwnedBusinessId(userId)) {
                 is Result.Success -> {
-                    businessId = result.data.find { it.data.ownerId == userId }?.id
+                    businessId = result.data
+                    _state.update {
+                        it.copy(
+                            isBusinessContextLoading = false,
+                            businessContextError = if (result.data == null) {
+                                getString(Res.string.error_business_not_found)
+                            } else {
+                                null
+                            }
+                        )
+                    }
                 }
 
-                is Result.Error -> {}
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isBusinessContextLoading = false,
+                            businessContextError = result.error.message
+                        )
+                    }
+                }
             }
         }
     }
@@ -72,7 +104,23 @@ class VerifyCodeViewModel(
     }
 
     fun verifyCode() {
-        val code = _state.value.codeInput
+        val snapshot = _state.value
+        if (snapshot.isBusinessContextLoading) return
+
+        val bid = businessId
+        if (bid.isNullOrBlank()) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(
+                        errorMessage = snapshot.businessContextError
+                            ?: getString(Res.string.error_business_not_found)
+                    )
+                }
+            }
+            return
+        }
+
+        val code = snapshot.codeInput
         if (code.length != 6 && code.length != 4) {
             viewModelScope.launch {
                 _state.update { it.copy(errorMessage = getString(Res.string.verify_code_error_invalid)) }
@@ -91,8 +139,6 @@ class VerifyCodeViewModel(
                     pendingOrder = null
                 )
             }
-
-            val bid = businessId ?: ""
 
             when (val studentResult = codeRepository.verifyCode(code, bid)) {
                 is Result.Success -> {
@@ -124,7 +170,6 @@ class VerifyCodeViewModel(
                 }
 
                 is Result.Error -> {
-                    // Öğrenci kodu olarak bulunamadı — destekçi siparişi olarak dene
                     tryVerifyAsOrder(code, bid)
                 }
             }
@@ -248,6 +293,19 @@ class VerifyCodeViewModel(
     }
 
     fun resetState() {
-        _state.update { VerifyCodeState() }
+        _state.update {
+            it.copy(
+                codeInput = "",
+                isLoading = false,
+                verificationSuccess = false,
+                verifiedProductName = null,
+                pendingOrder = null,
+                isConfirmingOrder = false,
+                isCancellingOrder = false,
+                orderConfirmedSuccess = false,
+                orderCancelledSuccess = false,
+                errorMessage = null
+            )
+        }
     }
 }

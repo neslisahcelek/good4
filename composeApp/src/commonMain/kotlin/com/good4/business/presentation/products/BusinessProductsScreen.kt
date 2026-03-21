@@ -41,6 +41,7 @@ import good4.composeapp.generated.resources.business_products_add_content_desc
 import good4.composeapp.generated.resources.business_products_added_message
 import good4.composeapp.generated.resources.business_products_empty
 import good4.composeapp.generated.resources.business_products_title
+import good4.composeapp.generated.resources.business_products_updated_message
 import good4.composeapp.generated.resources.emoji_products_empty
 import good4.composeapp.generated.resources.price_currency_suffix
 import kotlinx.coroutines.launch
@@ -58,6 +59,7 @@ fun BusinessProductsScreenRoot(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val productAddedMessage = stringResource(Res.string.business_products_added_message)
+    val productUpdatedMessage = stringResource(Res.string.business_products_updated_message)
     val currencySuffix = stringResource(Res.string.price_currency_suffix)
     var showAddSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
@@ -81,6 +83,7 @@ fun BusinessProductsScreenRoot(
 
     LaunchedEffect(state.editSuccess) {
         if (state.editSuccess) {
+            snackbarHostState.showSnackbar(productUpdatedMessage)
             showEditSheet = false
             viewModel.resetEditState()
         }
@@ -171,6 +174,7 @@ fun BusinessProductsScreenRoot(
             onDiscountPriceChange = viewModel::onDiscountPriceChange,
             onAmountChange = viewModel::onAmountChange,
             onImageUrlChange = viewModel::onImageUrlChange,
+            onImageUploadStateChange = viewModel::onImageUploadStateChange,
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
             },
@@ -193,6 +197,7 @@ fun BusinessProductsScreenRoot(
             onDiscountPriceChange = viewModel::onDiscountPriceChange,
             onAmountChange = viewModel::onAmountChange,
             onImageUrlChange = viewModel::onImageUrlChange,
+            onImageUploadStateChange = viewModel::onImageUploadStateChange,
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
             },
@@ -208,8 +213,6 @@ fun BusinessProductsScreenPreview() {
         BusinessProductsScreenRoot()
     }
 }
-
-
 
 
 

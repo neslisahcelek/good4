@@ -16,5 +16,6 @@ data class BusinessProductsState(
     val productOriginalPrice: String = "",
     val productDiscountPrice: String = "",
     val productAmount: String = "",
-    val productImageUrl: String = ""
+    val productImageUrl: String = "",
+    val isProductImageUploading: Boolean = false
 )

@@ -64,10 +64,10 @@ val commonModule = module {
     viewModel {
         BusinessDashboardViewModel(
             get<AuthRepository>(),
-            get<UserRepository>(),
             get<FirestoreBusinessRepository>(),
             get<CodeRepository>(),
-            get<FirestoreProductRepository>()
+            get<FirestoreProductRepository>(),
+            get<OrderRepository>()
         )
     }
     viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>(), get<OrderRepository>(), get<UserRepository>()) }

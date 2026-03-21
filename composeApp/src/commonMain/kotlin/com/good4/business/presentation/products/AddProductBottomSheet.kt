@@ -1,4 +1,4 @@
-﻿package com.good4.business.presentation.products
+package com.good4.business.presentation.products
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +26,7 @@ fun AddProductBottomSheet(
     onDiscountPriceChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onImageUrlChange: (String) -> Unit,
+    onImageUploadStateChange: (Boolean) -> Unit,
     onImagePickerError: (String) -> Unit,
     onAddProduct: () -> Unit
 ) {
@@ -53,6 +54,8 @@ fun AddProductBottomSheet(
             onAmountChange = onAmountChange,
             imageUrl = state.productImageUrl,
             onImageUrlChange = onImageUrlChange,
+            isImageUploading = state.isProductImageUploading,
+            onImageUploadStateChange = onImageUploadStateChange,
             onImagePickerError = onImagePickerError
         )
     }

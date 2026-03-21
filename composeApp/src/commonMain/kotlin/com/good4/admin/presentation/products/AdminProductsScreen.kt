@@ -162,7 +162,10 @@ fun AdminProductsScreen(
                     onDismiss = {
                         showAddSheet = false
                         viewModel.resetAddState()
-                    }
+                    },
+                    onImagePickerError = { message ->
+                        scope.launch { snackbarHostState.showSnackbar(message) }
+                    },
                 )
             }
         }
@@ -190,6 +193,7 @@ fun AdminProductsScreen(
                 onDiscountPriceChange = viewModel::onDiscountPriceChange,
                 onCountChange = viewModel::onCountChange,
                 onImageUrlChange = viewModel::onImageUrlChange,
+                onImageUploadStateChange = viewModel::onImageUploadStateChange,
                 onImagePickerError = { message ->
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },

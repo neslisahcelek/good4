@@ -136,7 +136,10 @@ fun BusinessHomeScreenRoot(
                 .padding(paddingValues)
         ) {
             when (selectedItemIndex) {
-                0 -> BusinessDashboardScreen(viewModel = dashboardViewModel)
+                0 -> BusinessDashboardScreen(
+                    viewModel = dashboardViewModel,
+                    onOpenProductsTab = { selectedItemIndex = 2 }
+                )
                 1 -> VerifyCodeScreen()
                 2 -> BusinessProductsScreenRoot(viewModel = productsViewModel)
                 3 -> BusinessProfileScreen(onLogout = onLogout)

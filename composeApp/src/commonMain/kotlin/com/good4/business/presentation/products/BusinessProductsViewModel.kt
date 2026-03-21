@@ -38,7 +38,22 @@ class BusinessProductsViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            businessId = findBusinessIdForUser(userId)
+            when (val ownedResult = businessRepository.getOwnedBusinessId(userId)) {
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = ownedResult.error.message
+                        )
+                    }
+                    return@launch
+                }
+
+                is Result.Success -> {
+                    businessId = ownedResult.data
+                }
+            }
+
             val currentBusinessId = businessId
 
             if (currentBusinessId == null) {
@@ -80,15 +95,6 @@ class BusinessProductsViewModel(
         loadBusinessProducts()
     }
 
-    private suspend fun findBusinessIdForUser(userId: String): String? {
-        return when (val result = businessRepository.getBusinessesWithIds()) {
-            is Result.Success -> {
-                result.data.find { it.data.ownerId == userId }?.id
-            }
-            is Result.Error -> null
-        }
-    }
-
     fun onProductNameChange(name: String) {
         _state.update { it.copy(productName = name) }
     }
@@ -117,6 +123,10 @@ class BusinessProductsViewModel(
 
     fun onImageUrlChange(url: String) {
         _state.update { it.copy(productImageUrl = url) }
+    }
+
+    fun onImageUploadStateChange(uploading: Boolean) {
+        _state.update { it.copy(isProductImageUploading = uploading) }
     }
 
     fun addProduct() {
@@ -186,7 +196,8 @@ class BusinessProductsViewModel(
                 productOriginalPrice = product.originalPrice?.toString() ?: "",
                 productDiscountPrice = product.discountPrice?.toString() ?: "",
                 productAmount = product.amount.toString(),
-                productImageUrl = product.imageUrl
+                productImageUrl = product.imageUrl,
+                isProductImageUploading = false
             )
         }
     }
@@ -251,6 +262,7 @@ class BusinessProductsViewModel(
                 productDiscountPrice = "",
                 productAmount = "",
                 productImageUrl = "",
+                isProductImageUploading = false,
                 errorMessage = null
             )
         }
@@ -267,6 +279,7 @@ class BusinessProductsViewModel(
                 productDiscountPrice = "",
                 productAmount = "",
                 productImageUrl = "",
+                isProductImageUploading = false,
                 errorMessage = null
             )
         }

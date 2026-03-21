@@ -27,11 +27,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.UiText
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfileLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.profile_avatar_content_desc
 import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.profile_address_label
 import good4.composeapp.generated.resources.profile_phone_label
@@ -51,7 +53,9 @@ fun BusinessProfileScreen(
 
     ProfileScreenScaffold(
         isLoading = state.isLoading,
-        modifier = modifier
+        modifier = modifier,
+        errorMessage = state.errorMessage?.let { UiText.DynamicString(it) },
+        onDismissError = viewModel::dismissError
     ) {
         Box(
             modifier = Modifier
@@ -63,7 +67,7 @@ fun BusinessProfileScreen(
         ) {
             Icon(
                 imageVector = Icons.Filled.Home,
-                contentDescription = null,
+                contentDescription = stringResource(Res.string.profile_avatar_content_desc),
                 modifier = Modifier.size(48.dp),
                 tint = TextPrimary
             )

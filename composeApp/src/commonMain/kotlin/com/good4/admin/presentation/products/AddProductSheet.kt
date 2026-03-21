@@ -15,7 +15,8 @@ fun AddProductSheet(
     modifier: Modifier = Modifier,
     state: AdminProductsState,
     viewModel: AdminProductsViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onImagePickerError: (String) -> Unit
 ) {
     LaunchedEffect(state.addSuccess) {
         if (state.addSuccess) {
@@ -50,6 +51,9 @@ fun AddProductSheet(
         amount = state.productCount,
         onAmountChange = viewModel::onCountChange,
         imageUrl = state.productImageUrl,
-        onImageUrlChange = viewModel::onImageUrlChange
+        onImageUrlChange = viewModel::onImageUrlChange,
+        isImageUploading = state.isProductImageUploading,
+        onImageUploadStateChange = viewModel::onImageUploadStateChange,
+        onImagePickerError = onImagePickerError
     )
 }

@@ -26,6 +26,20 @@ class FirestoreBusinessRepository(
             is Result.Error -> result
         }
     }
+
+    /**
+     * Giriş yapan kullanıcının sahibi olduğu işletmenin Firestore belge kimliği.
+     * Kullanıcıya ait işletme yoksa [Result.Success] içinde `null` döner.
+     */
+    suspend fun getOwnedBusinessId(userId: String): Result<String?, Error> {
+        return when (val result = getBusinessesWithIds()) {
+            is Result.Success -> {
+                val id = result.data.find { it.data.ownerId == userId }?.id
+                Result.Success(id)
+            }
+            is Result.Error -> result
+        }
+    }
     
     suspend fun getBusinessById(id: String): Result<Business, Error> {
         return when (val result = firestoreRepository.getDocument("businesses", id, BusinessDto::class)) {

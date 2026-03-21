@@ -9,6 +9,18 @@ data class DocumentWithId<T>(
     val data: T
 )
 
+/**
+ * Çoklu `where` eşitliği veya `where` + `orderBy` + `limit` bileşik Firestore indeksi ister.
+ * Tanımlar `firestore.indexes.json` içinde; Firebase projesinde deploy edilmiş olmalıdır.
+ *
+ * Özet (kod referansı):
+ * - **codes** `businessId` + `createdAt` (desc) + limit — [com.good4.code.data.repository.CodeRepository.getRecentCodesByBusinessId]
+ * - **codes** `userId` + `status` — [com.good4.code.data.repository.CodeRepository.getPendingCodeByUserId],
+ *   [com.good4.code.data.repository.CodeRepository.getCodesByUserIdAndStatus] (limit + null olmayan orderBy eklenirse ek indeks gerekir)
+ * - **orders** `businessId` + `createdAt` (desc) + limit — [com.good4.order.data.repository.OrderRepository.getRecentOrdersByBusiness]
+ * - **orders** `businessId` + `status` — [com.good4.order.data.repository.OrderRepository.getOrdersByBusinessAndStatus]
+ * - **orders** `code` + `businessId` + `status` — [com.good4.order.data.repository.OrderRepository.getOrderByCodeAndBusiness]
+ */
 interface FirestoreRepository {
     suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error>
     suspend fun <T : Any> getDocument(collectionPath: String, documentId: String, clazz: KClass<T>): Result<T, Error>

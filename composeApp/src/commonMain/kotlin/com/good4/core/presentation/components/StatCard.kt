@@ -1,6 +1,7 @@
 package com.good4.core.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -32,10 +34,21 @@ fun StatCard(
     title: String,
     value: String,
     icon: ImageVector,
-    color: Color
+    color: Color,
+    onClick: (() -> Unit)? = null,
+    clickLabel: String? = null
 ) {
+    val cardModifier = if (onClick != null) {
+        modifier.clickable(
+            onClick = onClick,
+            role = Role.Button,
+            onClickLabel = clickLabel ?: title
+        )
+    } else {
+        modifier
+    }
     Card(
-        modifier = modifier,
+        modifier = cardModifier,
         colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
@@ -55,7 +68,7 @@ fun StatCard(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = clickLabel ?: title,
                     tint = color,
                     modifier = Modifier.size(24.dp)
                 )

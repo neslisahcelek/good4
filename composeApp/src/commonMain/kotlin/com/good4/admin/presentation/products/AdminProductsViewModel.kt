@@ -1,4 +1,4 @@
-﻿package com.good4.admin.presentation.products
+package com.good4.admin.presentation.products
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -111,6 +111,10 @@ class AdminProductsViewModel(
         _state.update { it.copy(productImageUrl = url) }
     }
 
+    fun onImageUploadStateChange(uploading: Boolean) {
+        _state.update { it.copy(isProductImageUploading = uploading) }
+    }
+
     fun onBusinessSelect(businessId: String) {
         _state.update { it.copy(selectedBusinessId = businessId) }
     }
@@ -191,7 +195,8 @@ class AdminProductsViewModel(
                 productOriginalPrice = product.originalPrice?.toString().orEmpty(),
                 productDiscountPrice = product.discountPrice?.toString().orEmpty(),
                 productCount = product.pendingCount.toString(),
-                productImageUrl = product.imageUrl
+                productImageUrl = product.imageUrl,
+                isProductImageUploading = false
             )
         }
     }
@@ -273,6 +278,7 @@ class AdminProductsViewModel(
                 productDiscountPrice = "",
                 productCount = "",
                 productImageUrl = "",
+                isProductImageUploading = false,
                 selectedBusinessId = null,
                 addSuccess = false,
                 errorMessage = null
@@ -291,6 +297,7 @@ class AdminProductsViewModel(
                 productDiscountPrice = "",
                 productCount = "",
                 productImageUrl = "",
+                isProductImageUploading = false,
                 editSuccess = false,
                 errorMessage = null
             )
