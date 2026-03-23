@@ -311,18 +311,19 @@
     <string name="error_invalid_credentials">Hatalı e-posta veya şifre girdiniz. Lütfen bilgilerinizi kontrol ediniz.</string>
     <string name="error_user_not_found">Kullanıcı kaydı bulunamadı. Lütfen kayıt olmayı deneyiniz.</string>
     <string name="error_email_not_verified">E-posta adresiniz doğrulanmadı. Lütfen e-postanızı doğrulayıp tekrar deneyiniz.</string>
-    <string name="error_email_already_in_use">Bu e-posta adresi zaten başka bir hesap tarafından kullanılmaktadır.</string>
+    <string name="error_email_already_in_use">Bu e-posta ile zaten bir hesap var. Giriş yapmayı deneyebilir veya farklı bir adres kullanabilirsiniz.</string>
     <string name="error_weak_password">Belirlediğiniz şifre çok zayıf. Lütfen daha güçlü bir şifre seçiniz.</string>
     <string name="error_account_disabled">Hesabınız geçici olarak devre dışı bırakılmış. Destek ile iletişime geçiniz.</string>
     <string name="error_too_many_login_attempts">Çok fazla başarısız giriş denemesi yapıldı. Lütfen daha sonra tekrar deneyiniz.</string>
     <string name="error_network_connection_short">Lütfen internet bağlantınızı kontrol ediniz.</string>
-    <string name="error_user_info_save_failed_prefix">Kullanıcı bilgileri kaydedilirken bir hata oluştu: </string>
-    <string name="error_business_save_failed_prefix">İşletme bilgileri kaydedilirken bir hata oluştu: </string>
+    <string name="error_register_profile_save_failed">Üyelik bilgileriniz kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="error_register_business_save_failed">İşletme bilgileri kaydedilemedi. Lütfen tekrar deneyin.</string>
     <string name="already_have_reservation">Halihazırda aktif bir rezervasyonunuz bulunmaktadır</string>
     <string name="error_resend_wait_seconds">Tekrar gönderebilmek için lütfen %1$d saniye bekleyiniz.</string>
     <string name="error_user_not_logged_in">Oturum açmış bir kullanıcı bulunamadı</string>
     <string name="error_recent_login_required">Güvenlik önlemleri gereği lütfen tekrar giriş yaparak işleminizi yineleyiniz.</string>
     <string name="error_unknown">Beklenmedik bir hata oluştu</string>
+    <string name="error_sign_up_generic">Kayıt tamamlanamadı. Bilgilerinizi kontrol edip tekrar deneyin.</string>
     <string name="error_delete_account_failed">Hesap silme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.</string>
     <string name="error_image_upload_failed">Fotoğraf yükleme işlemi sırasında bir hata oluştu</string>
     <string name="error_image_upload_permission_denied">Fotoğraf yükleme izniniz yok. Lütfen tekrar giriş yapın veya yetkilerinizi kontrol edin.</string>
@@ -332,7 +333,15 @@
     <string name="product_free">Ücretsiz</string>
     <string name="product_list_greeting_prefix">Merhaba, </string>
     <string name="product_list_greeting_suffix">! 👋</string>
-    <string name="product_list_subtitle">Ürünlerden birini seçerek ücretsiz yemek hakkınızı kullanabilirsiniz.</string>
+    <string name="product_list_subtitle">Günlük ücretsiz yemek kredin var.</string>
+    <string name="product_list_meal_credit_format">%1$d Yemek Hakkı</string>
+    <string name="product_list_section_today_menu">Günün Menüsü</string>
+    <string name="product_list_see_all">Hepsini Gör</string>
+    <string name="product_list_order_code_label">Sipariş Kodu</string>
+    <string name="product_list_countdown_prefix">Kalan: </string>
+    <string name="product_list_discount_percent">%1$d%% İndirim</string>
+    <string name="product_list_out_of_stock_button">Stokta Yok</string>
+    <string name="product_list_active_reservation_title">Aktif Rezervasyon</string>
     <string name="product_list_credit_label">KALAN KREDİ</string>
     <string name="product_list_renewal_prefix">Kredi hakkınız </string>
     <string name="product_list_renewal_soon">Yakında</string>
@@ -340,6 +349,11 @@
     <string name="product_list_renewal_hours_suffix"> saat</string>
     <string name="product_list_delivery_suffix"> dk teslim süresi</string>
     <string name="product_list_renewal_text_suffix"> sonra yenilenecektir.</string>
+    <string name="product_list_price_format">%1$d %2$s</string>
+    <string name="product_list_stock_units">%1$d adet</string>
+    <string name="product_list_availability_in_stock">Stokta</string>
+    <string name="product_list_availability_out">Tükendi</string>
+    <string name="product_list_delivery_icon_desc">Teslim süresi</string>
 
     <!-- Supporter Product List -->
     <string name="supporter_product_list_empty">Şu anda satın alınabilecek ürün bulunmuyor.</string>

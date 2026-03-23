@@ -3,7 +3,7 @@ package com.good4.auth.presentation.register.student
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
-import com.good4.auth.domain.AuthError
+import com.good4.auth.presentation.register.mapAuthSignUpErrorToUiText
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
@@ -21,24 +21,19 @@ import good4.composeapp.generated.resources.education_level_5
 import good4.composeapp.generated.resources.education_level_6
 import good4.composeapp.generated.resources.education_level_masters
 import good4.composeapp.generated.resources.education_level_phd
-import good4.composeapp.generated.resources.error_email_already_in_use
 import good4.composeapp.generated.resources.error_email_required
 import good4.composeapp.generated.resources.error_full_name_required
-import good4.composeapp.generated.resources.error_network_connection_short
 import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
 import good4.composeapp.generated.resources.error_terms_not_accepted
+import good4.composeapp.generated.resources.error_register_profile_save_failed
 import good4.composeapp.generated.resources.error_university_required
-import good4.composeapp.generated.resources.error_unknown
-import good4.composeapp.generated.resources.error_user_info_save_failed_prefix
-import good4.composeapp.generated.resources.error_weak_password
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import org.jetbrains.compose.resources.getString
 
 class StudentRegisterViewModel(
     private val authRepository: AuthRepository,
@@ -236,12 +231,11 @@ class StudentRegisterViewModel(
                         }
 
                         is Result.Error -> {
-                            val prefix = getString(Res.string.error_user_info_save_failed_prefix)
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = UiText.DynamicString(
-                                        prefix + (userResult.error.message ?: "")
+                                    errorMessage = UiText.StringResourceId(
+                                        Res.string.error_register_profile_save_failed
                                     )
                                 )
                             }
@@ -250,22 +244,10 @@ class StudentRegisterViewModel(
                 }
 
                 is Result.Error -> {
-                    val errorMessage = when (authResult.error) {
-                        is AuthError.EmailAlreadyInUse ->
-                            UiText.StringResourceId(Res.string.error_email_already_in_use)
-
-                        is AuthError.WeakPassword ->
-                            UiText.StringResourceId(Res.string.error_weak_password)
-
-                        is AuthError.NetworkError ->
-                            UiText.StringResourceId(Res.string.error_network_connection_short)
-
-                        else -> UiText.StringResourceId(Res.string.error_unknown)
-                    }
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = errorMessage
+                            errorMessage = mapAuthSignUpErrorToUiText(authResult.error)
                         )
                     }
                 }

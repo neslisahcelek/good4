@@ -47,6 +47,8 @@ local.properties
 .cursorrules
 AGENTS.md
 .agents/
+.skills/
+skills-lock.json
 .stitch/
 
 # CocoaPods
