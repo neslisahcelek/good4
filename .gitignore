@@ -46,6 +46,8 @@ local.properties
 .vscode/
 .cursorrules
 AGENTS.md
+.agents/
+.stitch/
 
 # CocoaPods
 iosApp/Pods/
