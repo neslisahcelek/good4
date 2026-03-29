@@ -57,6 +57,8 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.util.singleClick
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
@@ -303,7 +305,7 @@ fun LoginScreen(
                     onClick = onLoginClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(StandardButtonHeight),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = TextPrimary,
@@ -313,7 +315,7 @@ fun LoginScreen(
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                             color = SurfaceDefault,
                             strokeWidth = 2.dp
                         )
@@ -367,7 +369,7 @@ fun LoginScreen(
                     onClick = { onAction(LoginAction.OnStudentRegisterClick) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(StandardButtonHeight),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DeepGreen
                     ),
@@ -386,7 +388,7 @@ fun LoginScreen(
                     onClick = { onAction(LoginAction.OnBusinessRegisterClick) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(StandardButtonHeight),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PistachioGreen
                     ),
@@ -406,7 +408,7 @@ fun LoginScreen(
                     onClick = { onAction(LoginAction.OnSupporterRegisterClick) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(StandardButtonHeight),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DeepGreen.copy(alpha = 0.15f)
                     ),

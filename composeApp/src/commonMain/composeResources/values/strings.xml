@@ -248,10 +248,10 @@
     <string name="verify_code_order_supporter_label">Destekçi</string>
     <string name="verify_code_order_items_label">Ürünler</string>
     <string name="verify_code_order_total_label">Toplam</string>
-    <string name="verify_code_order_confirm">Ödemeyi Onayla</string>
+    <string name="verify_code_order_confirm">Onayla</string>
     <string name="verify_code_order_confirming">Onaylanıyor…</string>
     <string name="verify_code_order_confirmed">Ödeme onaylandı! Ürünler askıya alındı.</string>
-    <string name="verify_code_order_cancel">Siparişi İptal Et</string>
+    <string name="verify_code_order_cancel">İptal Et</string>
     <string name="verify_code_order_canceling">Sipariş iptal ediliyor…</string>
     <string name="verify_code_order_cancelled">Sipariş iptal edildi.</string>
     <string name="verify_code_order_not_found">Sipariş bulunamadı veya süresi dolmuş</string>

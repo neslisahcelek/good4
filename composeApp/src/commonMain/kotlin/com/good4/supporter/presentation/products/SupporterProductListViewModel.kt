@@ -48,12 +48,10 @@ class SupporterProductListViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // includeOutOfStock=true ile tüm ürünleri çek, sonra fiziksel stoğu olanları filtrele.
-            // Destekçi gerçek stoktan satın alır (amount > 0), askıdaki havuzdan değil.
             when (val result = productRepository.getProducts(includeOutOfStock = true)) {
                 is Result.Success -> {
                     isLoaded = true
-                    val availableProducts = result.data.filter { it.amount > 0 }
+                    val availableProducts = result.data.filter { it.price > 0 }
                     _state.update {
                         it.copy(products = availableProducts, isLoading = false)
                     }

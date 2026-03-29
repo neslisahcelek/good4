@@ -56,6 +56,8 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.auth.presentation.register.student.TermsCheckbox
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
 import good4.composeapp.generated.resources.business_information
@@ -391,7 +393,7 @@ fun BusinessRegisterScreen(
                     onClick = { onAction(BusinessRegisterAction.OnRegisterClick) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(StandardButtonHeight),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PistachioGreen,
@@ -402,7 +404,7 @@ fun BusinessRegisterScreen(
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                             color = TextPrimary,
                             strokeWidth = 2.dp
                         )

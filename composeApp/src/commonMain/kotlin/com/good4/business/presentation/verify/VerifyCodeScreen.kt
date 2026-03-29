@@ -53,6 +53,8 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.util.singleClick
@@ -199,7 +201,7 @@ fun VerifyCodeScreen(
                 onClick = onVerifyClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(StandardButtonHeight),
                 enabled = canVerifyCode,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = TextPrimary,
@@ -209,7 +211,7 @@ fun VerifyCodeScreen(
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                         color = SurfaceDefault,
                         strokeWidth = 2.dp
                     )
@@ -238,7 +240,7 @@ fun VerifyCodeScreen(
                         onClick = { viewModel.resetState() },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(StandardButtonHeight),
                         colors = ButtonDefaults.buttonColors(containerColor = DeepGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -263,7 +265,7 @@ fun VerifyCodeScreen(
                         onClick = { viewModel.resetState() },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(StandardButtonHeight),
                         colors = ButtonDefaults.buttonColors(containerColor = DeepGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -288,7 +290,7 @@ fun VerifyCodeScreen(
                         onClick = { viewModel.resetState() },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(StandardButtonHeight),
                         colors = ButtonDefaults.buttonColors(containerColor = DeepGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -409,7 +411,7 @@ private fun OrderConfirmCard(
                     enabled = !isConfirming && !isCancelling,
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .height(StandardButtonHeight),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ErrorRed,
@@ -418,7 +420,7 @@ private fun OrderConfirmCard(
                 ) {
                     if (isCancelling) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                             color = SurfaceDefault,
                             strokeWidth = 2.dp
                         )
@@ -436,7 +438,7 @@ private fun OrderConfirmCard(
                     enabled = !isConfirming && !isCancelling,
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .height(StandardButtonHeight),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DeepGreen,
@@ -445,7 +447,7 @@ private fun OrderConfirmCard(
                 ) {
                     if (isConfirming) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                             color = SurfaceDefault,
                             strokeWidth = 2.dp
                         )

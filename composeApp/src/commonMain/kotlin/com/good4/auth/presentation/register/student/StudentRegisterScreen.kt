@@ -77,6 +77,8 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.util.singleClick
 import config.LegalLinks
 import good4.composeapp.generated.resources.Res
@@ -340,7 +342,7 @@ fun StudentRegisterScreen(
                     onClick = onRegisterClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(StandardButtonHeight),
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DeepGreen,
@@ -350,7 +352,7 @@ fun StudentRegisterScreen(
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                             color = SurfaceDefault,
                             strokeWidth = 2.dp
                         )

@@ -55,6 +55,8 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.util.singleClick
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
@@ -286,7 +288,7 @@ private fun RegisterSubmitButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(StandardButtonHeight),
         enabled = !isLoading,
         colors = ButtonDefaults.buttonColors(
             containerColor = DeepGreen,
@@ -296,7 +298,7 @@ private fun RegisterSubmitButton(
     ) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                 color = SurfaceDefault,
                 strokeWidth = 2.dp
             )

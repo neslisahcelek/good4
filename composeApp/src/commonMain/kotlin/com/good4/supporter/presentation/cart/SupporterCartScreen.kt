@@ -15,12 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,10 +58,10 @@ import good4.composeapp.generated.resources.supporter_cart
 import good4.composeapp.generated.resources.supporter_cart_active_orders_title
 import good4.composeapp.generated.resources.supporter_cart_create_order
 import good4.composeapp.generated.resources.supporter_cart_creating_order
-import good4.composeapp.generated.resources.supporter_cart_order_canceling
 import good4.composeapp.generated.resources.supporter_cart_empty
 import good4.composeapp.generated.resources.supporter_cart_empty_subtitle
 import good4.composeapp.generated.resources.supporter_cart_item_remove
+import good4.composeapp.generated.resources.supporter_cart_order_canceling
 import good4.composeapp.generated.resources.supporter_cart_total
 import good4.composeapp.generated.resources.time_minute_suffix
 import good4.composeapp.generated.resources.time_second_suffix
@@ -90,22 +89,6 @@ fun SupporterCartScreen(
                             text = stringResource(Res.string.supporter_cart),
                             fontWeight = FontWeight.SemiBold
                         )
-                        if (state.totalItemCount > 0) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .background(DeepGreen, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = state.totalItemCount.toString(),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            }
-                        }
                     }
                 }
             )
@@ -135,8 +118,20 @@ fun SupporterCartScreen(
                                 CartItemCard(
                                     cartItem = cartItem,
                                     currencySuffix = stringResource(Res.string.price_currency_suffix),
-                                    onIncrease = { onAction(SupporterCartAction.OnIncreaseQuantity(cartItem.product.documentId)) },
-                                    onDecrease = { onAction(SupporterCartAction.OnDecreaseQuantity(cartItem.product.documentId)) },
+                                    onIncrease = {
+                                        onAction(
+                                            SupporterCartAction.OnIncreaseQuantity(
+                                                cartItem.product.documentId
+                                            )
+                                        )
+                                    },
+                                    onDecrease = {
+                                        onAction(
+                                            SupporterCartAction.OnDecreaseQuantity(
+                                                cartItem.product.documentId
+                                            )
+                                        )
+                                    },
                                     onRemove = { onAction(SupporterCartAction.OnRemoveItem(cartItem.product.documentId)) }
                                 )
                             }
@@ -280,15 +275,16 @@ private fun CartItemCard(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(SurfaceDefault, RoundedCornerShape(12.dp))
-            .border(1.dp, BorderMuted, RoundedCornerShape(12.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(SurfaceDefault, RoundedCornerShape(18.dp))
+            .border(1.dp, BorderMuted, RoundedCornerShape(18.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = cartItem.product.name,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary,
                 maxLines = 1,
@@ -302,51 +298,63 @@ private fun CartItemCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "${unitPrice.toInt()}$currencySuffix",
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen
             )
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .height(36.dp)
+                .background(SurfaceMuted, RoundedCornerShape(18.dp))
+                .border(1.dp, BorderMuted, RoundedCornerShape(18.dp)),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(
                 onClick = onDecrease,
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(SurfaceMuted, CircleShape)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = stringResource(Res.string.supporter_cart_item_remove),
-                    modifier = Modifier.size(14.dp),
+                    imageVector = Icons.Filled.Remove,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
                     tint = TextPrimary
                 )
             }
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(18.dp)
+                    .background(BorderMuted)
+            )
             Text(
                 text = cartItem.quantity.toString(),
                 modifier = Modifier.padding(horizontal = 12.dp),
                 fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
+            )
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(18.dp)
+                    .background(BorderMuted)
             )
             IconButton(
                 onClick = onIncrease,
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(DeepGreen, CircleShape)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = TextPrimary
+                    modifier = Modifier.size(16.dp),
+                    tint = DeepGreen
                 )
             }
         }
-        Spacer(modifier = Modifier.width(4.dp))
         IconButton(
             onClick = onRemove,
             modifier = Modifier.size(32.dp)
