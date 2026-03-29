@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -145,7 +146,11 @@ fun VerifyCodeScreen(
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Text(text = stringResource(Res.string.emoji_ticket), fontSize = 64.sp)
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 

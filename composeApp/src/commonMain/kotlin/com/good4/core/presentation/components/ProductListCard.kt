@@ -45,7 +45,10 @@ fun ProductListCard(
     currencySuffix: String,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    showStoreName: Boolean = false
+    showStoreName: Boolean = false,
+    showStockInfo: Boolean = true,
+    stockPrefix: String = stringResource(Res.string.business_products_stock_prefix),
+    stockValue: Int = product.amount
 ) {
     val cardModifier = if (onClick != null) {
         modifier
@@ -141,75 +144,87 @@ fun ProductListCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.padding(top = 8.dp))
+                val showPrice = when {
+                    product.discountPrice != null && product.originalPrice != null ->
+                        product.discountPrice > 0 || product.originalPrice > 0
+                    product.discountPrice != null -> product.discountPrice > 0
+                    product.originalPrice != null -> product.originalPrice > 0
+                    else -> product.price > 0
+                }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    when {
-                        product.discountPrice != null && product.originalPrice != null -> {
-                            Text(
-                                text = "${product.discountPrice} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DeepGreen
-                            )
-                            Text(
-                                text = "${product.originalPrice} $currencySuffix",
-                                fontSize = 12.sp,
-                                color = TextSecondary,
-                                style = androidx.compose.ui.text.TextStyle(
-                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                if (showPrice) {
+                    Spacer(modifier = Modifier.padding(top = 8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        when {
+                            product.discountPrice != null && product.originalPrice != null -> {
+                                Text(
+                                    text = "${product.discountPrice} $currencySuffix",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DeepGreen
                                 )
-                            )
-                        }
+                                Text(
+                                    text = "${product.originalPrice} $currencySuffix",
+                                    fontSize = 12.sp,
+                                    color = TextSecondary,
+                                    style = androidx.compose.ui.text.TextStyle(
+                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                    )
+                                )
+                            }
 
-                        product.discountPrice != null -> {
-                            Text(
-                                text = "${product.discountPrice} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                        }
+                            product.discountPrice != null -> {
+                                Text(
+                                    text = "${product.discountPrice} $currencySuffix",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
 
-                        product.originalPrice != null -> {
-                            Text(
-                                text = "${product.originalPrice} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                        }
+                            product.originalPrice != null -> {
+                                Text(
+                                    text = "${product.originalPrice} $currencySuffix",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
 
-                        else -> {
-                            Text(
-                                text = "${product.price} $currencySuffix",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
+                            else -> {
+                                Text(
+                                    text = "${product.price} $currencySuffix",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .background(
-                        if (product.amount > 0) DeepGreen.copy(alpha = 0.1f)
-                        else ErrorRed.copy(alpha = 0.1f),
-                        RoundedCornerShape(8.dp)
+            if (showStockInfo) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            if (stockValue > 0) DeepGreen.copy(alpha = 0.1f)
+                            else ErrorRed.copy(alpha = 0.1f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = stockPrefix + stockValue,
+                        fontSize = 12.sp,
+                        color = if (stockValue > 0) DeepGreen else ErrorRed,
+                        fontWeight = FontWeight.Medium
                     )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.business_products_stock_prefix) + product.amount,
-                    fontSize = 12.sp,
-                    color = if (product.amount > 0) DeepGreen else ErrorRed,
-                    fontWeight = FontWeight.Medium
-                )
+                }
             }
         }
     }

@@ -3,8 +3,10 @@ package com.good4.business.presentation.products
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -39,6 +41,8 @@ import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_content_desc
 import good4.composeapp.generated.resources.business_products_added_message
+import good4.composeapp.generated.resources.business_products_daily_stock_prefix
+import good4.composeapp.generated.resources.business_products_donation_section_title
 import good4.composeapp.generated.resources.business_products_empty
 import good4.composeapp.generated.resources.business_products_title
 import good4.composeapp.generated.resources.business_products_updated_message
@@ -61,17 +65,11 @@ fun BusinessProductsScreenRoot(
     val productAddedMessage = stringResource(Res.string.business_products_added_message)
     val productUpdatedMessage = stringResource(Res.string.business_products_updated_message)
     val currencySuffix = stringResource(Res.string.price_currency_suffix)
+    val dailyStockPrefix = stringResource(Res.string.business_products_daily_stock_prefix)
     var showAddSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissError()
-        }
-    }
 
     LaunchedEffect(state.addSuccess) {
         if (state.addSuccess) {
@@ -138,6 +136,9 @@ fun BusinessProductsScreenRoot(
                 }
             }
         } else {
+            val donationProducts = state.products.filter { it.isDonation }
+            val regularProducts = state.products.filterNot { it.isDonation }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -145,15 +146,40 @@ fun BusinessProductsScreenRoot(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(state.products, key = { it.documentId }) { product ->
+                items(regularProducts, key = { it.documentId }) { product ->
                     ProductListCard(
                         product = product,
                         currencySuffix = currencySuffix,
+                        showStockInfo = false,
                         onClick = {
                             viewModel.selectProductForEdit(product)
                             showEditSheet = true
                         }
                     )
+                }
+
+                if (donationProducts.isNotEmpty()) {
+                    item(key = "donation_section_title") {
+                        Spacer(Modifier.size(12.dp))
+                        Text(
+                            text = stringResource(Res.string.business_products_donation_section_title),
+                            fontSize = 16.sp,
+                            color = TextPrimary
+                        )
+                    }
+
+                    items(donationProducts, key = { it.documentId }) { product ->
+                        ProductListCard(
+                            product = product,
+                            currencySuffix = currencySuffix,
+                            stockPrefix = dailyStockPrefix,
+                            stockValue = product.dailyPendingLimit ?: product.pendingCount,
+                            onClick = {
+                                viewModel.selectProductForEdit(product)
+                                showEditSheet = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -170,9 +196,10 @@ fun BusinessProductsScreenRoot(
             },
             onProductNameChange = viewModel::onProductNameChange,
             onProductDescriptionChange = viewModel::onProductDescriptionChange,
+            onDonationProductChange = viewModel::onDonationProductChange,
             onOriginalPriceChange = viewModel::onOriginalPriceChange,
             onDiscountPriceChange = viewModel::onDiscountPriceChange,
-            onAmountChange = viewModel::onAmountChange,
+            onDailyPendingLimitChange = viewModel::onDailyPendingLimitChange,
             onPendingProductImageChange = viewModel::onPendingProductImageChange,
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
@@ -192,9 +219,10 @@ fun BusinessProductsScreenRoot(
             },
             onProductNameChange = viewModel::onProductNameChange,
             onProductDescriptionChange = viewModel::onProductDescriptionChange,
+            onDonationProductChange = viewModel::onDonationProductChange,
             onOriginalPriceChange = viewModel::onOriginalPriceChange,
             onDiscountPriceChange = viewModel::onDiscountPriceChange,
-            onAmountChange = viewModel::onAmountChange,
+            onDailyPendingLimitChange = viewModel::onDailyPendingLimitChange,
             onPendingProductImageChange = viewModel::onPendingProductImageChange,
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
@@ -211,6 +239,3 @@ fun BusinessProductsScreenPreview() {
         BusinessProductsScreenRoot()
     }
 }
-
-
-

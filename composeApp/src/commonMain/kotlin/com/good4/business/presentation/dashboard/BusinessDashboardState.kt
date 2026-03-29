@@ -14,6 +14,7 @@ data class BusinessDashboardState(
     val recentOrders: List<RecentOrderUiModel> = emptyList(),
     val orderDetailSheetVisible: Boolean = false,
     val orderDetailLoading: Boolean = false,
+    val isCancellingOrderDetail: Boolean = false,
     val orderDetail: Order? = null,
     val errorMessage: String? = null
 )

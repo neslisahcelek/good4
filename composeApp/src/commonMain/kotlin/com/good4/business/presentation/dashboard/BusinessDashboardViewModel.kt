@@ -14,6 +14,8 @@ import com.good4.order.domain.OrderStatus
 import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name_fallback
+import good4.composeapp.generated.resources.business_order_detail_cancel_failed
+import good4.composeapp.generated.resources.business_order_detail_cancel_success
 import good4.composeapp.generated.resources.error_business_not_found
 import good4.composeapp.generated.resources.error_data_load_failed
 import good4.composeapp.generated.resources.product_name_fallback
@@ -53,8 +55,58 @@ class BusinessDashboardViewModel(
             it.copy(
                 orderDetailSheetVisible = false,
                 orderDetailLoading = false,
+                isCancellingOrderDetail = false,
                 orderDetail = null
             )
+        }
+    }
+
+    fun cancelOrderFromDetail() {
+        val snapshot = _state.value
+        val order = snapshot.orderDetail ?: return
+        if (order.status != OrderStatus.PENDING || snapshot.isCancellingOrderDetail || snapshot.orderDetailLoading) {
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isCancellingOrderDetail = true, errorMessage = null) }
+
+            when (val result = orderRepository.updateOrderStatus(order.id, OrderStatus.CANCELLED)) {
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isCancellingOrderDetail = false,
+                            errorMessage = userFriendlyErrorMessage(
+                                result.error.message,
+                                getString(Res.string.business_order_detail_cancel_failed)
+                            )
+                        )
+                    }
+                    return@launch
+                }
+
+                is Result.Success -> Unit
+            }
+
+            order.items.forEach { item ->
+                productRepository.incrementProductSuspendedCount(item.productId, item.quantity)
+            }
+
+            _state.update { current ->
+                current.copy(
+                    isCancellingOrderDetail = false,
+                    orderDetail = order.copy(status = OrderStatus.CANCELLED),
+                    supporterPendingCount = (current.supporterPendingCount - 1).coerceAtLeast(0),
+                    recentOrders = current.recentOrders.map { recentOrder ->
+                        if (recentOrder.id == order.id) {
+                            recentOrder.copy(orderStatus = OrderStatus.CANCELLED)
+                        } else {
+                            recentOrder
+                        }
+                    },
+                    errorMessage = getString(Res.string.business_order_detail_cancel_success)
+                )
+            }
         }
     }
 
@@ -64,6 +116,7 @@ class BusinessDashboardViewModel(
                 it.copy(
                     orderDetailSheetVisible = true,
                     orderDetailLoading = true,
+                    isCancellingOrderDetail = false,
                     orderDetail = null
                 )
             }
@@ -136,6 +189,7 @@ class BusinessDashboardViewModel(
                     errorMessage = null,
                     orderDetailSheetVisible = false,
                     orderDetailLoading = false,
+                    isCancellingOrderDetail = false,
                     orderDetail = null
                 )
             }

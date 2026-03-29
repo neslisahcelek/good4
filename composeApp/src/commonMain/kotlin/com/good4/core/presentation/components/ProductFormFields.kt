@@ -1,8 +1,10 @@
 package com.good4.core.presentation.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,28 +21,38 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.amount
 import good4.composeapp.generated.resources.business_name
+import good4.composeapp.generated.resources.daily_pending_limit_placeholder
+import good4.composeapp.generated.resources.discount_price_placeholder
+import good4.composeapp.generated.resources.donation_product_description
+import good4.composeapp.generated.resources.donation_product_title
 import good4.composeapp.generated.resources.description
+import good4.composeapp.generated.resources.daily_pending_limit
 import good4.composeapp.generated.resources.discounted_price
 import good4.composeapp.generated.resources.original_price
+import good4.composeapp.generated.resources.original_price_placeholder
+import good4.composeapp.generated.resources.product_description_placeholder
 import good4.composeapp.generated.resources.product_name
+import good4.composeapp.generated.resources.product_name_placeholder
 import org.jetbrains.compose.resources.stringResource
 
 data class SelectOption(
@@ -58,6 +70,9 @@ fun ProductFormFields(
     submitButtonColor: Color,
     submitButtonDisabledColor: Color = submitButtonColor.copy(alpha = 0.5f),
     errorMessage: String? = null,
+    showDonationOption: Boolean = false,
+    isDonationProduct: Boolean = false,
+    onDonationProductChange: (Boolean) -> Unit = {},
     showBusinessSelector: Boolean = false,
     businessOptions: List<SelectOption> = emptyList(),
     selectedBusinessId: String? = null,
@@ -70,8 +85,8 @@ fun ProductFormFields(
     onOriginalPriceChange: (String) -> Unit,
     discountPrice: String,
     onDiscountPriceChange: (String) -> Unit,
-    amount: String,
-    onAmountChange: (String) -> Unit,
+    dailyPendingLimit: String,
+    onDailyPendingLimitChange: (String) -> Unit,
     currentRemoteImageUrl: String,
     pendingProductImageBytes: ByteArray?,
     onPendingProductImageChange: (ByteArray?) -> Unit,
@@ -79,6 +94,7 @@ fun ProductFormFields(
     onImagePickerError: (String) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val isDonationMode = isDonationProduct
 
     Column(
         modifier = modifier
@@ -94,6 +110,42 @@ fun ProductFormFields(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        if (showDonationOption) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(Res.string.donation_product_title),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Switch(
+                    checked = isDonationProduct,
+                    onCheckedChange = onDonationProductChange
+                )
+            }
+
+            if (isDonationMode) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.donation_product_description),
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         if (showBusinessSelector) {
             Text(
@@ -142,6 +194,7 @@ fun ProductFormFields(
             onValueChange = onProductNameChange,
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(Res.string.product_name)) },
+            placeholder = { Text(stringResource(Res.string.product_name_placeholder)) },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = TextPrimary,
                 focusedLabelColor = TextPrimary,
@@ -157,6 +210,7 @@ fun ProductFormFields(
             onValueChange = onProductDescriptionChange,
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(Res.string.description)) },
+            placeholder = { Text(stringResource(Res.string.product_description_placeholder)) },
             minLines = 3,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = TextPrimary,
@@ -168,53 +222,59 @@ fun ProductFormFields(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = originalPrice,
-            onValueChange = onOriginalPriceChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(Res.string.original_price)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = TextPrimary,
-                focusedLabelColor = TextPrimary,
-                cursorColor = TextPrimary
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
+        if (!isDonationMode) {
+            OutlinedTextField(
+                value = originalPrice,
+                onValueChange = onOriginalPriceChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(Res.string.original_price)) },
+                placeholder = { Text(stringResource(Res.string.original_price_placeholder)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TextPrimary,
+                    focusedLabelColor = TextPrimary,
+                    cursorColor = TextPrimary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = discountPrice,
-            onValueChange = onDiscountPriceChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(Res.string.discounted_price)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = TextPrimary,
-                focusedLabelColor = TextPrimary,
-                cursorColor = TextPrimary
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
+            OutlinedTextField(
+                value = discountPrice,
+                onValueChange = onDiscountPriceChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(Res.string.discounted_price)) },
+                placeholder = { Text(stringResource(Res.string.discount_price_placeholder)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TextPrimary,
+                    focusedLabelColor = TextPrimary,
+                    cursorColor = TextPrimary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
-        OutlinedTextField(
-            value = amount,
-            onValueChange = onAmountChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(Res.string.amount)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = TextPrimary,
-                focusedLabelColor = TextPrimary,
-                cursorColor = TextPrimary
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
+        if (isDonationMode) {
+            OutlinedTextField(
+                value = dailyPendingLimit,
+                onValueChange = onDailyPendingLimitChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(Res.string.daily_pending_limit)) },
+                placeholder = { Text(stringResource(Res.string.daily_pending_limit_placeholder)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TextPrimary,
+                    focusedLabelColor = TextPrimary,
+                    cursorColor = TextPrimary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         ProductImagePicker(
             modifier = Modifier.fillMaxWidth(),
@@ -232,6 +292,7 @@ fun ProductFormFields(
                 text = message,
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 14.sp,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }

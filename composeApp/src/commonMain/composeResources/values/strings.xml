@@ -147,8 +147,17 @@
     <string name="admin_products_edit_title">Ürün Bilgilerini Düzenleyin</string>
     <string name="admin_products_update_button">Güncelleyin</string>
     <string name="product_name">Ürün Adı *</string>
+    <string name="product_name_placeholder">Örn: Mercimek Çorbası</string>
     <string name="price">Fiyat Bilgisi *</string>
+    <string name="original_price_placeholder">Örn: 120</string>
+    <string name="discount_price_placeholder">Örn: 90</string>
     <string name="amount">Adet Miktarı *</string>
+    <string name="product_description_placeholder">Ürün içeriği, porsiyon bilgisi vb.</string>
+    <string name="donation_product_title">Bağış Ürünü</string>
+    <string name="donation_product_description">Bu ürün öğrencilere ücretsiz olarak sunulacaktır. Her gece 00:00&apos;da belirlediğiniz günlük limit kadar yenilenecektir.</string>
+    <string name="daily_pending_limit">Günlük Bağış Adedi</string>
+    <string name="daily_pending_limit_placeholder">Örn: 4</string>
+    <string name="daily_pending_limit_helper">Bağış kotası aktif: Ürün fiyatı 0 TL olur ve kontenjan her gün otomatik yenilenir.</string>
     <string name="image_url">Resim URL\'si</string>
     <string name="add">Ekle</string>
     <string name="cancel">İptal Et</string>
@@ -203,6 +212,8 @@
     <string name="dashboard_order_status_cancelled">İptal edildi</string>
     <string name="dashboard_verify_tab_hint">Sipariş onayı veya iptali için alttaki Kod Doğrula sekmesini kullanın.</string>
     <string name="business_order_detail_title">Sipariş detayı</string>
+    <string name="business_order_detail_cancel_success">Sipariş iptal edildi.</string>
+    <string name="business_order_detail_cancel_failed">Sipariş iptal edilemedi.</string>
     <string name="dashboard_pending_orders_open_detail">Bekleyen sipariş detayını aç</string>
     <string name="dashboard_pending">Bekleyenler</string>
     <string name="dashboard_completed">Tamamlananlar</string>
@@ -224,7 +235,9 @@
     <string name="business_products_update_button">Güncelle</string>
     <string name="business_products_add_content_desc">Yeni ürün ekle</string>
     <string name="business_products_price_unavailable">Fiyat Belirtilmedi</string>
-    <string name="business_products_stock_prefix">Stok Miktarı: </string>
+    <string name="business_products_stock_prefix">Stok Adedi: </string>
+    <string name="business_products_daily_stock_prefix">Günlük Adet: </string>
+    <string name="business_products_donation_section_title">Bağış Ürünlerim</string>
     <string name="business_products_added_message">Ürün başarıyla eklendi</string>
     <string name="business_products_updated_message">Ürün başarıyla güncellendi</string>
     <string name="image_picker_gallery">Galeriden Seçin</string>
@@ -299,6 +312,7 @@
     <string name="error_credit_reset_failed">Kredi sıfırlama işlemi başarısız oldu</string>
     <string name="error_business_required">Lütfen bir işletme seçiniz</string>
     <string name="error_price_required">Lütfen fiyat bilgisini giriniz</string>
+    <string name="error_daily_pending_limit_invalid">Lütfen günlük bağış adedi giriniz</string>
     <string name="error_email_required">Lütfen e-posta adresinizi giriniz</string>
     <string name="error_email_invalid_format">Geçersiz bir e-posta formatı girdiniz</string>
     <string name="error_email_must_be_edu_tr">E-posta adresiniz edu.tr uzantılı olmalıdır</string>
@@ -337,8 +351,6 @@
     <string name="product_free">Ücretsiz</string>
     <string name="product_list_greeting_prefix">Merhaba, </string>
     <string name="product_list_greeting_suffix">! 👋</string>
-    <string name="product_list_subtitle">Günlük ücretsiz yemek kredin var.</string>
-    <string name="product_list_meal_credit_format">%1$d Yemek Hakkı</string>
     <string name="product_list_section_today_menu">Günün Menüsü</string>
     <string name="product_list_see_all">Hepsini Gör</string>
     <string name="product_list_order_code_label">Sipariş Kodu</string>

@@ -9,11 +9,12 @@ data class AdminProductsState(
     val businesses: List<Business> = emptyList(),
     val selectedBusinessId: String? = null,
     val selectedProduct: Product? = null,
+    val isDonationProduct: Boolean = false,
     val productName: String = "",
     val productDescription: String = "",
     val productOriginalPrice: String = "",
     val productDiscountPrice: String = "",
-    val productCount: String = "",
+    val productDailyPendingLimit: String = "",
     val productImageUrl: String = "",
     val pendingProductImageBytes: ByteArray? = null,
     val isProductImageUploading: Boolean = false,
@@ -23,4 +24,3 @@ data class AdminProductsState(
     val editSuccess: Boolean = false,
     val errorMessage: String? = null
 )
-

@@ -11,6 +11,7 @@ import com.good4.product.data.dto.ProductDto
 import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_business_not_found
+import good4.composeapp.generated.resources.error_daily_pending_limit_invalid
 import good4.composeapp.generated.resources.error_image_upload_failed
 import good4.composeapp.generated.resources.error_image_upload_permission_denied
 import good4.composeapp.generated.resources.error_product_name_required
@@ -19,6 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 class BusinessProductsViewModel(
@@ -29,6 +32,7 @@ class BusinessProductsViewModel(
 ) : ViewModel() {
     companion object {
         private const val TAG = "BusinessProductsVM"
+        private val DONATION_RESET_TIME_ZONE = TimeZone.of("Europe/Istanbul")
     }
 
     private val _state = MutableStateFlow(BusinessProductsState())
@@ -112,20 +116,49 @@ class BusinessProductsViewModel(
     }
 
     fun onOriginalPriceChange(price: String) {
+        if (_state.value.isDonationProduct) return
         if (price.isEmpty() || price.all { it.isDigit() }) {
             _state.update { it.copy(productOriginalPrice = price) }
         }
     }
 
     fun onDiscountPriceChange(price: String) {
+        if (_state.value.isDonationProduct) return
         if (price.isEmpty() || price.all { it.isDigit() }) {
             _state.update { it.copy(productDiscountPrice = price) }
         }
     }
 
-    fun onAmountChange(amount: String) {
-        if (amount.isEmpty() || amount.all { it.isDigit() }) {
-            _state.update { it.copy(productAmount = amount) }
+    fun onDonationProductChange(isDonation: Boolean) {
+        _state.update { current ->
+            if (isDonation) {
+                current.copy(
+                    isDonationProduct = true,
+                    productOriginalPrice = "0",
+                    productDiscountPrice = "0"
+                )
+            } else {
+                current.copy(
+                    isDonationProduct = false,
+                    productDailyPendingLimit = ""
+                )
+            }
+        }
+    }
+
+    fun onDailyPendingLimitChange(limit: String) {
+        if (limit.isEmpty() || limit.all { it.isDigit() }) {
+            _state.update { current ->
+                if (current.isDonationProduct) {
+                    current.copy(
+                        productDailyPendingLimit = limit,
+                        productOriginalPrice = "0",
+                        productDiscountPrice = "0"
+                    )
+                } else {
+                    current.copy(productDailyPendingLimit = limit)
+                }
+            }
         }
     }
 
@@ -142,6 +175,18 @@ class BusinessProductsViewModel(
             viewModelScope.launch {
                 _state.update {
                     it.copy(errorMessage = getString(Res.string.error_product_name_required))
+                }
+            }
+            return
+        }
+        if (isDailyPendingLimitInvalid(
+                rawValue = state.productDailyPendingLimit,
+                isDonationProduct = state.isDonationProduct
+            )
+        ) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_daily_pending_limit_invalid))
                 }
             }
             return
@@ -163,13 +208,19 @@ class BusinessProductsViewModel(
                 return@launch
             }
 
+            val isDonation = snapshot.isDonationProduct
+            val donationLimit = if (isDonation) snapshot.productDailyPendingLimit.toIntOrNull() else null
+
             val productDto = ProductDto(
                 name = snapshot.productName,
                 description = snapshot.productDescription.ifBlank { null },
                 businessId = businessId,
-                originalPrice = snapshot.productOriginalPrice.toIntOrNull(),
-                discountPrice = snapshot.productDiscountPrice.toIntOrNull(),
-                pendingCount = snapshot.productAmount.toIntOrNull(),
+                originalPrice = if (isDonation) 0 else snapshot.productOriginalPrice.toIntOrNull(),
+                discountPrice = if (isDonation) 0 else snapshot.productDiscountPrice.toIntOrNull(),
+                pendingCount = if (isDonation) donationLimit else null,
+                dailyPendingLimit = donationLimit,
+                isDonation = isDonation,
+                lastDailyResetEpochDay = if (isDonation) currentDonationDateKey() else null,
                 imageUrl = imageUrl,
                 totalDelivered = 0,
                 totalSuspended = 0,
@@ -255,7 +306,8 @@ class BusinessProductsViewModel(
                 productDescription = product.description,
                 productOriginalPrice = product.originalPrice?.toString() ?: "",
                 productDiscountPrice = product.discountPrice?.toString() ?: "",
-                productAmount = product.amount.toString(),
+                isDonationProduct = product.isDonation,
+                productDailyPendingLimit = product.dailyPendingLimit?.toString().orEmpty(),
                 productImageUrl = product.imageUrl,
                 pendingProductImageBytes = null,
                 isProductImageUploading = false
@@ -279,6 +331,18 @@ class BusinessProductsViewModel(
             }
             return
         }
+        if (isDailyPendingLimitInvalid(
+                rawValue = state.productDailyPendingLimit,
+                isDonationProduct = state.isDonationProduct
+            )
+        ) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_daily_pending_limit_invalid))
+                }
+            }
+            return
+        }
         viewModelScope.launch {
             _state.update { it.copy(isEditLoading = true, errorMessage = null) }
             val snapshot = _state.value
@@ -289,13 +353,19 @@ class BusinessProductsViewModel(
             }
             Logger.d(TAG, "update_product_payload | docId=${product.documentId} | imageUrl=${imageUrl.orEmpty()}")
 
+            val isDonation = snapshot.isDonationProduct
+            val donationLimit = if (isDonation) snapshot.productDailyPendingLimit.toIntOrNull() else null
+
             val productDto = ProductDto(
                 name = snapshot.productName,
                 description = snapshot.productDescription.ifBlank { null },
-                businessId = businessId,
-                originalPrice = snapshot.productOriginalPrice.toIntOrNull(),
-                discountPrice = snapshot.productDiscountPrice.toIntOrNull(),
-                pendingCount = snapshot.productAmount.toIntOrNull(),
+                businessId = businessId ?: product.businessId,
+                originalPrice = if (isDonation) 0 else snapshot.productOriginalPrice.toIntOrNull(),
+                discountPrice = if (isDonation) 0 else snapshot.productDiscountPrice.toIntOrNull(),
+                pendingCount = if (isDonation) donationLimit else null,
+                dailyPendingLimit = donationLimit,
+                isDonation = isDonation,
+                lastDailyResetEpochDay = if (isDonation) currentDonationDateKey() else null,
                 imageUrl = imageUrl,
                 totalDelivered = product.totalDelivered,
                 totalSuspended = product.totalSuspended,
@@ -335,9 +405,10 @@ class BusinessProductsViewModel(
                 addSuccess = false,
                 productName = "",
                 productDescription = "",
+                isDonationProduct = false,
                 productOriginalPrice = "",
                 productDiscountPrice = "",
-                productAmount = "",
+                productDailyPendingLimit = "",
                 productImageUrl = "",
                 pendingProductImageBytes = null,
                 isProductImageUploading = false,
@@ -353,9 +424,10 @@ class BusinessProductsViewModel(
                 selectedProduct = null,
                 productName = "",
                 productDescription = "",
+                isDonationProduct = false,
                 productOriginalPrice = "",
                 productDiscountPrice = "",
-                productAmount = "",
+                productDailyPendingLimit = "",
                 productImageUrl = "",
                 pendingProductImageBytes = null,
                 isProductImageUploading = false,
@@ -381,5 +453,17 @@ class BusinessProductsViewModel(
         } else {
             getString(Res.string.error_image_upload_failed)
         }
+    }
+
+    private fun isDailyPendingLimitInvalid(rawValue: String, isDonationProduct: Boolean): Boolean {
+        if (!isDonationProduct) return false
+        if (rawValue.isBlank()) return true
+        val value = rawValue.toIntOrNull() ?: return true
+        return value <= 0
+    }
+
+    private fun currentDonationDateKey(): Int {
+        val date = Clock.System.now().toLocalDateTime(DONATION_RESET_TIME_ZONE).date
+        return (date.year * 10_000) + (date.monthNumber * 100) + date.dayOfMonth
     }
 }

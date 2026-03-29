@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.code.domain.CodeStatus
+import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
@@ -75,8 +76,8 @@ fun ReservationCard(
             containerColor = SurfaceDefault
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.12f))
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, BorderMuted)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -162,7 +163,7 @@ fun ReservationCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SurfaceMuted)
+                        .background(PistachioGreen.copy(alpha = 0.35f))
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -178,7 +179,7 @@ fun ReservationCard(
                             text = code,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            color = PrimaryGreen,
                             letterSpacing = 4.sp
                         )
                         if (!remainingTime.isNullOrBlank()) {
@@ -189,7 +190,7 @@ fun ReservationCard(
                                 Icon(
                                     imageVector = Icons.Filled.AccessTime,
                                     contentDescription = null,
-                                    tint = TextSecondary,
+                                    tint = PrimaryGreen,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -197,7 +198,8 @@ fun ReservationCard(
                                     text = stringResource(Res.string.student_reservations_remaining_prefix) +
                                             remainingTime,
                                     fontSize = 12.sp,
-                                    color = TextSecondary
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = PrimaryGreen
                                 )
                             }
                         }

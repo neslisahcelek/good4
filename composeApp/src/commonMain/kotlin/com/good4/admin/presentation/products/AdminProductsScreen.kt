@@ -187,11 +187,12 @@ fun AdminProductsScreen(
                     viewModel.resetEditState()
                 },
                 onBusinessSelect = viewModel::onBusinessSelect,
+                onDonationProductChange = viewModel::onDonationProductChange,
                 onProductNameChange = viewModel::onProductNameChange,
                 onProductDescriptionChange = viewModel::onProductDescriptionChange,
                 onOriginalPriceChange = viewModel::onOriginalPriceChange,
                 onDiscountPriceChange = viewModel::onDiscountPriceChange,
-                onCountChange = viewModel::onCountChange,
+                onDailyPendingLimitChange = viewModel::onDailyPendingLimitChange,
                 onPendingProductImageChange = viewModel::onPendingProductImageChange,
                 onImagePickerError = { message ->
                     scope.launch { snackbarHostState.showSnackbar(message) }

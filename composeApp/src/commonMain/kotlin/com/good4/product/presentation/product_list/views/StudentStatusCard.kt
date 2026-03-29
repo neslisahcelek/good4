@@ -1,5 +1,6 @@
 package com.good4.product.presentation.product_list.views
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,29 +13,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.good4.core.presentation.BorderMuted
+import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TertiaryOlive
+import com.good4.core.presentation.TextSecondary
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.product_list_credit_label
+import good4.composeapp.generated.resources.product_list_delivery_icon_desc
 import good4.composeapp.generated.resources.product_list_delivery_suffix
-import good4.composeapp.generated.resources.product_list_greeting_prefix
-import good4.composeapp.generated.resources.product_list_greeting_suffix
 import good4.composeapp.generated.resources.product_list_renewal_days_suffix
 import good4.composeapp.generated.resources.product_list_renewal_hours_suffix
 import good4.composeapp.generated.resources.product_list_renewal_prefix
 import good4.composeapp.generated.resources.product_list_renewal_soon
 import good4.composeapp.generated.resources.product_list_renewal_text_suffix
-import good4.composeapp.generated.resources.product_list_subtitle
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.time.Duration
@@ -42,7 +47,6 @@ import kotlin.time.Duration
 @Composable
 fun StudentStatusCard(
     modifier: Modifier = Modifier,
-    userName: String,
     remainingCredits: Int,
     renewalDuration: Duration?,
     deliveryTimeMinutes: Int
@@ -50,100 +54,63 @@ fun StudentStatusCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                color = PrimaryGreen
-            )
-            .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 14.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        Text(
-            text = stringResource(Res.string.product_list_greeting_prefix) +
-                    userName +
-                    stringResource(Res.string.product_list_greeting_suffix),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = SurfaceDefault
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = stringResource(Res.string.product_list_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = SurfaceDefault.copy(alpha = 0.85f)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = SurfaceDefault.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(18.dp)
-                )
-                .padding(16.dp)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = SurfaceDefault,
+            border = BorderStroke(1.dp, BorderMuted),
+            shadowElevation = 1.dp
         ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = SurfaceDefault.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(10.dp)
-                            )
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CreditCard,
-                            contentDescription = null,
-                            tint = SurfaceDefault,
-                            modifier = Modifier.size(22.dp)
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = remainingCredits.toString(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = PrimaryGreen
                         )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(Res.string.product_list_credit_label),
                             style = MaterialTheme.typography.labelSmall,
-                            color = SurfaceDefault.copy(alpha = 0.75f),
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = remainingCredits.toString(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = SurfaceDefault,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = TextSecondary.copy(alpha = 0.55f)
                         )
                     }
 
-
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = SurfaceDefault.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(50.dp)
-                            )
-                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    Surface(
+                        shape = RoundedCornerShape(percent = 50),
+                        color = PistachioGreen,
+                        border = BorderStroke(1.dp, DeepGreen.copy(alpha = 0.25f))
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = SurfaceDefault,
-                                modifier = Modifier.size(16.dp)
+                                contentDescription = stringResource(
+                                    Res.string.product_list_delivery_icon_desc
+                                ),
+                                tint = DeepGreen,
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = deliveryTimeMinutes.toString() +
                                         stringResource(Res.string.product_list_delivery_suffix),
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = SurfaceDefault
+                                fontWeight = FontWeight.Bold,
+                                color = TertiaryOlive
                             )
                         }
                     }
@@ -156,7 +123,7 @@ fun StudentStatusCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp)
-                            .background(SurfaceDefault.copy(alpha = 0.2f))
+                            .background(BorderMuted.copy(alpha = 0.35f))
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -164,22 +131,30 @@ fun StudentStatusCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = SurfaceDefault.copy(alpha = 0.75f),
-                            modifier = Modifier.size(15.dp)
+                            contentDescription = stringResource(
+                                Res.string.product_list_delivery_icon_desc
+                            ),
+                            tint = TextSecondary,
+                            modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(Res.string.product_list_renewal_prefix) +
                                     formatRenewalDuration(
                                         duration = renewalDuration,
-                                        daysSuffix = stringResource(Res.string.product_list_renewal_days_suffix),
-                                        hoursSuffix = stringResource(Res.string.product_list_renewal_hours_suffix),
+                                        daysSuffix = stringResource(
+                                            Res.string.product_list_renewal_days_suffix
+                                        ),
+                                        hoursSuffix = stringResource(
+                                            Res.string.product_list_renewal_hours_suffix
+                                        ),
                                         soon = stringResource(Res.string.product_list_renewal_soon),
-                                        suffix = stringResource(Res.string.product_list_renewal_text_suffix)
+                                        suffix = stringResource(
+                                            Res.string.product_list_renewal_text_suffix
+                                        )
                                     ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = SurfaceDefault.copy(alpha = 0.85f)
+                            color = TextSecondary
                         )
                     }
                 }
@@ -207,11 +182,10 @@ private fun formatRenewalDuration(
 
 @Preview
 @Composable
-fun Preview() {
+fun StudentStatusCardPreview() {
     MaterialTheme {
         StudentStatusCard(
-            userName = "Neslişah",
-            remainingCredits = 5,
+            remainingCredits = 1,
             renewalDuration = Duration.ZERO,
             deliveryTimeMinutes = 15
         )

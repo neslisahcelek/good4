@@ -12,11 +12,12 @@ data class BusinessProductsState(
     val addSuccess: Boolean = false,
     val editSuccess: Boolean = false,
     val selectedProduct: Product? = null,
+    val isDonationProduct: Boolean = false,
     val productName: String = "",
     val productDescription: String = "",
     val productOriginalPrice: String = "",
     val productDiscountPrice: String = "",
-    val productAmount: String = "",
+    val productDailyPendingLimit: String = "",
     val productImageUrl: String = "",
     val pendingProductImageBytes: ByteArray? = null,
     val isProductImageUploading: Boolean = false

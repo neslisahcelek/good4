@@ -11,6 +11,12 @@ data class ProductDto(
     val description: String? = null,
     @SerialName("pendingCount")
     val pendingCount: Int? = null,
+    @SerialName("dailyPendingLimit")
+    val dailyPendingLimit: Int? = null,
+    @SerialName("isDonation")
+    val isDonation: Boolean? = null,
+    @SerialName("lastDailyResetEpochDay")
+    val lastDailyResetEpochDay: Int? = null,
     @SerialName("businessId")
     val businessId: String? = null,
     @SerialName("createdAt")

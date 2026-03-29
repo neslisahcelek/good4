@@ -128,7 +128,8 @@ fun StudentHomeScreenRoot(
             when (selectedItemIndex) {
                 0 -> {
                     ProductListScreenRoot(
-                        viewModel = productListViewModel
+                        viewModel = productListViewModel,
+                        onReservationCardClick = { selectedItemIndex = 1 }
                     )
                 }
                 1 -> {

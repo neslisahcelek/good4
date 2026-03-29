@@ -51,7 +51,7 @@ class SupporterProductListViewModel(
             when (val result = productRepository.getProducts(includeOutOfStock = true)) {
                 is Result.Success -> {
                     isLoaded = true
-                    val availableProducts = result.data.filter { it.price > 0 }
+                    val availableProducts = result.data.filter { !it.isDonation && it.price > 0 }
                     _state.update {
                         it.copy(products = availableProducts, isLoading = false)
                     }

@@ -7,8 +7,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -22,14 +25,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.BorderMuted
+import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PrimaryGreen
+import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
+import com.good4.order.domain.OrderStatus
 import com.good4.core.util.toInitials
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_order_detail_title
+import good4.composeapp.generated.resources.verify_code_order_cancel
+import good4.composeapp.generated.resources.verify_code_order_canceling
 import good4.composeapp.generated.resources.order_code_piece_suffix
 import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.verify_code_order_items_label
@@ -44,8 +54,10 @@ fun BusinessOrderDetailBottomSheet(
     modifier: Modifier = Modifier,
     visible: Boolean,
     isLoading: Boolean,
+    isCancellingOrder: Boolean,
     order: Order?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onCancelOrder: () -> Unit
 ) {
     if (!visible) return
 
@@ -73,7 +85,9 @@ fun BusinessOrderDetailBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
-                    order = order
+                    order = order,
+                    isCancellingOrder = isCancellingOrder,
+                    onCancelOrder = onCancelOrder
                 )
             }
         }
@@ -83,10 +97,13 @@ fun BusinessOrderDetailBottomSheet(
 @Composable
 private fun BusinessOrderDetailContent(
     modifier: Modifier = Modifier,
-    order: Order
+    order: Order,
+    isCancellingOrder: Boolean,
+    onCancelOrder: () -> Unit
 ) {
     val currencySuffix = stringResource(Res.string.price_currency_suffix)
     val pieceSuffix = stringResource(Res.string.order_code_piece_suffix)
+    val isPendingOrder = order.status == OrderStatus.PENDING
 
     Column(
         modifier = modifier
@@ -153,7 +170,39 @@ private fun BusinessOrderDetailContent(
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        if (isPendingOrder) {
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StandardButtonHeight),
+                onClick = onCancelOrder,
+                enabled = !isCancellingOrder,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ErrorRed,
+                    disabledContainerColor = ErrorRed.copy(alpha = 0.5f)
+                )
+            ) {
+                if (isCancellingOrder) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
+                        color = SurfaceDefault,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(Res.string.verify_code_order_cancel))
+                }
+            }
+        }
+
+        if (isCancellingOrder) {
+            Text(
+                text = stringResource(Res.string.verify_code_order_canceling),
+                fontSize = 12.sp,
+                color = TextSecondary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 

@@ -283,8 +283,10 @@ fun BusinessDashboardScreen(
     BusinessOrderDetailBottomSheet(
         visible = state.orderDetailSheetVisible,
         isLoading = state.orderDetailLoading,
+        isCancellingOrder = state.isCancellingOrderDetail,
         order = state.orderDetail,
-        onDismiss = viewModel::dismissOrderDetail
+        onDismiss = viewModel::dismissOrderDetail,
+        onCancelOrder = viewModel::cancelOrderFromDetail
     )
 }
 
