@@ -192,8 +192,7 @@ fun AdminProductsScreen(
                 onOriginalPriceChange = viewModel::onOriginalPriceChange,
                 onDiscountPriceChange = viewModel::onDiscountPriceChange,
                 onCountChange = viewModel::onCountChange,
-                onImageUrlChange = viewModel::onImageUrlChange,
-                onImageUploadStateChange = viewModel::onImageUploadStateChange,
+                onPendingProductImageChange = viewModel::onPendingProductImageChange,
                 onImagePickerError = { message ->
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },

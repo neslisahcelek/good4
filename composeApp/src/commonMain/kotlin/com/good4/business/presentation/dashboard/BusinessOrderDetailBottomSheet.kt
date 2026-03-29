@@ -27,6 +27,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
+import com.good4.core.util.toInitials
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_order_detail_title
 import good4.composeapp.generated.resources.order_code_piece_suffix
@@ -111,7 +112,7 @@ private fun BusinessOrderDetailContent(
 
         OrderDetailRow(
             label = stringResource(Res.string.verify_code_order_supporter_label),
-            value = order.supporterName
+            value = order.supporterName.toInitials()
         )
 
         HorizontalDivider(color = BorderMuted)

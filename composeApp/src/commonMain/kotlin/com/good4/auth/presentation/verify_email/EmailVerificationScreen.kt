@@ -41,6 +41,7 @@ import good4.composeapp.generated.resources.logout
 import good4.composeapp.generated.resources.verify_email_check
 import good4.composeapp.generated.resources.verify_email_description
 import good4.composeapp.generated.resources.verify_email_resend
+import good4.composeapp.generated.resources.verify_email_spam_note
 import good4.composeapp.generated.resources.verify_email_title
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -104,6 +105,15 @@ fun EmailVerificationScreen(
             Text(
                 text = stringResource(Res.string.verify_email_description),
                 fontSize = 16.sp,
+                color = TextSecondary,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(Res.string.verify_email_spam_note),
+                fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center
             )

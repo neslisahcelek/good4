@@ -50,10 +50,10 @@ fun AddProductSheet(
         onDiscountPriceChange = viewModel::onDiscountPriceChange,
         amount = state.productCount,
         onAmountChange = viewModel::onCountChange,
-        imageUrl = state.productImageUrl,
-        onImageUrlChange = viewModel::onImageUrlChange,
+        currentRemoteImageUrl = state.productImageUrl,
+        pendingProductImageBytes = state.pendingProductImageBytes,
+        onPendingProductImageChange = viewModel::onPendingProductImageChange,
         isImageUploading = state.isProductImageUploading,
-        onImageUploadStateChange = viewModel::onImageUploadStateChange,
         onImagePickerError = onImagePickerError
     )
 }

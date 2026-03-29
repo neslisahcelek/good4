@@ -2,6 +2,7 @@ package com.good4.business.presentation.products
 
 import com.good4.product.Product
 
+@Suppress("ArrayInDataClass")
 data class BusinessProductsState(
     val isLoading: Boolean = true,
     val products: List<Product> = emptyList(),
@@ -17,5 +18,6 @@ data class BusinessProductsState(
     val productDiscountPrice: String = "",
     val productAmount: String = "",
     val productImageUrl: String = "",
+    val pendingProductImageBytes: ByteArray? = null,
     val isProductImageUploading: Boolean = false
 )

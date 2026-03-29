@@ -42,3 +42,24 @@ fun String.validateStudentEmail(): StringResource? {
 
     return null
 }
+
+fun String.toInitials(): String {
+    val parts = trim()
+        .split(Regex("\\s+"))
+        .filter { it.isNotBlank() }
+
+    if (parts.isEmpty()) return ""
+
+    return when (parts.size) {
+        1 -> parts.first().firstOrNull()?.uppercaseChar()?.toString().orEmpty()
+        else -> {
+            val firstInitial = parts.first().firstOrNull()?.uppercaseChar()
+            val lastInitial = parts.last().firstOrNull()?.uppercaseChar()
+
+            buildString {
+                if (firstInitial != null) append(firstInitial)
+                if (lastInitial != null) append(lastInitial)
+            }
+        }
+    }
+}

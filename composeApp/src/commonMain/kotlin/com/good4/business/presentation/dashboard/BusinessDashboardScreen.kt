@@ -337,7 +337,7 @@ private fun RecentOrderCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = order.supporterName,
+                    text = order.productName,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp
                 )
@@ -445,5 +445,3 @@ fun BusinessDashboardScreenPreview() {
         BusinessDashboardScreen()
     }
 }
-
-

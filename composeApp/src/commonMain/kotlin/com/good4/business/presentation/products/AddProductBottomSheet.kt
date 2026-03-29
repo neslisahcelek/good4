@@ -25,8 +25,7 @@ fun AddProductBottomSheet(
     onOriginalPriceChange: (String) -> Unit,
     onDiscountPriceChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
-    onImageUrlChange: (String) -> Unit,
-    onImageUploadStateChange: (Boolean) -> Unit,
+    onPendingProductImageChange: (ByteArray?) -> Unit,
     onImagePickerError: (String) -> Unit,
     onAddProduct: () -> Unit
 ) {
@@ -52,10 +51,10 @@ fun AddProductBottomSheet(
             onDiscountPriceChange = onDiscountPriceChange,
             amount = state.productAmount,
             onAmountChange = onAmountChange,
-            imageUrl = state.productImageUrl,
-            onImageUrlChange = onImageUrlChange,
+            currentRemoteImageUrl = state.productImageUrl,
+            pendingProductImageBytes = state.pendingProductImageBytes,
+            onPendingProductImageChange = onPendingProductImageChange,
             isImageUploading = state.isProductImageUploading,
-            onImageUploadStateChange = onImageUploadStateChange,
             onImagePickerError = onImagePickerError
         )
     }

@@ -26,8 +26,7 @@ fun EditProductSheet(
     onOriginalPriceChange: (String) -> Unit,
     onDiscountPriceChange: (String) -> Unit,
     onCountChange: (String) -> Unit,
-    onImageUrlChange: (String) -> Unit,
-    onImageUploadStateChange: (Boolean) -> Unit,
+    onPendingProductImageChange: (ByteArray?) -> Unit,
     onImagePickerError: (String) -> Unit,
     onUpdateProduct: () -> Unit
 ) {
@@ -62,10 +61,10 @@ fun EditProductSheet(
             onDiscountPriceChange = onDiscountPriceChange,
             amount = state.productCount,
             onAmountChange = onCountChange,
-            imageUrl = state.productImageUrl,
-            onImageUrlChange = onImageUrlChange,
+            currentRemoteImageUrl = state.productImageUrl,
+            pendingProductImageBytes = state.pendingProductImageBytes,
+            onPendingProductImageChange = onPendingProductImageChange,
             isImageUploading = state.isProductImageUploading,
-            onImageUploadStateChange = onImageUploadStateChange,
             onImagePickerError = onImagePickerError
         )
     }

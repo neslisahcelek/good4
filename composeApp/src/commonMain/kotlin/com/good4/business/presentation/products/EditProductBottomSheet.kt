@@ -5,6 +5,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.ProductFormFields
@@ -25,11 +26,16 @@ fun EditProductBottomSheet(
     onOriginalPriceChange: (String) -> Unit,
     onDiscountPriceChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
-    onImageUrlChange: (String) -> Unit,
-    onImageUploadStateChange: (Boolean) -> Unit,
+    onPendingProductImageChange: (ByteArray?) -> Unit,
     onImagePickerError: (String) -> Unit,
     onUpdateProduct: () -> Unit
 ) {
+    LaunchedEffect(state.editSuccess) {
+        if (state.editSuccess) {
+            onDismiss()
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -52,10 +58,10 @@ fun EditProductBottomSheet(
             onDiscountPriceChange = onDiscountPriceChange,
             amount = state.productAmount,
             onAmountChange = onAmountChange,
-            imageUrl = state.productImageUrl,
-            onImageUrlChange = onImageUrlChange,
+            currentRemoteImageUrl = state.productImageUrl,
+            pendingProductImageBytes = state.pendingProductImageBytes,
+            onPendingProductImageChange = onPendingProductImageChange,
             isImageUploading = state.isProductImageUploading,
-            onImageUploadStateChange = onImageUploadStateChange,
             onImagePickerError = onImagePickerError
         )
     }

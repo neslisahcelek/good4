@@ -8,7 +8,7 @@ import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
-import com.good4.core.util.validateEmail
+import com.good4.core.util.validateStudentEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
@@ -154,7 +154,7 @@ class StudentRegisterViewModel(
             return
         }
 
-        val emailValidation = email.validateEmail()
+        val emailValidation = email.validateStudentEmail()
         if (emailValidation != null) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(emailValidation))

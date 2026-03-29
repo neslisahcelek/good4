@@ -56,6 +56,7 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.util.singleClick
+import com.good4.core.util.toInitials
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
 import good4.composeapp.generated.resources.Res
@@ -358,7 +359,7 @@ private fun OrderConfirmCard(
 
             OrderConfirmRow(
                 label = stringResource(Res.string.verify_code_order_supporter_label),
-                value = order.supporterName
+                value = order.supporterName.toInitials()
             )
 
             HorizontalDivider(color = BorderMuted)

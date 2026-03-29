@@ -11,7 +11,7 @@ data class RecentCodeUiModel(
 
 data class RecentOrderUiModel(
     val id: String,
-    val supporterName: String,
+    val productName: String,
     val code: String,
     val orderStatus: OrderStatus
 )

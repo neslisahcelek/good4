@@ -1,6 +1,8 @@
 package com.good4.core.presentation.components
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -30,81 +32,75 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.good4.core.domain.ProductImageConstants
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextPrimary
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.error_image_upload_failed
-import good4.composeapp.generated.resources.error_image_upload_permission_denied
+import good4.composeapp.generated.resources.error_image_prepare_failed
 import good4.composeapp.generated.resources.image_picker_camera
 import good4.composeapp.generated.resources.image_picker_gallery
-import good4.composeapp.generated.resources.image_uploaded
 import good4.composeapp.generated.resources.image_uploading
-import kotlinx.coroutines.CoroutineScope
+import good4.composeapp.generated.resources.product_image_saved_remote
+import good4.composeapp.generated.resources.product_image_selected_pending
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.util.UUID
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 @Composable
 actual fun ProductImagePicker(
     modifier: Modifier,
-    currentImageUrl: String,
+    currentRemoteImageUrl: String,
+    pendingImageBytes: ByteArray?,
     isUploading: Boolean,
-    onImageUrlChange: (String) -> Unit,
-    onUploadStateChange: (Boolean) -> Unit,
+    onPendingImageChange: (ByteArray?) -> Unit,
     onError: (String) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var lastUploadedUrl by remember { mutableStateOf("") }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var hadUploadingPhase by remember { mutableStateOf(false) }
+    var showSavedRemoteStatus by remember { mutableStateOf(false) }
 
-    LaunchedEffect(currentImageUrl) {
-        if (currentImageUrl.isBlank()) {
-            lastUploadedUrl = ""
-        } else if (lastUploadedUrl.isNotBlank() && currentImageUrl != lastUploadedUrl) {
-            lastUploadedUrl = ""
-        }
-    }
-    val uploadFailedMessage = stringResource(Res.string.error_image_upload_failed)
-    val uploadPermissionDeniedMessage =
-        stringResource(Res.string.error_image_upload_permission_denied)
     val galleryLabel = stringResource(Res.string.image_picker_gallery)
     val cameraLabel = stringResource(Res.string.image_picker_camera)
     val uploadingLabel = stringResource(Res.string.image_uploading)
-    val uploadedLabel = stringResource(Res.string.image_uploaded)
+    val selectedPendingLabel = stringResource(Res.string.product_image_selected_pending)
+    val savedRemoteLabel = stringResource(Res.string.product_image_saved_remote)
+    val prepareFailedMessage = stringResource(Res.string.error_image_prepare_failed)
 
-    val displayUrl = lastUploadedUrl.ifBlank { currentImageUrl }
+    LaunchedEffect(isUploading, pendingImageBytes, currentRemoteImageUrl) {
+        if (isUploading) {
+            hadUploadingPhase = true
+        }
+        if (pendingImageBytes != null) {
+            showSavedRemoteStatus = false
+        }
+        if (!isUploading && hadUploadingPhase) {
+            showSavedRemoteStatus =
+                pendingImageBytes == null && currentRemoteImageUrl.isNotBlank()
+            hadUploadingPhase = false
+        }
+    }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            uploadImage(
-                uri = uri,
-                scope = scope,
-                onStart = {
-                    onUploadStateChange(true)
-                },
-                onSuccess = { url ->
-                    lastUploadedUrl = url
-                    onUploadStateChange(false)
-                    onImageUrlChange(url)
-                },
-                onFailure = { error ->
-                    onUploadStateChange(false)
-                    onError(
-                        mapUploadErrorMessage(
-                            raw = error,
-                            fallback = uploadFailedMessage,
-                            permissionDenied = uploadPermissionDeniedMessage
-                        )
-                    )
+            scope.launch {
+                try {
+                    val bytes = withContext(Dispatchers.Default) {
+                        compressJpegFromUri(context, uri)
+                    }
+                    onPendingImageChange(bytes)
+                } catch (_: Exception) {
+                    onError(prepareFailedMessage)
                 }
-            )
+            }
         }
     }
 
@@ -113,28 +109,16 @@ actual fun ProductImagePicker(
     ) { success ->
         val uri = pendingCameraUri
         if (success && uri != null) {
-            uploadImage(
-                uri = uri,
-                scope = scope,
-                onStart = {
-                    onUploadStateChange(true)
-                },
-                onSuccess = { url ->
-                    lastUploadedUrl = url
-                    onUploadStateChange(false)
-                    onImageUrlChange(url)
-                },
-                onFailure = { error ->
-                    onUploadStateChange(false)
-                    onError(
-                        mapUploadErrorMessage(
-                            raw = error,
-                            fallback = uploadFailedMessage,
-                            permissionDenied = uploadPermissionDeniedMessage
-                        )
-                    )
+            scope.launch {
+                try {
+                    val bytes = withContext(Dispatchers.Default) {
+                        compressJpegFromUri(context, uri)
+                    }
+                    onPendingImageChange(bytes)
+                } catch (_: Exception) {
+                    onError(prepareFailedMessage)
                 }
-            )
+            }
         }
     }
 
@@ -184,18 +168,33 @@ actual fun ProductImagePicker(
             }
         }
 
-        if (!isUploading && displayUrl.isNotBlank()) {
+        if (!isUploading && pendingImageBytes != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = uploadedLabel,
+                    contentDescription = selectedPendingLabel,
                     tint = DeepGreen,
                     modifier = Modifier.size(22.dp)
                 )
-                Text(text = uploadedLabel)
+                Text(text = selectedPendingLabel)
+            }
+        }
+
+        if (!isUploading && showSavedRemoteStatus) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = savedRemoteLabel,
+                    tint = DeepGreen,
+                    modifier = Modifier.size(22.dp)
+                )
+                Text(text = savedRemoteLabel)
             }
         }
     }
@@ -210,50 +209,28 @@ private fun createTempImageUri(context: Context): Uri {
     )
 }
 
-private fun uploadImage(
-    uri: Uri,
-    scope: CoroutineScope,
-    onStart: () -> Unit,
-    onSuccess: (String) -> Unit,
-    onFailure: (String?) -> Unit
-) {
-    onStart()
-    val storage = Firebase.storage
-    val imageRef = storage.reference.child("product_images/${UUID.randomUUID()}.jpg")
-    imageRef.putFile(uri)
-        .addOnSuccessListener {
-            imageRef.downloadUrl
-                .addOnSuccessListener { url ->
-                    scope.launch(Dispatchers.Main.immediate) {
-                        onSuccess(url.toString())
-                    }
-                }
-                .addOnFailureListener { error ->
-                    scope.launch(Dispatchers.Main.immediate) {
-                        onFailure(error.message)
-                    }
-                }
+private fun compressJpegFromUri(context: Context, uri: Uri): ByteArray {
+    val input = context.contentResolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("openInputStream failed")
+    input.use { stream ->
+        var bitmap = BitmapFactory.decodeStream(stream)
+            ?: throw IllegalArgumentException("decode failed")
+        val maxEdge = ProductImageConstants.MAX_EDGE_PX
+        val w = bitmap.width
+        val h = bitmap.height
+        val maxDim = max(w, h)
+        if (maxDim > maxEdge) {
+            val scale = maxEdge.toFloat() / maxDim
+            val newW = (w * scale).roundToInt().coerceAtLeast(1)
+            val newH = (h * scale).roundToInt().coerceAtLeast(1)
+            bitmap = Bitmap.createScaledBitmap(bitmap, newW, newH, true)
         }
-        .addOnFailureListener { error ->
-            scope.launch(Dispatchers.Main.immediate) {
-                onFailure(error.message)
-            }
-        }
-}
-
-private fun mapUploadErrorMessage(
-    raw: String?,
-    fallback: String,
-    permissionDenied: String
-): String {
-    val lower = raw?.lowercase().orEmpty()
-    if (
-        "permission denied" in lower ||
-        "unauthorized" in lower ||
-        "not authorized" in lower ||
-        "403" in lower
-    ) {
-        return permissionDenied
+        val out = ByteArrayOutputStream()
+        bitmap.compress(
+            Bitmap.CompressFormat.JPEG,
+            ProductImageConstants.JPEG_QUALITY_PERCENT,
+            out
+        )
+        return out.toByteArray()
     }
-    return raw?.takeIf { it.isNotBlank() } ?: fallback
 }

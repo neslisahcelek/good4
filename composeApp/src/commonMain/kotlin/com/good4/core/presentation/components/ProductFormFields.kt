@@ -72,10 +72,10 @@ fun ProductFormFields(
     onDiscountPriceChange: (String) -> Unit,
     amount: String,
     onAmountChange: (String) -> Unit,
-    imageUrl: String,
-    onImageUrlChange: (String) -> Unit,
+    currentRemoteImageUrl: String,
+    pendingProductImageBytes: ByteArray?,
+    onPendingProductImageChange: (ByteArray?) -> Unit,
     isImageUploading: Boolean = false,
-    onImageUploadStateChange: (Boolean) -> Unit = {},
     onImagePickerError: (String) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -218,10 +218,10 @@ fun ProductFormFields(
 
         ProductImagePicker(
             modifier = Modifier.fillMaxWidth(),
-            currentImageUrl = imageUrl,
+            currentRemoteImageUrl = currentRemoteImageUrl,
+            pendingImageBytes = pendingProductImageBytes,
             isUploading = isImageUploading,
-            onImageUrlChange = onImageUrlChange,
-            onUploadStateChange = onImageUploadStateChange,
+            onPendingImageChange = onPendingProductImageChange,
             onError = onImagePickerError
         )
 

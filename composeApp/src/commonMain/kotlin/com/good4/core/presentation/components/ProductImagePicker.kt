@@ -6,9 +6,9 @@ import androidx.compose.ui.Modifier
 @Composable
 expect fun ProductImagePicker(
     modifier: Modifier = Modifier,
-    currentImageUrl: String,
+    currentRemoteImageUrl: String,
+    pendingImageBytes: ByteArray?,
     isUploading: Boolean,
-    onImageUrlChange: (String) -> Unit,
-    onUploadStateChange: (Boolean) -> Unit = {},
-    onError: (String) -> Unit = {}
+    onPendingImageChange: (ByteArray?) -> Unit,
+    onError: (String) -> Unit
 )

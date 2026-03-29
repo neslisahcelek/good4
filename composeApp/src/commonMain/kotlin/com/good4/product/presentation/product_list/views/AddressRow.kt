@@ -13,7 +13,7 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.address_icon_description
-import good4.composeapp.generated.resources.ic_logo
+import good4.composeapp.generated.resources.ic_address
 import good4.composeapp.generated.resources.preview_address
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -26,7 +26,7 @@ fun AddressRow(
 ) {
     Row(modifier = modifier) {
         Image(
-            painter = painterResource(Res.drawable.ic_logo),
+            painter = painterResource(Res.drawable.ic_address),
             contentDescription = stringResource(Res.string.address_icon_description)
         )
         Text(

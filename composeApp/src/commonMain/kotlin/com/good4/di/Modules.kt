@@ -29,6 +29,7 @@ import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.FirestoreRepositoryImpl
+import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.student.presentation.profile.StudentProfileViewModel
@@ -71,7 +72,14 @@ val commonModule = module {
         )
     }
     viewModel { VerifyCodeViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<CodeRepository>(), get<FirestoreProductRepository>(), get<OrderRepository>(), get<UserRepository>()) }
-    viewModel { BusinessProductsViewModel(get<AuthRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>()) }
+    viewModel {
+        BusinessProductsViewModel(
+            get<AuthRepository>(),
+            get<FirestoreBusinessRepository>(),
+            get<FirestoreProductRepository>(),
+            get<ProductImageUploadRepository>()
+        )
+    }
     viewModel {
         AdminDashboardViewModel(
             get<FirestoreProductRepository>(),
@@ -84,7 +92,8 @@ val commonModule = module {
     viewModel {
         AdminProductsViewModel(
             get<FirestoreProductRepository>(),
-            get<FirestoreBusinessRepository>()
+            get<FirestoreBusinessRepository>(),
+            get<ProductImageUploadRepository>()
         )
     }
     viewModel { EditStudentCreditViewModel(get<UserRepository>()) }

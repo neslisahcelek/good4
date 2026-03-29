@@ -102,6 +102,7 @@ import good4.composeapp.generated.resources.privacy_policy
 import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.required_fields
 import good4.composeapp.generated.resources.student_registration
+import good4.composeapp.generated.resources.student_email_edu_hint
 import good4.composeapp.generated.resources.terms_accept_middle
 import good4.composeapp.generated.resources.terms_accept_suffix
 import good4.composeapp.generated.resources.terms_of_service
@@ -202,6 +203,7 @@ fun StudentRegisterScreen(
                     onValueChange = { onAction(StudentRegisterAction.OnEmailChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(stringResource(Res.string.email_required)) },
+                    supportingText = { Text(stringResource(Res.string.student_email_edu_hint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,

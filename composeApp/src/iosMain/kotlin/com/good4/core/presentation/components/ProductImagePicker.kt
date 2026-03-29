@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package com.good4.core.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
@@ -15,36 +17,29 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.good4.core.domain.ProductImageConstants
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextPrimary
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.storage.Data
-import dev.gitlive.firebase.storage.StorageReference
-import dev.gitlive.firebase.storage.storage
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_image_prepare_failed
-import good4.composeapp.generated.resources.error_image_upload_failed
-import good4.composeapp.generated.resources.error_image_upload_permission_denied
-import good4.composeapp.generated.resources.error_image_upload_timeout
 import good4.composeapp.generated.resources.image_picker_camera
 import good4.composeapp.generated.resources.image_picker_gallery
-import good4.composeapp.generated.resources.image_uploaded
 import good4.composeapp.generated.resources.image_uploading
-import kotlinx.coroutines.CancellationException
+import good4.composeapp.generated.resources.product_image_saved_remote
+import good4.composeapp.generated.resources.product_image_selected_pending
+import kotlinx.cinterop.Pinned
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.useContents
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.compose.resources.stringResource
 import platform.Foundation.NSData
 import platform.UIKit.UIApplication
@@ -55,112 +50,86 @@ import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerOriginalImage
 import platform.UIKit.UIImagePickerControllerSourceType
 import platform.UIKit.UINavigationControllerDelegateProtocol
+import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGSizeMake
+import platform.UIKit.UIGraphicsBeginImageContextWithOptions
+import platform.UIKit.UIGraphicsEndImageContext
+import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.darwin.NSObject
-import kotlin.random.Random
+import platform.posix.memcpy
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 @Composable
 actual fun ProductImagePicker(
     modifier: Modifier,
-    currentImageUrl: String,
+    currentRemoteImageUrl: String,
+    pendingImageBytes: ByteArray?,
     isUploading: Boolean,
-    onImageUrlChange: (String) -> Unit,
-    onUploadStateChange: (Boolean) -> Unit,
+    onPendingImageChange: (ByteArray?) -> Unit,
     onError: (String) -> Unit
 ) {
-    var lastUploadedUrl by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val delegateHolder = remember { mutableStateOf<ImagePickerDelegate?>(null) }
-
-    LaunchedEffect(currentImageUrl) {
-        if (currentImageUrl.isBlank()) {
-            lastUploadedUrl = ""
-        } else if (lastUploadedUrl.isNotBlank() && currentImageUrl != lastUploadedUrl) {
-            lastUploadedUrl = ""
-        }
-    }
+    val hadUploadingPhase = remember { mutableStateOf(false) }
+    val showSavedRemoteStatus = remember { mutableStateOf(false) }
 
     val galleryLabel = stringResource(Res.string.image_picker_gallery)
     val cameraLabel = stringResource(Res.string.image_picker_camera)
     val uploadingLabel = stringResource(Res.string.image_uploading)
-    val uploadedLabel = stringResource(Res.string.image_uploaded)
-    val uploadFailedMessage = stringResource(Res.string.error_image_upload_failed)
-    val uploadPermissionDeniedMessage =
-        stringResource(Res.string.error_image_upload_permission_denied)
+    val selectedPendingLabel = stringResource(Res.string.product_image_selected_pending)
+    val savedRemoteLabel = stringResource(Res.string.product_image_saved_remote)
     val prepareFailedMessage = stringResource(Res.string.error_image_prepare_failed)
-    val uploadTimeoutMessage = stringResource(Res.string.error_image_upload_timeout)
 
-    val displayUrl = lastUploadedUrl.ifBlank { currentImageUrl }
+    LaunchedEffect(isUploading, pendingImageBytes, currentRemoteImageUrl) {
+        if (isUploading) {
+            hadUploadingPhase.value = true
+        }
+        if (pendingImageBytes != null) {
+            showSavedRemoteStatus.value = false
+        }
+        if (!isUploading && hadUploadingPhase.value) {
+            showSavedRemoteStatus.value =
+                pendingImageBytes == null && currentRemoteImageUrl.isNotBlank()
+            hadUploadingPhase.value = false
+        }
+    }
 
-    fun uploadImageData(nsData: NSData) {
+    fun processPickedImage(image: UIImage) {
         scope.launch {
-            onUploadStateChange(true)
             try {
-                val storageRef = Firebase.storage.reference
-                    .child("product_images/${Random.nextLong()}.jpg")
-                val url = withTimeout(120_000L) {
-                    storageRef.putData(Data(nsData))
-                    // Let the upload session fully finalize before requesting the download URL (avoids HTTP 400
-                    // "Upload has already been finalized" / cancelFetcher noise on iOS).
-                    delay(150)
-                    storageRef.getDownloadUrlWithRetry()
+                val bytes = withContext(Dispatchers.Default) {
+                    val scaled = image.scaleToMaxEdge(ProductImageConstants.MAX_EDGE_PX.toDouble())
+                    val nsData = UIImageJPEGRepresentation(
+                        scaled,
+                        ProductImageConstants.JPEG_QUALITY_PERCENT / 100.0
+                    ) ?: throw IllegalArgumentException("jpeg failed")
+                    nsData.toByteArrayFromNSData()
                 }
                 withContext(Dispatchers.Main) {
-                    lastUploadedUrl = url
-                    onImageUrlChange(url)
+                    onPendingImageChange(bytes)
                 }
-            } catch (e: TimeoutCancellationException) {
+            } catch (_: Exception) {
                 withContext(Dispatchers.Main) {
-                    onError(uploadTimeoutMessage)
+                    onError(prepareFailedMessage)
                 }
-            } catch (e: CancellationException) {
-                val raw = e.message?.takeIf { it.isNotBlank() } ?: e.toString()
-                val lower = raw.lowercase()
-                val isPermissionIssue =
-                    "permission denied" in lower ||
-                        "unauthorized" in lower ||
-                        "code=403" in lower ||
-                        "\"code\": 403" in lower
-                val isStorageFinalizeIssue =
-                    "finalized" in lower ||
-                        "httpstatus" in lower ||
-                        "cancelfetcher" in lower ||
-                        "code=400" in lower
-
-                if (isPermissionIssue) {
-                    withContext(Dispatchers.Main) {
-                        onError(uploadPermissionDeniedMessage)
-                    }
-                } else if (isStorageFinalizeIssue) {
-                    withContext(Dispatchers.Main) {
-                        onError(uploadFailedMessage)
-                    }
-                } else {
-                    throw e
-                }
-            } catch (e: Throwable) {
-                withContext(Dispatchers.Main) {
-                    val raw = e.message?.takeIf { it.isNotBlank() } ?: e.toString()
-                    val lower = raw.lowercase()
-                    val message = when {
-                        "permission denied" in lower || "unauthorized" in lower || "code=403" in lower ||
-                            "\"code\": 403" in lower -> uploadPermissionDeniedMessage
-                        "finalized" in lower || "httpstatus" in lower -> uploadFailedMessage
-                        raw.isBlank() -> uploadFailedMessage
-                        else -> raw
-                    }
-                    onError(message)
-                }
-            } finally {
-                onUploadStateChange(false)
             }
         }
     }
 
     fun openPicker(sourceType: UIImagePickerControllerSourceType) {
         val delegate = ImagePickerDelegate(
-            onImageData = { nsData ->
+            onImagePicked = { image ->
                 delegateHolder.value = null
-                uploadImageData(nsData)
+                if (image == null) {
+                    scope.launch {
+                        withContext(Dispatchers.Main) {
+                            onError(prepareFailedMessage)
+                        }
+                    }
+                } else {
+                    processPickedImage(image)
+                }
             },
             onEncodeFailed = {
                 scope.launch {
@@ -230,43 +199,65 @@ actual fun ProductImagePicker(
             }
         }
 
-        if (!isUploading && displayUrl.isNotBlank()) {
+        if (!isUploading && pendingImageBytes != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = uploadedLabel,
+                    contentDescription = selectedPendingLabel,
                     tint = DeepGreen,
                     modifier = Modifier.size(22.dp)
                 )
-                Text(text = uploadedLabel)
+                Text(text = selectedPendingLabel)
+            }
+        }
+
+        if (!isUploading && showSavedRemoteStatus.value) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = savedRemoteLabel,
+                    tint = DeepGreen,
+                    modifier = Modifier.size(22.dp)
+                )
+                Text(text = savedRemoteLabel)
             }
         }
     }
 }
 
-/**
- * iOS Firebase Storage: immediate getDownloadUrl after putData can hit HTTP 400
- * "Upload has already been finalized" (see cancelFetcher logs). Retry after a short delay.
- */
-private suspend fun StorageReference.getDownloadUrlWithRetry(): String {
-    return try {
-        getDownloadUrl()
-    } catch (first: Exception) {
-        val m = first.message?.lowercase().orEmpty()
-        if ("finalized" in m || "httpstatus" in m) {
-            delay(500)
-            getDownloadUrl()
-        } else {
-            throw first
-        }
+private fun UIImage.scaleToMaxEdge(maxEdge: Double): UIImage {
+    val w = size.useContents { width.toDouble() }
+    val h = size.useContents { height.toDouble() }
+    val maxDim = max(w, h)
+    if (maxDim <= maxEdge) return this
+    val scale = maxEdge / maxDim
+    val newW = (w * scale).roundToInt().toDouble()
+    val newH = (h * scale).roundToInt().toDouble()
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(newW, newH), false, 1.0)
+    this.drawInRect(CGRectMake(0.0, 0.0, newW, newH))
+    val out = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return out ?: this
+}
+
+private fun NSData.toByteArrayFromNSData(): ByteArray {
+    val size = length.toInt()
+    if (size == 0) return ByteArray(0)
+    val result = ByteArray(size)
+    result.usePinned { pinned: Pinned<ByteArray> ->
+        memcpy(pinned.addressOf(0), this.bytes, length)
     }
+    return result
 }
 
 private class ImagePickerDelegate(
-    private val onImageData: (NSData) -> Unit,
+    private val onImagePicked: (UIImage?) -> Unit,
     private val onEncodeFailed: () -> Unit,
     private val onCancel: () -> Unit
 ) : NSObject(), UIImagePickerControllerDelegateProtocol, UINavigationControllerDelegateProtocol {
@@ -281,12 +272,7 @@ private class ImagePickerDelegate(
             onEncodeFailed()
             return
         }
-        val nsData = UIImageJPEGRepresentation(image, 0.8)
-        if (nsData == null) {
-            onEncodeFailed()
-            return
-        }
-        onImageData(nsData)
+        onImagePicked(image)
     }
 
     override fun imagePickerControllerDidCancel(picker: UIImagePickerController) {

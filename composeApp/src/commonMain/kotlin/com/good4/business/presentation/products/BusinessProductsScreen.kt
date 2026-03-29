@@ -166,15 +166,14 @@ fun BusinessProductsScreenRoot(
             onDismiss = {
                 showAddSheet = false
                 viewModel.resetAddState()
-                viewModel.refreshProducts()
+                viewModel.dismissError()
             },
             onProductNameChange = viewModel::onProductNameChange,
             onProductDescriptionChange = viewModel::onProductDescriptionChange,
             onOriginalPriceChange = viewModel::onOriginalPriceChange,
             onDiscountPriceChange = viewModel::onDiscountPriceChange,
             onAmountChange = viewModel::onAmountChange,
-            onImageUrlChange = viewModel::onImageUrlChange,
-            onImageUploadStateChange = viewModel::onImageUploadStateChange,
+            onPendingProductImageChange = viewModel::onPendingProductImageChange,
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
             },
@@ -189,15 +188,14 @@ fun BusinessProductsScreenRoot(
             onDismiss = {
                 showEditSheet = false
                 viewModel.resetEditState()
-                viewModel.refreshProducts()
+                viewModel.dismissError()
             },
             onProductNameChange = viewModel::onProductNameChange,
             onProductDescriptionChange = viewModel::onProductDescriptionChange,
             onOriginalPriceChange = viewModel::onOriginalPriceChange,
             onDiscountPriceChange = viewModel::onDiscountPriceChange,
             onAmountChange = viewModel::onAmountChange,
-            onImageUrlChange = viewModel::onImageUrlChange,
-            onImageUploadStateChange = viewModel::onImageUploadStateChange,
+            onPendingProductImageChange = viewModel::onPendingProductImageChange,
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
             },
@@ -213,7 +211,6 @@ fun BusinessProductsScreenPreview() {
         BusinessProductsScreenRoot()
     }
 }
-
 
 
 

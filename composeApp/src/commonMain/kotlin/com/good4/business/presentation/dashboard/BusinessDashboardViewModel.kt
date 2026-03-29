@@ -246,13 +246,15 @@ class BusinessDashboardViewModel(
                     var supporterPending = 0
                     var supporterConfirmed = 0
                     var recentOrdersUi = emptyList<RecentOrderUiModel>()
+                    val orderProductFallback = getString(Res.string.product_name_fallback)
 
                     when (val recentOrdersResult = orderRepository.getRecentOrdersByBusiness(businessId, limit = 5)) {
                         is Result.Success -> {
                             recentOrdersUi = recentOrdersResult.data.map { order ->
                                 RecentOrderUiModel(
                                     id = order.id,
-                                    supporterName = order.supporterName,
+                                    productName = order.items.firstOrNull()?.productName?.ifBlank { orderProductFallback }
+                                        ?: orderProductFallback,
                                     code = order.code,
                                     orderStatus = order.status
                                 )
