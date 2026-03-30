@@ -24,12 +24,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 class ProductListViewModel(
@@ -61,17 +55,11 @@ class ProductListViewModel(
             when (val result = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     val user = result.data
-                    val now = Clock.System.now()
-                    val nextMondayMidnight = nextMondayMidnightInstant()
-                    val duration = nextMondayMidnight - now
-                    val validDuration =
-                        if (duration.isPositive()) duration else kotlin.time.Duration.ZERO
 
                     _state.update {
                         it.copy(
                             userName = user.fullName.split(" ").firstOrNull() ?: user.fullName,
                             remainingCredits = user.credit,
-                            creditRenewalDuration = validDuration,
                             deliveryTimeMinutes = deliveryTimeMinutes
                         )
                     }
@@ -209,7 +197,7 @@ class ProductListViewModel(
                 )
             }
 
-            when (val userResult = userRepository.refreshStudentCreditIfNeeded(userId)) {
+            when (val userResult = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     val credit = userResult.data.credit ?: 0
                     if (credit <= 0) {
@@ -354,15 +342,4 @@ class ProductListViewModel(
             }
         }
     }
-}
-
-private fun nextMondayMidnightInstant(): kotlinx.datetime.Instant {
-    val now = Clock.System.now()
-    val todayUtc = now.toLocalDateTime(TimeZone.UTC)
-    val daysSinceMonday = todayUtc.dayOfWeek.ordinal // MONDAY=0, ..., SUNDAY=6
-    val lastMonday = todayUtc.date.minus(daysSinceMonday, DateTimeUnit.DAY)
-    val lastMondayMidnightSecs = LocalDateTime(
-        lastMonday.year, lastMonday.monthNumber, lastMonday.dayOfMonth, 0, 0, 0
-    ).toInstant(TimeZone.UTC).epochSeconds
-    return kotlinx.datetime.Instant.fromEpochSeconds(lastMondayMidnightSecs + 7 * 86_400L)
 }

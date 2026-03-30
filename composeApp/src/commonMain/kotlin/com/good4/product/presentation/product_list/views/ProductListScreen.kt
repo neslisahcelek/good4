@@ -174,7 +174,6 @@ fun ProductListScreen(
                             item {
                                 StudentStatusCard(
                                     remainingCredits = state.remainingCredits,
-                                    renewalDuration = state.creditRenewalDuration,
                                     deliveryTimeMinutes = state.deliveryTimeMinutes
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))

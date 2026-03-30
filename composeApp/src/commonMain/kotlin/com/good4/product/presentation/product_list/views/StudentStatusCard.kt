@@ -1,8 +1,6 @@
 package com.good4.product.presentation.product_list.views
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,20 +33,13 @@ import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.product_list_credit_label
 import good4.composeapp.generated.resources.product_list_delivery_icon_desc
 import good4.composeapp.generated.resources.product_list_delivery_suffix
-import good4.composeapp.generated.resources.product_list_renewal_days_suffix
-import good4.composeapp.generated.resources.product_list_renewal_hours_suffix
-import good4.composeapp.generated.resources.product_list_renewal_prefix
-import good4.composeapp.generated.resources.product_list_renewal_soon
-import good4.composeapp.generated.resources.product_list_renewal_text_suffix
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.time.Duration
 
 @Composable
 fun StudentStatusCard(
     modifier: Modifier = Modifier,
     remainingCredits: Int,
-    renewalDuration: Duration?,
     deliveryTimeMinutes: Int
 ) {
     Column(
@@ -116,67 +107,8 @@ fun StudentStatusCard(
                     }
                 }
 
-                if (renewalDuration != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(BorderMuted.copy(alpha = 0.35f))
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = stringResource(
-                                Res.string.product_list_delivery_icon_desc
-                            ),
-                            tint = TextSecondary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(Res.string.product_list_renewal_prefix) +
-                                    formatRenewalDuration(
-                                        duration = renewalDuration,
-                                        daysSuffix = stringResource(
-                                            Res.string.product_list_renewal_days_suffix
-                                        ),
-                                        hoursSuffix = stringResource(
-                                            Res.string.product_list_renewal_hours_suffix
-                                        ),
-                                        soon = stringResource(Res.string.product_list_renewal_soon),
-                                        suffix = stringResource(
-                                            Res.string.product_list_renewal_text_suffix
-                                        )
-                                    ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
-                    }
-                }
             }
         }
-    }
-}
-
-private fun formatRenewalDuration(
-    duration: Duration,
-    daysSuffix: String,
-    hoursSuffix: String,
-    soon: String,
-    suffix: String
-): String {
-    return duration.toComponents { days, hours, _, _, _ ->
-        buildString {
-            if (days > 0L) append("$days$daysSuffix")
-            if (hours > 0) append("$hours$hoursSuffix")
-            if (days == 0L && hours == 0) append(soon)
-            append(suffix)
-        }.trim()
     }
 }
 
@@ -186,7 +118,6 @@ fun StudentStatusCardPreview() {
     MaterialTheme {
         StudentStatusCard(
             remainingCredits = 1,
-            renewalDuration = Duration.ZERO,
             deliveryTimeMinutes = 15
         )
     }

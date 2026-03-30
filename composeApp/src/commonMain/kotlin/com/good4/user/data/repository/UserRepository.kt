@@ -4,22 +4,11 @@ import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
-import com.good4.core.domain.UnknownError
 import com.good4.core.domain.ValidationError
 import com.good4.user.User
 import com.good4.user.data.dto.UserDto
 import com.good4.user.domain.UserRole
-import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.error_credit_reset_failed
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.compose.resources.getString
 
 class UserRepository(
     private val firestoreRepository: FirestoreRepository,
@@ -227,107 +216,6 @@ class UserRepository(
         }
     }
 
-    suspend fun refreshStudentCreditIfNeeded(userId: String): Result<User, Error> {
-        return when (val result = getUserDto(userId)) {
-            is Result.Success -> {
-                val userDto = result.data
-                val role = UserRole.fromValue(userDto.role)
-                if (role != UserRole.STUDENT) {
-                    return Result.Success(userDto.toUser(userId))
-                }
-
-                val weeklyCredit = userDto.weeklyCreditOverride
-                    ?: configRepository.getStudentWeeklyCredit()
-                val lastResetAtSecs = userDto.lastCreditResetAt
-                val lastMondayMidnightSecs = lastMondayMidnightEpochSeconds()
-                val shouldReset =
-                    lastResetAtSecs == null || lastResetAtSecs < lastMondayMidnightSecs
-
-                if (shouldReset) {
-                    val updatedDto = userDto.copy(
-                        credit = weeklyCredit,
-                        lastCreditResetAt = lastMondayMidnightSecs
-                    )
-                    when (val updateResult = updateUser(userId, updatedDto)) {
-                        is Result.Success -> Result.Success(updatedDto.toUser(userId))
-                        is Result.Error -> updateResult
-                    }
-                } else {
-                    Result.Success(userDto.toUser(userId))
-                }
-            }
-
-            is Result.Error -> result
-        }
-    }
-
-    suspend fun resetStudentCreditsWeekly(): Result<Unit, Error> {
-        return when (val studentsResult = getUsersByRole(UserRole.STUDENT)) {
-            is Result.Success -> {
-                val students = studentsResult.data
-                val lastMondayMidnightSecs = lastMondayMidnightEpochSeconds()
-                val weeklyCredit = configRepository.getStudentWeeklyCredit()
-                var hasError = false
-                var lastError: Error? = null
-
-                students.forEach { student ->
-                    val lastResetSecs = student.lastCreditResetAt?.epochSeconds
-                    val shouldReset =
-                        lastResetSecs == null || lastResetSecs < lastMondayMidnightSecs
-                    val targetCredit = student.weeklyCreditOverride ?: weeklyCredit
-
-                    if (shouldReset) {
-                        val updatedDto = UserDto(
-                            email = student.email,
-                            fullName = student.fullName,
-                            phoneNumber = student.phoneNumber,
-                            role = UserRole.STUDENT.value,
-                            verified = student.verified,
-                            university = student.university,
-                            major = student.major,
-                            educationLevel = student.educationLevel,
-                            credit = targetCredit,
-                            weeklyCreditOverride = student.weeklyCreditOverride,
-                            lastCreditResetAt = lastMondayMidnightSecs,
-                            registrationDate = student.registrationDate?.epochSeconds,
-                            createdAt = student.createdAt?.epochSeconds,
-                            totalDonations = student.totalDonations,
-                            totalMeals = student.totalMeals
-                        )
-
-                        when (val updateResult = updateUser(student.id, updatedDto)) {
-                            is Result.Error -> {
-                                hasError = true
-                                lastError = updateResult.error
-                            }
-
-                            is Result.Success -> Unit
-                        }
-                    }
-                }
-
-                if (hasError) {
-                    Result.Error(
-                        lastError ?: UnknownError(getString(Res.string.error_credit_reset_failed))
-                    )
-                } else {
-                    Result.Success(Unit)
-                }
-            }
-
-            is Result.Error -> studentsResult
-        }
-    }
-}
-
-private fun lastMondayMidnightEpochSeconds(): Long {
-    val now = Clock.System.now()
-    val todayUtc = now.toLocalDateTime(TimeZone.UTC)
-    val daysSinceMonday = todayUtc.dayOfWeek.ordinal // MONDAY=0, ..., SUNDAY=6
-    val lastMonday = todayUtc.date.minus(daysSinceMonday, DateTimeUnit.DAY)
-    return LocalDateTime(lastMonday.year, lastMonday.monthNumber, lastMonday.dayOfMonth, 0, 0, 0)
-        .toInstant(TimeZone.UTC)
-        .epochSeconds
 }
 
 private fun UserDto.toUser(userId: String): User {

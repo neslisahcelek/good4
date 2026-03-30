@@ -141,7 +141,7 @@ class StudentReservationsViewModel(
 
             expirationDuration = configRepository.getExpirationDuration()
 
-            when (val userResult = userRepository.refreshStudentCreditIfNeeded(userId)) {
+            when (val userResult = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     val user = userResult.data
                     _state.update { it.copy(remainingCredit = user.credit) }

@@ -309,7 +309,6 @@
     <string name="error_campaign_image_required">Lütfen bir resim URL\'si belirtiniz</string>
     <string name="error_code_not_found_or_used">Kod bulunamadı veya daha önce kullanılmış</string>
     <string name="error_code_not_found">Girdiğiniz kod sistemde bulunamadı</string>
-    <string name="error_credit_reset_failed">Kredi sıfırlama işlemi başarısız oldu</string>
     <string name="error_business_required">Lütfen bir işletme seçiniz</string>
     <string name="error_price_required">Lütfen fiyat bilgisini giriniz</string>
     <string name="error_daily_pending_limit_invalid">Lütfen günlük bağış adedi giriniz</string>
@@ -359,12 +358,7 @@
     <string name="product_list_out_of_stock_button">Stokta Yok</string>
     <string name="product_list_active_reservation_title">Aktif Rezervasyon</string>
     <string name="product_list_credit_label">KALAN KREDİ</string>
-    <string name="product_list_renewal_prefix">Kredi hakkınız </string>
-    <string name="product_list_renewal_soon">Yakında</string>
-    <string name="product_list_renewal_days_suffix"> gün </string>
-    <string name="product_list_renewal_hours_suffix"> saat</string>
     <string name="product_list_delivery_suffix"> dk teslim süresi</string>
-    <string name="product_list_renewal_text_suffix"> sonra yenilenecektir.</string>
     <string name="product_list_price_format">%1$d %2$s</string>
     <string name="product_list_stock_units">%1$d adet</string>
     <string name="product_list_availability_in_stock">Stokta</string>
@@ -433,4 +427,6 @@
     <string name="privacy_policy">Gizlilik Politikası</string>
     <string name="terms_accept_suffix">'nı okudum ve kabul ediyorum.</string>
     <string name="error_terms_not_accepted">Devam etmek için Üyelik Sözleşmesi ve Gizlilik Politikası'nı kabul edin.</string>
+    <string name="session_restore_title">Oturumun yeniden bağlanması bekleniyor</string>
+    <string name="session_restore_retry">Tekrar Dene</string>
 </resources>
