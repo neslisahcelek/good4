@@ -48,7 +48,7 @@ fun ProductListCard(
     showStoreName: Boolean = false,
     showStockInfo: Boolean = true,
     stockPrefix: String = stringResource(Res.string.business_products_stock_prefix),
-    stockValue: Int = product.amount
+    stockValue: Int = product.pendingCount
 ) {
     val cardModifier = if (onClick != null) {
         modifier

@@ -64,8 +64,8 @@ class StudentReservationsViewModel(
     private fun startTimer() {
         viewModelScope.launch {
             while (true) {
-                delay(60.seconds)
                 updateRemainingTimes()
+                delay(1.seconds)
             }
         }
     }

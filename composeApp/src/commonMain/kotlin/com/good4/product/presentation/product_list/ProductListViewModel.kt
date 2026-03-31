@@ -188,6 +188,18 @@ class ProductListViewModel(
             return
         }
 
+        val localRemainingCredits = _state.value.remainingCredits
+        if (localRemainingCredits != null && localRemainingCredits <= 0) {
+            _state.update {
+                it.copy(
+                    isReserving = false,
+                    reservingProductId = null,
+                    errorMessage = UiText.StringResourceId(Res.string.error_no_credit)
+                )
+            }
+            return
+        }
+
         viewModelScope.launch {
             _state.update {
                 it.copy(
@@ -200,6 +212,7 @@ class ProductListViewModel(
             when (val userResult = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     val credit = userResult.data.credit ?: 0
+                    _state.update { it.copy(remainingCredits = credit) }
                     if (credit <= 0) {
                         _state.update {
                             it.copy(
@@ -226,7 +239,7 @@ class ProductListViewModel(
                 }
             }
 
-            if (product.amount <= 0) {
+            if (product.pendingCount <= 0) {
                 _state.update {
                     it.copy(
                         isReserving = false,
@@ -256,7 +269,7 @@ class ProductListViewModel(
 
                 when (val result = codeRepository.createCode(codeDto)) {
                     is Result.Success -> {
-                        userRepository.decrementUserCredit(userId)
+                        val decrementResult = userRepository.decrementUserCredit(userId)
                         val expirationMinutes =
                             configRepository.getExpirationDuration().inWholeMinutes
                         _state.update {
@@ -269,8 +282,15 @@ class ProductListViewModel(
                                     expiryTime = expiryTime,
                                     codeId = result.data
                                 ),
-                                reservationExpirationMinutes = expirationMinutes
+                                reservationExpirationMinutes = expirationMinutes,
+                                remainingCredits = (it.remainingCredits ?: 1).let { current ->
+                                    (current - 1).coerceAtLeast(0)
+                                }
                             )
+                        }
+
+                        if (decrementResult is Result.Error) {
+                            loadStudentInfo()
                         }
                     }
 

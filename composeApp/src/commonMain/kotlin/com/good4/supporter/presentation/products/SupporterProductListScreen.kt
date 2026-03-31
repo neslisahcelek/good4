@@ -484,7 +484,7 @@ fun SupporterProductListScreenPreview() {
                         discountPrice = 120,
                         discountPercentage = 20,
                         imageUrl = "",
-                        amount = 5
+                        pendingCount = 5
                     )
                 )
             ),

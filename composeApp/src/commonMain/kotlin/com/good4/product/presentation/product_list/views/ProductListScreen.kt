@@ -497,7 +497,7 @@ fun ProductListScreenPreview() {
                 discountPrice = 80,
                 discountPercentage = 20,
                 imageUrl = "",
-                amount = 5
+                pendingCount = 5
             ),
             Product(
                 id = 2,
@@ -513,7 +513,7 @@ fun ProductListScreenPreview() {
                 discountPrice = null,
                 discountPercentage = null,
                 imageUrl = "",
-                amount = 3
+                pendingCount = 3
             )
         )
         ProductListScreen(

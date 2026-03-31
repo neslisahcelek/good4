@@ -34,12 +34,12 @@ class AdminDashboardViewModel(
             when (val result = productRepository.getProducts(includeOutOfStock = true)) {
                 is Result.Success -> {
                     val activeProducts = result.data
-                        .filter { product -> product.amount > 0 }
+                        .filter { product -> product.pendingCount > 0 }
                         .map { product ->
                             ActiveProductStock(
                                 id = product.documentId,
                                 name = product.name,
-                                stock = product.amount
+                                stock = product.pendingCount
                             )
                         }
                     _state.update {

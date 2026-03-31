@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.AppBackground
 import com.good4.navigation.Route
 import com.good4.user.domain.UserRole
 
@@ -17,7 +17,8 @@ fun SplashScreenRoot(
     viewModel: SplashViewModel,
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: (UserRole) -> Unit,
-    onNavigateToEmailVerification: () -> Unit
+    onNavigateToEmailVerification: () -> Unit,
+    onNavigateToSessionRestore: () -> Unit
 ) {
     val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
     val userRole by viewModel.userRole.collectAsStateWithLifecycle()
@@ -33,6 +34,7 @@ fun SplashScreenRoot(
                 }
 
                 Route.EmailVerification -> onNavigateToEmailVerification()
+                Route.SessionRestore -> onNavigateToSessionRestore()
                 else -> Unit
             }
         }
@@ -48,6 +50,6 @@ fun SplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(AppBackground)
+            .background(Color.White)
     )
 }

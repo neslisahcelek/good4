@@ -19,6 +19,8 @@ import com.good4.auth.presentation.register.supporter.SupporterRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
+import com.good4.core.presentation.sessionrestore.SessionRestoreScreenRoot
+import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashScreenRoot
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.student.presentation.home.StudentHomeScreenRoot
@@ -57,6 +59,30 @@ fun Good4NavGraph(
                     onSplashReady?.invoke()
                     navController.navigate(Route.EmailVerification) {
                         popUpTo(Route.Splash) { inclusive = true }
+                    }
+                },
+                onNavigateToSessionRestore = {
+                    onSplashReady?.invoke()
+                    navController.navigate(Route.SessionRestore) {
+                        popUpTo(Route.Splash) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable<Route.SessionRestore> {
+            val viewModel: SessionRestoreViewModel = koinViewModel()
+            SessionRestoreScreenRoot(
+                viewModel = viewModel,
+                onNavigateToLogin = {
+                    navController.navigateToLogin()
+                },
+                onNavigateToHome = { role ->
+                    navController.navigateToHome(role)
+                },
+                onNavigateToEmailVerification = {
+                    navController.navigate(Route.EmailVerification) {
+                        popUpTo(Route.SessionRestore) { inclusive = true }
                     }
                 }
             )
@@ -194,24 +220,14 @@ fun Good4NavGraph(
 }
 
 fun NavHostController.navigateToHome(userRole: UserRole) {
-    val destination = when (userRole) {
-        UserRole.ADMIN -> Route.AdminHome
-        UserRole.BUSINESS -> Route.BusinessHome
-        UserRole.STUDENT -> Route.StudentHome
-        UserRole.SUPPORTER -> Route.SupporterHome
-    }
+    val destination = userRole.toHomeRoute()
     navigate(destination) {
         popUpTo(Route.Login) { inclusive = true }
     }
 }
 
 fun NavHostController.navigateToHomeFromSplash(userRole: UserRole) {
-    val destination = when (userRole) {
-        UserRole.ADMIN -> Route.AdminHome
-        UserRole.BUSINESS -> Route.BusinessHome
-        UserRole.STUDENT -> Route.StudentHome
-        UserRole.SUPPORTER -> Route.SupporterHome
-    }
+    val destination = userRole.toHomeRoute()
     navigate(destination) {
         popUpTo(Route.Splash) { inclusive = true }
     }

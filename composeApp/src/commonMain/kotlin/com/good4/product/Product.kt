@@ -14,7 +14,6 @@ data class Product(
     val imageUrl: String,
     val address: String,
     val addressUrl: String = "",
-    val amount: Int,
     val pendingCount: Int = 0,
     val dailyPendingLimit: Int? = null,
     val isDonation: Boolean = false,

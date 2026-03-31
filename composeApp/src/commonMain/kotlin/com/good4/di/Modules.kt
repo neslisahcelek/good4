@@ -26,6 +26,8 @@ import com.good4.code.data.repository.CodeRepository
 import com.good4.order.data.repository.OrderRepository
 import com.good4.supportactivity.data.repository.SupportActivityRepository
 import com.good4.config.data.repository.AppConfigRepository
+import com.good4.core.data.local.StartupSessionCache
+import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.FirestoreRepositoryImpl
@@ -53,10 +55,24 @@ val commonModule = module {
     single { SupportActivityRepository(get<FirestoreRepository>()) }
     single { OrderRepository(get<FirestoreRepository>()) }
 
-    viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>()) }
-    viewModel { StudentRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
-    viewModel { BusinessRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<FirestoreBusinessRepository>()) }
-    viewModel { SupporterRegisterViewModel(get<AuthRepository>(), get<UserRepository>()) }
+    viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
+    viewModel {
+        StudentRegisterViewModel(
+            get<AuthRepository>(),
+            get<UserRepository>(),
+            get<AppConfigRepository>(),
+            get<StartupSessionCache>()
+        )
+    }
+    viewModel {
+        BusinessRegisterViewModel(
+            get<AuthRepository>(),
+            get<UserRepository>(),
+            get<FirestoreBusinessRepository>(),
+            get<StartupSessionCache>()
+        )
+    }
+    viewModel { SupporterRegisterViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel { EmailVerificationViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { ProductListViewModel(get<FirestoreProductRepository>(), get<CodeRepository>(), get<AuthRepository>(), get<AppConfigRepository>(), get<UserRepository>()) }
     viewModel { StudentProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
@@ -98,7 +114,15 @@ val commonModule = module {
     }
     viewModel { EditStudentCreditViewModel(get<UserRepository>()) }
     viewModel { AdminProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
-    viewModel { SplashViewModel(get<AuthRepository>(), get<UserRepository>(), get<AppConfigRepository>()) }
+    viewModel {
+        SplashViewModel(
+            get<AuthRepository>(),
+            get<UserRepository>(),
+            get<AppConfigRepository>(),
+            get<StartupSessionCache>()
+        )
+    }
+    viewModel { SessionRestoreViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel { SupporterProductListViewModel(get<FirestoreProductRepository>(), get<AuthRepository>(), get<UserRepository>()) }
     viewModel {
         SupporterCartViewModel(

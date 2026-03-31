@@ -113,7 +113,7 @@ fun StudentHomeScreenRoot(
                             selectedTextColor = DeepGreen,
                             unselectedIconColor = TextSecondary,
                             unselectedTextColor = TextSecondary,
-                            indicatorColor = Color.Transparent
+                            indicatorColor = DeepGreen.copy(alpha = 0.18f)
                         )
                     )
                 }

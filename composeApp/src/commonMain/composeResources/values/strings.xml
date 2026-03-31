@@ -6,10 +6,10 @@
     <string name="or">veya</string>
     <string name="loading">Yükleniyor…</string>
     <string name="required_fields">* ile işaretli alanların doldurulması zorunludur</string>
-    <string name="email">E-posta Adresiniz</string>
+    <string name="email">E-posta Adresi</string>
     <string name="email_placeholder">ornek@email.com</string>
     <string name="student_email_edu_hint">Lütfen okulunuza ait edu uzantılı e-posta hesabınızı kullanın.</string>
-    <string name="password">Şifreniz</string>
+    <string name="password">Şifre</string>
     <string name="password_placeholder">••••••••</string>
     <string name="password_visibility_show">Şifreyi göster</string>
     <string name="password_visibility_hide">Şifreyi gizle</string>

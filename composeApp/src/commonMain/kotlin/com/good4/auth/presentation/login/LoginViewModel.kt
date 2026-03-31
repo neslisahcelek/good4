@@ -7,12 +7,13 @@ import com.good4.auth.domain.AuthError
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
+import com.good4.core.data.local.StartupSessionCache
+import com.good4.core.data.local.cacheStartupSession
+import com.good4.core.data.local.shouldCheckEmailVerificationFor
 import com.good4.core.presentation.UiText
-import com.good4.core.util.AppEnvironment
 import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.repository.UserRepository
-import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_account_disabled
 import good4.composeapp.generated.resources.error_email_invalid_format
@@ -39,7 +40,8 @@ import kotlin.time.Duration.Companion.seconds
 
 class LoginViewModel(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val startupSessionCache: StartupSessionCache
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -127,10 +129,14 @@ class LoginViewModel(
                     when (val userResult = userRepository.getUser(userId)) {
                         is Result.Success -> {
                             val role = userResult.data.role
-                            val shouldCheckEmailVerification =
-                                AppEnvironment.isEmailVerificationRequired &&
-                                        (role == UserRole.STUDENT || role == UserRole.SUPPORTER)
+                            val shouldCheckEmailVerification = shouldCheckEmailVerificationFor(role)
                             if (shouldCheckEmailVerification && !authUser.isEmailVerified) {
+                                startupSessionCache.cacheStartupSession(
+                                    uid = userId,
+                                    role = role,
+                                    isUserVerified = userResult.data.verified,
+                                    isAuthEmailVerified = authUser.isEmailVerified
+                                )
                                 val sendResult = authRepository.sendEmailVerification()
                                 _state.update { current ->
                                     current.copy(
@@ -145,6 +151,12 @@ class LoginViewModel(
                                     )
                                 }
                             } else {
+                                startupSessionCache.cacheStartupSession(
+                                    uid = userId,
+                                    role = role,
+                                    isUserVerified = userResult.data.verified,
+                                    isAuthEmailVerified = authUser.isEmailVerified
+                                )
                                 _state.update {
                                     it.copy(
                                         isLoading = false,
@@ -162,6 +174,7 @@ class LoginViewModel(
                                     errorMessage = userResult.error.toUserFetchErrorUiText()
                                 )
                             }
+                            startupSessionCache.clear(userId)
                             authRepository.signOut()
                         }
                     }

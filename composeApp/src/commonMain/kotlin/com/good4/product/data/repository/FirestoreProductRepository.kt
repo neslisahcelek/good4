@@ -223,7 +223,6 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         imageUrl = imageUrl ?: "",
         address = business?.address ?: "",
         addressUrl = business?.addressUrl ?: "",
-        amount = pendingCount ?: 0,
         pendingCount = pendingCount ?: 0,
         dailyPendingLimit = dailyPendingLimit,
         isDonation = isDonation ?: false,

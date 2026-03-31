@@ -2,6 +2,8 @@ package com.good4.di
 
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.data.repository.FirebaseAuthRepository
+import com.good4.core.data.local.StartupSessionCache
+import com.good4.core.data.local.StartupSessionCacheAndroid
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.core.data.repository.ProductImageUploadRepositoryAndroid
@@ -18,4 +20,5 @@ actual val platformModule: Module = module {
     single<FirestoreRepository> { FirestoreRepositoryAndroidImpl(get()) }
     single<ProductImageUploadRepository> { ProductImageUploadRepositoryAndroid() }
     single<SupporterCartStorage> { SupporterCartStorageAndroid(get()) }
+    single<StartupSessionCache> { StartupSessionCacheAndroid(get()) }
 }

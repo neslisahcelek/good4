@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.register.mapAuthSignUpErrorToUiText
 import com.good4.config.data.repository.AppConfigRepository
+import com.good4.core.data.local.StartupSessionCache
+import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
@@ -38,7 +40,8 @@ import kotlinx.datetime.Clock
 class StudentRegisterViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val configRepository: AppConfigRepository
+    private val configRepository: AppConfigRepository,
+    private val startupSessionCache: StartupSessionCache
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -218,6 +221,12 @@ class StudentRegisterViewModel(
 
                     when (val userResult = userRepository.createUser(userId, userDto)) {
                         is Result.Success -> {
+                            startupSessionCache.cacheStartupSession(
+                                uid = userId,
+                                role = UserRole.STUDENT,
+                                isUserVerified = false,
+                                isAuthEmailVerified = authResult.data.isEmailVerified
+                            )
                             when (val sendResult = authRepository.sendEmailVerification()) {
                                 is Result.Success -> Unit
                                 is Result.Error -> Unit

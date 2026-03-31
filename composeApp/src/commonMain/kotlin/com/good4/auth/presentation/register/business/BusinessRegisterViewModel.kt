@@ -6,6 +6,8 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.register.mapAuthSignUpErrorToUiText
 import com.good4.business.data.dto.BusinessDto
 import com.good4.business.data.dto.FirestoreBusinessRepository
+import com.good4.core.data.local.StartupSessionCache
+import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
@@ -33,7 +35,8 @@ import kotlinx.coroutines.launch
 class BusinessRegisterViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val businessRepository: FirestoreBusinessRepository
+    private val businessRepository: FirestoreBusinessRepository,
+    private val startupSessionCache: StartupSessionCache
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BusinessRegisterState())
@@ -204,6 +207,12 @@ class BusinessRegisterViewModel(
 
                             when (val userResult = userRepository.createUser(userId, userDto)) {
                                 is Result.Success -> {
+                                    startupSessionCache.cacheStartupSession(
+                                        uid = userId,
+                                        role = UserRole.BUSINESS,
+                                        isUserVerified = false,
+                                        isAuthEmailVerified = authResult.data.isEmailVerified
+                                    )
                                     _state.update {
                                         it.copy(
                                             isLoading = false,
