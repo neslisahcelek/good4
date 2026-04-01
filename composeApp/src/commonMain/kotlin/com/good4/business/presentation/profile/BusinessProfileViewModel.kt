@@ -22,6 +22,7 @@ class BusinessProfileViewModel(
 
     private val _state = MutableStateFlow(BusinessProfileState())
     val state = _state.asStateFlow()
+    private var hasLoadedOnce: Boolean = false
 
     init {
         loadProfile()
@@ -31,11 +32,19 @@ class BusinessProfileViewModel(
         _state.update { it.copy(errorMessage = null) }
     }
 
-    private fun loadProfile() {
+    fun refresh(showLoading: Boolean = !hasLoadedOnce) {
+        loadProfile(showLoading = showLoading)
+    }
+
+    private fun loadProfile(showLoading: Boolean = true) {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            if (showLoading) {
+                _state.update { it.copy(isLoading = true, errorMessage = null) }
+            } else {
+                _state.update { it.copy(errorMessage = null) }
+            }
 
             when (val userResult = userRepository.getUser(userId)) {
                 is Result.Success -> {
@@ -53,6 +62,7 @@ class BusinessProfileViewModel(
                 is Result.Success -> {
                     val business = result.data.find { it.ownerId == userId }
                     if (business != null) {
+                        hasLoadedOnce = true
                         _state.update {
                             it.copy(
                                 isLoading = false,
@@ -63,6 +73,7 @@ class BusinessProfileViewModel(
                             )
                         }
                     } else {
+                        hasLoadedOnce = true
                         val message = getString(Res.string.error_business_not_found)
                         _state.update {
                             it.copy(
@@ -73,6 +84,7 @@ class BusinessProfileViewModel(
                     }
                 }
                 is Result.Error -> {
+                    hasLoadedOnce = true
                     _state.update {
                         it.copy(
                             isLoading = false,

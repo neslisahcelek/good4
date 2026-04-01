@@ -26,19 +26,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.product.presentation.product_list.ProductListState
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.product.presentation.product_list.views.ProductListScreenRoot
 import com.good4.student.presentation.profile.StudentProfileScreen
+import com.good4.student.presentation.profile.StudentProfileViewModel
+import com.good4.student.presentation.reservations.ReservationUiModel
 import com.good4.student.presentation.reservations.StudentReservationsScreen
 import com.good4.student.presentation.reservations.StudentReservationsViewModel
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.student_profile
 import good4.composeapp.generated.resources.student_reservations
 import good4.composeapp.generated.resources.student_home
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -75,11 +80,13 @@ fun StudentHomeScreenRoot(
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
+    val profileViewModel: StudentProfileViewModel = koinViewModel()
 
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
             0 -> productListViewModel.refresh()
             1 -> reservationsViewModel.refresh()
+            2 -> profileViewModel.refresh()
         }
     }
 
@@ -129,7 +136,17 @@ fun StudentHomeScreenRoot(
                 0 -> {
                     ProductListScreenRoot(
                         viewModel = productListViewModel,
-                        onReservationCardClick = { selectedItemIndex = 1 }
+                        onReservationCardClick = {
+                            val productState = productListViewModel.state.value
+                            val activeReservation = productState.activeReservation
+                            if (activeReservation != null) {
+                                reservationsViewModel.seedPendingReservation(
+                                    reservation = productState.toPendingReservationUiModel(),
+                                    remainingCredit = productState.remainingCredits
+                                )
+                            }
+                            selectedItemIndex = 1
+                        }
                     )
                 }
                 1 -> {
@@ -139,12 +156,32 @@ fun StudentHomeScreenRoot(
                 }
                 2 -> {
                     StudentProfileScreen(
+                        viewModel = profileViewModel,
                         onLogout = onLogout
                     )
                 }
             }
         }
     }
+}
+
+private fun ProductListState.toPendingReservationUiModel(): ReservationUiModel {
+    val activeReservation = requireNotNull(activeReservation)
+    val createdAt = reservationExpirationMinutes?.let { expirationMinutes ->
+        activeReservation.expiryTime.epochSeconds - (expirationMinutes * 60)
+    } ?: Clock.System.now().epochSeconds
+
+    return ReservationUiModel(
+        id = activeReservation.codeId,
+        code = activeReservation.code,
+        productName = activeReservation.product.name,
+        businessName = activeReservation.product.storeName,
+        businessAddress = activeReservation.product.address,
+        businessAddressUrl = activeReservation.product.addressUrl,
+        status = CodeStatus.PENDING.value,
+        remainingTime = "",
+        createdAt = createdAt
+    )
 }
 
 @Preview

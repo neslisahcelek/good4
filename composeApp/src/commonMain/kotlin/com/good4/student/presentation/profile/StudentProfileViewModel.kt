@@ -25,19 +25,27 @@ class StudentProfileViewModel(
 
     private val _state = MutableStateFlow(StudentProfileState())
     val state = _state.asStateFlow()
+    private var hasLoadedOnce: Boolean = false
 
     init {
         loadProfile()
     }
 
-    private fun loadProfile() {
+    fun refresh(showLoading: Boolean = !hasLoadedOnce) {
+        loadProfile(showLoading = showLoading)
+    }
+
+    private fun loadProfile(showLoading: Boolean = true) {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            if (showLoading) {
+                _state.update { it.copy(isLoading = true) }
+            }
 
             when (val result = userRepository.getUser(userId)) {
                 is Result.Success -> {
+                    hasLoadedOnce = true
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -46,6 +54,7 @@ class StudentProfileViewModel(
                     }
                 }
                 is Result.Error -> {
+                    hasLoadedOnce = true
                     _state.update {
                         it.copy(
                             isLoading = false,

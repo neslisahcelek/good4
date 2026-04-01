@@ -37,13 +37,14 @@ class BusinessDashboardViewModel(
     val state = _state.asStateFlow()
 
     private var cachedBusinessId: String? = null
+    private var hasLoadedOnce: Boolean = false
 
     init {
         loadDashboard()
     }
 
-    fun refreshDashboard() {
-        loadDashboard()
+    fun refreshDashboard(showLoading: Boolean = !hasLoadedOnce) {
+        loadDashboard(showLoading = showLoading)
     }
 
     fun dismissError() {
@@ -179,52 +180,53 @@ class BusinessDashboardViewModel(
         }
     }
 
-    private fun loadDashboard() {
+    private fun loadDashboard(showLoading: Boolean = true) {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
-            _state.update {
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null,
-                    orderDetailSheetVisible = false,
-                    orderDetailLoading = false,
-                    isCancellingOrderDetail = false,
-                    orderDetail = null
-                )
-            }
-            val loadErrorFallback = getString(Res.string.error_data_load_failed)
-
-            when (val ownedResult = businessRepository.getOwnedBusinessId(userId)) {
-                is Result.Error -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = userFriendlyErrorMessage(
-                                ownedResult.error.message,
-                                loadErrorFallback
-                            )
-                        )
-                    }
-                    return@launch
+            try {
+                _state.update { current ->
+                    current.copy(
+                        isLoading = showLoading,
+                        errorMessage = null,
+                        orderDetailSheetVisible = false,
+                        orderDetailLoading = false,
+                        isCancellingOrderDetail = false,
+                        orderDetail = null
+                    )
                 }
+                val loadErrorFallback = getString(Res.string.error_data_load_failed)
 
-                is Result.Success -> {
-                    val businessId = ownedResult.data
-                    if (businessId == null) {
-                        cachedBusinessId = null
+                when (val ownedResult = businessRepository.getOwnedBusinessId(userId)) {
+                    is Result.Error -> {
                         _state.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = getString(Res.string.error_business_not_found)
+                                errorMessage = userFriendlyErrorMessage(
+                                    ownedResult.error.message,
+                                    loadErrorFallback
+                                )
                             )
                         }
                         return@launch
                     }
 
-                    cachedBusinessId = businessId
+                    is Result.Success -> {
+                        val businessId = ownedResult.data
+                        if (businessId == null) {
+                            cachedBusinessId = null
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = getString(Res.string.error_business_not_found)
+                                )
+                            }
+                            return@launch
+                        }
 
-                    val fallbackName = getString(Res.string.business_name_fallback)
+                        cachedBusinessId = businessId
+
+                        val fallbackName = getString(Res.string.business_name_fallback)
 
                     when (val businessResult = businessRepository.getBusinessById(businessId)) {
                         is Result.Success -> {
@@ -360,7 +362,10 @@ class BusinessDashboardViewModel(
                             }
                         }
                     }
+                    }
                 }
+            } finally {
+                hasLoadedOnce = true
             }
         }
     }

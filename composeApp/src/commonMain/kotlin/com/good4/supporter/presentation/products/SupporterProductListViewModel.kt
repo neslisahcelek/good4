@@ -10,6 +10,7 @@ import com.good4.user.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class SupporterProductListViewModel(
@@ -21,19 +22,20 @@ class SupporterProductListViewModel(
     private val _state = MutableStateFlow(SupporterProductListState())
     val state = _state.asStateFlow()
 
-    private var isLoaded = false
+    private var hasLoadedOnce = false
+    private var loadJob: Job? = null
 
     fun loadProductsIfNeeded() {
-        if (!isLoaded && !_state.value.isLoading) {
+        if (!hasLoadedOnce && !_state.value.isLoading) {
             loadSupporterInfo()
-            loadProducts()
+            loadProducts(showLoading = true)
         }
     }
 
-    fun refresh() {
-        isLoaded = false
+    fun refresh(showLoading: Boolean = !hasLoadedOnce) {
+        if (_state.value.isLoading) return
         loadSupporterInfo()
-        loadProducts()
+        loadProducts(showLoading = showLoading)
     }
 
     fun onAction(action: SupporterProductListAction) {
@@ -44,23 +46,27 @@ class SupporterProductListViewModel(
         }
     }
 
-    private fun loadProducts() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+    private fun loadProducts(showLoading: Boolean) {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
+            if (showLoading) {
+                _state.update { it.copy(isLoading = true, errorMessage = null) }
+            } else {
+                _state.update { it.copy(errorMessage = null) }
+            }
 
             when (val result = productRepository.getProducts(includeOutOfStock = true)) {
                 is Result.Success -> {
-                    isLoaded = true
+                    hasLoadedOnce = true
                     val availableProducts = result.data.filter { !it.isDonation && it.price > 0 }
                     _state.update {
                         it.copy(products = availableProducts, isLoading = false)
                     }
                 }
                 is Result.Error -> {
-                    isLoaded = true
+                    hasLoadedOnce = true
                     _state.update {
                         it.copy(
-                            products = emptyList(),
                             isLoading = false,
                             errorMessage = UiText.DynamicString(result.error.message ?: "")
                         )

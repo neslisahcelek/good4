@@ -59,6 +59,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.toDisplayAddressOrNull
+import com.good4.core.util.ReservationTimeCalculator
 import com.good4.core.util.openMaps
 import com.good4.product.Product
 import com.good4.product.presentation.product_list.ProductListAction
@@ -80,7 +81,6 @@ import good4.composeapp.generated.resources.reservation_status_pending
 import good4.composeapp.generated.resources.time_minute_suffix
 import good4.composeapp.generated.resources.time_second_suffix
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -297,18 +297,21 @@ private fun ProductListActiveReservationCard(
 
     LaunchedEffect(expiryTime) {
         while (expiryTime != null && !isExpired) {
-            val now = Clock.System.now()
-            val diff = expiryTime - now
-
-            if (diff.inWholeSeconds <= 0) {
+            val remainingSeconds = ReservationTimeCalculator.remainingSecondsUntilExpiry(
+                expiresAtEpochSeconds = expiryTime.epochSeconds
+            ) ?: break
+            if (remainingSeconds <= 0) {
                 isExpired = true
                 onExpired(codeId)
                 break
             }
 
-            val minutes = diff.inWholeMinutes
-            val seconds = diff.inWholeSeconds % 60
-            remainingTime = "${minutes}${minuteSuffix} ${seconds}${secondSuffix}"
+            remainingTime = ReservationTimeCalculator.formatRemainingTimeFromExpiry(
+                expiresAtEpochSeconds = expiryTime.epochSeconds,
+                minuteSuffix = minuteSuffix,
+                secondSuffix = secondSuffix,
+                expiredLabel = ""
+            ).orEmpty()
 
             delay(1.seconds)
         }

@@ -9,6 +9,7 @@ import com.good4.code.domain.CodeStatus
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.config.domain.AppDefaults
 import com.good4.core.domain.Result
+import com.good4.core.util.ReservationTimeCalculator
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name_fallback
@@ -21,8 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import org.jetbrains.compose.resources.getString
@@ -41,6 +40,7 @@ class StudentReservationsViewModel(
     private var minuteSuffix: String = ""
     private var secondSuffix: String = ""
     private var expirationDuration = AppDefaults.RESERVATION_EXPIRATION_MINUTES.minutes
+    private var hasLoadedOnce: Boolean = false
 
     init {
         loadReservations()
@@ -94,126 +94,140 @@ class StudentReservationsViewModel(
     }
 
     private fun isReservationExpired(createdAtSecs: Long?): Boolean {
-        if (createdAtSecs == null) return false
-        return try {
-            val createdInstant = Instant.fromEpochSeconds(createdAtSecs)
-            val now = Clock.System.now()
-            val elapsed = now - createdInstant
-            elapsed >= expirationDuration
-        } catch (_: Exception) {
-            false
-        }
+        return ReservationTimeCalculator.isExpiredFromCreatedAt(
+            createdAtEpochSeconds = createdAtSecs,
+            expirationDuration = expirationDuration
+        )
     }
 
     private fun calculateRemainingTime(createdAtSecs: Long?): String {
-        if (createdAtSecs == null) return ""
-
-        return try {
-            val createdInstant = Instant.fromEpochSeconds(createdAtSecs)
-            val now = Clock.System.now()
-            val elapsed = now - createdInstant
-            val remaining = expirationDuration - elapsed
-
-            if (remaining.isNegative()) {
-                expiredLabel
-            } else {
-                val minutes = remaining.inWholeMinutes
-                val seconds = (remaining.inWholeSeconds % 60)
-                "${minutes}${minuteSuffix} ${seconds}${secondSuffix}"
-            }
-        } catch (e: Exception) {
-            ""
-        }
+        return ReservationTimeCalculator.formatRemainingTimeFromCreatedAt(
+            createdAtEpochSeconds = createdAtSecs,
+            expirationDuration = expirationDuration,
+            minuteSuffix = minuteSuffix,
+            secondSuffix = secondSuffix,
+            expiredLabel = expiredLabel
+        )
     }
 
     private fun checkAndExpireCodes() {
         viewModelScope.launch {
             codeRepository.checkAndExpireCodes()
-            loadReservations()
+            loadReservations(showLoading = false)
         }
     }
 
-    private fun loadReservations() {
+    private fun loadReservations(showLoading: Boolean = true) {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-
-            expirationDuration = configRepository.getExpirationDuration()
-
-            when (val userResult = userRepository.getUser(userId)) {
-                is Result.Success -> {
-                    val user = userResult.data
-                    _state.update { it.copy(remainingCredit = user.credit) }
+            try {
+                if (showLoading) {
+                    _state.update { it.copy(isLoading = true) }
                 }
-                is Result.Error -> {}
-            }
 
-            val codesResult = codeRepository.getCodesByUserId(userId)
-            if (codesResult is Result.Error) {
-                _state.update {
-                    it.copy(isLoading = false, errorMessage = codesResult.error.message)
-                }
-                return@launch
-            }
+                expirationDuration = configRepository.getExpirationDuration()
 
-            val allUserCodes = (codesResult as Result.Success).data
-            val normalizedCodes = allUserCodes.map { code ->
-                if (code.statusEnum == CodeStatus.PENDING && isReservationExpired(code.createdAt)) {
-                    when (codeRepository.markCodeAsExpired(code.id)) {
-                        is Result.Success -> {
-                            userRepository.incrementUserCredit(userId)
-                            code.copy(status = CodeStatus.EXPIRED.value)
-                        }
-                        is Result.Error -> code
+                when (val userResult = userRepository.getUser(userId)) {
+                    is Result.Success -> {
+                        val user = userResult.data
+                        _state.update { it.copy(remainingCredit = user.credit) }
                     }
-                } else {
-                    code
-                }
-            }
-
-            val pendingCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.PENDING }
-            val completedCodes = normalizedCodes
-                .filter { it.statusEnum == CodeStatus.USED }
-                .sortedByDescending { code -> code.usedAt ?: 0L }
-                .take(MAX_COMPLETED_RESERVATIONS.toInt())
-            val expiredCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.EXPIRED }
-            val cancelledCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.CANCELLED }
-
-            val allCodes = pendingCodes + completedCodes + expiredCodes + cancelledCodes
-
-            val sortedCodes = allCodes.sortedByDescending { code ->
-                code.usedAt ?: code.createdAt ?: 0L
-            }
-
-            val productFallback = getString(Res.string.product_name_fallback)
-            val businessFallback = getString(Res.string.business_name_fallback)
-            val reservations = sortedCodes.map { code ->
-                val remainingTime = if (code.statusEnum == CodeStatus.PENDING) {
-                    calculateRemainingTime(code.createdAt)
-                } else {
-                    ""
+                    is Result.Error -> {}
                 }
 
-                ReservationUiModel(
-                    id = code.id,
-                    code = code.value,
-                    productName = code.productName ?: productFallback,
-                    businessName = code.businessName ?: businessFallback,
-                    businessAddress = code.businessAddress ?: "",
-                    businessAddressUrl = code.businessAddressUrl ?: "",
-                    status = code.status,
-                    remainingTime = remainingTime,
-                    createdAt = code.createdAt
-                )
-            }
+                val codesResult = codeRepository.getCodesByUserId(userId)
+                if (codesResult is Result.Error) {
+                    _state.update {
+                        it.copy(isLoading = false, errorMessage = codesResult.error.message)
+                    }
+                    return@launch
+                }
 
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    reservations = reservations
-                )
+                val allUserCodes = (codesResult as Result.Success).data
+                val normalizedCodes = allUserCodes.map { code ->
+                    if (code.statusEnum == CodeStatus.PENDING && isReservationExpired(code.createdAt)) {
+                        when (codeRepository.markCodeAsExpired(code.id)) {
+                            is Result.Success -> {
+                                userRepository.incrementUserCredit(userId)
+                                code.copy(status = CodeStatus.EXPIRED.value)
+                            }
+                            is Result.Error -> code
+                        }
+                    } else {
+                        code
+                    }
+                }
+
+                val pendingCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.PENDING }
+                val completedCodes = normalizedCodes
+                    .filter { it.statusEnum == CodeStatus.USED }
+                    .sortedByDescending { code -> code.usedAt ?: 0L }
+                    .take(MAX_COMPLETED_RESERVATIONS.toInt())
+                val expiredCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.EXPIRED }
+                val cancelledCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.CANCELLED }
+
+                val allCodes = pendingCodes + completedCodes + expiredCodes + cancelledCodes
+
+                val sortedCodes = allCodes.sortedByDescending { code ->
+                    code.usedAt ?: code.createdAt ?: 0L
+                }
+
+                val productFallback = getString(Res.string.product_name_fallback)
+                val businessFallback = getString(Res.string.business_name_fallback)
+                val reservations = sortedCodes.map { code ->
+                    val remainingTime = if (code.statusEnum == CodeStatus.PENDING) {
+                        calculateRemainingTime(code.createdAt)
+                    } else {
+                        ""
+                    }
+
+                    ReservationUiModel(
+                        id = code.id,
+                        code = code.value,
+                        productName = code.productName ?: productFallback,
+                        businessName = code.businessName ?: businessFallback,
+                        businessAddress = code.businessAddress ?: "",
+                        businessAddressUrl = code.businessAddressUrl ?: "",
+                        status = code.status,
+                        remainingTime = remainingTime,
+                        createdAt = code.createdAt
+                    )
+                }
+
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        reservations = reservations
+                    )
+                }
+            } finally {
+                hasLoadedOnce = true
             }
+        }
+    }
+
+    fun seedPendingReservation(
+        reservation: ReservationUiModel,
+        remainingCredit: Int?
+    ) {
+        if (reservation.statusEnum != CodeStatus.PENDING) return
+
+        val seededReservation = reservation.copy(
+            remainingTime = calculateRemainingTime(reservation.createdAt)
+        )
+
+        _state.update { currentState ->
+            val reservations = buildList {
+                add(seededReservation)
+                addAll(currentState.reservations.filterNot { it.id == seededReservation.id })
+            }.sortedByDescending { it.createdAt ?: 0L }
+
+            currentState.copy(
+                isLoading = false,
+                reservations = reservations,
+                remainingCredit = remainingCredit ?: currentState.remainingCredit
+            )
         }
     }
 
@@ -233,7 +247,7 @@ class StudentReservationsViewModel(
         }
     }
 
-    fun refresh() {
-        loadReservations()
+    fun refresh(showLoading: Boolean = !hasLoadedOnce) {
+        loadReservations(showLoading = showLoading)
     }
 }

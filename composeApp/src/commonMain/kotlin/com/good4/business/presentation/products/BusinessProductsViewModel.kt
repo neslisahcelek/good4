@@ -36,72 +36,79 @@ class BusinessProductsViewModel(
     val state = _state.asStateFlow()
 
     private var businessId: String? = null
+    private var hasLoadedOnce: Boolean = false
 
     init {
         loadBusinessProducts()
     }
 
-    private fun loadBusinessProducts() {
+    private fun loadBusinessProducts(showLoading: Boolean = true) {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            try {
+                if (showLoading) {
+                    _state.update { it.copy(isLoading = true) }
+                }
 
-            when (val ownedResult = businessRepository.getOwnedBusinessId(userId)) {
-                is Result.Error -> {
+                when (val ownedResult = businessRepository.getOwnedBusinessId(userId)) {
+                    is Result.Error -> {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = ownedResult.error.message
+                            )
+                        }
+                        return@launch
+                    }
+
+                    is Result.Success -> {
+                        businessId = ownedResult.data
+                    }
+                }
+
+                val currentBusinessId = businessId
+
+                if (currentBusinessId == null) {
+                    val message = getString(Res.string.error_business_not_found)
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = ownedResult.error.message
+                            errorMessage = message
                         )
                     }
                     return@launch
                 }
 
-                is Result.Success -> {
-                    businessId = ownedResult.data
-                }
-            }
-
-            val currentBusinessId = businessId
-
-            if (currentBusinessId == null) {
-                val message = getString(Res.string.error_business_not_found)
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = message
-                    )
-                }
-                return@launch
-            }
-
-            when (val result = productRepository.getProductsByBusinessId(
-                businessId = currentBusinessId,
-                includeOutOfStock = true
-            )) {
-                is Result.Success -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            products = result.data
-                        )
+                when (val result = productRepository.getProductsByBusinessId(
+                    businessId = currentBusinessId,
+                    includeOutOfStock = true
+                )) {
+                    is Result.Success -> {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                products = result.data
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = result.error.message
+                            )
+                        }
                     }
                 }
-                is Result.Error -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.error.message
-                        )
-                    }
-                }
+            } finally {
+                hasLoadedOnce = true
             }
         }
     }
 
-    fun refreshProducts() {
-        loadBusinessProducts()
+    fun refreshProducts(showLoading: Boolean = !hasLoadedOnce) {
+        loadBusinessProducts(showLoading = showLoading)
     }
 
     fun onProductNameChange(name: String) {

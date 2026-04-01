@@ -50,6 +50,7 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ReservationCard
+import com.good4.core.util.ReservationTimeCalculator
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.cancel
 import good4.composeapp.generated.resources.price_currency_suffix
@@ -65,7 +66,6 @@ import good4.composeapp.generated.resources.supporter_cart_order_canceling
 import good4.composeapp.generated.resources.supporter_cart_total
 import good4.composeapp.generated.resources.time_minute_suffix
 import good4.composeapp.generated.resources.time_second_suffix
-import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -160,7 +160,7 @@ fun SupporterCartScreen(
                                     businessAddress = null,
                                     status = CodeStatus.PENDING,
                                     code = order.code,
-                                    remainingTime = formatRemainingTime(
+                                    remainingTime = ReservationTimeCalculator.formatRemainingTimeFromExpiry(
                                         expiresAtEpochSeconds = order.expiresAtEpochSeconds,
                                         minuteSuffix = stringResource(Res.string.time_minute_suffix),
                                         secondSuffix = stringResource(Res.string.time_second_suffix),
@@ -444,20 +444,4 @@ fun SupporterCartScreenPreview() {
             onAction = {}
         )
     }
-}
-
-private fun formatRemainingTime(
-    expiresAtEpochSeconds: Long?,
-    minuteSuffix: String,
-    secondSuffix: String,
-    expiredLabel: String
-): String? {
-    if (expiresAtEpochSeconds == null) return null
-
-    val remainingSeconds = expiresAtEpochSeconds - Clock.System.now().epochSeconds
-    if (remainingSeconds <= 0) return expiredLabel
-
-    val minutes = remainingSeconds / 60
-    val seconds = remainingSeconds % 60
-    return "${minutes}${minuteSuffix} ${seconds}${secondSuffix}"
 }

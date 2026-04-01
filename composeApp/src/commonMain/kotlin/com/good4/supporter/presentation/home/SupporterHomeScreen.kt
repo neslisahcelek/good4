@@ -39,9 +39,11 @@ import com.good4.supporter.presentation.cart.SupporterCartScreen
 import com.good4.supporter.presentation.cart.SupporterCartViewModel
 import com.good4.supporter.presentation.cart.SupporterOrderSummaryScreen
 import com.good4.supporter.presentation.cart.totalItemCount
+import com.good4.supporter.presentation.products.SupporterProductListAction
 import com.good4.supporter.presentation.products.SupporterProductListScreenRoot
 import com.good4.supporter.presentation.products.SupporterProductListViewModel
 import com.good4.supporter.presentation.profile.SupporterProfileScreen
+import com.good4.supporter.presentation.profile.SupporterProfileViewModel
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.supporter_home_tab_cart
 import good4.composeapp.generated.resources.supporter_home_tab_dashboard
@@ -90,6 +92,7 @@ fun SupporterHomeScreen(
     onLogout: () -> Unit
 ) {
     val cartState by cartViewModel.state.collectAsStateWithLifecycle()
+    val profileViewModel: SupporterProfileViewModel = koinViewModel()
     val cartItemCounts = cartState.items.associate { it.product.documentId to it.quantity }
     val totalItemCount = cartState.totalItemCount
 
@@ -112,6 +115,14 @@ fun SupporterHomeScreen(
     )
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(selectedItemIndex) {
+        when (selectedItemIndex) {
+            0 -> productListViewModel.onAction(SupporterProductListAction.OnRefresh)
+            1 -> cartViewModel.onAction(SupporterCartAction.OnRefreshActiveOrders)
+            2 -> profileViewModel.refresh()
+        }
+    }
 
     Good4NestedScaffold(
         modifier = modifier,
@@ -171,7 +182,10 @@ fun SupporterHomeScreen(
                         )
                     }
                 }
-                2 -> SupporterProfileScreen(onLogout = onLogout)
+                2 -> SupporterProfileScreen(
+                    viewModel = profileViewModel,
+                    onLogout = onLogout
+                )
             }
         }
     }

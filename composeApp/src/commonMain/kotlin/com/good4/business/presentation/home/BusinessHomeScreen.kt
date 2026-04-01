@@ -34,6 +34,7 @@ import com.good4.business.presentation.dashboard.BusinessDashboardViewModel
 import com.good4.business.presentation.products.BusinessProductsScreenRoot
 import com.good4.business.presentation.products.BusinessProductsViewModel
 import com.good4.business.presentation.profile.BusinessProfileScreen
+import com.good4.business.presentation.profile.BusinessProfileViewModel
 import com.good4.business.presentation.verify.VerifyCodeScreen
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
@@ -85,11 +86,13 @@ fun BusinessHomeScreenRoot(
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     val dashboardViewModel: BusinessDashboardViewModel = koinViewModel()
     val productsViewModel: BusinessProductsViewModel = koinViewModel()
+    val profileViewModel: BusinessProfileViewModel = koinViewModel()
 
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
             0 -> dashboardViewModel.refreshDashboard()
             2 -> productsViewModel.refreshProducts()
+            3 -> profileViewModel.refresh()
         }
     }
 
@@ -142,7 +145,10 @@ fun BusinessHomeScreenRoot(
                 )
                 1 -> VerifyCodeScreen()
                 2 -> BusinessProductsScreenRoot(viewModel = productsViewModel)
-                3 -> BusinessProfileScreen(onLogout = onLogout)
+                3 -> BusinessProfileScreen(
+                    viewModel = profileViewModel,
+                    onLogout = onLogout
+                )
             }
         }
     }
