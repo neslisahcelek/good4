@@ -15,8 +15,6 @@ data class ProductDto(
     val dailyPendingLimit: Int? = null,
     @SerialName("isDonation")
     val isDonation: Boolean? = null,
-    @SerialName("lastDailyResetEpochDay")
-    val lastDailyResetEpochDay: Int? = null,
     @SerialName("businessId")
     val businessId: String? = null,
     @SerialName("createdAt")

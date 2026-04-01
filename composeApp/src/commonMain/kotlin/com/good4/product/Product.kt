@@ -17,7 +17,6 @@ data class Product(
     val pendingCount: Int = 0,
     val dailyPendingLimit: Int? = null,
     val isDonation: Boolean = false,
-    val lastDailyResetEpochDay: Int? = null,
     val totalDelivered: Int = 0,
     val totalSuspended: Int = 0,
     val createdAt: Long? = null

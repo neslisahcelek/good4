@@ -5,12 +5,8 @@ import com.good4.business.domain.Business
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
-import com.good4.core.util.Logger
 import com.good4.product.Product
 import com.good4.product.data.dto.ProductDto
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 class FirestoreProductRepository(
     private val firestoreRepository: FirestoreRepository,
@@ -34,12 +30,8 @@ class FirestoreProductRepository(
                 }
                 
                 val products = result.data.map { documentWithId ->
-                    val productDto = refreshDonationQuotaIfNeeded(
-                        documentId = documentWithId.id,
-                        product = documentWithId.data
-                    )
-                    val business = productDto.businessId?.let { businessCache[it] }
-                    productDto.toProduct(documentWithId.id, business)
+                    val business = documentWithId.data.businessId?.let { businessCache[it] }
+                    documentWithId.data.toProduct(documentWithId.id, business)
                 }.let { items ->
                     if (includeOutOfStock) {
                         items
@@ -71,11 +63,7 @@ class FirestoreProductRepository(
                 }
 
                 val products = result.data.map { documentWithId ->
-                    val productDto = refreshDonationQuotaIfNeeded(
-                        documentId = documentWithId.id,
-                        product = documentWithId.data
-                    )
-                    productDto.toProduct(documentWithId.id, business)
+                    documentWithId.data.toProduct(documentWithId.id, business)
                 }.let { items ->
                     if (includeOutOfStock) items else items.filter { it.pendingCount > 0 }
                 }
@@ -89,11 +77,7 @@ class FirestoreProductRepository(
     suspend fun getProductById(id: String): Result<Product, Error> {
         return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
             is Result.Success -> {
-                val productDto = refreshDonationQuotaIfNeeded(
-                    documentId = id,
-                    product = result.data
-                )
-                val businessResult = productDto.businessId?.let { businessId ->
+                val businessResult = result.data.businessId?.let { businessId ->
                     businessRepository.getBusinessById(businessId)
                 }
                 
@@ -102,7 +86,7 @@ class FirestoreProductRepository(
                     else -> null
                 }
                 
-                Result.Success(productDto.toProduct(id, business))
+                Result.Success(result.data.toProduct(id, business))
             }
             is Result.Error -> result
         }
@@ -165,39 +149,6 @@ class FirestoreProductRepository(
         return firestoreRepository.deleteDocument("products", id)
     }
 
-    private suspend fun refreshDonationQuotaIfNeeded(
-        documentId: String,
-        product: ProductDto
-    ): ProductDto {
-        if (product.isDonation != true) return product
-
-        val dailyLimit = product.dailyPendingLimit ?: return product
-        if (dailyLimit <= 0) return product
-
-        val todayEpochDay = currentDonationDateKey()
-        if (product.lastDailyResetEpochDay == todayEpochDay) {
-            return product
-        }
-
-        val updatedProduct = product.copy(
-            pendingCount = dailyLimit,
-            originalPrice = 0,
-            discountPrice = 0,
-            isDonation = true,
-            lastDailyResetEpochDay = todayEpochDay
-        )
-
-        return when (val updateResult = updateProduct(documentId, updatedProduct)) {
-            is Result.Success -> updatedProduct
-            is Result.Error -> {
-                Logger.e(
-                    tag = "FirestoreProductRepo",
-                    message = "donation_quota_reset_failed | productId=$documentId | error=${updateResult.error.message}"
-                )
-                product
-            }
-        }
-    }
 }
 
 private fun ProductDto.toProduct(documentId: String, business: Business?): Product {
@@ -226,14 +177,8 @@ private fun ProductDto.toProduct(documentId: String, business: Business?): Produ
         pendingCount = pendingCount ?: 0,
         dailyPendingLimit = dailyPendingLimit,
         isDonation = isDonation ?: false,
-        lastDailyResetEpochDay = lastDailyResetEpochDay,
         totalDelivered = totalDelivered ?: 0,
         totalSuspended = totalSuspended ?: 0,
         createdAt = createdAt
     )
-}
-
-private fun currentDonationDateKey(): Int {
-    val date = Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul")).date
-    return (date.year * 10_000) + (date.monthNumber * 100) + date.dayOfMonth
 }

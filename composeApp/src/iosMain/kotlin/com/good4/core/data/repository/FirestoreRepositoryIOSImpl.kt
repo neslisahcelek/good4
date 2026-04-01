@@ -481,7 +481,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             pendingCount = document.getOrNull("pendingCount"),
             dailyPendingLimit = document.getAsInt("dailyPendingLimit"),
             isDonation = document.getOrNull("isDonation"),
-            lastDailyResetEpochDay = document.getAsInt("lastDailyResetEpochDay"),
             businessId = document.getOrNull("businessId"),
             createdAt = document.getEpochSeconds("createdAt"),
             discountPrice = document.getOrNull("discountPrice"),

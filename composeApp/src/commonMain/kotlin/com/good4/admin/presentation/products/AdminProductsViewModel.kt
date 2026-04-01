@@ -20,8 +20,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 class AdminProductsViewModel(
@@ -29,10 +27,6 @@ class AdminProductsViewModel(
     private val businessRepository: FirestoreBusinessRepository,
     private val productImageUploadRepository: ProductImageUploadRepository
 ) : ViewModel() {
-    companion object {
-        private val DONATION_RESET_TIME_ZONE = TimeZone.of("Europe/Istanbul")
-    }
-
     private val _state = MutableStateFlow(AdminProductsState())
     val state = _state.asStateFlow()
 
@@ -249,7 +243,6 @@ class AdminProductsViewModel(
 
             val isDonation = snapshot.isDonationProduct
             val donationLimit = if (isDonation) snapshot.productDailyPendingLimit.toIntOrNull() else null
-
             val productDto = ProductDto(
                 name = snapshot.productName,
                 description = snapshot.productDescription.ifBlank { null },
@@ -259,7 +252,6 @@ class AdminProductsViewModel(
                 pendingCount = if (isDonation) donationLimit else null,
                 dailyPendingLimit = donationLimit,
                 isDonation = isDonation,
-                lastDailyResetEpochDay = if (isDonation) currentDonationDateKey() else null,
                 imageUrl = imageUrl,
                 totalDelivered = 0,
                 totalSuspended = 0,
@@ -357,7 +349,6 @@ class AdminProductsViewModel(
 
             val isDonation = snapshot.isDonationProduct
             val donationLimit = if (isDonation) snapshot.productDailyPendingLimit.toIntOrNull() else null
-
             val productDto = ProductDto(
                 name = snapshot.productName,
                 description = snapshot.productDescription.ifBlank { null },
@@ -368,7 +359,6 @@ class AdminProductsViewModel(
                 pendingCount = if (isDonation) donationLimit else null,
                 dailyPendingLimit = donationLimit,
                 isDonation = isDonation,
-                lastDailyResetEpochDay = if (isDonation) currentDonationDateKey() else null,
                 totalDelivered = product.totalDelivered,
                 totalSuspended = product.totalSuspended,
                 createdAt = product.createdAt
@@ -462,8 +452,4 @@ class AdminProductsViewModel(
         return value <= 0
     }
 
-    private fun currentDonationDateKey(): Int {
-        val date = Clock.System.now().toLocalDateTime(DONATION_RESET_TIME_ZONE).date
-        return (date.year * 10_000) + (date.monthNumber * 100) + date.dayOfMonth
-    }
 }
