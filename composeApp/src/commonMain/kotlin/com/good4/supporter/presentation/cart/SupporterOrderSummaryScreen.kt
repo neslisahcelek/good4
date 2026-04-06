@@ -2,6 +2,7 @@ package com.good4.supporter.presentation.cart
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Store
@@ -39,6 +41,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.supporter_cart_total
@@ -55,6 +58,7 @@ import org.jetbrains.compose.resources.stringResource
 fun SupporterOrderSummaryScreen(
     modifier: Modifier = Modifier,
     state: SupporterCartState,
+    onProfileClick: (() -> Unit)? = null,
     onAction: (SupporterCartAction) -> Unit
 ) {
     val currencySuffix = stringResource(Res.string.price_currency_suffix)
@@ -63,7 +67,12 @@ fun SupporterOrderSummaryScreen(
         modifier = modifier,
         topBar = {
             Good4TopBar(
-                title = stringResource(Res.string.supporter_order_summary_title)
+                title = stringResource(Res.string.supporter_order_summary_title),
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -77,107 +86,113 @@ fun SupporterOrderSummaryScreen(
             if (state.items.isNotEmpty()) {
                 Column(
                     modifier = Modifier
+                        .weight(1f, fill = true)
                         .fillMaxWidth()
-                        .background(SurfaceDefault, RoundedCornerShape(16.dp))
-                        .border(1.dp, BorderMuted, RoundedCornerShape(16.dp))
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text(
-                        text = stringResource(Res.string.supporter_order_summary_card_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(SurfaceMuted, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .background(SurfaceDefault, RoundedCornerShape(16.dp))
+                            .border(1.dp, BorderMuted, RoundedCornerShape(16.dp))
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Store,
-                            contentDescription = null,
-                            tint = DeepGreen
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = state.items.first().product.storeName,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            text = stringResource(Res.string.supporter_order_summary_card_title),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
-                    }
 
-                    state.items.forEach { cartItem ->
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(SurfaceMuted, RoundedCornerShape(12.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "${cartItem.quantity}x ${cartItem.product.name}",
-                                fontSize = 14.sp,
-                                color = TextPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                            Icon(
+                                imageVector = Icons.Filled.Store,
+                                contentDescription = null,
+                                tint = DeepGreen
                             )
-                            val unitPrice = (
-                                    cartItem.product.discountPrice
-                                        ?: cartItem.product.originalPrice
-                                        ?: cartItem.product.price
-                                    ).toDouble()
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "${(unitPrice * cartItem.quantity).toInt()}$currencySuffix",
-                                fontSize = 14.sp,
+                                text = state.items.first().product.storeName,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary
+                                color = TextPrimary,
                             )
                         }
+
+                        state.items.forEach { cartItem ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${cartItem.quantity}x ${cartItem.product.name}",
+                                    fontSize = 14.sp,
+                                    color = TextPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                val unitPrice = (
+                                        cartItem.product.discountPrice
+                                            ?: cartItem.product.originalPrice
+                                            ?: cartItem.product.price
+                                        ).toDouble()
+                                Text(
+                                    text = "${(unitPrice * cartItem.quantity).toInt()}$currencySuffix",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = BorderMuted)
+
+                        SummaryRow(
+                            label = stringResource(Res.string.supporter_order_summary_subtotal),
+                            value = "${state.totalPrice.toInt()}$currencySuffix",
+                            isEmphasized = false
+                        )
+                        SummaryRow(
+                            label = stringResource(Res.string.supporter_cart_total),
+                            value = "${state.totalPrice.toInt()}$currencySuffix",
+                            isEmphasized = true
+                        )
                     }
 
-                    HorizontalDivider(color = BorderMuted)
-
-                    SummaryRow(
-                        label = stringResource(Res.string.supporter_order_summary_subtotal),
-                        value = "${state.totalPrice.toInt()}$currencySuffix",
-                        isEmphasized = false
-                    )
-                    SummaryRow(
-                        label = stringResource(Res.string.supporter_cart_total),
-                        value = "${state.totalPrice.toInt()}$currencySuffix",
-                        isEmphasized = true
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(SurfaceDefault, RoundedCornerShape(14.dp))
+                            .border(1.dp, DeepGreen.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                            .padding(14.dp)
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.supporter_order_summary_info_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(Res.string.supporter_order_summary_info_text),
+                            fontSize = 15.sp,
+                            color = TextSecondary
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(SurfaceDefault, RoundedCornerShape(14.dp))
-                        .border(1.dp, DeepGreen.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                        .padding(14.dp)
-                ) {
-                    Text(
-                        text = stringResource(Res.string.supporter_order_summary_info_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(Res.string.supporter_order_summary_info_text),
-                        fontSize = 15.sp,
-                        color = TextSecondary
-                    )
-                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f, fill = true))
             }
-
-            Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = { onAction(SupporterCartAction.OnConfirmCreateOrder) },

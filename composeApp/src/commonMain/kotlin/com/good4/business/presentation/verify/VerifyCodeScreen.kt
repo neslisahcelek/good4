@@ -58,6 +58,7 @@ import com.good4.core.presentation.components.StandardButtonHeight
 import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.util.singleClick
 import com.good4.core.util.toInitials
 import com.good4.order.domain.Order
@@ -90,7 +91,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun VerifyCodeScreen(
     modifier: Modifier = Modifier,
-    viewModel: VerifyCodeViewModel = koinViewModel()
+    viewModel: VerifyCodeViewModel = koinViewModel(),
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
@@ -109,7 +111,16 @@ fun VerifyCodeScreen(
 
     Good4NestedScaffold(
         modifier = modifier,
-        topBar = { Good4TopBar(title = stringResource(Res.string.verify_code)) }
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.verify_code),
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         if (state.isBusinessContextLoading) {
             Box(

@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -42,12 +40,9 @@ import com.good4.supporter.presentation.cart.totalItemCount
 import com.good4.supporter.presentation.products.SupporterProductListAction
 import com.good4.supporter.presentation.products.SupporterProductListScreenRoot
 import com.good4.supporter.presentation.products.SupporterProductListViewModel
-import com.good4.supporter.presentation.profile.SupporterProfileScreen
-import com.good4.supporter.presentation.profile.SupporterProfileViewModel
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.supporter_home_tab_cart
 import good4.composeapp.generated.resources.supporter_home_tab_dashboard
-import good4.composeapp.generated.resources.supporter_home_tab_profile
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -62,6 +57,7 @@ data class SupporterNavItem(
 fun SupporterHomeScreenRoot(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
+    onNavigateToProfile: () -> Unit,
     onNavigateToOrderCode: (orderId: String) -> Unit
 ) {
     val cartViewModel: SupporterCartViewModel = koinViewModel()
@@ -80,7 +76,8 @@ fun SupporterHomeScreenRoot(
         modifier = modifier,
         cartViewModel = cartViewModel,
         productListViewModel = productListViewModel,
-        onLogout = onLogout
+        onLogout = onLogout,
+        onNavigateToProfile = onNavigateToProfile
     )
 }
 
@@ -89,10 +86,10 @@ fun SupporterHomeScreen(
     modifier: Modifier = Modifier,
     cartViewModel: SupporterCartViewModel,
     productListViewModel: SupporterProductListViewModel,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     val cartState by cartViewModel.state.collectAsStateWithLifecycle()
-    val profileViewModel: SupporterProfileViewModel = koinViewModel()
     val cartItemCounts = cartState.items.associate { it.product.documentId to it.quantity }
     val totalItemCount = cartState.totalItemCount
 
@@ -106,11 +103,6 @@ fun SupporterHomeScreen(
             title = stringResource(Res.string.supporter_home_tab_cart),
             selectedIcon = Icons.Filled.ShoppingCart,
             unselectedIcon = Icons.Outlined.ShoppingCart
-        ),
-        SupporterNavItem(
-            title = stringResource(Res.string.supporter_home_tab_profile),
-            selectedIcon = Icons.Filled.Person,
-            unselectedIcon = Icons.Outlined.Person
         )
     )
 
@@ -120,7 +112,6 @@ fun SupporterHomeScreen(
         when (selectedItemIndex) {
             0 -> productListViewModel.onAction(SupporterProductListAction.OnRefresh)
             1 -> cartViewModel.onAction(SupporterCartAction.OnRefreshActiveOrders)
-            2 -> profileViewModel.refresh()
         }
     }
 
@@ -167,25 +158,24 @@ fun SupporterHomeScreen(
                 0 -> SupporterProductListScreenRoot(
                     viewModel = productListViewModel,
                     cartItemCounts = cartItemCounts,
+                    onProfileClick = onNavigateToProfile,
                     onAddToCart = { cartViewModel.onAction(SupporterCartAction.OnAddItem(it)) }
                 )
                 1 -> {
                     if (cartState.isReviewingOrder) {
                         SupporterOrderSummaryScreen(
                             state = cartState,
+                            onProfileClick = onNavigateToProfile,
                             onAction = cartViewModel::onAction
                         )
                     } else {
                         SupporterCartScreen(
                             state = cartState,
+                            onProfileClick = onNavigateToProfile,
                             onAction = cartViewModel::onAction
                         )
                     }
                 }
-                2 -> SupporterProfileScreen(
-                    viewModel = profileViewModel,
-                    onLogout = onLogout
-                )
             }
         }
     }

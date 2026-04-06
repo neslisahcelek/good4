@@ -44,6 +44,7 @@ import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ImagePreviewBox
+import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_campaign
 import good4.composeapp.generated.resources.admin_campaigns_empty
@@ -59,7 +60,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AdminCampaignsScreen(
     modifier: Modifier = Modifier,
     viewModel: AdminCampaignsViewModel = koinViewModel(),
-    onMenuClick: (() -> Unit)? = null
+    onMenuClick: (() -> Unit)? = null,
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
@@ -75,6 +77,11 @@ fun AdminCampaignsScreen(
                         IconButton(onClick = onMenuClick) {
                             Icon(Icons.Filled.Menu, contentDescription = null)
                         }
+                    }
+                },
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
                     }
                 }
             )

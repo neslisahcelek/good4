@@ -48,6 +48,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.StatCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.dashboard_code_prefix
@@ -82,6 +83,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun BusinessDashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: BusinessDashboardViewModel = koinViewModel(),
+    onProfileClick: (() -> Unit)? = null,
     onOpenProductsTab: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -106,6 +108,11 @@ fun BusinessDashboardScreen(
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
+                },
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
+                    }
                 }
             )
         }

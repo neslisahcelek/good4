@@ -16,11 +16,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,22 +34,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.good4.admin.presentation.campaigns.AdminCampaignsScreen
 import com.good4.admin.presentation.dashboard.AdminDashboardScreen
-import com.good4.admin.presentation.profile.AdminProfileScreen
-import com.good4.admin.presentation.products.AdminProductsScreen
 import com.good4.admin.presentation.editstudentcredit.EditStudentCreditScreen
+import com.good4.admin.presentation.products.AdminProductsScreen
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.admin_drawer_edit_student_credit
-import good4.composeapp.generated.resources.admin_drawer_profile
 import good4.composeapp.generated.resources.admin_nav_campaigns
 import good4.composeapp.generated.resources.admin_nav_dashboard
 import good4.composeapp.generated.resources.admin_nav_products
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.launch
 
 data class AdminNavItem(
     val title: String,
@@ -60,7 +58,7 @@ data class AdminNavItem(
 @Composable
 fun AdminHomeScreenRoot(
     modifier: Modifier = Modifier,
-    onLogout: () -> Unit
+    onNavigateToProfile: () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -100,20 +98,6 @@ fun AdminHomeScreenRoot(
                         Icon(
                             imageVector = Icons.Filled.Person,
                             contentDescription = stringResource(Res.string.admin_drawer_edit_student_credit)
-                        )
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text(stringResource(Res.string.admin_drawer_profile)) },
-                    selected = selectedDrawerItem == 1,
-                    onClick = {
-                        selectedDrawerItem = 1
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = stringResource(Res.string.admin_drawer_profile)
                         )
                     }
                 )
@@ -167,20 +151,23 @@ fun AdminHomeScreenRoot(
             ) {
                 when {
                     selectedDrawerItem == 0 -> EditStudentCreditScreen(
-                        onMenuClick = { scope.launch { drawerState.open() } }
-                    )
-                    selectedDrawerItem == 1 -> AdminProfileScreen(
                         onMenuClick = { scope.launch { drawerState.open() } },
-                        onLogout = onLogout
+                        onProfileClick = onNavigateToProfile
                     )
+
                     selectedItemIndex == 0 -> AdminDashboardScreen(
-                        onMenuClick = { scope.launch { drawerState.open() } }
+                        onMenuClick = { scope.launch { drawerState.open() } },
+                        onProfileClick = onNavigateToProfile
                     )
+
                     selectedItemIndex == 1 -> AdminProductsScreen(
-                        onMenuClick = { scope.launch { drawerState.open() } }
+                        onMenuClick = { scope.launch { drawerState.open() } },
+                        onProfileClick = onNavigateToProfile
                     )
+
                     else -> AdminCampaignsScreen(
-                        onMenuClick = { scope.launch { drawerState.open() } }
+                        onMenuClick = { scope.launch { drawerState.open() } },
+                        onProfileClick = onNavigateToProfile
                     )
                 }
             }
@@ -192,6 +179,8 @@ fun AdminHomeScreenRoot(
 @Composable
 fun AdminHomeScreenPreview() {
     MaterialTheme {
-        AdminHomeScreenRoot(onLogout = {})
+        AdminHomeScreenRoot(
+            onNavigateToProfile = {}
+        )
     }
 }

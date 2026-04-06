@@ -8,16 +8,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -52,12 +52,12 @@ import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
-import com.good4.core.presentation.SurfaceCanvasWarm
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.ReservationTimeCalculator
 import com.good4.core.util.openMaps
@@ -75,7 +75,6 @@ import good4.composeapp.generated.resources.product_list_countdown_prefix
 import good4.composeapp.generated.resources.product_list_greeting_prefix
 import good4.composeapp.generated.resources.product_list_greeting_suffix
 import good4.composeapp.generated.resources.product_list_order_code_label
-import good4.composeapp.generated.resources.product_list_section_today_menu
 import good4.composeapp.generated.resources.products_load_error
 import good4.composeapp.generated.resources.reservation_status_pending
 import good4.composeapp.generated.resources.time_minute_suffix
@@ -91,6 +90,7 @@ import kotlin.time.Duration.Companion.seconds
 fun ProductListScreenRoot(
     modifier: Modifier = Modifier,
     viewModel: ProductListViewModel = koinViewModel(),
+    onProfileClick: (() -> Unit)? = null,
     onReservationCardClick: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -104,6 +104,7 @@ fun ProductListScreenRoot(
     ProductListScreen(
         modifier = modifier,
         state = state,
+        onProfileClick = onProfileClick,
         onReservationCardClick = onReservationCardClick,
         onAction = { action ->
             viewModel.onAction(action)
@@ -115,6 +116,7 @@ fun ProductListScreenRoot(
 fun ProductListScreen(
     modifier: Modifier = Modifier,
     state: ProductListState,
+    onProfileClick: (() -> Unit)? = null,
     onReservationCardClick: () -> Unit = {},
     onAction: (ProductListAction) -> Unit
 ) {
@@ -127,7 +129,7 @@ fun ProductListScreen(
     }
 
     Good4NestedScaffold(
-        modifier = modifier,
+        modifier = modifier
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -143,30 +145,25 @@ fun ProductListScreen(
                     )
                 }
 
-                state.products.isEmpty() -> {
-                    Text(
-                        text = stringResource(Res.string.products_load_error),
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
-                }
-
                 else -> {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
-                            top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
+                            top = if (onProfileClick == null) {
+                                WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
+                            } else {
+                                0.dp
+                            },
                             bottom = 16.dp
                         )
                     ) {
                         if (state.userName != null) {
                             item {
-                                ProductListGreetingHeader(userName = state.userName)
+                                ProductListGreetingHeader(
+                                    userName = state.userName,
+                                    onProfileClick = onProfileClick
+                                )
                             }
                         }
 
@@ -195,38 +192,46 @@ fun ProductListScreen(
                             }
                         }
 
-                        item {
-                            ProductListSectionTitle(
-                                title = stringResource(Res.string.product_list_section_today_menu)
-                            )
-                        }
+                        if (state.products.isEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(Res.string.products_load_error),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp).padding(top = 60.dp),
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary
+                                )
+                            }
+                        } else {
+                            items(
+                                items = state.products,
+                                key = { it.documentId }
+                            ) { product ->
+                                val isReservedProduct =
+                                    state.activeReservation?.product?.documentId == product.documentId
+                                val canReserve =
+                                    state.activeReservation == null && !state.isReserving
 
-                        items(
-                            items = state.products,
-                            key = { it.documentId }
-                        ) { product ->
-                            val isReservedProduct =
-                                state.activeReservation?.product?.documentId == product.documentId
-                            val canReserve =
-                                state.activeReservation == null && !state.isReserving
-
-                            ProductItem(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                product = product,
-                                onReserveClick = {
-                                    onAction(
-                                        ProductListAction.OnReserveProduct(
-                                            product
+                                ProductItem(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    product = product,
+                                    onReserveClick = {
+                                        onAction(
+                                            ProductListAction.OnReserveProduct(
+                                                product
+                                            )
                                         )
-                                    )
-                                },
-                                isReserving = state.isReserving &&
-                                    state.reservingProductId == product.documentId,
-                                reservationSuccess = isReservedProduct,
-                                isReserveEnabled = canReserve
-                            )
+                                    },
+                                    isReserving = state.isReserving &&
+                                            state.reservingProductId == product.documentId,
+                                    reservationSuccess = isReservedProduct,
+                                    isReserveEnabled = canReserve
+                                )
+                            }
                         }
                     }
                 }
@@ -244,23 +249,32 @@ fun ProductListScreen(
 @Composable
 private fun ProductListGreetingHeader(
     modifier: Modifier = Modifier,
-    userName: String
+    userName: String,
+    onProfileClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 8.dp,
+                bottom = 8.dp
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = stringResource(Res.string.product_list_greeting_prefix) +
-                userName +
-                stringResource(Res.string.product_list_greeting_suffix),
+                    userName +
+                    stringResource(Res.string.product_list_greeting_suffix),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
             modifier = Modifier.weight(1f)
         )
+        if (onProfileClick != null) {
+            ProfileTopBarAction(onClick = onProfileClick)
+        }
     }
 }
 
@@ -462,7 +476,7 @@ private fun ProductListActiveReservationCard(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = stringResource(Res.string.product_list_countdown_prefix) +
-                                        remainingTime,
+                                            remainingTime,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = PrimaryGreen

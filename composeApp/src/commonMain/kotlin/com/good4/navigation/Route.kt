@@ -24,21 +24,45 @@ sealed class Route {
     
     @Serializable
     data object StudentHome : Route()
+
+    @Serializable
+    data object StudentProfile : Route()
+
+    @Serializable
+    data object StudentAccountSettings : Route()
     
     @Serializable
     data class ProductDetail(val productId: String) : Route()
     
     @Serializable
     data object BusinessHome : Route()
+
+    @Serializable
+    data object BusinessProfile : Route()
+
+    @Serializable
+    data object BusinessAccountSettings : Route()
     
     @Serializable
     data object AdminHome : Route()
+
+    @Serializable
+    data object AdminProfile : Route()
+
+    @Serializable
+    data object AdminAccountSettings : Route()
 
     @Serializable
     data object SupporterRegister : Route()
 
     @Serializable
     data object SupporterHome : Route()
+
+    @Serializable
+    data object SupporterProfile : Route()
+
+    @Serializable
+    data object SupporterAccountSettings : Route()
 
     @Serializable
     data class SupporterOrderCode(val orderId: String) : Route()

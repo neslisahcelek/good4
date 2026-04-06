@@ -43,14 +43,13 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.StatCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.admin_dashboard
 import good4.composeapp.generated.resources.admin_dashboard_active_products
 import good4.composeapp.generated.resources.admin_dashboard_businesses
 import good4.composeapp.generated.resources.admin_dashboard_campaigns
-import good4.composeapp.generated.resources.admin_dashboard_quick_actions_subtitle
-import good4.composeapp.generated.resources.admin_dashboard_quick_actions_title
 import good4.composeapp.generated.resources.admin_dashboard_stock_suffix
 import good4.composeapp.generated.resources.admin_dashboard_total_products
 import good4.composeapp.generated.resources.admin_dashboard_users
@@ -64,7 +63,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AdminDashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: AdminDashboardViewModel = koinViewModel(),
-    onMenuClick: (() -> Unit)? = null
+    onMenuClick: (() -> Unit)? = null,
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
@@ -83,6 +83,11 @@ fun AdminDashboardScreen(
                     IconButton(onClick = onMenuClick) {
                         Icon(Icons.Filled.Menu, contentDescription = null)
                     }
+                }
+            },
+            actions = {
+                if (onProfileClick != null) {
+                    ProfileTopBarAction(onClick = onProfileClick)
                 }
             }
         )

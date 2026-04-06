@@ -34,6 +34,7 @@ import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ReservationCard
 import good4.composeapp.generated.resources.Res
@@ -59,13 +60,15 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun StudentReservationsScreen(
     modifier: Modifier = Modifier,
-    viewModel: StudentReservationsViewModel = koinViewModel()
+    viewModel: StudentReservationsViewModel = koinViewModel(),
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     StudentReservationsContent(
         modifier = modifier,
         state = state,
+        onProfileClick = onProfileClick,
         onCancelReservation = viewModel::cancelReservation
     )
 }
@@ -75,11 +78,21 @@ fun StudentReservationsScreen(
 private fun StudentReservationsContent(
     modifier: Modifier = Modifier,
     state: StudentReservationsState,
+    onProfileClick: (() -> Unit)? = null,
     onCancelReservation: (String) -> Unit
 ) {
     Good4NestedScaffold(
         modifier = modifier,
-        topBar = { Good4TopBar(title = stringResource(Res.string.student_reservations_title)) }
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.student_reservations_title),
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -268,5 +281,4 @@ fun StudentReservationsScreenPreview() {
         )
     }
 }
-
 

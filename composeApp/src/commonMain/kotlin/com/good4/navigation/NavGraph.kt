@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.good4.admin.presentation.home.AdminHomeScreenRoot
+import com.good4.admin.presentation.profile.AdminProfileScreen
 import com.good4.auth.presentation.login.LoginScreenRoot
 import com.good4.auth.presentation.login.LoginViewModel
 import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
@@ -19,15 +20,20 @@ import com.good4.auth.presentation.register.supporter.SupporterRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
+import com.good4.business.presentation.profile.BusinessProfileScreen
 import com.good4.core.presentation.sessionrestore.SessionRestoreScreenRoot
 import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashScreenRoot
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.student.presentation.home.StudentHomeScreenRoot
+import com.good4.student.presentation.profile.StudentProfileScreen
 import com.good4.supporter.presentation.home.SupporterHomeScreenRoot
 import com.good4.supporter.presentation.ordercode.SupporterOrderCodeScreenRoot
 import com.good4.supporter.presentation.ordercode.SupporterOrderCodeViewModel
+import com.good4.supporter.presentation.profile.SupporterProfileScreen
 import com.good4.user.domain.UserRole
+import com.good4.user.presentation.accountsettings.AccountSettingsMode
+import com.good4.user.presentation.accountsettings.AccountSettingsScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -155,6 +161,9 @@ fun Good4NavGraph(
             StudentHomeScreenRoot(
                 onLogout = {
                     navController.navigateToLogin()
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Route.StudentProfile)
                 }
             )
         }
@@ -164,6 +173,9 @@ fun Good4NavGraph(
             BusinessHomeScreenRoot(
                 onLogout = {
                     navController.navigateToLogin()
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Route.BusinessProfile)
                 }
             )
         }
@@ -171,8 +183,8 @@ fun Good4NavGraph(
         // Admin Routes
         composable<Route.AdminHome> {
             AdminHomeScreenRoot(
-                onLogout = {
-                    navController.navigateToLogin()
+                onNavigateToProfile = {
+                    navController.navigate(Route.AdminProfile)
                 }
             )
         }
@@ -194,9 +206,84 @@ fun Good4NavGraph(
         composable<Route.SupporterHome> {
             SupporterHomeScreenRoot(
                 onLogout = { navController.navigateToLogin() },
+                onNavigateToProfile = {
+                    navController.navigate(Route.SupporterProfile)
+                },
                 onNavigateToOrderCode = { orderId ->
                     navController.navigate(Route.SupporterOrderCode(orderId))
                 }
+            )
+        }
+
+        composable<Route.StudentProfile> {
+            StudentProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() },
+                onOpenAccountSettings = {
+                    navController.navigate(Route.StudentAccountSettings)
+                }
+            )
+        }
+
+        composable<Route.StudentAccountSettings> {
+            AccountSettingsScreen(
+                mode = AccountSettingsMode.STUDENT,
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() }
+            )
+        }
+
+        composable<Route.BusinessProfile> {
+            BusinessProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() },
+                onOpenAccountSettings = {
+                    navController.navigate(Route.BusinessAccountSettings)
+                }
+            )
+        }
+
+        composable<Route.BusinessAccountSettings> {
+            AccountSettingsScreen(
+                mode = AccountSettingsMode.BUSINESS,
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() }
+            )
+        }
+
+        composable<Route.SupporterProfile> {
+            SupporterProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() },
+                onOpenAccountSettings = {
+                    navController.navigate(Route.SupporterAccountSettings)
+                }
+            )
+        }
+
+        composable<Route.SupporterAccountSettings> {
+            AccountSettingsScreen(
+                mode = AccountSettingsMode.SUPPORTER,
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() }
+            )
+        }
+
+        composable<Route.AdminProfile> {
+            AdminProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() },
+                onOpenAccountSettings = {
+                    navController.navigate(Route.AdminAccountSettings)
+                }
+            )
+        }
+
+        composable<Route.AdminAccountSettings> {
+            AccountSettingsScreen(
+                mode = AccountSettingsMode.ADMIN,
+                onBackClick = { navController.popBackStack() },
+                onLogout = { navController.navigateToLogin() }
             )
         }
 

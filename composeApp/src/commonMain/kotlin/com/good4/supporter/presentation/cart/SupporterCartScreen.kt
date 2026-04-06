@@ -49,6 +49,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ReservationCard
 import com.good4.core.util.ReservationTimeCalculator
 import good4.composeapp.generated.resources.Res
@@ -73,6 +74,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun SupporterCartScreen(
     modifier: Modifier = Modifier,
     state: SupporterCartState,
+    onProfileClick: (() -> Unit)? = null,
     onAction: (SupporterCartAction) -> Unit
 ) {
     LaunchedEffect(Unit) {
@@ -89,6 +91,11 @@ fun SupporterCartScreen(
                             text = stringResource(Res.string.supporter_cart),
                             fontWeight = FontWeight.SemiBold
                         )
+                    }
+                },
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
                     }
                 }
             )

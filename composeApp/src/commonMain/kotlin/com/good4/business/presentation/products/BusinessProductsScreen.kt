@@ -37,6 +37,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_content_desc
@@ -57,7 +58,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun BusinessProductsScreenRoot(
     modifier: Modifier = Modifier,
-    viewModel: BusinessProductsViewModel = koinViewModel()
+    viewModel: BusinessProductsViewModel = koinViewModel(),
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -89,7 +91,16 @@ fun BusinessProductsScreenRoot(
 
     Good4NestedScaffold(
         modifier = modifier,
-        topBar = { Good4TopBar(title = stringResource(Res.string.business_products_title)) },
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.business_products_title),
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddSheet = true },

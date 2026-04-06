@@ -34,6 +34,30 @@ class UserRepository(
         return firestoreRepository.updateDocument("users", userId, userDto)
     }
 
+    suspend fun updateUserProfile(
+        userId: String,
+        fullName: String,
+        phoneNumber: String?,
+        university: String? = null,
+        major: String? = null,
+        educationLevel: String? = null
+    ): Result<Unit, Error> {
+        return when (val result = getUserDto(userId)) {
+            is Result.Success -> {
+                val updatedDto = result.data.copy(
+                    fullName = fullName.trim(),
+                    phoneNumber = phoneNumber?.trim().orEmpty().ifBlank { null },
+                    university = university?.trim().orEmpty().ifBlank { null },
+                    major = major?.trim().orEmpty().ifBlank { null },
+                    educationLevel = educationLevel?.trim().orEmpty().ifBlank { null }
+                )
+                updateUser(userId, updatedDto)
+            }
+
+            is Result.Error -> result
+        }
+    }
+
     suspend fun updateStudentWeeklyCreditOverride(
         userId: String,
         weeklyCreditOverride: Int?

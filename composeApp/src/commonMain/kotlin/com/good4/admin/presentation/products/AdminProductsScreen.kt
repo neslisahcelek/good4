@@ -41,6 +41,7 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ProductListCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_product
@@ -58,7 +59,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AdminProductsScreen(
     modifier: Modifier = Modifier,
     viewModel: AdminProductsViewModel = koinViewModel(),
-    onMenuClick: (() -> Unit)? = null
+    onMenuClick: (() -> Unit)? = null,
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
@@ -80,6 +82,11 @@ fun AdminProductsScreen(
                         IconButton(onClick = onMenuClick) {
                             Icon(Icons.Filled.Menu, contentDescription = null)
                         }
+                    }
+                },
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
                     }
                 }
             )

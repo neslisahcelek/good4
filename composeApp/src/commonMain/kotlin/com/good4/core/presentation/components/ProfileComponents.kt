@@ -2,6 +2,7 @@ package com.good4.core.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,6 +30,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,11 +39,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
@@ -109,10 +114,20 @@ fun ProfileInfoCard(
     icon: ImageVector,
     title: String,
     value: String,
-    isValueUnderlined: Boolean = false
+    isValueUnderlined: Boolean = false,
+    trailingIcon: ImageVector? = null,
+    onClick: (() -> Unit)? = null
 ) {
+    val clickableModifier = if (onClick != null) {
+        Modifier.clickable(onClick = onClick)
+    } else {
+        Modifier
+    }
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(clickableModifier),
         colors = CardDefaults.cardColors(
             containerColor = SurfaceDefault
         ),
@@ -139,26 +154,69 @@ fun ProfileInfoCard(
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    fontSize = 12.sp,
-                    color = TextSecondary
-                )
-                Text(
-                    text = value,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary,
-                    textDecoration = if (isValueUnderlined) TextDecoration.Underline else null
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (title.isNotBlank()) {
+                        Text(
+                            text = title,
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                    }
+                    Text(
+                        text = value,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary,
+                        textDecoration = if (isValueUnderlined) TextDecoration.Underline else null
+                    )
+                }
+
+                if (trailingIcon != null) {
+                    Icon(
+                        imageVector = trailingIcon,
+                        contentDescription = null,
+                        tint = TextPrimary
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun ProfileLogoutButton(
+fun ProfileSectionCard(
+    modifier: Modifier = Modifier,
+    verticalSpacing: Dp = 10.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
+        border = BorderStroke(
+            width = 1.dp,
+            color = TextSecondary.copy(alpha = 0.2f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(verticalSpacing),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun ProfilePrimaryLogoutButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -166,23 +224,22 @@ fun ProfileLogoutButton(
         onClick = onClick,
         modifier = modifier
             .wrapContentWidth()
-            .height(40.dp),
+            .height(StandardButtonHeight),
         colors = ButtonDefaults.buttonColors(
-            contentColor = ErrorRed,
-            containerColor = Color.Transparent
+            containerColor = PrimaryGreen,
+            contentColor = SurfaceDefault
         ),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(width = 2.dp, color = ErrorRed)
+        shape = RoundedCornerShape(28.dp)
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
             contentDescription = null
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = stringResource(Res.string.logout),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -192,17 +249,27 @@ fun ProfileDeleteAccountButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TextButton(
+    OutlinedButton(
         onClick = onClick,
-        modifier = modifier,
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = TextSecondary
-        )
+        modifier = modifier.height(40.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = ErrorRed
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = ErrorRed
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
+        Icon(
+            imageVector = Icons.Filled.DeleteOutline,
+            contentDescription = null
+        )
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = stringResource(Res.string.delete_account),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

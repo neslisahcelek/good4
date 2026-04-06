@@ -8,13 +8,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Stairs
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,13 +33,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.DeleteAccountConfirmDialog
-import com.good4.core.presentation.components.ProfileDeleteAccountButton
+import com.good4.core.presentation.UiText
+import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileInfoCard
-import com.good4.core.presentation.components.ProfileLogoutButton
+import com.good4.core.presentation.components.ProfilePrimaryLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
+import good4.composeapp.generated.resources.account_info
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.account_settings_title
 import good4.composeapp.generated.resources.placeholder_dash
+import good4.composeapp.generated.resources.profile_title_student
 import good4.composeapp.generated.resources.profile_education_level_label
 import good4.composeapp.generated.resources.profile_major_label
 import good4.composeapp.generated.resources.profile_university_label
@@ -45,29 +55,30 @@ import org.koin.compose.viewmodel.koinViewModel
 fun StudentProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: StudentProfileViewModel = koinViewModel(),
-    onLogout: () -> Unit
+    onBackClick: () -> Unit,
+    onLogout: () -> Unit,
+    onOpenAccountSettings: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    LaunchedEffect(state.isAccountDeleted) {
-        if (state.isAccountDeleted) {
-            onLogout()
-        }
-    }
-
-    if (state.isDeleteDialogVisible) {
-        DeleteAccountConfirmDialog(
-            isDeleting = state.isDeleting,
-            onConfirm = viewModel::deleteAccount,
-            onDismiss = viewModel::hideDeleteAccountDialog
-        )
-    }
 
     ProfileScreenScaffold(
         isLoading = state.isLoading,
         modifier = modifier,
-        errorMessage = state.deleteErrorMessage,
-        onDismissError = viewModel::clearDeleteError
+        errorMessage = state.errorMessage?.let { UiText.DynamicString(it) },
+        onDismissError = {},
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.profile_title_student),
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            )
+        }
     ) {
         Box(
             modifier = Modifier
@@ -104,7 +115,7 @@ fun StudentProfileScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         ProfileInfoCard(
-            icon = Icons.Filled.Info,
+            icon = Icons.Filled.School,
             title = stringResource(Res.string.profile_university_label),
             value = state.user?.university ?: stringResource(Res.string.placeholder_dash)
         )
@@ -112,7 +123,7 @@ fun StudentProfileScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         ProfileInfoCard(
-            icon = Icons.Filled.Person,
+            icon = Icons.Filled.Book,
             title = stringResource(Res.string.profile_major_label),
             value = state.user?.major ?: stringResource(Res.string.placeholder_dash)
         )
@@ -120,28 +131,31 @@ fun StudentProfileScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         ProfileInfoCard(
-            icon = Icons.Filled.Info,
+            icon = Icons.Filled.Stairs,
             title = stringResource(Res.string.profile_education_level_label),
             value = state.user?.educationLevel ?: stringResource(Res.string.placeholder_dash)
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        ProfileInfoCard(
+            icon = Icons.Filled.Person,
+            title = stringResource(Res.string.account_info),
+            value = stringResource(Res.string.account_settings_title),
+            trailingIcon = Icons.Filled.ChevronRight,
+            onClick = onOpenAccountSettings
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
 
-        ProfileLogoutButton(
+        ProfilePrimaryLogoutButton(
             onClick = {
                 viewModel.logout()
                 onLogout()
-            },
-            modifier = Modifier.fillMaxWidth()
+            }
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
-
-        ProfileDeleteAccountButton(
-            onClick = viewModel::showDeleteAccountDialog
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -149,6 +163,10 @@ fun StudentProfileScreen(
 @Composable
 fun StudentProfileScreenPreview() {
     MaterialTheme {
-        StudentProfileScreen(onLogout = {})
+        StudentProfileScreen(
+            onBackClick = {},
+            onLogout = {},
+            onOpenAccountSettings = {}
+        )
     }
 }

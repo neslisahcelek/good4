@@ -5,15 +5,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -33,8 +30,6 @@ import com.good4.business.presentation.dashboard.BusinessDashboardScreen
 import com.good4.business.presentation.dashboard.BusinessDashboardViewModel
 import com.good4.business.presentation.products.BusinessProductsScreenRoot
 import com.good4.business.presentation.products.BusinessProductsViewModel
-import com.good4.business.presentation.profile.BusinessProfileScreen
-import com.good4.business.presentation.profile.BusinessProfileViewModel
 import com.good4.business.presentation.verify.VerifyCodeScreen
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
@@ -43,7 +38,6 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.nav_dashboard
 import good4.composeapp.generated.resources.nav_products
-import good4.composeapp.generated.resources.nav_profile
 import good4.composeapp.generated.resources.nav_verify_code
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -58,7 +52,8 @@ data class BusinessNavItem(
 @Composable
 fun BusinessHomeScreenRoot(
     modifier: Modifier = Modifier,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     val navItems = listOf(
         BusinessNavItem(
@@ -75,24 +70,17 @@ fun BusinessHomeScreenRoot(
             title = stringResource(Res.string.nav_products),
             selectedIcon = Icons.Filled.Store,
             unselectedIcon = Icons.Outlined.Store
-        ),
-        BusinessNavItem(
-            title = stringResource(Res.string.nav_profile),
-            selectedIcon = Icons.Filled.Person,
-            unselectedIcon = Icons.Outlined.Person
         )
     )
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     val dashboardViewModel: BusinessDashboardViewModel = koinViewModel()
     val productsViewModel: BusinessProductsViewModel = koinViewModel()
-    val profileViewModel: BusinessProfileViewModel = koinViewModel()
 
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
             0 -> dashboardViewModel.refreshDashboard()
             2 -> productsViewModel.refreshProducts()
-            3 -> profileViewModel.refresh()
         }
     }
 
@@ -114,7 +102,7 @@ fun BusinessHomeScreenRoot(
                                 contentDescription = item.title
                             )
                         },
-                        label = { 
+                        label = {
                             Text(
                                 text = item.title,
                                 fontSize = 11.sp,
@@ -141,13 +129,17 @@ fun BusinessHomeScreenRoot(
             when (selectedItemIndex) {
                 0 -> BusinessDashboardScreen(
                     viewModel = dashboardViewModel,
+                    onProfileClick = onNavigateToProfile,
                     onOpenProductsTab = { selectedItemIndex = 2 }
                 )
-                1 -> VerifyCodeScreen()
-                2 -> BusinessProductsScreenRoot(viewModel = productsViewModel)
-                3 -> BusinessProfileScreen(
-                    viewModel = profileViewModel,
-                    onLogout = onLogout
+
+                1 -> VerifyCodeScreen(
+                    onProfileClick = onNavigateToProfile
+                )
+
+                2 -> BusinessProductsScreenRoot(
+                    viewModel = productsViewModel,
+                    onProfileClick = onNavigateToProfile
                 )
             }
         }
@@ -158,6 +150,9 @@ fun BusinessHomeScreenRoot(
 @Composable
 fun BusinessHomeScreenPreview() {
     MaterialTheme {
-        BusinessHomeScreenRoot(onLogout = {})
+        BusinessHomeScreenRoot(
+            onLogout = {},
+            onNavigateToProfile = {}
+        )
     }
 }

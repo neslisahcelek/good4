@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,6 +56,7 @@ import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.openMaps
 import com.good4.product.Product
@@ -62,11 +66,11 @@ import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.in_cart_label
 import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.product_image_description
+import good4.composeapp.generated.resources.supporter_product_list_empty
 import good4.composeapp.generated.resources.supporter_products_greeting_prefix
 import good4.composeapp.generated.resources.supporter_products_greeting_suffix
 import good4.composeapp.generated.resources.supporter_products_name_fallback
 import good4.composeapp.generated.resources.supporter_products_prompt
-import good4.composeapp.generated.resources.supporter_product_list_empty
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -76,6 +80,7 @@ fun SupporterProductListScreenRoot(
     modifier: Modifier = Modifier,
     viewModel: SupporterProductListViewModel,
     cartItemCounts: Map<String, Int>,
+    onProfileClick: (() -> Unit)? = null,
     onAddToCart: (Product) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -88,6 +93,7 @@ fun SupporterProductListScreenRoot(
         modifier = modifier,
         state = state,
         cartItemCounts = cartItemCounts,
+        onProfileClick = onProfileClick,
         onAddToCart = onAddToCart,
         onAction = viewModel::onAction
     )
@@ -98,11 +104,12 @@ fun SupporterProductListScreen(
     modifier: Modifier = Modifier,
     state: SupporterProductListState,
     cartItemCounts: Map<String, Int> = emptyMap(),
+    onProfileClick: (() -> Unit)? = null,
     onAddToCart: (Product) -> Unit = {},
     onAction: (SupporterProductListAction) -> Unit = {}
 ) {
     Good4NestedScaffold(
-        modifier = modifier,
+        modifier = modifier
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -114,6 +121,7 @@ fun SupporterProductListScreen(
                 state.isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
+
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -122,7 +130,8 @@ fun SupporterProductListScreen(
                     ) {
                         item {
                             SupporterWelcomeCard(
-                                supporterName = state.supporterName
+                                supporterName = state.supporterName,
+                                onProfileClick = onProfileClick
                             )
                         }
                         if (state.products.isEmpty()) {
@@ -164,32 +173,44 @@ fun SupporterProductListScreen(
 @Composable
 private fun SupporterWelcomeCard(
     modifier: Modifier = Modifier,
-    supporterName: String
+    supporterName: String,
+    onProfileClick: (() -> Unit)? = null
 ) {
     val displayName = supporterName.ifBlank {
         stringResource(Res.string.supporter_products_name_fallback)
     }
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .background(PrimaryGreen)
-            .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 18.dp)
+            .padding(
+                start = 20.dp,
+                end = 10.dp,
+                top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 12.dp,
+                bottom = 18.dp
+            ),
+        verticalAlignment = Alignment.Top
     ) {
-        Text(
-            text = stringResource(Res.string.supporter_products_greeting_prefix) +
-                displayName +
-                stringResource(Res.string.supporter_products_greeting_suffix),
-            color = SurfaceDefault,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = stringResource(Res.string.supporter_products_prompt),
-            color = SurfaceDefault.copy(alpha = 0.9f),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(top = 6.dp)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(Res.string.supporter_products_greeting_prefix) +
+                        displayName +
+                        stringResource(Res.string.supporter_products_greeting_suffix),
+                color = SurfaceDefault,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(Res.string.supporter_products_prompt),
+                color = SurfaceDefault.copy(alpha = 0.9f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+        }
+        if (onProfileClick != null) {
+            ProfileTopBarAction(onClick = onProfileClick, tint = Color.White)
+        }
     }
 }
 

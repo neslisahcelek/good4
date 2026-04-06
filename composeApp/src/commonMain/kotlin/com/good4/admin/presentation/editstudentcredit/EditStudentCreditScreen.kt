@@ -1,12 +1,14 @@
 package com.good4.admin.presentation.editstudentcredit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +34,7 @@ import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.admin_users_email
 import good4.composeapp.generated.resources.admin_users_edit_credit_description
@@ -48,7 +51,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun EditStudentCreditScreen(
     modifier: Modifier = Modifier,
     viewModel: EditStudentCreditViewModel = koinViewModel(),
-    onMenuClick: (() -> Unit)? = null
+    onMenuClick: (() -> Unit)? = null,
+    onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -72,6 +76,11 @@ fun EditStudentCreditScreen(
                             Icon(Icons.Filled.Menu, contentDescription = null)
                         }
                     }
+                },
+                actions = {
+                    if (onProfileClick != null) {
+                        ProfileTopBarAction(onClick = onProfileClick)
+                    }
                 }
             )
         },
@@ -83,10 +92,12 @@ fun EditStudentCreditScreen(
                 .background(AppBackground)
                 .padding(paddingValues)
                 .padding(16.dp),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(

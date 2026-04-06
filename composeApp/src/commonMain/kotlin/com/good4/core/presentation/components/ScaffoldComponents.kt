@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
@@ -19,6 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -102,6 +109,21 @@ fun Good4TopBar(
             actionIconContentColor = TextPrimary
         )
     )
+}
+
+@Composable
+fun ProfileTopBarAction(
+    onClick: () -> Unit,
+    tint: Color = TextPrimary
+) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Outlined.AccountCircle,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(25.dp)
+        )
+    }
 }
 
 @Composable

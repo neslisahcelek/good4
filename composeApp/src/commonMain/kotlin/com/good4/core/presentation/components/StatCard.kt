@@ -82,8 +82,8 @@ fun StatCard(
                 )
                 Text(
                     text = value,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
             }

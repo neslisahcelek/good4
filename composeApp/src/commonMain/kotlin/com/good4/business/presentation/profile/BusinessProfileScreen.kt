@@ -8,11 +8,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,15 +31,19 @@ import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
+import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileInfoCard
-import com.good4.core.presentation.components.ProfileLogoutButton
+import com.good4.core.presentation.components.ProfilePrimaryLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.account_info
+import good4.composeapp.generated.resources.account_settings_title
 import good4.composeapp.generated.resources.profile_avatar_content_desc
 import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.profile_address_label
 import good4.composeapp.generated.resources.profile_phone_label
+import good4.composeapp.generated.resources.profile_title_business
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -45,7 +52,9 @@ import org.koin.compose.viewmodel.koinViewModel
 fun BusinessProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: BusinessProfileViewModel = koinViewModel(),
-    onLogout: () -> Unit
+    onBackClick: () -> Unit,
+    onLogout: () -> Unit,
+    onOpenAccountSettings: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val displayAddress = toDisplayAddressOrNull(state.address).orEmpty()
@@ -55,7 +64,20 @@ fun BusinessProfileScreen(
         isLoading = state.isLoading,
         modifier = modifier,
         errorMessage = state.errorMessage?.let { UiText.DynamicString(it) },
-        onDismissError = viewModel::dismissError
+        onDismissError = viewModel::dismissError,
+        topBar = {
+            Good4TopBar(
+                title = stringResource(Res.string.profile_title_business),
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            )
+        }
     ) {
         Box(
             modifier = Modifier
@@ -115,14 +137,23 @@ fun BusinessProfileScreen(
             value = state.phone
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        ProfileLogoutButton(
+        ProfileInfoCard(
+            icon = Icons.Filled.Home,
+            title = stringResource(Res.string.account_info),
+            value = stringResource(Res.string.account_settings_title),
+            trailingIcon = Icons.Filled.ChevronRight,
+            onClick = onOpenAccountSettings
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        ProfilePrimaryLogoutButton(
             onClick = {
                 viewModel.logout()
                 onLogout()
-            },
-            modifier = Modifier.fillMaxWidth()
+            }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -133,6 +164,10 @@ fun BusinessProfileScreen(
 @Composable
 fun BusinessProfileScreenPreview() {
     MaterialTheme {
-        BusinessProfileScreen(onLogout = {})
+        BusinessProfileScreen(
+            onBackClick = {},
+            onLogout = {},
+            onOpenAccountSettings = {}
+        )
     }
 }

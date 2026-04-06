@@ -37,6 +37,7 @@ import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.student.presentation.profile.StudentProfileViewModel
 import com.good4.student.presentation.reservations.StudentReservationsViewModel
 import com.good4.user.data.repository.UserRepository
+import com.good4.user.presentation.accountsettings.AccountSettingsViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -135,4 +136,12 @@ val commonModule = module {
     }
     viewModel { SupporterOrderCodeViewModel(get<OrderRepository>(), get<FirestoreBusinessRepository>()) }
     viewModel { SupporterProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
+    viewModel {
+        AccountSettingsViewModel(
+            get<AuthRepository>(),
+            get<UserRepository>(),
+            get<FirestoreBusinessRepository>(),
+            get<AppConfigRepository>()
+        )
+    }
 }

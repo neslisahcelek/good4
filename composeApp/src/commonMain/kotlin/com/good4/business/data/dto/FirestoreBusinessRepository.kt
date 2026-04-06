@@ -5,6 +5,7 @@ import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
+import com.good4.core.domain.ValidationError
 
 class FirestoreBusinessRepository(
     private val firestoreRepository: FirestoreRepository
@@ -54,6 +55,36 @@ class FirestoreBusinessRepository(
     
     suspend fun updateBusiness(id: String, business: BusinessDto): Result<Unit, Error> {
         return firestoreRepository.updateDocument("businesses", id, business)
+    }
+
+    suspend fun updateOwnedBusinessProfile(
+        ownerId: String,
+        businessName: String,
+        phone: String?
+    ): Result<Unit, Error> {
+        return when (val businessIdResult = getOwnedBusinessId(ownerId)) {
+            is Result.Success -> {
+                val businessId = businessIdResult.data
+                    ?: return Result.Error(ValidationError("Business not found"))
+
+                when (val businessResult = getBusinessById(businessId)) {
+                    is Result.Success -> {
+                        val normalizedPhone = phone?.trim().orEmpty()
+                        val updatedDto = businessResult.data.copy(
+                            name = businessName.trim(),
+                            phone = normalizedPhone.ifBlank {
+                                businessResult.data.phone
+                            }
+                        ).toDto()
+                        updateBusiness(businessId, updatedDto)
+                    }
+
+                    is Result.Error -> businessResult
+                }
+            }
+
+            is Result.Error -> businessIdResult
+        }
     }
     
     suspend fun deleteBusiness(id: String): Result<Unit, Error> {
