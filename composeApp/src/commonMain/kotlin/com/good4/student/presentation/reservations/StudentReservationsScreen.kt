@@ -10,13 +10,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +43,6 @@ import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ReservationCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.cancel
-import good4.composeapp.generated.resources.emoji_ticket
 import good4.composeapp.generated.resources.preview_address
 import good4.composeapp.generated.resources.preview_business_name
 import good4.composeapp.generated.resources.preview_product_name
@@ -160,9 +163,11 @@ private fun StudentReservationsContent(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = stringResource(Res.string.emoji_ticket),
-                                fontSize = 64.sp
+                            Icon(
+                                imageVector = Icons.Filled.ShoppingCart,
+                                contentDescription = null,
+                                tint = TextSecondary,
+                                modifier = Modifier.size(64.dp)
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
@@ -281,4 +286,3 @@ fun StudentReservationsScreenPreview() {
         )
     }
 }
-
