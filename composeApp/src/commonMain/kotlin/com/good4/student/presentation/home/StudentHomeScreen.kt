@@ -12,7 +12,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,8 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.good4.code.domain.CodeStatus
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextSecondary
@@ -96,13 +93,7 @@ fun StudentHomeScreenRoot(
                                 contentDescription = item.title
                             )
                         },
-                        label = {
-                            Text(
-                                text = item.title,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedItemIndex == index) FontWeight.Medium else FontWeight.Normal
-                            )
-                        },
+                        alwaysShowLabel = false,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = DeepGreen,
                             selectedTextColor = DeepGreen,

@@ -205,7 +205,6 @@ fun Good4NavGraph(
 
         composable<Route.SupporterHome> {
             SupporterHomeScreenRoot(
-                onLogout = { navController.navigateToLogin() },
                 onNavigateToProfile = {
                     navController.navigate(Route.SupporterProfile)
                 },

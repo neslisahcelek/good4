@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.DeepGreen
@@ -56,7 +55,6 @@ data class SupporterNavItem(
 @Composable
 fun SupporterHomeScreenRoot(
     modifier: Modifier = Modifier,
-    onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToOrderCode: (orderId: String) -> Unit
 ) {
@@ -76,7 +74,6 @@ fun SupporterHomeScreenRoot(
         modifier = modifier,
         cartViewModel = cartViewModel,
         productListViewModel = productListViewModel,
-        onLogout = onLogout,
         onNavigateToProfile = onNavigateToProfile
     )
 }
@@ -86,7 +83,6 @@ fun SupporterHomeScreen(
     modifier: Modifier = Modifier,
     cartViewModel: SupporterCartViewModel,
     productListViewModel: SupporterProductListViewModel,
-    onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
     val cartState by cartViewModel.state.collectAsStateWithLifecycle()
@@ -130,13 +126,7 @@ fun SupporterHomeScreen(
                                 badge = if (index == 1 && totalItemCount > 0) totalItemCount else null
                             )
                         },
-                        label = {
-                            Text(
-                                text = item.title,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedItemIndex == index) FontWeight.Medium else FontWeight.Normal
-                            )
-                        },
+                        alwaysShowLabel = false,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = DeepGreen,
                             selectedTextColor = DeepGreen,
@@ -161,6 +151,7 @@ fun SupporterHomeScreen(
                     onProfileClick = onNavigateToProfile,
                     onAddToCart = { cartViewModel.onAction(SupporterCartAction.OnAddItem(it)) }
                 )
+
                 1 -> {
                     if (cartState.isReviewingOrder) {
                         SupporterOrderSummaryScreen(
