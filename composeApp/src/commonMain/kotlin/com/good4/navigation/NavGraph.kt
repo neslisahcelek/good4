@@ -159,9 +159,6 @@ fun Good4NavGraph(
         // Student Routes
         composable<Route.StudentHome> {
             StudentHomeScreenRoot(
-                onLogout = {
-                    navController.navigateToLogin()
-                },
                 onNavigateToProfile = {
                     navController.navigate(Route.StudentProfile)
                 }

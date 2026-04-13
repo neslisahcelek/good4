@@ -22,7 +22,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -31,8 +30,8 @@ import com.good4.business.presentation.dashboard.BusinessDashboardViewModel
 import com.good4.business.presentation.products.BusinessProductsScreenRoot
 import com.good4.business.presentation.products.BusinessProductsViewModel
 import com.good4.business.presentation.verify.VerifyCodeScreen
-import com.good4.core.presentation.DeepGreen
-import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
 import good4.composeapp.generated.resources.Res
@@ -110,11 +109,11 @@ fun BusinessHomeScreenRoot(
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = DeepGreen,
-                            selectedTextColor = DeepGreen,
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary,
-                            indicatorColor = Color.Transparent
+                            selectedIconColor = TextPrimary,
+                            selectedTextColor = TextPrimary,
+                            unselectedIconColor = TextPrimary,
+                            unselectedTextColor = TextPrimary,
+                            indicatorColor = SurfaceDefault.copy(alpha = 0.95f)
                         )
                     )
                 }

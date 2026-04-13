@@ -21,8 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.good4.code.domain.CodeStatus
-import com.good4.core.presentation.DeepGreen
-import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.product.presentation.product_list.ProductListState
@@ -48,7 +48,6 @@ data class BottomNavItem(
 @Composable
 fun StudentHomeScreenRoot(
     modifier: Modifier = Modifier,
-    onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
     val navItems = listOf(
@@ -95,11 +94,11 @@ fun StudentHomeScreenRoot(
                         },
                         alwaysShowLabel = false,
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = DeepGreen,
-                            selectedTextColor = DeepGreen,
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary,
-                            indicatorColor = DeepGreen.copy(alpha = 0.18f)
+                            selectedIconColor = TextPrimary,
+                            selectedTextColor = TextPrimary,
+                            unselectedIconColor = TextPrimary,
+                            unselectedTextColor = TextPrimary,
+                            indicatorColor = SurfaceDefault.copy(alpha = 0.95f)
                         )
                     )
                 }
@@ -165,7 +164,6 @@ private fun ProductListState.toPendingReservationUiModel(): ReservationUiModel {
 fun StudentHomeScreenPreview() {
     MaterialTheme {
         StudentHomeScreenRoot(
-            onLogout = {},
             onNavigateToProfile = {}
         )
     }
