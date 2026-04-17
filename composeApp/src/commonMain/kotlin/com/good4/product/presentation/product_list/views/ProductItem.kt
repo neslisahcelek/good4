@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,9 +56,6 @@ import good4.composeapp.generated.resources.reserved
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-
-private val CardShape = RoundedCornerShape(12.dp)
-private val ImageShape = RoundedCornerShape(8.dp)
 
 @Composable
 fun ProductItem(
@@ -88,7 +84,7 @@ fun ProductItem(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = CardShape,
+        shape = RoundedCornerShape(12.dp),
         color = SurfaceDefault,
         border = BorderStroke(1.dp, BorderMuted),
         shadowElevation = 1.dp
@@ -105,7 +101,7 @@ fun ProductItem(
                 Box(
                     modifier = Modifier
                         .size(96.dp)
-                        .clip(ImageShape)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(SurfaceMuted)
                 ) {
                     if (product.imageUrl.isNotBlank()) {
@@ -176,7 +172,6 @@ fun ProductItem(
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 11.sp,
                             color = TextSecondary,
-                            fontStyle = FontStyle.Italic,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
