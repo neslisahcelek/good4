@@ -55,6 +55,7 @@ skills-lock.json
 iosApp/Pods/
 composeApp/*.podspec
 iosApp/iosApp.xcworkspace/
+!iosApp/iosApp.xcworkspace/contents.xcworkspacedata
 
 # Firebase iOS config variants
 **/GoogleService-Info*.plist
