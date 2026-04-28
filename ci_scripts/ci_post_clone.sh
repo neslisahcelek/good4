@@ -1,5 +1,4 @@
 #!/bin/zsh
-
 set -e
 
 echo "--- ci_post_clone: Starting ---"
@@ -7,24 +6,24 @@ echo "--- ci_post_clone: Starting ---"
 REPO_ROOT="${CI_PRIMARY_REPOSITORY_PATH:-.}"
 IOS_DIR="$REPO_ROOT/iosApp"
 
-# Build KMP framework first — pod install depends on local ComposeApp pod
-echo "Building KMP iOS framework..."
+echo "Repo root: $REPO_ROOT"
+
+# 1. Gradle build
 cd "$REPO_ROOT"
 chmod +x gradlew
 ./gradlew :composeApp:podPublishReleaseXCFramework
 
-# CocoaPods — must run here so .xcworkspace exists before Xcode Cloud resolves it
-if ! command -v pod &>/dev/null; then
-    echo "pod not found, installing via gem..."
-    sudo gem install cocoapods --no-document
-fi
-
-echo "Installing CocoaPods dependencies..."
+# 2. CocoaPods
 cd "$IOS_DIR"
-pod install --repo-update
-cd "$REPO_ROOT"
 
-echo "Searching for xcworkspace files:"
-find "$REPO_ROOT" -name "*.xcworkspace" -not -path "*/Pods/*"
+echo "Podfile check:"
+ls -la
+
+echo "Installing pods..."
+pod install --repo-update
+
+echo "Workspace kontrol:"
+ls -la
+find . -name "*.xcworkspace"
 
 echo "--- ci_post_clone: Done ---"
