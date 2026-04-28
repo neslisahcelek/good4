@@ -1,34 +1,33 @@
-source 'https://cdn.cocoapods.org'
-platform :ios, '16.0'
+#!/bin/zsh
+set -e
 
-install! 'cocoapods', :deterministic_uuids => false
+echo "--- ci_post_clone: Starting ---"
 
-use_frameworks!
-inhibit_all_warnings!
+REPO_ROOT="${CI_PRIMARY_REPOSITORY_PATH:-.}"
+IOS_DIR="$REPO_ROOT/iosApp"
 
-target 'iosApp' do
-  pod 'ComposeApp', :path => '../composeApp'
-  pod 'Firebase/Core'
-  pod 'Firebase/Auth'
-  pod 'Firebase/Firestore'
-  pod 'Firebase/Storage'
-end
+# 🔴 1. JAVA
+echo "Installing Java..."
+brew install openjdk@17
 
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-    end
-  end
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export PATH="$JAVA_HOME/bin:$PATH"
 
-  installer.aggregate_targets.each do |aggregate_target|
-    aggregate_target.user_project.targets.each do |target|
-      target.build_phases.each do |build_phase|
-        next unless build_phase.respond_to?(:name)
-        next unless build_phase.name == '[CP-User] Build ComposeApp'
-        build_phase.always_out_of_date = '1'
-      end
-      aggregate_target.user_project.save
-    end
-  end
-end
+java -version
+
+# 🔴 2. Gradle build
+echo "Building KMP iOS framework..."
+cd "$REPO_ROOT"
+chmod +x gradlew
+./gradlew :composeApp:podPublishReleaseXCFramework
+
+# 🔴 3. CocoaPods
+cd "$IOS_DIR"
+
+echo "Installing pods..."
+pod install --repo-update
+
+echo "Workspace check:"
+find . -name "*.xcworkspace"
+
+echo "--- ci_post_clone: Done ---"
