@@ -248,7 +248,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks.sh\"\n\ncodesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --preserve-metadata=identifier,entitlements \"$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH\"/*.framework\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
