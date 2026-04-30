@@ -18,11 +18,18 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-      config.build_settings['ENABLE_BITCODE'] = 'NO'
-      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-      config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ""
+
+      if config.name == 'Release'
+        config.build_settings['CODE_SIGNING_ALLOWED'] = "NO"
+        config.build_settings['CODE_SIGNING_REQUIRED'] = "NO"
+        config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ""
+      end
     end
+  end
+
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings['CODE_SIGNING_ALLOWED'] = "NO"
+    config.build_settings['CODE_SIGNING_REQUIRED'] = "NO"
   end
 
   installer.aggregate_targets.each do |aggregate_target|
@@ -35,4 +42,5 @@ post_install do |installer|
     end
     aggregate_target.user_project.save
   end
+
 end
