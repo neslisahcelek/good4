@@ -11,6 +11,7 @@ import com.good4.admin.presentation.home.AdminHomeScreenRoot
 import com.good4.admin.presentation.profile.AdminProfileScreen
 import com.good4.auth.presentation.login.LoginScreenRoot
 import com.good4.auth.presentation.login.LoginViewModel
+import com.good4.auth.presentation.register.RegisterOptionsScreen
 import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterScreenRoot
@@ -102,6 +103,18 @@ fun Good4NavGraph(
                 onLoginSuccess = { userRole ->
                     navController.navigateToHome(userRole)
                 },
+                onNavigateToRegisterOptions = {
+                    navController.navigate(Route.RegisterOptions)
+                },
+                onNavigateToEmailVerification = {
+                    navController.navigate(Route.EmailVerification)
+                }
+            )
+        }
+
+        composable<Route.RegisterOptions> {
+            RegisterOptionsScreen(
+                onBackClick = { navController.popBackStack() },
                 onNavigateToStudentRegister = {
                     navController.navigate(Route.StudentRegister)
                 },
@@ -110,9 +123,6 @@ fun Good4NavGraph(
                 },
                 onNavigateToSupporterRegister = {
                     navController.navigate(Route.SupporterRegister)
-                },
-                onNavigateToEmailVerification = {
-                    navController.navigate(Route.EmailVerification)
                 }
             )
         }

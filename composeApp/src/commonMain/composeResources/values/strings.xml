@@ -18,6 +18,8 @@
     <string name="verification_email_sent">Doğrulama e-postası tarafınıza gönderildi</string>
     <string name="login">Giriş Yap</string>
     <string name="no_account">Henüz bir hesabınız yok mu?</string>
+    <string name="register_options_title">Kayıt Türü</string>
+    <string name="register_options_description">Lütfen rolünüzü seçin.</string>
     <string name="student_register">🎓 Öğrenci Olarak Kayıt Olun</string>
     <string name="business_register">🏪 İşletme Olarak Kayıt Olun</string>
     <string name="supporter_register">💚 Destekçi Olarak Kayıt Olun</string>
@@ -62,7 +64,7 @@
     <string name="tax_number">Vergi Numarası</string>
     <string name="address">Adres Bilgisi *</string>
     <string name="open_address">Açık Adres *</string>
-    <string name="map_address_url_optional">Harita Adres URL\'si (Opsiyonel)</string>
+    <string name="map_address_url_optional">Harita Adres URL'si (Opsiyonel)</string>
     <string name="city">Şehir *</string>
     <string name="district">İlçe</string>
     <string name="security">Güvenlik</string>

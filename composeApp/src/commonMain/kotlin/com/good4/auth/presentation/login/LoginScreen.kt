@@ -67,7 +67,6 @@ import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.app_name
 import good4.composeapp.generated.resources.app_tagline
-import good4.composeapp.generated.resources.business_register
 import good4.composeapp.generated.resources.email
 import good4.composeapp.generated.resources.email_placeholder
 import good4.composeapp.generated.resources.error_resend_wait_seconds
@@ -79,9 +78,8 @@ import good4.composeapp.generated.resources.password
 import good4.composeapp.generated.resources.password_placeholder
 import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
+import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.splash_logo
-import good4.composeapp.generated.resources.student_register
-import good4.composeapp.generated.resources.supporter_register
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -93,9 +91,7 @@ fun LoginScreenRoot(
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel,
     onLoginSuccess: (UserRole) -> Unit,
-    onNavigateToStudentRegister: () -> Unit,
-    onNavigateToBusinessRegister: () -> Unit,
-    onNavigateToSupporterRegister: () -> Unit,
+    onNavigateToRegisterOptions: () -> Unit,
     onNavigateToEmailVerification: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -119,9 +115,7 @@ fun LoginScreenRoot(
         state = state,
         onAction = { action ->
             when (action) {
-                is LoginAction.OnStudentRegisterClick -> onNavigateToStudentRegister()
-                is LoginAction.OnBusinessRegisterClick -> onNavigateToBusinessRegister()
-                is LoginAction.OnSupporterRegisterClick -> onNavigateToSupporterRegister()
+                is LoginAction.OnStudentRegisterClick -> onNavigateToRegisterOptions()
                 else -> viewModel.onAction(action)
             }
         }
@@ -184,7 +178,10 @@ fun LoginScreen(
                     onValueChange = { onAction(LoginAction.OnEmailChange(it)) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { contentType = ContentType.EmailAddress },
+                        .semantics {
+                            // iOS Password AutoFill primarily matches login identifiers as "username".
+                            contentType = ContentType.Username
+                        },
                     label = { Text(stringResource(Res.string.email)) },
                     placeholder = { Text(stringResource(Res.string.email_placeholder)) },
                     singleLine = true,
@@ -383,55 +380,14 @@ fun LoginScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = stringResource(Res.string.student_register),
+                        text = stringResource(Res.string.register),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = { onAction(LoginAction.OnBusinessRegisterClick) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StandardButtonHeight),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PistachioGreen
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(Res.string.business_register),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = { onAction(LoginAction.OnSupporterRegisterClick) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StandardButtonHeight),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DeepGreen.copy(alpha = 0.15f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(Res.string.supporter_register),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DeepGreen
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(32.dp))
             }
-
         }
     }
 }

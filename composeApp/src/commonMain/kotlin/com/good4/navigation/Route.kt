@@ -9,6 +9,9 @@ sealed class Route {
     
     @Serializable
     data object Login : Route()
+
+    @Serializable
+    data object RegisterOptions : Route()
     
     @Serializable
     data object StudentRegister : Route()
