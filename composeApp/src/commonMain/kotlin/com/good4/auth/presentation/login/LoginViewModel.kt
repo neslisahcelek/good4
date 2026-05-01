@@ -15,16 +15,12 @@ import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.error_account_disabled
-import good4.composeapp.generated.resources.error_email_invalid_format
 import good4.composeapp.generated.resources.error_email_not_verified
 import good4.composeapp.generated.resources.error_email_required
-import good4.composeapp.generated.resources.error_invalid_credentials
 import good4.composeapp.generated.resources.error_network_connection
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_please_register
 import good4.composeapp.generated.resources.error_resend_wait_seconds
-import good4.composeapp.generated.resources.error_too_many_login_attempts
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_found
 import good4.composeapp.generated.resources.forgot_password_email_sent
@@ -184,7 +180,7 @@ class LoginViewModel(
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.error.toLoginErrorUiText()
+                            errorMessage = mapAuthLoginErrorToUiText(result.error)
                         )
                     }
                 }
@@ -284,18 +280,6 @@ class LoginViewModel(
 
     companion object {
         private const val PASSWORD_RESET_COOLDOWN_SECONDS = 60
-    }
-}
-
-private fun AuthError.toLoginErrorUiText(): UiText {
-    return when (this) {
-        is AuthError.InvalidEmail -> UiText.StringResourceId(Res.string.error_email_invalid_format)
-        is AuthError.InvalidCredentials -> UiText.StringResourceId(Res.string.error_invalid_credentials)
-        is AuthError.UserNotFound -> UiText.StringResourceId(Res.string.error_user_not_found)
-        is AuthError.NetworkError -> UiText.StringResourceId(Res.string.error_network_connection)
-        is AuthError.TooManyRequests -> UiText.StringResourceId(Res.string.error_too_many_login_attempts)
-        is AuthError.AccountDisabled -> UiText.StringResourceId(Res.string.error_account_disabled)
-        else -> UiText.StringResourceId(Res.string.error_unknown)
     }
 }
 

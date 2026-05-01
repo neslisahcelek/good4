@@ -49,21 +49,9 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
                 Result.Error(AuthError.Unknown(""))
             }
         } catch (e: Exception) {
-            val errorMessage = e.message ?: ""
-            when {
-                errorMessage.contains("weak-password") -> {
-                    Result.Error(AuthError.WeakPassword)
-                }
-                errorMessage.contains("email-already-in-use") -> {
-                    Result.Error(AuthError.EmailAlreadyInUse)
-                }
-                errorMessage.contains("network") -> {
-                    Result.Error(AuthError.NetworkError)
-                }
-                else -> {
-                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
-                }
-            }
+            mapFirebaseAuthError(e.message.orEmpty())?.let { mappedError ->
+                Result.Error(mappedError)
+            } ?: Result.Error(AuthError.Unknown(e.message.orEmpty()))
         }
     }
 
@@ -82,18 +70,9 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
             user.delete()
             Result.Success(Unit)
         } catch (e: Exception) {
-            val errorMessage = e.message ?: ""
-            when {
-                errorMessage.contains("requires-recent-login") -> {
-                    Result.Error(AuthError.RequiresRecentLogin)
-                }
-                errorMessage.contains("network") -> {
-                    Result.Error(AuthError.NetworkError)
-                }
-                else -> {
-                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
-                }
-            }
+            mapFirebaseAuthError(e.message.orEmpty())?.let { mappedError ->
+                Result.Error(mappedError)
+            } ?: Result.Error(AuthError.Unknown(e.message.orEmpty()))
         }
     }
 
@@ -103,22 +82,9 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
             user.sendEmailVerification()
             Result.Success(Unit)
         } catch (e: Exception) {
-            val errorMessage = e.message.orEmpty()
-            when {
-                errorMessage.contains("network", ignoreCase = true) ||
-                    errorMessage.contains("timeout", ignoreCase = true) ||
-                    errorMessage.contains("unreachable", ignoreCase = true) ||
-                    errorMessage.contains("recaptcha", ignoreCase = true) -> {
-                    Result.Error(AuthError.NetworkError)
-                }
-                errorMessage.contains("user-not-found", ignoreCase = true) ||
-                    errorMessage.contains("no user record", ignoreCase = true) -> {
-                    Result.Error(AuthError.UserNotFound)
-                }
-                else -> {
-                    Result.Error(AuthError.Unknown(errorMessage))
-                }
-            }
+            mapFirebaseAuthError(e.message.orEmpty())?.let { mappedError ->
+                Result.Error(mappedError)
+            } ?: Result.Error(AuthError.Unknown(e.message.orEmpty()))
         }
     }
 
@@ -142,15 +108,9 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
             firebaseAuth.sendPasswordResetEmail(email)
             Result.Success(Unit)
         } catch (e: Exception) {
-            val errorMessage = e.message ?: ""
-            when {
-                errorMessage.contains("user-not-found") -> {
-                    Result.Error(AuthError.UserNotFound)
-                }
-                else -> {
-                    Result.Error(AuthError.Unknown(e.message.orEmpty()))
-                }
-            }
+            mapFirebaseAuthError(e.message.orEmpty())?.let { mappedError ->
+                Result.Error(mappedError)
+            } ?: Result.Error(AuthError.Unknown(e.message.orEmpty()))
         }
     }
 
@@ -169,14 +129,39 @@ class FirebaseAuthRepositoryIOS : AuthRepository {
 }
 
 private fun mapFirebaseSignInError(message: String): AuthError? {
+    return mapFirebaseAuthError(message)
+}
+
+private fun mapFirebaseAuthError(message: String): AuthError? {
+    val firebaseCode = extractFirebaseIosAuthErrorCode(message)
     val normalizedMessage = message.lowercase()
+
+    val fromCode = when (firebaseCode) {
+        17004, 17009 -> AuthError.InvalidCredentials
+        17005 -> AuthError.AccountDisabled
+        17007 -> AuthError.EmailAlreadyInUse
+        17008 -> AuthError.InvalidEmail
+        17010 -> AuthError.TooManyRequests
+        17011 -> AuthError.UserNotFound
+        17014 -> AuthError.RequiresRecentLogin
+        17020 -> AuthError.NetworkError
+        17026 -> AuthError.WeakPassword
+        else -> null
+    }
+    if (fromCode != null) {
+        return fromCode
+    }
+
     return when {
         normalizedMessage.contains("invalid-email") ||
+            normalizedMessage.contains("invalid_email") ||
             normalizedMessage.contains("badly formatted") -> {
             AuthError.InvalidEmail
         }
 
         normalizedMessage.contains("too-many-requests") ||
+            normalizedMessage.contains("too_many_requests") ||
+            normalizedMessage.contains("error_too_many_requests") ||
             normalizedMessage.contains("too many requests") ||
             normalizedMessage.contains("too many unsuccessful login attempts") ||
             normalizedMessage.contains("temporarily disabled") -> {
@@ -184,28 +169,66 @@ private fun mapFirebaseSignInError(message: String): AuthError? {
         }
 
         normalizedMessage.contains("user-disabled") ||
+            normalizedMessage.contains("user_disabled") ||
+            normalizedMessage.contains("error_user_disabled") ||
             normalizedMessage.contains("account has been disabled") -> {
             AuthError.AccountDisabled
         }
 
         normalizedMessage.contains("invalid-credential") ||
+            normalizedMessage.contains("invalid_credential") ||
+            normalizedMessage.contains("error_invalid_credential") ||
+            normalizedMessage.contains("invalid_login_credentials") ||
+            normalizedMessage.contains("error_invalid_login_credentials") ||
             normalizedMessage.contains("wrong-password") ||
+            normalizedMessage.contains("wrong password") ||
+            normalizedMessage.contains("password is invalid") ||
             normalizedMessage.contains("invalid login credentials") -> {
             AuthError.InvalidCredentials
         }
 
         normalizedMessage.contains("user-not-found") ||
-            normalizedMessage.contains("no user record") -> {
+            normalizedMessage.contains("user_not_found") ||
+            normalizedMessage.contains("error_user_not_found") ||
+            normalizedMessage.contains("no user record") ||
+            normalizedMessage.contains("there is no user record") -> {
             AuthError.UserNotFound
         }
 
+        normalizedMessage.contains("weak-password") ||
+            normalizedMessage.contains("weak_password") ||
+            normalizedMessage.contains("error_weak_password") -> {
+            AuthError.WeakPassword
+        }
+
+        normalizedMessage.contains("email-already-in-use") ||
+            normalizedMessage.contains("email_already_in_use") ||
+            normalizedMessage.contains("error_email_already_in_use") -> {
+            AuthError.EmailAlreadyInUse
+        }
+
         normalizedMessage.contains("network") ||
+            normalizedMessage.contains("network-request-failed") ||
+            normalizedMessage.contains("network_request_failed") ||
             normalizedMessage.contains("timeout") ||
             normalizedMessage.contains("unreachable") ||
             normalizedMessage.contains("recaptcha") -> {
             AuthError.NetworkError
         }
 
+        normalizedMessage.contains("requires-recent-login") ||
+            normalizedMessage.contains("requires_recent_login") ||
+            normalizedMessage.contains("error_requires_recent_login") ->
+            AuthError.RequiresRecentLogin
+
         else -> null
     }
+}
+
+private fun extractFirebaseIosAuthErrorCode(message: String): Int? {
+    val codeRegex = Regex("""\bcode\s*=\s*(\d{4,6})\b""", RegexOption.IGNORE_CASE)
+    return codeRegex.find(message)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
 }
