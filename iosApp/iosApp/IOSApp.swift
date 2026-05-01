@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
+import FirebaseCrashlytics
 
 @main
 struct IOSApp: App {
@@ -11,6 +12,9 @@ struct IOSApp: App {
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
         FirebaseApp.configure()
+        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+        Crashlytics.crashlytics().setCustomValue("ios", forKey: "platform")
+        Crashlytics.crashlytics().log("IOSApp initialized")
         #if DEBUG
         Firestore.enableLogging(true)
         #endif
