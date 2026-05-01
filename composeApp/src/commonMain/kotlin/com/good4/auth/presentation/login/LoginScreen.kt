@@ -37,8 +37,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -179,7 +182,9 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.email,
                     onValueChange = { onAction(LoginAction.OnEmailChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentType = ContentType.EmailAddress },
                     label = { Text(stringResource(Res.string.email)) },
                     placeholder = { Text(stringResource(Res.string.email_placeholder)) },
                     singleLine = true,
@@ -202,7 +207,9 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.password,
                     onValueChange = { onAction(LoginAction.OnPasswordChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentType = ContentType.Password },
                     label = { Text(stringResource(Res.string.password)) },
                     placeholder = { Text(stringResource(Res.string.password_placeholder)) },
                     singleLine = true,
