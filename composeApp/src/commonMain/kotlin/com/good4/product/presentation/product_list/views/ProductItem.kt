@@ -96,165 +96,165 @@ fun ProductItem(
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(96.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(SurfaceMuted)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (product.imageUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = product.imageUrl,
-                            contentDescription = stringResource(Res.string.product_image_description),
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(Res.drawable.ic_placeholder),
+                    Box(
+                        modifier = Modifier
+                            .size(96.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(SurfaceMuted)
+                    ) {
+                        if (product.imageUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = product.imageUrl,
                                 contentDescription = stringResource(Res.string.product_image_description),
-                                modifier = Modifier.size(40.dp),
-                                alpha = 0.35f
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(Res.drawable.ic_placeholder),
+                                    contentDescription = stringResource(Res.string.product_image_description),
+                                    modifier = Modifier.size(40.dp),
+                                    alpha = 0.35f
+                                )
+                            }
+                        }
+
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = product.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = TextPrimary,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = priceLine,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = PrimaryGreen,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+
+                        Text(
+                            text = product.storeName,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        if (product.description.isNotBlank()) {
+                            Text(
+                                text = product.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-
                 }
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                val displayAddress = toDisplayAddressOrNull(product.address)
+                val mapsAddress = product.addressUrl
+                if (displayAddress != null) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 16.dp)
+                            .then(
+                                if (mapsAddress.isNotBlank()) {
+                                    Modifier.clickable { openMaps(mapsAddress) }
+                                } else {
+                                    Modifier
+                                }
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = product.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = TextPrimary,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
+                        Icon(
+                            imageVector = Icons.Outlined.Place,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = priceLine,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = PrimaryGreen,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-
-                    Text(
-                        text = product.storeName,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    if (product.description.isNotBlank()) {
-                        Text(
-                            text = product.description,
-                            style = MaterialTheme.typography.bodySmall,
+                            text = displayAddress,
+                            style = MaterialTheme.typography.labelSmall,
                             fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
                             color = TextSecondary,
+                            textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
-            }
 
-            val displayAddress = toDisplayAddressOrNull(product.address)
-            val mapsAddress = product.addressUrl
-            if (displayAddress != null) {
-                Row(
+                Button(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 16.dp)
-                        .then(
-                            if (mapsAddress.isNotBlank()) {
-                                Modifier.clickable { openMaps(mapsAddress) }
-                            } else {
-                                Modifier
-                            }
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Place,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = displayAddress,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextSecondary,
-                        textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
-                    .height(40.dp),
-                onClick = reserveClickHandler,
-                enabled = isReserveEnabled && !reservationSuccess,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when {
-                        reservationSuccess -> DeepGreen
-                        else -> PrimaryGreen
-                    },
-                    contentColor = Color.White,
-                    disabledContainerColor = SurfaceMuted,
-                    disabledContentColor = TextSecondary.copy(alpha = 0.45f)
-                ),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = 16.dp,
-                    vertical = 0.dp
-                )
-            ) {
-                if (isReserving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = when {
-                            reservationSuccess -> stringResource(Res.string.reserved)
-                            else -> stringResource(Res.string.reserve_button_label)
+                        .padding(top = 4.dp)
+                        .height(40.dp),
+                    onClick = reserveClickHandler,
+                    enabled = isReserveEnabled && !reservationSuccess,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = when {
+                            reservationSuccess -> DeepGreen
+                            else -> PrimaryGreen
                         },
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        contentColor = Color.White,
+                        disabledContainerColor = SurfaceMuted,
+                        disabledContentColor = TextSecondary.copy(alpha = 0.45f)
+                    ),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 16.dp,
+                        vertical = 0.dp
                     )
+                ) {
+                    if (isReserving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = when {
+                                reservationSuccess -> stringResource(Res.string.reserved)
+                                else -> stringResource(Res.string.reserve_button_label)
+                            },
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-            }
             }
         }
 

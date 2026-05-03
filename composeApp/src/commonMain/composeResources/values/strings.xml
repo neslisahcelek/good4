@@ -298,6 +298,8 @@
     <string name="verify_code_order_not_found">Sipariş bulunamadı veya süresi dolmuş</string>
     <string name="verify_code_order_error_confirm">Onaylama sırasında bir hata oluştu</string>
     <string name="verify_code_order_error_cancel">İptal sırasında bir hata oluştu</string>
+    <string name="verify_code_student_reservation_title">Öğrenci Rezervasyonu</string>
+    <string name="verify_code_student_label">Öğrenci</string>
     <string name="student_reservations_title">Rezervasyonlarım</string>
     <string name="student_reservations_empty_title">Henüz bir rezervasyonunuz bulunmuyor</string>
     <string name="student_reservations_empty_subtitle">Bir ürün rezerve ettiğinizde\nbilgileri burada görüntüleyebilirsiniz.</string>
