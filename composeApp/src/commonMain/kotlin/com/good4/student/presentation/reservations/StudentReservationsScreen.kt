@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +69,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun StudentReservationsScreen(
     modifier: Modifier = Modifier,
     viewModel: StudentReservationsViewModel = koinViewModel(),
+    scrollToTopRequestKey: Int = 0,
+    prioritizedReservation: ReservationUiModel? = null,
     onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -71,6 +78,8 @@ fun StudentReservationsScreen(
     StudentReservationsContent(
         modifier = modifier,
         state = state,
+        scrollToTopRequestKey = scrollToTopRequestKey,
+        prioritizedReservation = prioritizedReservation,
         onProfileClick = onProfileClick,
         onCancelReservation = viewModel::cancelReservation
     )
@@ -81,9 +90,33 @@ fun StudentReservationsScreen(
 private fun StudentReservationsContent(
     modifier: Modifier = Modifier,
     state: StudentReservationsState,
+    scrollToTopRequestKey: Int = 0,
+    prioritizedReservation: ReservationUiModel? = null,
     onProfileClick: (() -> Unit)? = null,
     onCancelReservation: (String) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    val displayReservations = remember(state.reservations, prioritizedReservation) {
+        val prioritized = prioritizedReservation
+        if (prioritized == null || state.reservations.any { it.id == prioritized.id }) {
+            state.reservations
+        } else {
+            listOf(prioritized) + state.reservations
+        }
+    }
+    var pendingScrollRequestKey by remember { mutableIntStateOf(-1) }
+
+    LaunchedEffect(scrollToTopRequestKey) {
+        pendingScrollRequestKey = scrollToTopRequestKey
+    }
+
+    LaunchedEffect(displayReservations.size, pendingScrollRequestKey) {
+        if (pendingScrollRequestKey == scrollToTopRequestKey && displayReservations.isNotEmpty()) {
+            listState.scrollToItem(0)
+            pendingScrollRequestKey = -1
+        }
+    }
+
     Good4NestedScaffold(
         modifier = modifier,
         topBar = {
@@ -155,7 +188,7 @@ private fun StudentReservationsContent(
                     }
                 }
 
-                state.reservations.isEmpty() -> {
+                displayReservations.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -189,12 +222,13 @@ private fun StudentReservationsContent(
 
                 else -> {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
-                            items = state.reservations,
+                            items = displayReservations,
                             key = { it.id }
                         ) { reservation ->
                             ReservationItem(

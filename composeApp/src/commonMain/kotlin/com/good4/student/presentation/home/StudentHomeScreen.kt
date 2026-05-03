@@ -16,16 +16,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.good4.code.domain.CodeStatus
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
-import com.good4.product.presentation.product_list.ProductListState
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.product.presentation.product_list.views.ProductListScreenRoot
 import com.good4.student.presentation.reservations.ReservationUiModel
@@ -34,7 +35,6 @@ import com.good4.student.presentation.reservations.StudentReservationsViewModel
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.student_home
 import good4.composeapp.generated.resources.student_reservations
-import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -64,8 +64,19 @@ fun StudentHomeScreenRoot(
     )
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+    var reservationsScrollRequestKey by rememberSaveable { mutableIntStateOf(0) }
+    var pendingReservationFromHome by remember { mutableStateOf<ReservationUiModel?>(null) }
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
+    val reservationsState by reservationsViewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(reservationsState.reservations, pendingReservationFromHome?.id) {
+        val pendingId = pendingReservationFromHome?.id ?: return@LaunchedEffect
+        val existsInReservations = reservationsState.reservations.any { it.id == pendingId }
+        if (existsInReservations) {
+            pendingReservationFromHome = null
+        }
+    }
 
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
@@ -118,11 +129,9 @@ fun StudentHomeScreenRoot(
                         onReservationCardClick = {
                             val productState = productListViewModel.state.value
                             val activeReservation = productState.activeReservation
+                            reservationsScrollRequestKey += 1
                             if (activeReservation != null) {
-                                reservationsViewModel.seedPendingReservation(
-                                    reservation = productState.toPendingReservationUiModel(),
-                                    remainingCredit = productState.remainingCredits
-                                )
+                                pendingReservationFromHome = productState.toPendingReservationUiModel()
                             }
                             selectedItemIndex = 1
                         }
@@ -132,31 +141,14 @@ fun StudentHomeScreenRoot(
                 1 -> {
                     StudentReservationsScreen(
                         viewModel = reservationsViewModel,
+                        scrollToTopRequestKey = reservationsScrollRequestKey,
+                        prioritizedReservation = pendingReservationFromHome,
                         onProfileClick = onNavigateToProfile
                     )
                 }
             }
         }
     }
-}
-
-private fun ProductListState.toPendingReservationUiModel(): ReservationUiModel {
-    val activeReservation = requireNotNull(activeReservation)
-    val createdAt = reservationExpirationMinutes?.let { expirationMinutes ->
-        activeReservation.expiryTime.epochSeconds - (expirationMinutes * 60)
-    } ?: Clock.System.now().epochSeconds
-
-    return ReservationUiModel(
-        id = activeReservation.codeId,
-        code = activeReservation.code,
-        productName = activeReservation.product.name,
-        businessName = activeReservation.product.storeName,
-        businessAddress = activeReservation.product.address,
-        businessAddressUrl = activeReservation.product.addressUrl,
-        status = CodeStatus.PENDING.value,
-        remainingTime = "",
-        createdAt = createdAt
-    )
 }
 
 @Preview

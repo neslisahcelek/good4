@@ -175,7 +175,7 @@ class StudentReservationsViewModel(
 
                 val productFallback = getString(Res.string.product_name_fallback)
                 val businessFallback = getString(Res.string.business_name_fallback)
-                val reservations = sortedCodes.map { code ->
+                val reservationsFromBackend = sortedCodes.map { code ->
                     val remainingTime = if (code.statusEnum == CodeStatus.PENDING) {
                         calculateRemainingTime(code.createdAt)
                     } else {
@@ -198,36 +198,12 @@ class StudentReservationsViewModel(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        reservations = reservations
+                        reservations = reservationsFromBackend
                     )
                 }
             } finally {
                 hasLoadedOnce = true
             }
-        }
-    }
-
-    fun seedPendingReservation(
-        reservation: ReservationUiModel,
-        remainingCredit: Int?
-    ) {
-        if (reservation.statusEnum != CodeStatus.PENDING) return
-
-        val seededReservation = reservation.copy(
-            remainingTime = calculateRemainingTime(reservation.createdAt)
-        )
-
-        _state.update { currentState ->
-            val reservations = buildList {
-                add(seededReservation)
-                addAll(currentState.reservations.filterNot { it.id == seededReservation.id })
-            }.sortedByDescending { it.createdAt ?: 0L }
-
-            currentState.copy(
-                isLoading = false,
-                reservations = reservations,
-                remainingCredit = remainingCredit ?: currentState.remainingCredit
-            )
         }
     }
 
