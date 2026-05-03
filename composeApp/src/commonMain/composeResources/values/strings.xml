@@ -388,6 +388,7 @@
     <string name="product_list_credit_label">KALAN KREDİ</string>
     <string name="product_list_delivery_suffix"> dk teslim süresi</string>
     <string name="product_list_price_format">%1$d %2$s</string>
+    <string name="product_list_pending_badge">%1$d askıda</string>
     <string name="product_list_stock_units">%1$d adet</string>
     <string name="product_list_availability_in_stock">Stokta</string>
     <string name="product_list_availability_out">Tükendi</string>

@@ -51,6 +51,7 @@ import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.ic_placeholder
 import good4.composeapp.generated.resources.product_free
 import good4.composeapp.generated.resources.product_image_description
+import good4.composeapp.generated.resources.product_list_pending_badge
 import good4.composeapp.generated.resources.reserve_button_label
 import good4.composeapp.generated.resources.reserved
 import org.jetbrains.compose.resources.painterResource
@@ -82,18 +83,19 @@ fun ProductItem(
 
     val priceLine = stringResource(Res.string.product_free)
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = SurfaceDefault,
-        border = BorderStroke(1.dp, BorderMuted),
-        shadowElevation = 1.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
+    Box(modifier = modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = SurfaceDefault,
+            border = BorderStroke(1.dp, BorderMuted),
+            shadowElevation = 1.dp
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -252,6 +254,28 @@ fun ProductItem(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+            }
+        }
+
+        if (product.pendingCount > 0) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopStart),
+                shape = RoundedCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
+                color = PrimaryGreen
+            ) {
+                Text(
+                    text = stringResource(
+                        Res.string.product_list_pending_badge,
+                        product.pendingCount
+                    ),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
             }
         }
     }
