@@ -152,7 +152,7 @@ fun LoginScreen(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(110.dp))
 
                 Image(
                     painter = painterResource(Res.drawable.splash_logo),
