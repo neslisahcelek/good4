@@ -3,12 +3,15 @@ package com.good4.core.util
 object FirebaseDebugLogger {
     private const val tag = "Good4Firebase"
     private const val maxMessageLength = 1000
+    private const val logRequestsAndSuccesses = false
 
     fun request(operation: String, path: String, detail: String? = null) {
+        if (!logRequestsAndSuccesses) return
         Logger.d(tag, buildMessage(stage = "REQUEST", operation = operation, path = path, detail = detail))
     }
 
     fun success(operation: String, path: String, detail: String? = null) {
+        if (!logRequestsAndSuccesses) return
         Logger.d(tag, buildMessage(stage = "SUCCESS", operation = operation, path = path, detail = detail))
     }
 

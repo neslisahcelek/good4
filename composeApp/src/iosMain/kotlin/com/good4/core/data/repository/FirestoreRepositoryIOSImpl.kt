@@ -153,6 +153,35 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         }
     }
 
+    override suspend fun updateFields(
+        collectionPath: String,
+        documentId: String,
+        fields: Map<String, Any?>
+    ): Result<Unit, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "updateFields",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
+        return try {
+            firestore.collection(collectionPath)
+                .document(documentId)
+                .update(fields)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            FirebaseDebugLogger.error(
+                operation = "updateFields",
+                path = collectionPath,
+                throwable = e,
+                detail = "documentId=$documentId, fields=${fields.keys}"
+            )
+            Result.Error(NetworkError(e.message ?: "Unknown error"))
+        }
+    }
+
     override suspend fun deleteDocument(
         collectionPath: String,
         documentId: String

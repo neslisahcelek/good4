@@ -1,12 +1,12 @@
 package com.good4.core.data.repository
 
-import com.good4.core.domain.Result
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
-import kotlin.reflect.KClass
+import com.good4.core.domain.Result
+import com.good4.core.util.Logger
 import kotlinx.coroutines.delay
 import kotlin.random.Random
-import com.good4.core.util.Logger
+import kotlin.reflect.KClass
 
 class FirestoreRepositoryImpl : FirestoreRepository {
     override suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error> {
@@ -24,6 +24,15 @@ class FirestoreRepositoryImpl : FirestoreRepository {
     override suspend fun <T : Any> updateDocument(collectionPath: String, documentId: String, data: T): Result<Unit, Error> {
         delay(500)
         Logger.d("FirestoreRepositoryMock", "Updated document $documentId in $collectionPath with data: $data")
+        return Result.Success(Unit)
+    }
+
+    override suspend fun updateFields(
+        collectionPath: String,
+        documentId: String,
+        fields: Map<String, Any?>
+    ): Result<Unit, Error> {
+        delay(500)
         return Result.Success(Unit)
     }
 

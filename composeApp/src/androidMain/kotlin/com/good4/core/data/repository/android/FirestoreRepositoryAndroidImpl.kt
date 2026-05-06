@@ -9,6 +9,7 @@ import com.good4.core.util.FirebaseDebugLogger
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import kotlinx.datetime.Instant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -18,7 +19,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.serializer
-import kotlinx.datetime.Instant
 import kotlin.reflect.KClass
 
 class FirestoreRepositoryAndroidImpl(
@@ -265,6 +265,36 @@ class FirestoreRepositoryAndroidImpl(
                 path = collectionPath,
                 throwable = e,
                 detail = "documentId=$documentId"
+            )
+            Result.Error(NetworkError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun updateFields(
+        collectionPath: String,
+        documentId: String,
+        fields: Map<String, Any?>
+    ): Result<Unit, Error> {
+        if (documentId.isBlank()) {
+            FirebaseDebugLogger.error(
+                operation = "updateFields",
+                path = collectionPath,
+                detail = "documentId is empty"
+            )
+            return Result.Error(NetworkError("Document path cannot be empty"))
+        }
+        return try {
+            firestore.collection(collectionPath)
+                .document(documentId)
+                .update(fields)
+                .await()
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            FirebaseDebugLogger.error(
+                operation = "updateFields",
+                path = collectionPath,
+                throwable = e,
+                detail = "documentId=$documentId, fields=${fields.keys}"
             )
             Result.Error(NetworkError(e.message ?: "Unknown error"))
         }
