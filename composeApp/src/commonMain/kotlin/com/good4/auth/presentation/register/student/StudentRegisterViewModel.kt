@@ -10,6 +10,7 @@ import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
+import com.good4.core.util.normalizePersonalNameInput
 import com.good4.core.util.validateStudentEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
@@ -28,8 +29,8 @@ import good4.composeapp.generated.resources.error_full_name_required
 import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
-import good4.composeapp.generated.resources.error_terms_not_accepted
 import good4.composeapp.generated.resources.error_register_profile_save_failed
+import good4.composeapp.generated.resources.error_terms_not_accepted
 import good4.composeapp.generated.resources.error_university_required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,7 +94,12 @@ class StudentRegisterViewModel(
             }
 
             is StudentRegisterAction.OnFullNameChange -> {
-                _state.update { it.copy(fullName = action.fullName, errorMessage = null) }
+                _state.update {
+                    it.copy(
+                        fullName = action.fullName.normalizePersonalNameInput(),
+                        errorMessage = null
+                    )
+                }
             }
 
             is StudentRegisterAction.OnUniversityChange -> {
@@ -219,7 +225,7 @@ class StudentRegisterViewModel(
                         registrationDate = nowSecs
                     )
 
-                    when (val userResult = userRepository.createUser(userId, userDto)) {
+                    when (userRepository.createUser(userId, userDto)) {
                         is Result.Success -> {
                             startupSessionCache.cacheStartupSession(
                                 uid = userId,
@@ -227,7 +233,7 @@ class StudentRegisterViewModel(
                                 isUserVerified = false,
                                 isAuthEmailVerified = authResult.data.isEmailVerified
                             )
-                            when (val sendResult = authRepository.sendEmailVerification()) {
+                            when (authRepository.sendEmailVerification()) {
                                 is Result.Success -> Unit
                                 is Result.Error -> Unit
                             }

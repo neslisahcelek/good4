@@ -10,7 +10,10 @@ import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.hasValidOptionalPhoneNumber
 import com.good4.core.util.normalizeForEmail
+import com.good4.core.util.normalizePersonalNameInput
+import com.good4.core.util.normalizePhoneNumberInput
 import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
@@ -24,6 +27,7 @@ import good4.composeapp.generated.resources.error_full_name_required
 import good4.composeapp.generated.resources.error_password_min_length
 import good4.composeapp.generated.resources.error_password_required
 import good4.composeapp.generated.resources.error_passwords_not_match
+import good4.composeapp.generated.resources.error_phone_invalid_format
 import good4.composeapp.generated.resources.error_register_business_save_failed
 import good4.composeapp.generated.resources.error_register_profile_save_failed
 import good4.composeapp.generated.resources.error_terms_not_accepted
@@ -62,11 +66,21 @@ class BusinessRegisterViewModel(
             }
 
             is BusinessRegisterAction.OnFullNameChange -> {
-                _state.update { it.copy(fullName = action.fullName, errorMessage = null) }
+                _state.update {
+                    it.copy(
+                        fullName = action.fullName.normalizePersonalNameInput(),
+                        errorMessage = null
+                    )
+                }
             }
 
             is BusinessRegisterAction.OnPhoneNumberChange -> {
-                _state.update { it.copy(phoneNumber = action.phoneNumber, errorMessage = null) }
+                _state.update {
+                    it.copy(
+                        phoneNumber = action.phoneNumber.normalizePhoneNumberInput(),
+                        errorMessage = null
+                    )
+                }
             }
 
             is BusinessRegisterAction.OnBusinessNameChange -> {
@@ -74,7 +88,12 @@ class BusinessRegisterViewModel(
             }
 
             is BusinessRegisterAction.OnBusinessPhoneChange -> {
-                _state.update { it.copy(businessPhone = action.businessPhone, errorMessage = null) }
+                _state.update {
+                    it.copy(
+                        businessPhone = action.businessPhone.normalizePhoneNumberInput(),
+                        errorMessage = null
+                    )
+                }
             }
 
             is BusinessRegisterAction.OnAddressChange -> {
@@ -153,6 +172,12 @@ class BusinessRegisterViewModel(
             }
             return
         }
+        if (!state.phoneNumber.hasValidOptionalPhoneNumber() || !state.businessPhone.hasValidOptionalPhoneNumber()) {
+            _state.update {
+                it.copy(errorMessage = UiText.StringResourceId(Res.string.error_phone_invalid_format))
+            }
+            return
+        }
         if (state.businessName.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_business_name_required))
@@ -195,7 +220,7 @@ class BusinessRegisterViewModel(
                         district = state.district.ifBlank { null }
                     )
 
-                    when (val businessResult = businessRepository.addBusiness(businessDto)) {
+                    when (businessRepository.addBusiness(businessDto)) {
                         is Result.Success -> {
                             val userDto = UserDto(
                                 email = email,
@@ -205,7 +230,7 @@ class BusinessRegisterViewModel(
                                 verified = false
                             )
 
-                            when (val userResult = userRepository.createUser(userId, userDto)) {
+                            when (userRepository.createUser(userId, userDto)) {
                                 is Result.Success -> {
                                     startupSessionCache.cacheStartupSession(
                                         uid = userId,

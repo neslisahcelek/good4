@@ -1,31 +1,25 @@
 package com.good4.auth.presentation.register.student
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -49,7 +43,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -69,7 +62,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.AppBackground
+import com.good4.auth.presentation.register.RegisterScreenContentContainer
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
@@ -93,6 +86,7 @@ import good4.composeapp.generated.resources.education_level_6
 import good4.composeapp.generated.resources.education_level_masters
 import good4.composeapp.generated.resources.education_level_phd
 import good4.composeapp.generated.resources.education_level_placeholder
+import good4.composeapp.generated.resources.email_placeholder
 import good4.composeapp.generated.resources.email_required
 import good4.composeapp.generated.resources.full_name
 import good4.composeapp.generated.resources.major
@@ -103,8 +97,8 @@ import good4.composeapp.generated.resources.password_visibility_show
 import good4.composeapp.generated.resources.privacy_policy
 import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.required_fields
-import good4.composeapp.generated.resources.student_registration
 import good4.composeapp.generated.resources.student_email_edu_hint
+import good4.composeapp.generated.resources.student_registration
 import good4.composeapp.generated.resources.terms_accept_middle
 import good4.composeapp.generated.resources.terms_accept_suffix
 import good4.composeapp.generated.resources.terms_of_service
@@ -174,19 +168,10 @@ fun StudentRegisterScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(AppBackground)
-                .padding(paddingValues)
+        RegisterScreenContentContainer(
+            modifier = modifier,
+            paddingValues = paddingValues
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
                 OutlinedTextField(
                     value = state.fullName,
                     onValueChange = { onAction(StudentRegisterAction.OnFullNameChange(it)) },
@@ -205,6 +190,7 @@ fun StudentRegisterScreen(
                     onValueChange = { onAction(StudentRegisterAction.OnEmailChange(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(stringResource(Res.string.email_required)) },
+                    placeholder = { Text(stringResource(Res.string.email_placeholder)) },
                     supportingText = { Text(stringResource(Res.string.student_email_edu_hint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -374,7 +360,6 @@ fun StudentRegisterScreen(
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
-            }
         }
     }
 }
@@ -409,7 +394,7 @@ private fun SelectionDropdown(
     leadingIcon: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    var showSheet by remember { mutableStateOf(false) }
+    val showSheet = remember { mutableStateOf(false) }
     val hasOptions = options.isNotEmpty()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -443,13 +428,13 @@ private fun SelectionDropdown(
                     enabled = true,
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                ) { showSheet = true }
+                ) { showSheet.value = true }
         )
     }
 
-    if (showSheet) {
+    if (showSheet.value) {
         ModalBottomSheet(
-            onDismissRequest = { showSheet = false },
+            onDismissRequest = { showSheet.value = false },
             sheetState = sheetState,
             containerColor = SurfaceDefault
         ) {
@@ -492,7 +477,7 @@ private fun SelectionDropdown(
                             },
                             modifier = Modifier.clickable {
                                 onValueChange(option)
-                                showSheet = false
+                                showSheet.value = false
                             }
                         )
                         HorizontalDivider(color = TextSecondary.copy(alpha = 0.15f))

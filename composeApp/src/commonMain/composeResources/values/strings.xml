@@ -7,8 +7,8 @@
     <string name="loading">Yükleniyor…</string>
     <string name="required_fields">* ile işaretli alanların doldurulması zorunludur</string>
     <string name="email">E-posta Adresi</string>
-    <string name="email_placeholder">ornek@email.com</string>
-    <string name="student_email_edu_hint">Lütfen okulunuza ait edu uzantılı e-posta hesabınızı kullanın.</string>
+    <string name="email_placeholder">ornek@universite.edu.tr</string>
+    <string name="student_email_edu_hint">Lütfen okulunuza ait edu.tr uzantılı e-posta hesabınızı kullanın.</string>
     <string name="password">Şifre</string>
     <string name="password_placeholder">••••••••</string>
     <string name="password_visibility_show">Şifreyi göster</string>
@@ -345,6 +345,7 @@
     <string name="error_email_required">Lütfen e-posta adresinizi giriniz</string>
     <string name="error_email_invalid_format">Geçersiz bir e-posta formatı girdiniz</string>
     <string name="error_email_must_be_edu_tr">E-posta adresiniz edu.tr uzantılı olmalıdır</string>
+    <string name="error_phone_invalid_format">Telefon numarası en az 10 haneli olmalıdır</string>
     <string name="error_password_required">Lütfen şifrenizi giriniz</string>
     <string name="error_full_name_required">Lütfen ad ve soyadınızı giriniz</string>
     <string name="error_password_min_length">Şifreniz en az 6 karakterden oluşmalıdır</string>

@@ -9,6 +9,7 @@ import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
+import com.good4.core.util.normalizePersonalNameInput
 import com.good4.core.util.validateEmail
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
@@ -39,7 +40,12 @@ class SupporterRegisterViewModel(
     fun onAction(action: SupporterRegisterAction) {
         when (action) {
             is SupporterRegisterAction.OnFullNameChange ->
-                _state.update { it.copy(fullName = action.fullName, errorMessage = null) }
+                _state.update {
+                    it.copy(
+                        fullName = action.fullName.normalizePersonalNameInput(),
+                        errorMessage = null
+                    )
+                }
             is SupporterRegisterAction.OnEmailChange ->
                 _state.update { it.copy(email = action.email, errorMessage = null) }
             is SupporterRegisterAction.OnPasswordChange ->

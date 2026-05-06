@@ -1,20 +1,14 @@
 package com.good4.auth.presentation.register.supporter
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
@@ -34,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -46,8 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.auth.presentation.register.RegisterScreenContentContainer
 import com.good4.auth.presentation.register.student.TermsCheckbox
-import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
@@ -122,30 +115,18 @@ fun SupporterRegisterScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(AppBackground)
-                .padding(paddingValues)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = { focusManager.clearFocus() })
-                }
+        RegisterScreenContentContainer(
+            modifier = modifier,
+            paddingValues = paddingValues
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                    SupporterRegisterFormFields(
-                        state = state,
-                        onAction = onAction,
-                        onDone = {
-                            focusManager.clearFocus()
-                            onAction(SupporterRegisterAction.OnRegisterClick)
-                        }
-                    )
+            SupporterRegisterFormFields(
+                state = state,
+                onAction = onAction,
+                onDone = {
+                    focusManager.clearFocus()
+                    onAction(SupporterRegisterAction.OnRegisterClick)
+                }
+            )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -183,7 +164,6 @@ fun SupporterRegisterScreen(
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
-            }
         }
     }
 }
