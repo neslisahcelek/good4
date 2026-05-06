@@ -22,10 +22,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import org.jetbrains.compose.resources.getString
-private const val MAX_COMPLETED_RESERVATIONS = 10L
+
+private const val MAX_RESERVATIONS = 10L
 
 class StudentReservationsViewModel(
     private val authRepository: AuthRepository,
@@ -41,6 +42,7 @@ class StudentReservationsViewModel(
     private var secondSuffix: String = ""
     private var expirationDuration = AppDefaults.RESERVATION_EXPIRATION_MINUTES.minutes
     private var hasLoadedOnce: Boolean = false
+    private val optimisticCancelledReservationIds = mutableSetOf<String>()
 
     init {
         loadReservations()
@@ -53,6 +55,12 @@ class StudentReservationsViewModel(
             expirationDuration = configRepository.getExpirationDuration()
         }
         startTimer()
+        viewModelScope.launch {
+            while (true) {
+                delay(30.seconds)
+                loadReservations(showLoading = false)
+            }
+        }
         viewModelScope.launch {
             while (true) {
                 delay(5.minutes)
@@ -111,10 +119,7 @@ class StudentReservationsViewModel(
     }
 
     private fun checkAndExpireCodes() {
-        viewModelScope.launch {
-            codeRepository.checkAndExpireCodes()
-            loadReservations(showLoading = false)
-        }
+        loadReservations(showLoading = false)
     }
 
     private fun loadReservations(showLoading: Boolean = true) {
@@ -136,15 +141,32 @@ class StudentReservationsViewModel(
                     is Result.Error -> {}
                 }
 
-                val codesResult = codeRepository.getCodesByUserId(userId)
-                if (codesResult is Result.Error) {
-                    _state.update {
-                        it.copy(isLoading = false, errorMessage = codesResult.error.message)
+                val recentCodesResult = codeRepository.getRecentCodesByUserId(
+                    userId = userId,
+                    limit = MAX_RESERVATIONS
+                )
+                val allUserCodes = when (recentCodesResult) {
+                    is Result.Success -> {
+                        if (recentCodesResult.data.isNotEmpty()) {
+                            recentCodesResult.data
+                        } else {
+                            loadFallbackReservations(userId) ?: emptyList()
+                        }
                     }
-                    return@launch
+
+                    is Result.Error -> {
+                        loadFallbackReservations(userId) ?: run {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = recentCodesResult.error.message
+                                )
+                            }
+                            return@launch
+                        }
+                    }
                 }
 
-                val allUserCodes = (codesResult as Result.Success).data
                 val normalizedCodes = allUserCodes.map { code ->
                     if (code.statusEnum == CodeStatus.PENDING && isReservationExpired(code.createdAt)) {
                         when (codeRepository.markCodeAsExpired(code.id)) {
@@ -159,23 +181,18 @@ class StudentReservationsViewModel(
                     }
                 }
 
-                val pendingCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.PENDING }
-                val completedCodes = normalizedCodes
-                    .filter { it.statusEnum == CodeStatus.USED }
-                    .sortedByDescending { code -> code.usedAt ?: 0L }
-                    .take(MAX_COMPLETED_RESERVATIONS.toInt())
-                val expiredCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.EXPIRED }
-                val cancelledCodes = normalizedCodes.filter { it.statusEnum == CodeStatus.CANCELLED }
-
-                val allCodes = pendingCodes + completedCodes + expiredCodes + cancelledCodes
-
-                val sortedCodes = allCodes.sortedByDescending { code ->
+                val sortedCodes = normalizedCodes.sortedByDescending { code ->
                     code.usedAt ?: code.createdAt ?: 0L
                 }
 
                 val productFallback = getString(Res.string.product_name_fallback)
                 val businessFallback = getString(Res.string.business_name_fallback)
                 val reservationsFromBackend = sortedCodes.map { code ->
+                    val status = if (code.id in optimisticCancelledReservationIds) {
+                        CodeStatus.CANCELLED.value
+                    } else {
+                        code.status
+                    }
                     val remainingTime = if (code.statusEnum == CodeStatus.PENDING) {
                         calculateRemainingTime(code.createdAt)
                     } else {
@@ -189,8 +206,8 @@ class StudentReservationsViewModel(
                         businessName = code.businessName ?: businessFallback,
                         businessAddress = code.businessAddress ?: "",
                         businessAddressUrl = code.businessAddressUrl ?: "",
-                        status = code.status,
-                        remainingTime = remainingTime,
+                        status = status,
+                        remainingTime = if (status == CodeStatus.PENDING.value) remainingTime else "",
                         createdAt = code.createdAt
                     )
                 }
@@ -207,17 +224,48 @@ class StudentReservationsViewModel(
         }
     }
 
+    private suspend fun loadFallbackReservations(
+        userId: String
+    ): List<com.good4.code.data.repository.CodeWithDetails>? {
+        return when (val fallbackResult = codeRepository.getCodesByUserId(userId)) {
+            is Result.Success -> fallbackResult.data
+                .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: 0L }
+                .take(MAX_RESERVATIONS.toInt())
+
+            is Result.Error -> null
+        }
+    }
+
     fun cancelReservation(reservationId: String) {
         val userId = authRepository.currentUser?.uid ?: return
+        optimisticCancelledReservationIds += reservationId
+        _state.update { state ->
+            state.copy(
+                reservations = state.reservations.map { reservation ->
+                    if (reservation.id == reservationId) {
+                        reservation.copy(
+                            status = CodeStatus.CANCELLED.value,
+                            remainingTime = ""
+                        )
+                    } else {
+                        reservation
+                    }
+                },
+                errorMessage = null
+            )
+        }
 
         viewModelScope.launch {
             when (val cancelResult = codeRepository.markCodeAsCancelled(reservationId)) {
                 is Result.Success -> {
                     userRepository.incrementUserCredit(userId)
+                    optimisticCancelledReservationIds -= reservationId
                     loadReservations()
                 }
                 is Result.Error -> {
+                    optimisticCancelledReservationIds -= reservationId
                     _state.update { it.copy(errorMessage = cancelResult.error.message) }
+                    loadReservations(showLoading = false)
                 }
             }
         }

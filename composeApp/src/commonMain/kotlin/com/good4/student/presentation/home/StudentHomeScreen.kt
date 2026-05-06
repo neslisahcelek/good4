@@ -70,6 +70,15 @@ fun StudentHomeScreenRoot(
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
     val reservationsState by reservationsViewModel.state.collectAsStateWithLifecycle()
 
+    fun showReservationsTab() {
+        val productState = productListViewModel.state.value
+        if (productState.activeReservation != null) {
+            pendingReservationFromHome = productState.toPendingReservationUiModel()
+            reservationsScrollRequestKey += 1
+        }
+        selectedItemIndex = 1
+    }
+
     LaunchedEffect(reservationsState.reservations, pendingReservationFromHome?.id) {
         val pendingId = pendingReservationFromHome?.id ?: return@LaunchedEffect
         val existsInReservations = reservationsState.reservations.any { it.id == pendingId }
@@ -92,7 +101,13 @@ fun StudentHomeScreenRoot(
                 navItems.forEachIndexed { index, item ->
                     NavigationBarItem(
                         selected = selectedItemIndex == index,
-                        onClick = { selectedItemIndex = index },
+                        onClick = {
+                            if (index == 1) {
+                                showReservationsTab()
+                            } else {
+                                selectedItemIndex = index
+                            }
+                        },
                         icon = {
                             Icon(
                                 imageVector = if (selectedItemIndex == index) {
@@ -127,13 +142,7 @@ fun StudentHomeScreenRoot(
                         viewModel = productListViewModel,
                         onProfileClick = onNavigateToProfile,
                         onReservationCardClick = {
-                            val productState = productListViewModel.state.value
-                            val activeReservation = productState.activeReservation
-                            reservationsScrollRequestKey += 1
-                            if (activeReservation != null) {
-                                pendingReservationFromHome = productState.toPendingReservationUiModel()
-                            }
-                            selectedItemIndex = 1
+                            showReservationsTab()
                         }
                     )
                 }
@@ -143,7 +152,13 @@ fun StudentHomeScreenRoot(
                         viewModel = reservationsViewModel,
                         scrollToTopRequestKey = reservationsScrollRequestKey,
                         prioritizedReservation = pendingReservationFromHome,
-                        onProfileClick = onNavigateToProfile
+                        onProfileClick = onNavigateToProfile,
+                        onReservationCancelStarted = { reservationId ->
+                            if (pendingReservationFromHome?.id == reservationId) {
+                                pendingReservationFromHome = null
+                            }
+                            productListViewModel.clearActiveReservationIfMatches(reservationId)
+                        }
                     )
                 }
             }

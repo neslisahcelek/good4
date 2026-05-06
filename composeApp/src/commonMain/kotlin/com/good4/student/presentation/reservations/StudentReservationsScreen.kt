@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -43,8 +43,8 @@ import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
-import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ReservationCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.cancel
@@ -71,7 +71,8 @@ fun StudentReservationsScreen(
     viewModel: StudentReservationsViewModel = koinViewModel(),
     scrollToTopRequestKey: Int = 0,
     prioritizedReservation: ReservationUiModel? = null,
-    onProfileClick: (() -> Unit)? = null
+    onProfileClick: (() -> Unit)? = null,
+    onReservationCancelStarted: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -81,7 +82,10 @@ fun StudentReservationsScreen(
         scrollToTopRequestKey = scrollToTopRequestKey,
         prioritizedReservation = prioritizedReservation,
         onProfileClick = onProfileClick,
-        onCancelReservation = viewModel::cancelReservation
+        onCancelReservation = { reservationId ->
+            onReservationCancelStarted(reservationId)
+            viewModel.cancelReservation(reservationId)
+        }
     )
 }
 
@@ -179,7 +183,7 @@ private fun StudentReservationsContent(
             }
 
             when {
-                state.isLoading -> {
+                state.isLoading && displayReservations.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
