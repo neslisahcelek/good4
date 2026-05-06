@@ -8,6 +8,7 @@ import com.good4.order.data.dto.OrderItemDto
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
 import com.good4.order.domain.OrderStatus
+import com.good4.order.domain.isExpired
 import kotlinx.datetime.Instant
 
 private const val COLLECTION = "orders"
@@ -126,10 +127,33 @@ class OrderRepository(
     }
 
     suspend fun updateOrderStatus(id: String, status: OrderStatus): Result<Unit, Error> {
-        return when (val result = firestoreRepository.getDocument(COLLECTION, id, OrderDto::class)) {
+        return firestoreRepository.updateFields(
+            collectionPath = COLLECTION,
+            documentId = id,
+            fields = mapOf("status" to status.value)
+        )
+    }
+
+    suspend fun checkAndExpireOrdersByBusiness(businessId: String): Result<Unit, Error> {
+        return when (val result = getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
             is Result.Success -> {
-                val updated = result.data.copy(status = status.value)
-                firestoreRepository.updateDocument(COLLECTION, id, updated)
+                result.data
+                    .filter { order -> order.isExpired() }
+                    .forEach { order -> updateOrderStatus(order.id, OrderStatus.EXPIRED) }
+                Result.Success(Unit)
+            }
+
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun checkAndExpireOrdersBySupporter(supporterId: String): Result<Unit, Error> {
+        return when (val result = getOrdersBySupporter(supporterId)) {
+            is Result.Success -> {
+                result.data
+                    .filter { order -> order.status == OrderStatus.PENDING && order.isExpired() }
+                    .forEach { order -> updateOrderStatus(order.id, OrderStatus.EXPIRED) }
+                Result.Success(Unit)
             }
             is Result.Error -> result
         }

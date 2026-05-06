@@ -6,6 +6,8 @@ import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.order.data.repository.OrderRepository
+import com.good4.order.domain.OrderStatus
+import com.good4.order.domain.isExpired
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.order_code_loading_error
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +31,10 @@ class SupporterOrderCodeViewModel(
 
             when (val result = orderRepository.getOrder(orderId)) {
                 is Result.Success -> {
+                    if (result.data.isExpired()) {
+                        orderRepository.updateOrderStatus(result.data.id, OrderStatus.EXPIRED)
+                    }
+
                     val (businessAddress, businessAddressUrl) = when (
                         val businessResult = businessRepository.getBusinessById(result.data.businessId)
                     ) {
@@ -38,7 +44,11 @@ class SupporterOrderCodeViewModel(
 
                     _state.update {
                         it.copy(
-                            order = result.data,
+                            order = if (result.data.isExpired()) {
+                                result.data.copy(status = OrderStatus.EXPIRED)
+                            } else {
+                                result.data
+                            },
                             businessAddress = businessAddress,
                             businessAddressUrl = businessAddressUrl,
                             isLoading = false

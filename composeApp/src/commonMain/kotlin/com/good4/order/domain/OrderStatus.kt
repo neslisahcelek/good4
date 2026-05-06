@@ -4,7 +4,8 @@ enum class OrderStatus(val value: String) {
     PENDING("pending"),
     CONFIRMED("confirmed"),
     COMPLETED("completed"),
-    CANCELLED("cancelled");
+    CANCELLED("cancelled"),
+    EXPIRED("expired");
 
     companion object {
         fun fromValue(value: String?): OrderStatus {

@@ -11,6 +11,8 @@ import com.good4.core.domain.Result
 import com.good4.core.util.userFriendlyErrorMessage
 import com.good4.order.data.repository.OrderRepository
 import com.good4.order.domain.OrderStatus
+import com.good4.order.domain.isActivePending
+import com.good4.order.domain.isVisibleOnBusinessDashboard
 import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name_fallback
@@ -151,9 +153,10 @@ class BusinessDashboardViewModel(
     fun openFirstPendingOrderDetail() {
         val businessId = cachedBusinessId ?: return
         viewModelScope.launch {
+            orderRepository.checkAndExpireOrdersByBusiness(businessId)
             when (val result = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
                 is Result.Success -> {
-                    val first = result.data.firstOrNull()
+                    val first = result.data.firstOrNull { order -> order.isActivePending() }
                     if (first != null) {
                         _state.update {
                             it.copy(
@@ -228,6 +231,9 @@ class BusinessDashboardViewModel(
 
                         val fallbackName = getString(Res.string.business_name_fallback)
 
+                        codeRepository.checkAndExpireCodes()
+                        orderRepository.checkAndExpireOrdersByBusiness(businessId)
+
                     when (val businessResult = businessRepository.getBusinessById(businessId)) {
                         is Result.Success -> {
                             _state.update {
@@ -272,7 +278,10 @@ class BusinessDashboardViewModel(
                         is Result.Success -> {
                             val productFallback = getString(Res.string.product_name_fallback)
                             recentResult.data
-                                .filter { code -> code.statusEnum != CodeStatus.CANCELLED }
+                                .filter { code ->
+                                    code.statusEnum != CodeStatus.CANCELLED &&
+                                            code.statusEnum != CodeStatus.EXPIRED
+                                }
                                 .sortedByDescending { code -> code.usedAt ?: code.createdAt ?: 0L }
                                 .map { code ->
                                     RecentCodeUiModel(
@@ -304,24 +313,31 @@ class BusinessDashboardViewModel(
                     var recentOrdersUi = emptyList<RecentOrderUiModel>()
                     val orderProductFallback = getString(Res.string.product_name_fallback)
 
-                    when (val recentOrdersResult = orderRepository.getRecentOrdersByBusiness(businessId, limit = 5)) {
+                        when (val recentOrdersResult =
+                            orderRepository.getRecentOrdersByBusiness(businessId, limit = 20)) {
                         is Result.Success -> {
-                            recentOrdersUi = recentOrdersResult.data.map { order ->
-                                RecentOrderUiModel(
-                                    id = order.id,
-                                    productName = order.items.firstOrNull()?.productName?.ifBlank { orderProductFallback }
-                                        ?: orderProductFallback,
-                                    code = order.code,
-                                    orderStatus = order.status
-                                )
-                            }
+                            recentOrdersUi = recentOrdersResult.data
+                                .filter { order -> order.isVisibleOnBusinessDashboard() }
+                                .take(5)
+                                .map { order ->
+                                    RecentOrderUiModel(
+                                        id = order.id,
+                                        productName = order.items.firstOrNull()?.productName?.ifBlank { orderProductFallback }
+                                            ?: orderProductFallback,
+                                        code = order.code,
+                                        orderStatus = order.status
+                                    )
+                                }
                         }
 
                         is Result.Error -> Unit
                     }
 
                     when (val pendingOrders = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
-                        is Result.Success -> supporterPending = pendingOrders.data.size
+                        is Result.Success -> {
+                            supporterPending =
+                                pendingOrders.data.count { order -> order.isActivePending() }
+                        }
                         is Result.Error -> Unit
                     }
 

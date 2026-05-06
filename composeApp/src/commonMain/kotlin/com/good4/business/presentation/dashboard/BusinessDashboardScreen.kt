@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.code.domain.CodeStatus
-import com.good4.order.domain.OrderStatus
 import com.good4.core.presentation.AccentYellow
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.PistachioGreen
@@ -50,6 +49,7 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.StatCard
+import com.good4.order.domain.OrderStatus
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.dashboard_code_prefix
 import good4.composeapp.generated.resources.dashboard_completed_codes_label
@@ -58,8 +58,10 @@ import good4.composeapp.generated.resources.dashboard_no_orders
 import good4.composeapp.generated.resources.dashboard_order_code_prefix
 import good4.composeapp.generated.resources.dashboard_order_status_cancelled
 import good4.composeapp.generated.resources.dashboard_order_status_confirmed
+import good4.composeapp.generated.resources.dashboard_order_status_expired
 import good4.composeapp.generated.resources.dashboard_order_status_pending
 import good4.composeapp.generated.resources.dashboard_pending_codes_label
+import good4.composeapp.generated.resources.dashboard_pending_orders_open_detail
 import good4.composeapp.generated.resources.dashboard_recent_actions
 import good4.composeapp.generated.resources.dashboard_recent_orders
 import good4.composeapp.generated.resources.dashboard_section_products
@@ -70,7 +72,6 @@ import good4.composeapp.generated.resources.dashboard_status_used
 import good4.composeapp.generated.resources.dashboard_supporter_confirmed_orders
 import good4.composeapp.generated.resources.dashboard_supporter_pending_orders
 import good4.composeapp.generated.resources.dashboard_total_products
-import good4.composeapp.generated.resources.dashboard_pending_orders_open_detail
 import good4.composeapp.generated.resources.dashboard_verify_tab_hint
 import good4.composeapp.generated.resources.dashboard_welcome_prefix
 import good4.composeapp.generated.resources.nav_products
@@ -363,6 +364,7 @@ private fun RecentOrderCard(
                         when (order.orderStatus) {
                             OrderStatus.CONFIRMED -> DeepGreen.copy(alpha = 0.1f)
                             OrderStatus.CANCELLED -> TextSecondary.copy(alpha = 0.15f)
+                            OrderStatus.EXPIRED -> TextSecondary.copy(alpha = 0.15f)
                             else -> PistachioGreen.copy(alpha = 0.3f)
                         }
                     )
@@ -374,6 +376,7 @@ private fun RecentOrderCard(
                     color = when (order.orderStatus) {
                         OrderStatus.CONFIRMED -> DeepGreen
                         OrderStatus.CANCELLED -> TextSecondary
+                        OrderStatus.EXPIRED -> TextSecondary
                         else -> TextPrimary
                     }
                 )
@@ -389,6 +392,7 @@ private fun OrderStatusLabel(status: OrderStatus): String {
         OrderStatus.CONFIRMED -> stringResource(Res.string.dashboard_order_status_confirmed)
         OrderStatus.CANCELLED -> stringResource(Res.string.dashboard_order_status_cancelled)
         OrderStatus.COMPLETED -> stringResource(Res.string.dashboard_order_status_confirmed)
+        OrderStatus.EXPIRED -> stringResource(Res.string.dashboard_order_status_expired)
     }
 }
 

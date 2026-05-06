@@ -8,6 +8,7 @@ import com.good4.code.data.repository.CodeRepository
 import com.good4.core.domain.Result
 import com.good4.order.data.repository.OrderRepository
 import com.good4.order.domain.OrderStatus
+import com.good4.order.domain.isExpired
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.getString
 
 class VerifyCodeViewModel(
@@ -144,17 +144,26 @@ class VerifyCodeViewModel(
                 is Result.Success -> {
                     when (codeRepository.markCodeAsUsed(studentResult.data.id)) {
                         is Result.Success -> {
-                            launch {
-                                productRepository.decrementProductPendingCount(studentResult.data.productId)
-                                productRepository.incrementProductDeliveredCount(studentResult.data.productId, 1)
-                            }
-                            _state.update {
-                                it.copy(
-                                    isLoading = false,
-                                    verificationSuccess = true,
-                                    verifiedProductName = studentResult.data.productName,
-                                    codeInput = ""
-                                )
+                            when (productRepository.recordProductDelivery(studentResult.data.productId)) {
+                                is Result.Success -> {
+                                    _state.update {
+                                        it.copy(
+                                            isLoading = false,
+                                            verificationSuccess = true,
+                                            verifiedProductName = studentResult.data.productName,
+                                            codeInput = ""
+                                        )
+                                    }
+                                }
+
+                                is Result.Error -> {
+                                    _state.update {
+                                        it.copy(
+                                            isLoading = false,
+                                            errorMessage = getString(Res.string.verify_code_error_failed)
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -180,8 +189,7 @@ class VerifyCodeViewModel(
         when (val orderResult = orderRepository.getOrderByCodeAndBusiness(code, bid)) {
             is Result.Success -> {
                 val order = orderResult.data
-                val isExpired = order?.expiresAt?.let { it <= Clock.System.now() } == true
-                if (order != null && !isExpired) {
+                if (order != null && !order.isExpired()) {
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -191,6 +199,9 @@ class VerifyCodeViewModel(
                         )
                     }
                 } else {
+                    if (order != null) {
+                        orderRepository.updateOrderStatus(order.id, OrderStatus.EXPIRED)
+                    }
                     _state.update {
                         it.copy(
                             isLoading = false,

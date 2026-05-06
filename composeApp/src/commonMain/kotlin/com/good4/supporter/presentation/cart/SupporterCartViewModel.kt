@@ -10,6 +10,7 @@ import com.good4.order.data.dto.OrderDto
 import com.good4.order.data.dto.OrderItemDto
 import com.good4.order.data.repository.OrderRepository
 import com.good4.order.domain.OrderStatus
+import com.good4.order.domain.isActivePending
 import com.good4.product.Product
 import com.good4.supporter.data.local.SupporterCartStorage
 import com.good4.supporter.data.local.SupporterCartStoredItem
@@ -18,8 +19,8 @@ import com.good4.supporter.data.local.toStoredProduct
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.supporter_cart_empty_error
-import good4.composeapp.generated.resources.supporter_cart_order_cancel_failed
 import good4.composeapp.generated.resources.supporter_cart_no_session_error
+import good4.composeapp.generated.resources.supporter_cart_order_cancel_failed
 import good4.composeapp.generated.resources.supporter_cart_order_failed
 import good4.composeapp.generated.resources.supporter_cart_single_business_error
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -270,15 +271,12 @@ class SupporterCartViewModel(
         }
 
         viewModelScope.launch {
+            orderRepository.checkAndExpireOrdersBySupporter(userId)
             when (val result = orderRepository.getOrdersBySupporter(userId)) {
                 is Result.Success -> {
-                    val now = Clock.System.now()
                     val activeOrders = result.data
                         .asSequence()
-                        .filter { order ->
-                            order.status == OrderStatus.PENDING &&
-                                (order.expiresAt == null || order.expiresAt > now)
-                        }
+                        .filter { order -> order.isActivePending() }
                         .sortedByDescending { it.createdAt?.epochSeconds ?: 0L }
                         .map { order ->
                             ActiveSupporterOrder(

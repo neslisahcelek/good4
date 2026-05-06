@@ -48,14 +48,16 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.openMaps
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
+import com.good4.order.domain.OrderStatus
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.order_code_back_to_home
+import good4.composeapp.generated.resources.dashboard_order_status_expired
 import good4.composeapp.generated.resources.order_code_address
+import good4.composeapp.generated.resources.order_code_back_to_home
 import good4.composeapp.generated.resources.order_code_expires
 import good4.composeapp.generated.resources.order_code_items_title
 import good4.composeapp.generated.resources.order_code_piece_suffix
@@ -171,7 +173,7 @@ private fun OrderCodeContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        CodeSection(code = order.code)
+        CodeSection(order = order)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -227,7 +229,7 @@ private fun OrderCodeHeader(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CodeSection(modifier: Modifier = Modifier, code: String) {
+private fun CodeSection(modifier: Modifier = Modifier, order: Order) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
@@ -236,7 +238,7 @@ private fun CodeSection(modifier: Modifier = Modifier, code: String) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = code,
+                text = order.code,
                 fontSize = 40.sp,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace,
@@ -247,15 +249,19 @@ private fun CodeSection(modifier: Modifier = Modifier, code: String) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OrderStatusBadge()
+        OrderStatusBadge(status = order.status)
     }
 }
 
 @Composable
-private fun OrderStatusBadge(modifier: Modifier = Modifier) {
+private fun OrderStatusBadge(modifier: Modifier = Modifier, status: OrderStatus) {
+    val isExpired = status == OrderStatus.EXPIRED
     Row(
         modifier = modifier
-            .background(DeepGreen.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+            .background(
+                if (isExpired) TextSecondary.copy(alpha = 0.15f) else DeepGreen.copy(alpha = 0.15f),
+                RoundedCornerShape(20.dp)
+            )
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -263,14 +269,18 @@ private fun OrderStatusBadge(modifier: Modifier = Modifier) {
         Icon(
             imageVector = Icons.Filled.CheckCircle,
             contentDescription = null,
-            tint = PrimaryGreen,
+            tint = if (isExpired) TextSecondary else PrimaryGreen,
             modifier = Modifier.size(14.dp)
         )
         Text(
-            text = stringResource(Res.string.order_code_status_pending),
+            text = if (isExpired) {
+                stringResource(Res.string.dashboard_order_status_expired)
+            } else {
+                stringResource(Res.string.order_code_status_pending)
+            },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
-            color = PrimaryGreen
+            color = if (isExpired) TextSecondary else PrimaryGreen
         )
     }
 }

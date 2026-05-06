@@ -109,6 +109,23 @@ class CodeRepository(
         }
     }
 
+    suspend fun getRecentCodesByUserId(
+        userId: String,
+        limit: Long
+    ): Result<List<CodeWithDetails>, Error> {
+        return when (val result = firestoreRepository.queryCollectionWithMultipleConditionsAndLimit(
+            collectionPath = "codes",
+            conditions = mapOf("userId" to userId),
+            orderByField = "createdAt",
+            descending = true,
+            limit = limit,
+            clazz = CodeDto::class
+        )) {
+            is Result.Success -> Result.Success(buildCodesWithDetails(result.data))
+            is Result.Error -> result
+        }
+    }
+
     suspend fun getCodesByUserIdAndStatus(
         userId: String,
         status: CodeStatus,
@@ -245,16 +262,14 @@ class CodeRepository(
     }
 
     suspend fun markCodeAsUsed(codeId: String): Result<Unit, Error> {
-        return when (val result = firestoreRepository.getDocument("codes", codeId, CodeDto::class)) {
-            is Result.Success -> {
-                val updatedCode = result.data.copy(
-                    status = CodeStatus.USED.value,
-                    usedAt = kotlinx.datetime.Clock.System.now().epochSeconds
-                )
-                firestoreRepository.updateDocument("codes", codeId, updatedCode)
-            }
-            is Result.Error -> result
-        }
+        return firestoreRepository.updateFields(
+            collectionPath = "codes",
+            documentId = codeId,
+            fields = mapOf(
+                "status" to CodeStatus.USED.value,
+                "usedAt" to kotlinx.datetime.Clock.System.now().epochSeconds
+            )
+        )
     }
 
     suspend fun createCode(code: CodeDto): Result<String, Error> {
@@ -276,27 +291,19 @@ class CodeRepository(
     }
     
     suspend fun markCodeAsExpired(codeId: String): Result<Unit, Error> {
-        return when (val result = firestoreRepository.getDocument("codes", codeId, CodeDto::class)) {
-            is Result.Success -> {
-                val updatedCode = result.data.copy(
-                    status = CodeStatus.EXPIRED.value
-                )
-                firestoreRepository.updateDocument("codes", codeId, updatedCode)
-            }
-            is Result.Error -> result
-        }
+        return firestoreRepository.updateFields(
+            collectionPath = "codes",
+            documentId = codeId,
+            fields = mapOf("status" to CodeStatus.EXPIRED.value)
+        )
     }
 
     suspend fun markCodeAsCancelled(codeId: String): Result<Unit, Error> {
-        return when (val result = firestoreRepository.getDocument("codes", codeId, CodeDto::class)) {
-            is Result.Success -> {
-                val updatedCode = result.data.copy(
-                    status = CodeStatus.CANCELLED.value
-                )
-                firestoreRepository.updateDocument("codes", codeId, updatedCode)
-            }
-            is Result.Error -> result
-        }
+        return firestoreRepository.updateFields(
+            collectionPath = "codes",
+            documentId = codeId,
+            fields = mapOf("status" to CodeStatus.CANCELLED.value)
+        )
     }
 
     suspend fun checkAndExpireCodes(): Result<Unit, Error> {
@@ -307,9 +314,14 @@ class CodeRepository(
 
                 result.data.forEach { documentWithId ->
                     val code = documentWithId.data
-                    if (code.statusEnum == CodeStatus.PENDING && code.createdAt != null) {
-                        val elapsed = nowSecs - code.createdAt
-                        if (elapsed >= expirationSecs) {
+                    if (code.statusEnum == CodeStatus.PENDING) {
+                        val hasExpired = code.expiresAt?.let { expiresAt ->
+                            nowSecs >= expiresAt
+                        } ?: code.createdAt?.let { createdAt ->
+                            nowSecs - createdAt >= expirationSecs
+                        } ?: false
+
+                        if (hasExpired) {
                             markCodeAsExpired(documentWithId.id)
                         }
                     }

@@ -238,6 +238,7 @@
     <string name="dashboard_order_status_pending">Ödeme bekliyor</string>
     <string name="dashboard_order_status_confirmed">Onaylandı</string>
     <string name="dashboard_order_status_cancelled">İptal edildi</string>
+    <string name="dashboard_order_status_expired">Süresi doldu</string>
     <string name="dashboard_verify_tab_hint">Sipariş onayı veya iptali için alttaki Kod Doğrula sekmesini kullanın.</string>
     <string name="business_order_detail_title">Sipariş detayı</string>
     <string name="business_order_detail_cancel_success">Sipariş iptal edildi.</string>

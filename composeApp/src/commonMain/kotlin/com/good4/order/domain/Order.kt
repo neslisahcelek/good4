@@ -1,5 +1,6 @@
 package com.good4.order.domain
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 data class OrderItem(
@@ -27,3 +28,17 @@ data class Order(
     val supporterName: String,
     val items: List<OrderItem>
 )
+
+fun Order.isActivePending(): Boolean {
+    return status == OrderStatus.PENDING && !isExpired()
+}
+
+fun Order.isExpired(): Boolean {
+    return expiresAt?.let { expiresAt -> expiresAt <= Clock.System.now() } ?: false
+}
+
+fun Order.isVisibleOnBusinessDashboard(): Boolean {
+    return status != OrderStatus.EXPIRED &&
+            status != OrderStatus.CANCELLED &&
+            (status != OrderStatus.PENDING || isActivePending())
+}
