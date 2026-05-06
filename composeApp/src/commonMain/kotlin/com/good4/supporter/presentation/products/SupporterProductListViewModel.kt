@@ -6,11 +6,12 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.product.data.repository.FirestoreProductRepository
+import com.good4.product.isVisibleToPublicUsers
 import com.good4.user.data.repository.UserRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class SupporterProductListViewModel(
@@ -58,7 +59,11 @@ class SupporterProductListViewModel(
             when (val result = productRepository.getProducts(includeOutOfStock = true)) {
                 is Result.Success -> {
                     hasLoadedOnce = true
-                    val availableProducts = result.data.filter { !it.isDonation && it.price > 0 }
+                    val availableProducts = result.data.filter { product ->
+                        !product.isDonation &&
+                                product.price > 0 &&
+                                product.isVisibleToPublicUsers()
+                    }
                     _state.update {
                         it.copy(products = availableProducts, isLoading = false)
                     }

@@ -122,9 +122,11 @@ android {
             dimension = "env"
             applicationIdSuffix = ".test"
             versionNameSuffix = "-test"
+            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "false")
         }
         create("prod") {
             dimension = "env"
+            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
         }
     }
 

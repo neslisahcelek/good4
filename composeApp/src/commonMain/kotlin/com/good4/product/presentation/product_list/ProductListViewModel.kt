@@ -10,6 +10,7 @@ import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.product.data.repository.FirestoreProductRepository
+import com.good4.product.isVisibleToPublicUsers
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.already_have_reservation
@@ -171,6 +172,16 @@ class ProductListViewModel(
                     }
                     loadStudentInfo()
                 }
+            }
+        }
+    }
+
+    fun clearActiveReservationIfMatches(codeId: String) {
+        _state.update { state ->
+            if (state.activeReservation?.codeId == codeId) {
+                state.copy(activeReservation = null)
+            } else {
+                state
             }
         }
     }
@@ -342,7 +353,9 @@ class ProductListViewModel(
                     isLoaded = true
                     _state.update {
                         it.copy(
-                            products = result.data,
+                            products = result.data.filter { product ->
+                                product.isVisibleToPublicUsers()
+                            },
                             isLoading = false,
                             errorMessage = null
                         )

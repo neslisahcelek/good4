@@ -1,5 +1,7 @@
 package com.good4.product
 
+import com.good4.core.util.AppEnvironment
+
 data class Product(
     val id: Long,
     val documentId: String,
@@ -21,3 +23,7 @@ data class Product(
     val totalSuspended: Int = 0,
     val createdAt: Long? = null
 )
+
+fun Product.isVisibleToPublicUsers(): Boolean {
+    return AppEnvironment.isDebug || !name.trim().equals("test", ignoreCase = true)
+}
