@@ -161,6 +161,7 @@ class CodeRepository(
         }
     }
 
+    @Suppress("unused")
     suspend fun getCodesByBusinessId(businessId: String): Result<List<CodeWithDetails>, Error> {
         return when (val result = firestoreRepository.queryCollectionWithIds("codes", "businessId", businessId, CodeDto::class)) {
             is Result.Success -> {
@@ -254,7 +255,7 @@ class CodeRepository(
                         )
                     )
                 } else {
-                    Result.Error(com.good4.core.domain.NetworkError(getString(Res.string.error_code_not_found_or_used)))
+                    Result.Error(NetworkError(getString(Res.string.error_code_not_found_or_used)))
                 }
             }
             is Result.Error -> result
@@ -272,8 +273,16 @@ class CodeRepository(
         )
     }
 
+    @Suppress("unused")
     suspend fun createCode(code: CodeDto): Result<String, Error> {
         return firestoreRepository.addDocument("codes", code)
+    }
+
+    suspend fun reserveProductAndCreateCode(
+        productId: String,
+        code: CodeDto
+    ): Result<String, Error> {
+        return firestoreRepository.reserveProductAndCreateCode(productId, code)
     }
 
     suspend fun getCodeIdByValue(codeValue: String): Result<String, Error> {

@@ -1,5 +1,6 @@
 package com.good4.core.data.repository
 
+import com.good4.code.data.dto.CodeDto
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
@@ -12,6 +13,14 @@ class FirestoreRepositoryImpl : FirestoreRepository {
     override suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error> {
         delay(500)
         Logger.d("FirestoreRepositoryMock", "Added document to $collectionPath with data: $data")
+        return Result.Success("mock_document_id_${Random.nextInt()}")
+    }
+
+    override suspend fun reserveProductAndCreateCode(
+        productId: String,
+        code: CodeDto
+    ): Result<String, Error> {
+        delay(500)
         return Result.Success("mock_document_id_${Random.nextInt()}")
     }
 

@@ -12,8 +12,10 @@ import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_business_not_found
 import good4.composeapp.generated.resources.error_daily_pending_limit_invalid
+import good4.composeapp.generated.resources.error_discount_price_greater_than_original
 import good4.composeapp.generated.resources.error_image_upload_failed
 import good4.composeapp.generated.resources.error_image_upload_permission_denied
+import good4.composeapp.generated.resources.error_price_required
 import good4.composeapp.generated.resources.error_product_name_required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -174,6 +176,7 @@ class BusinessProductsViewModel(
 
     fun addProduct() {
         val state = _state.value
+        if (state.isAddLoading || state.isProductImageUploading) return
 
         if (state.productName.isBlank()) {
             viewModelScope.launch {
@@ -203,9 +206,30 @@ class BusinessProductsViewModel(
             }
             return
         }
+        if (!state.isDonationProduct && state.productOriginalPrice.isBlank()) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_price_required))
+                }
+            }
+            return
+        }
+        if (isDiscountPriceGreaterThanOriginal(
+                originalPrice = state.productOriginalPrice,
+                discountPrice = state.productDiscountPrice,
+                isDonationProduct = state.isDonationProduct
+            )
+        ) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_discount_price_greater_than_original))
+                }
+            }
+            return
+        }
+        _state.update { it.copy(isAddLoading = true, errorMessage = null) }
 
         viewModelScope.launch {
-            _state.update { it.copy(isAddLoading = true, errorMessage = null) }
             val snapshot = _state.value
             val imageUrl = resolveImageUrlForSubmit(snapshot, SubmitKind.Add)
             if (imageUrl == null && snapshot.pendingProductImageBytes != null) {
@@ -345,6 +369,27 @@ class BusinessProductsViewModel(
             }
             return
         }
+        if (!state.isDonationProduct && state.productOriginalPrice.isBlank()) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_price_required))
+                }
+            }
+            return
+        }
+        if (isDiscountPriceGreaterThanOriginal(
+                originalPrice = state.productOriginalPrice,
+                discountPrice = state.productDiscountPrice,
+                isDonationProduct = state.isDonationProduct
+            )
+        ) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(errorMessage = getString(Res.string.error_discount_price_greater_than_original))
+                }
+            }
+            return
+        }
         viewModelScope.launch {
             _state.update { it.copy(isEditLoading = true, errorMessage = null) }
             val snapshot = _state.value
@@ -460,6 +505,17 @@ class BusinessProductsViewModel(
         if (rawValue.isBlank()) return true
         val value = rawValue.toIntOrNull() ?: return true
         return value <= 0
+    }
+
+    private fun isDiscountPriceGreaterThanOriginal(
+        originalPrice: String,
+        discountPrice: String,
+        isDonationProduct: Boolean
+    ): Boolean {
+        if (isDonationProduct || discountPrice.isBlank()) return false
+        val original = originalPrice.toIntOrNull() ?: return false
+        val discount = discountPrice.toIntOrNull() ?: return false
+        return discount > original
     }
 
 }

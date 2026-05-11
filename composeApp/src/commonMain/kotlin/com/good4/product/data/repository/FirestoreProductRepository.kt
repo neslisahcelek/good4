@@ -100,6 +100,7 @@ class FirestoreProductRepository(
         return firestoreRepository.updateDocument("products", id, product)
     }
 
+    @Suppress("unused")
     suspend fun decrementProductPendingCount(id: String): Result<Unit, Error> {
         return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
             is Result.Success -> {
@@ -123,11 +124,27 @@ class FirestoreProductRepository(
         }
     }
 
+    @Suppress("unused")
     suspend fun incrementProductDeliveredCount(id: String, amount: Int): Result<Unit, Error> {
         return when (val result = firestoreRepository.getDocument("products", id, ProductDto::class)) {
             is Result.Success -> {
                 val current = result.data.totalDelivered ?: 0
                 val updated = result.data.copy(totalDelivered = current + amount)
+                updateProduct(id, updated)
+            }
+
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun recordProductDelivery(id: String): Result<Unit, Error> {
+        return when (val result =
+            firestoreRepository.getDocument("products", id, ProductDto::class)) {
+            is Result.Success -> {
+                val currentDelivered = result.data.totalDelivered ?: 0
+                val updated = result.data.copy(
+                    totalDelivered = currentDelivered + 1
+                )
                 updateProduct(id, updated)
             }
             is Result.Error -> result
@@ -144,7 +161,8 @@ class FirestoreProductRepository(
             is Result.Error -> result
         }
     }
-    
+
+    @Suppress("unused")
     suspend fun deleteProduct(id: String): Result<Unit, Error> {
         return firestoreRepository.deleteDocument("products", id)
     }

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PrimaryGreen
@@ -32,16 +33,15 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.StandardButtonHeight
 import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
+import com.good4.core.util.toInitials
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
 import com.good4.order.domain.OrderStatus
-import com.good4.core.util.toInitials
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_order_detail_title
+import good4.composeapp.generated.resources.order_code_piece_suffix
 import good4.composeapp.generated.resources.verify_code_order_cancel
 import good4.composeapp.generated.resources.verify_code_order_canceling
-import good4.composeapp.generated.resources.order_code_piece_suffix
-import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.verify_code_order_items_label
 import good4.composeapp.generated.resources.verify_code_order_supporter_label
 import good4.composeapp.generated.resources.verify_code_order_title
@@ -101,7 +101,7 @@ private fun BusinessOrderDetailContent(
     isCancellingOrder: Boolean,
     onCancelOrder: () -> Unit
 ) {
-    val currencySuffix = stringResource(Res.string.price_currency_suffix)
+    val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
     val pieceSuffix = stringResource(Res.string.order_code_piece_suffix)
     val isPendingOrder = order.status == OrderStatus.PENDING
 

@@ -1,5 +1,6 @@
 package com.good4.core.data.repository.android
 
+import com.good4.code.data.dto.CodeDto
 import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
@@ -71,9 +72,8 @@ class FirestoreRepositoryAndroidImpl(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun encodeToJsonString(data: Any): String {
-        val ser = serializer(data::class.java) as KSerializer<Any>
+        val ser = serializer(data::class.java)
         return json.encodeToString(ser, data)
     }
 
@@ -117,7 +117,8 @@ class FirestoreRepositoryAndroidImpl(
                         if (epochSeconds != null) {
                             return JsonPrimitive(epochSeconds)
                         }
-                    } catch (e: Exception) { }
+                    } catch (_: Exception) {
+                    }
                 }
 
                 buildJsonObject {
@@ -172,6 +173,40 @@ class FirestoreRepositoryAndroidImpl(
             Result.Success(documentReference.id)
         } catch (e: Exception) {
             FirebaseDebugLogger.error(operation = "addDocument", path = collectionPath, throwable = e)
+            Result.Error(NetworkError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun reserveProductAndCreateCode(
+        productId: String,
+        code: CodeDto
+    ): Result<String, Error> {
+        if (productId.isBlank()) {
+            return Result.Error(NetworkError("Product path cannot be empty"))
+        }
+        return try {
+            val codeId = firestore.runTransaction { transaction ->
+                val productRef = firestore.collection("products").document(productId)
+                val productSnapshot = transaction.get(productRef)
+                val currentPending = productSnapshot.getLong("pendingCount") ?: 0L
+
+                if (currentPending <= 0L) {
+                    throw IllegalStateException("Product out of stock")
+                }
+
+                val codeRef = firestore.collection("codes").document()
+                transaction.update(productRef, "pendingCount", currentPending - 1L)
+                transaction.set(codeRef, encodeToFirestoreMap(code))
+                codeRef.id
+            }.await()
+
+            Result.Success(codeId)
+        } catch (e: Exception) {
+            FirebaseDebugLogger.error(
+                operation = "reserveProductAndCreateCode",
+                path = "products/$productId",
+                throwable = e
+            )
             Result.Error(NetworkError(e.message ?: "Unknown error"))
         }
     }

@@ -71,7 +71,7 @@ class ProductListViewModel(
         }
     }
 
-    fun loadActiveReservation(): Unit {
+    fun loadActiveReservation() {
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {
@@ -162,6 +162,9 @@ class ProductListViewModel(
                         is Result.Success -> {
                             authRepository.currentUser?.uid?.let { userId ->
                                 userRepository.incrementUserCredit(userId)
+                            }
+                            _state.value.activeReservation?.product?.documentId?.let { productId ->
+                                productRepository.incrementProductPendingCount(productId, 1)
                             }
                         }
                         is Result.Error -> Unit
@@ -278,7 +281,8 @@ class ProductListViewModel(
                     usedAt = null
                 )
 
-                when (val result = codeRepository.createCode(codeDto)) {
+                when (val result =
+                    codeRepository.reserveProductAndCreateCode(product.documentId, codeDto)) {
                     is Result.Success -> {
                         val decrementResult = userRepository.decrementUserCredit(userId)
                         val expirationMinutes =
@@ -312,7 +316,7 @@ class ProductListViewModel(
                                 isReserving = false,
                                 reservingProductId = null,
                                 errorMessage = UiText.DynamicString(
-                                    prefix + (result.error.message ?: "")
+                                    prefix + result.error.message
                                 )
                             )
                         }
@@ -368,7 +372,7 @@ class ProductListViewModel(
                         it.copy(
                             products = emptyList(),
                             isLoading = false,
-                            errorMessage = UiText.DynamicString(result.error.message ?: "")
+                            errorMessage = UiText.DynamicString(result.error.message)
                         )
                     }
                 }

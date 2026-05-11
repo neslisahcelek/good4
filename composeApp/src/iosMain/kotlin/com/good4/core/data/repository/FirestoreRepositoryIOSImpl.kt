@@ -20,7 +20,6 @@ import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Query
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
-import dev.gitlive.firebase.firestore.where
 import kotlinx.serialization.KSerializer
 import kotlin.reflect.KClass
 
@@ -55,6 +54,44 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             FirebaseDebugLogger.error(
                 operation = "addDocument",
                 path = collectionPath,
+                throwable = e
+            )
+            Result.Error(NetworkError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun reserveProductAndCreateCode(
+        productId: String,
+        code: CodeDto
+    ): Result<String, Error> {
+        if (productId.isBlank()) {
+            return Result.Error(NetworkError("Product path cannot be empty"))
+        }
+        return try {
+            val codeId = firestore.runTransaction {
+                val productRef = firestore.collection("products").document(productId)
+                val productSnapshot = get(productRef)
+                val currentPending = if (productSnapshot.contains("pendingCount")) {
+                    productSnapshot.get<Long>("pendingCount")
+                } else {
+                    0L
+                }
+
+                if (currentPending <= 0L) {
+                    throw IllegalStateException("Product out of stock")
+                }
+
+                val codeRef = firestore.collection("codes").document
+                update(productRef, "pendingCount" to currentPending - 1L)
+                set(codeRef, serializerForData(code), code)
+                codeRef.id
+            }
+
+            Result.Success(codeId)
+        } catch (e: Exception) {
+            FirebaseDebugLogger.error(
+                operation = "reserveProductAndCreateCode",
+                path = "products/$productId",
                 throwable = e
             )
             Result.Error(NetworkError(e.message ?: "Unknown error"))
@@ -231,7 +268,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             val querySnapshot = firestore.collection(collectionPath).get()
-            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     decodeDocumentSnapshot(document, clazz)
@@ -274,7 +310,6 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             val querySnapshot = firestore.collection(collectionPath).get()
-            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val decoded = decodeDocumentSnapshot(document, clazz)
@@ -320,9 +355,8 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
         return try {
             val querySnapshot = firestore.collection(collectionPath)
-                .where(field, equalTo = value)
+                .where { field equalTo value }
                 .get()
-            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val decoded = decodeDocumentSnapshot(document, clazz)
@@ -368,10 +402,9 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return try {
             var query: Query = firestore.collection(collectionPath)
             conditions.forEach { (field, value) ->
-                query = query.where(field, equalTo = value)
+                query = query.where { field equalTo value }
             }
             val querySnapshot = query.get()
-            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val decoded = decodeDocumentSnapshot(document, clazz)
@@ -420,14 +453,13 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return try {
             var query: Query = firestore.collection(collectionPath)
             conditions.forEach { (field, value) ->
-                query = query.where(field, equalTo = value)
+                query = query.where { field equalTo value }
             }
             if (orderByField != null) {
                 val direction = if (descending) Direction.DESCENDING else Direction.ASCENDING
                 query = query.orderBy(orderByField, direction)
             }
             val querySnapshot = query.limit(limit).get()
-            val serializer = serializerFor(clazz)
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val decoded = decodeDocumentSnapshot(document, clazz)
@@ -676,7 +708,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             if (!contains(field)) return null
             getOrNull<Long>(field)
                 ?: getOrNull<Timestamp>(field)?.seconds
-                ?: null
+                ?: readEpochSecondsFromMap(getOrNull<Any>(field))
         } catch (_: Exception) {
             null
         }

@@ -10,6 +10,7 @@ import com.good4.config.data.repository.AppConfigRepository
 import com.good4.config.domain.AppDefaults
 import com.good4.core.domain.Result
 import com.good4.core.util.ReservationTimeCalculator
+import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name_fallback
@@ -32,6 +33,7 @@ class StudentReservationsViewModel(
     private val authRepository: AuthRepository,
     private val codeRepository: CodeRepository,
     private val userRepository: UserRepository,
+    private val productRepository: FirestoreProductRepository,
     private val configRepository: AppConfigRepository
 ) : ViewModel() {
 
@@ -172,6 +174,7 @@ class StudentReservationsViewModel(
                         when (codeRepository.markCodeAsExpired(code.id)) {
                             is Result.Success -> {
                                 userRepository.incrementUserCredit(userId)
+                                productRepository.incrementProductPendingCount(code.productId, 1)
                                 code.copy(status = CodeStatus.EXPIRED.value)
                             }
                             is Result.Error -> code
@@ -202,6 +205,7 @@ class StudentReservationsViewModel(
                     ReservationUiModel(
                         id = code.id,
                         code = code.value,
+                        productId = code.productId,
                         productName = code.productName ?: productFallback,
                         businessName = code.businessName ?: businessFallback,
                         businessAddress = code.businessAddress ?: "",
@@ -238,6 +242,7 @@ class StudentReservationsViewModel(
 
     fun cancelReservation(reservationId: String) {
         val userId = authRepository.currentUser?.uid ?: return
+        val reservation = _state.value.reservations.firstOrNull { it.id == reservationId }
         optimisticCancelledReservationIds += reservationId
         _state.update { state ->
             state.copy(
@@ -259,6 +264,9 @@ class StudentReservationsViewModel(
             when (val cancelResult = codeRepository.markCodeAsCancelled(reservationId)) {
                 is Result.Success -> {
                     userRepository.incrementUserCredit(userId)
+                    reservation?.productId?.takeIf { it.isNotBlank() }?.let { productId ->
+                        productRepository.incrementProductPendingCount(productId, 1)
+                    }
                     optimisticCancelledReservationIds -= reservationId
                     loadReservations()
                 }

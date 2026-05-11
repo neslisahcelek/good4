@@ -27,9 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -108,16 +106,9 @@ private fun StudentReservationsContent(
             listOf(prioritized) + state.reservations
         }
     }
-    var pendingScrollRequestKey by remember { mutableIntStateOf(-1) }
-
-    LaunchedEffect(scrollToTopRequestKey) {
-        pendingScrollRequestKey = scrollToTopRequestKey
-    }
-
-    LaunchedEffect(displayReservations.size, pendingScrollRequestKey) {
-        if (pendingScrollRequestKey == scrollToTopRequestKey && displayReservations.isNotEmpty()) {
+    LaunchedEffect(scrollToTopRequestKey, displayReservations.size) {
+        if (scrollToTopRequestKey > 0 && displayReservations.isNotEmpty()) {
             listState.scrollToItem(0)
-            pendingScrollRequestKey = -1
         }
     }
 
@@ -273,6 +264,7 @@ private fun ReservationItem(
 data class ReservationUiModel(
     val id: String,
     val code: String,
+    val productId: String = "",
     val productName: String,
     val businessName: String,
     val businessAddress: String = "",
