@@ -121,7 +121,7 @@ class SupporterRegisterViewModel(
                         totalMeals = 0
                     )
 
-                    when (val userResult = userRepository.createUser(userId, userDto)) {
+                    when (userRepository.createUser(userId, userDto)) {
                         is Result.Success -> {
                             startupSessionCache.cacheStartupSession(
                                 uid = userId,

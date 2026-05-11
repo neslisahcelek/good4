@@ -32,10 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.core.graphics.scale
 import com.good4.core.domain.ProductImageConstants
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextPrimary
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.error_camera_open_failed
+import good4.composeapp.generated.resources.error_image_picker_open_failed
 import good4.composeapp.generated.resources.error_image_prepare_failed
 import good4.composeapp.generated.resources.image_picker_camera
 import good4.composeapp.generated.resources.image_picker_gallery
@@ -63,7 +66,7 @@ actual fun ProductImagePicker(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
-    var hadUploadingPhase by remember { mutableStateOf(false) }
+    val hadUploadingPhase = remember { mutableStateOf(false) }
     var showSavedRemoteStatus by remember { mutableStateOf(false) }
 
     val galleryLabel = stringResource(Res.string.image_picker_gallery)
@@ -72,18 +75,20 @@ actual fun ProductImagePicker(
     val selectedPendingLabel = stringResource(Res.string.product_image_selected_pending)
     val savedRemoteLabel = stringResource(Res.string.product_image_saved_remote)
     val prepareFailedMessage = stringResource(Res.string.error_image_prepare_failed)
+    val pickerOpenFailedMessage = stringResource(Res.string.error_image_picker_open_failed)
+    val cameraOpenFailedMessage = stringResource(Res.string.error_camera_open_failed)
 
     LaunchedEffect(isUploading, pendingImageBytes, currentRemoteImageUrl) {
         if (isUploading) {
-            hadUploadingPhase = true
+            hadUploadingPhase.value = true
         }
         if (pendingImageBytes != null) {
             showSavedRemoteStatus = false
         }
-        if (!isUploading && hadUploadingPhase) {
+        if (!isUploading && hadUploadingPhase.value) {
             showSavedRemoteStatus =
                 pendingImageBytes == null && currentRemoteImageUrl.isNotBlank()
-            hadUploadingPhase = false
+            hadUploadingPhase.value = false
         }
     }
 
@@ -133,11 +138,15 @@ actual fun ProductImagePicker(
         ) {
             Button(
                 onClick = {
-                    galleryLauncher.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                    try {
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
                         )
-                    )
+                    } catch (_: Exception) {
+                        onError(pickerOpenFailedMessage)
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = DeepGreen)
             ) {
@@ -145,9 +154,13 @@ actual fun ProductImagePicker(
             }
             OutlinedButton(
                 onClick = {
-                    val uri = createTempImageUri(context)
-                    pendingCameraUri = uri
-                    cameraLauncher.launch(uri)
+                    try {
+                        val uri = createTempImageUri(context)
+                        pendingCameraUri = uri
+                        cameraLauncher.launch(uri)
+                    } catch (_: Exception) {
+                        onError(cameraOpenFailedMessage)
+                    }
                 }
             ) {
                 Text(text = cameraLabel)
@@ -223,7 +236,7 @@ private fun compressJpegFromUri(context: Context, uri: Uri): ByteArray {
             val scale = maxEdge.toFloat() / maxDim
             val newW = (w * scale).roundToInt().coerceAtLeast(1)
             val newH = (h * scale).roundToInt().coerceAtLeast(1)
-            bitmap = Bitmap.createScaledBitmap(bitmap, newW, newH, true)
+            bitmap = bitmap.scale(newW, newH)
         }
         val out = ByteArrayOutputStream()
         bitmap.compress(

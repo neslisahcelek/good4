@@ -27,6 +27,8 @@ import com.good4.core.domain.ProductImageConstants
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.TextPrimary
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.error_camera_open_failed
+import good4.composeapp.generated.resources.error_image_picker_open_failed
 import good4.composeapp.generated.resources.error_image_prepare_failed
 import good4.composeapp.generated.resources.image_picker_camera
 import good4.composeapp.generated.resources.image_picker_gallery
@@ -41,8 +43,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
+import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSData
 import platform.UIKit.UIApplication
+import platform.UIKit.UIGraphicsBeginImageContextWithOptions
+import platform.UIKit.UIGraphicsEndImageContext
+import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIImagePickerController
@@ -50,11 +57,6 @@ import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerOriginalImage
 import platform.UIKit.UIImagePickerControllerSourceType
 import platform.UIKit.UINavigationControllerDelegateProtocol
-import platform.CoreGraphics.CGRectMake
-import platform.CoreGraphics.CGSizeMake
-import platform.UIKit.UIGraphicsBeginImageContextWithOptions
-import platform.UIKit.UIGraphicsEndImageContext
-import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.darwin.NSObject
 import platform.posix.memcpy
 import kotlin.math.max
@@ -80,6 +82,8 @@ actual fun ProductImagePicker(
     val selectedPendingLabel = stringResource(Res.string.product_image_selected_pending)
     val savedRemoteLabel = stringResource(Res.string.product_image_saved_remote)
     val prepareFailedMessage = stringResource(Res.string.error_image_prepare_failed)
+    val pickerOpenFailedMessage = stringResource(Res.string.error_image_picker_open_failed)
+    val cameraOpenFailedMessage = stringResource(Res.string.error_camera_open_failed)
 
     LaunchedEffect(isUploading, pendingImageBytes, currentRemoteImageUrl) {
         if (isUploading) {
@@ -117,7 +121,15 @@ actual fun ProductImagePicker(
         }
     }
 
-    fun openPicker(sourceType: UIImagePickerControllerSourceType) {
+    fun openPicker(
+        sourceType: UIImagePickerControllerSourceType,
+        openFailedMessage: String
+    ) {
+        if (!UIImagePickerController.isSourceTypeAvailable(sourceType)) {
+            onError(openFailedMessage)
+            return
+        }
+
         val delegate = ImagePickerDelegate(
             onImagePicked = { image ->
                 delegateHolder.value = null
@@ -149,9 +161,14 @@ actual fun ProductImagePicker(
         picker.allowsEditing = false
         picker.delegate = delegate
 
-        UIApplication.sharedApplication.keyWindow
-            ?.rootViewController
-            ?.presentViewController(picker, animated = true, completion = null)
+        val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
+        if (rootViewController == null) {
+            delegateHolder.value = null
+            onError(openFailedMessage)
+            return
+        }
+
+        rootViewController.presentViewController(picker, animated = true, completion = null)
     }
 
     Column(
@@ -165,7 +182,10 @@ actual fun ProductImagePicker(
         ) {
             Button(
                 onClick = {
-                    openPicker(UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary)
+                    openPicker(
+                        sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary,
+                        openFailedMessage = pickerOpenFailedMessage
+                    )
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = DeepGreen)
             ) {
@@ -177,7 +197,10 @@ actual fun ProductImagePicker(
             ) {
                 OutlinedButton(
                     onClick = {
-                        openPicker(UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera)
+                        openPicker(
+                            sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera,
+                            openFailedMessage = cameraOpenFailedMessage
+                        )
                     }
                 ) {
                     Text(text = cameraLabel)
@@ -232,8 +255,8 @@ actual fun ProductImagePicker(
 }
 
 private fun UIImage.scaleToMaxEdge(maxEdge: Double): UIImage {
-    val w = size.useContents { width.toDouble() }
-    val h = size.useContents { height.toDouble() }
+    val w = size.useContents { width }
+    val h = size.useContents { height }
     val maxDim = max(w, h)
     if (maxDim <= maxEdge) return this
     val scale = maxEdge / maxDim

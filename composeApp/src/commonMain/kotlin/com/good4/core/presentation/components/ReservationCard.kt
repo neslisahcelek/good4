@@ -39,11 +39,11 @@ import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
-import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.util.openMaps
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.product_address_maps_hint
 import good4.composeapp.generated.resources.reservation_status_cancelled
 import good4.composeapp.generated.resources.reservation_status_completed
 import good4.composeapp.generated.resources.reservation_status_expired
@@ -67,8 +67,12 @@ fun ReservationCard(
     cancelButtonLabel: String? = null,
     onCancelClick: (() -> Unit)? = null
 ) {
-    val displayAddress = toDisplayAddressOrNull(businessAddress)
     val mapsAddress = businessAddressUrl?.takeIf { it.isNotBlank() }
+    val displayAddress = if (mapsAddress != null) {
+        stringResource(Res.string.product_address_maps_hint)
+    } else {
+        toDisplayAddressOrNull(businessAddress)
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -248,19 +252,19 @@ private fun StatusBadge(
         )
 
         CodeStatus.USED -> Triple(
-            SurfaceMuted,
+            PistachioGreen.copy(alpha = 0.6f),
             TextPrimary,
             stringResource(Res.string.reservation_status_completed)
         )
 
         CodeStatus.EXPIRED -> Triple(
-            ErrorRed.copy(alpha = 0.12f),
+            ErrorRed.copy(alpha = 0.2f),
             ErrorRed,
             stringResource(Res.string.reservation_status_expired)
         )
 
         CodeStatus.CANCELLED -> Triple(
-            ErrorRed.copy(alpha = 0.12f),
+            ErrorRed.copy(alpha = 0.3f),
             ErrorRed,
             stringResource(Res.string.reservation_status_cancelled)
         )
