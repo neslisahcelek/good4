@@ -160,7 +160,7 @@
     <string name="donation_product_description">Bu ürün öğrencilere ücretsiz olarak sunulacaktır. Her gece 00:00&apos;da belirlediğiniz günlük limit kadar yenilenecektir.</string>
     <string name="daily_pending_limit">Günlük Bağış Adedi</string>
     <string name="daily_pending_limit_placeholder">Örn: 4</string>
-    <string name="daily_pending_limit_helper">Bağış kotası aktif: Ürün fiyatı 0 TL olur ve kontenjan her gün otomatik yenilenir.</string>
+    <string name="daily_pending_limit_helper">Bağış kotası aktif: Ürün fiyatı 0₺ olur ve kontenjan her gün otomatik yenilenir.</string>
     <string name="image_url">Resim URL\'si</string>
     <string name="add">Ekle</string>
     <string name="cancel">İptal Et</string>
@@ -312,7 +312,7 @@
     <string name="reservation_status_completed">Tamamlandı</string>
     <string name="reservation_status_expired">Süresi Doldu</string>
     <string name="reservation_status_cancelled">İptal Edildi</string>
-    <string name="price_currency_suffix">TL</string>
+    <string name="price_currency_suffix">₺</string>
     <string name="discount_badge_suffix"> indirim</string>
     <string name="discount_badge_prefix">%</string>
     <string name="reservation_expired_short">Süresi doldu</string>
@@ -342,6 +342,7 @@
     <string name="error_code_not_found">Girdiğiniz kod sistemde bulunamadı</string>
     <string name="error_business_required">Lütfen bir işletme seçiniz</string>
     <string name="error_price_required">Lütfen fiyat bilgisini giriniz</string>
+    <string name="error_discount_price_greater_than_original">İndirimli fiyat orijinal fiyattan büyük olamaz</string>
     <string name="error_daily_pending_limit_invalid">Lütfen günlük bağış adedi giriniz</string>
     <string name="error_email_required">Lütfen e-posta adresinizi giriniz</string>
     <string name="error_email_invalid_format">Geçersiz bir e-posta formatı girdiniz</string>

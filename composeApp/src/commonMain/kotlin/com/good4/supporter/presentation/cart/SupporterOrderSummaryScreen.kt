@@ -2,7 +2,6 @@ package com.good4.supporter.presentation.cart
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.DeepGreen
@@ -43,7 +44,6 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.supporter_cart_total
 import good4.composeapp.generated.resources.supporter_order_summary_cancel
 import good4.composeapp.generated.resources.supporter_order_summary_card_title
@@ -61,7 +61,7 @@ fun SupporterOrderSummaryScreen(
     onProfileClick: (() -> Unit)? = null,
     onAction: (SupporterCartAction) -> Unit
 ) {
-    val currencySuffix = stringResource(Res.string.price_currency_suffix)
+    val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
 
     Good4NestedScaffold(
         modifier = modifier,
@@ -227,7 +227,8 @@ fun SupporterOrderSummaryScreen(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
+                border = ButtonDefaults.outlinedButtonBorder(enabled = !state.isCreatingOrder)
+                    .copy(width = 1.dp)
             ) {
                 Text(
                     text = stringResource(Res.string.supporter_order_summary_cancel),

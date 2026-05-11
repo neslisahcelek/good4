@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.code.domain.CodeStatus
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.DeepGreen
@@ -54,7 +55,6 @@ import com.good4.core.presentation.components.ReservationCard
 import com.good4.core.util.ReservationTimeCalculator
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.cancel
-import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.reservation_expired_short
 import good4.composeapp.generated.resources.supporter_cart
 import good4.composeapp.generated.resources.supporter_cart_active_orders_title
@@ -124,7 +124,7 @@ fun SupporterCartScreen(
                             items(state.items, key = { it.product.documentId }) { cartItem ->
                                 CartItemCard(
                                     cartItem = cartItem,
-                                    currencySuffix = stringResource(Res.string.price_currency_suffix),
+                                    currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL,
                                     onIncrease = {
                                         onAction(
                                             SupporterCartAction.OnIncreaseQuantity(
@@ -193,7 +193,7 @@ fun SupporterCartScreen(
                     if (state.items.isNotEmpty()) {
                         CartBottomBar(
                             state = state,
-                            currencySuffix = stringResource(Res.string.price_currency_suffix),
+                            currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL,
                             onCreateOrder = { onAction(SupporterCartAction.OnCreateOrder) }
                         )
                     }

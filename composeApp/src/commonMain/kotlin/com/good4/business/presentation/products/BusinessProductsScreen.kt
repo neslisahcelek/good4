@@ -26,19 +26,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
-import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ProductListCard
+import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_content_desc
 import good4.composeapp.generated.resources.business_products_added_message
@@ -48,7 +48,6 @@ import good4.composeapp.generated.resources.business_products_empty
 import good4.composeapp.generated.resources.business_products_title
 import good4.composeapp.generated.resources.business_products_updated_message
 import good4.composeapp.generated.resources.emoji_products_empty
-import good4.composeapp.generated.resources.price_currency_suffix
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -66,17 +65,17 @@ fun BusinessProductsScreenRoot(
     val scope = rememberCoroutineScope()
     val productAddedMessage = stringResource(Res.string.business_products_added_message)
     val productUpdatedMessage = stringResource(Res.string.business_products_updated_message)
-    val currencySuffix = stringResource(Res.string.price_currency_suffix)
+    val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
     val dailyStockPrefix = stringResource(Res.string.business_products_daily_stock_prefix)
-    var showAddSheet by remember { mutableStateOf(false) }
-    var showEditSheet by remember { mutableStateOf(false) }
+    val showAddSheet = remember { mutableStateOf(false) }
+    val showEditSheet = remember { mutableStateOf(false) }
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(state.addSuccess) {
         if (state.addSuccess) {
             snackbarHostState.showSnackbar(productAddedMessage)
-            showAddSheet = false
+            showAddSheet.value = false
             viewModel.resetAddState()
         }
     }
@@ -84,7 +83,7 @@ fun BusinessProductsScreenRoot(
     LaunchedEffect(state.editSuccess) {
         if (state.editSuccess) {
             snackbarHostState.showSnackbar(productUpdatedMessage)
-            showEditSheet = false
+            showEditSheet.value = false
             viewModel.resetEditState()
         }
     }
@@ -103,7 +102,7 @@ fun BusinessProductsScreenRoot(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddSheet = true },
+                onClick = { showAddSheet.value = true },
                 containerColor = TextPrimary,
                 contentColor = SurfaceDefault
             ) {
@@ -164,7 +163,7 @@ fun BusinessProductsScreenRoot(
                         showStockInfo = false,
                         onClick = {
                             viewModel.selectProductForEdit(product)
-                            showEditSheet = true
+                            showEditSheet.value = true
                         }
                     )
                 }
@@ -187,7 +186,7 @@ fun BusinessProductsScreenRoot(
                             stockValue = product.dailyPendingLimit ?: product.pendingCount,
                             onClick = {
                                 viewModel.selectProductForEdit(product)
-                                showEditSheet = true
+                                showEditSheet.value = true
                             }
                         )
                     }
@@ -196,12 +195,12 @@ fun BusinessProductsScreenRoot(
         }
     }
 
-    if (showAddSheet) {
+    if (showAddSheet.value) {
         AddProductBottomSheet(
             sheetState = addSheetState,
             state = state,
             onDismiss = {
-                showAddSheet = false
+                showAddSheet.value = false
                 viewModel.resetAddState()
                 viewModel.dismissError()
             },
@@ -219,12 +218,12 @@ fun BusinessProductsScreenRoot(
         )
     }
 
-    if (showEditSheet) {
+    if (showEditSheet.value) {
         EditProductBottomSheet(
             sheetState = editSheetState,
             state = state,
             onDismiss = {
-                showEditSheet = false
+                showEditSheet.value = false
                 viewModel.resetEditState()
                 viewModel.dismissError()
             },

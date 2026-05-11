@@ -29,26 +29,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
-import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ProductListCard
+import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_product
 import good4.composeapp.generated.resources.admin_products_empty
 import good4.composeapp.generated.resources.emoji_products_empty
 import good4.composeapp.generated.resources.manage_products
-import good4.composeapp.generated.resources.price_currency_suffix
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -63,13 +62,13 @@ fun AdminProductsScreen(
     onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var showAddSheet by remember { mutableStateOf(false) }
-    var showEditSheet by remember { mutableStateOf(false) }
+    val showAddSheet = remember { mutableStateOf(false) }
+    val showEditSheet = remember { mutableStateOf(false) }
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val currencySuffix = stringResource(Res.string.price_currency_suffix)
+    val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
     val addProductLabel = stringResource(Res.string.add_product)
 
     Good4NestedScaffold(
@@ -93,7 +92,7 @@ fun AdminProductsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddSheet = true },
+                onClick = { showAddSheet.value = true },
                 containerColor = TextPrimary,
                 contentColor = SurfaceDefault
             ) {
@@ -149,7 +148,7 @@ fun AdminProductsScreen(
                             showStoreName = true,
                             onClick = {
                                 viewModel.selectProductForEdit(product)
-                                showEditSheet = true
+                                showEditSheet.value = true
                             }
                         )
                     }
@@ -157,9 +156,9 @@ fun AdminProductsScreen(
             }
         }
 
-        if (showAddSheet) {
+        if (showAddSheet.value) {
             ModalBottomSheet(
-                onDismissRequest = { showAddSheet = false },
+                onDismissRequest = { showAddSheet.value = false },
                 sheetState = addSheetState
             ) {
                 AddProductSheet(
@@ -167,7 +166,7 @@ fun AdminProductsScreen(
                     state = state,
                     viewModel = viewModel,
                     onDismiss = {
-                        showAddSheet = false
+                        showAddSheet.value = false
                         viewModel.resetAddState()
                     },
                     onImagePickerError = { message ->
@@ -177,10 +176,10 @@ fun AdminProductsScreen(
             }
         }
 
-        if (showEditSheet) {
+        if (showEditSheet.value) {
             LaunchedEffect(state.editSuccess) {
                 if (state.editSuccess) {
-                    showEditSheet = false
+                    showEditSheet.value = false
                     viewModel.resetEditState()
                 }
             }
@@ -190,7 +189,7 @@ fun AdminProductsScreen(
                 sheetState = editSheetState,
                 state = state,
                 onDismiss = {
-                    showEditSheet = false
+                    showEditSheet.value = false
                     viewModel.resetEditState()
                 },
                 onBusinessSelect = viewModel::onBusinessSelect,

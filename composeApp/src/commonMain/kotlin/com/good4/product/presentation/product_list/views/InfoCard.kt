@@ -19,12 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.UiText
 import com.good4.core.util.singleClick
-import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.price_currency_suffix
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -85,7 +84,7 @@ fun InfoCard(
 fun InfoCardPreview() {
     MaterialTheme {
         InfoCard(
-            text = UiText.StringResourceId(Res.string.price_currency_suffix)
+            text = UiText.DynamicString(CurrencyConstants.TURKISH_LIRA_SYMBOL)
         )
     }
 }

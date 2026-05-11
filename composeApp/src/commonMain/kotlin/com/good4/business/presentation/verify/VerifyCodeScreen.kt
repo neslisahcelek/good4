@@ -37,8 +37,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.DeepGreen
@@ -54,20 +55,18 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
-import com.good4.core.presentation.components.StandardButtonHeight
-import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileTopBarAction
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.util.singleClick
 import com.good4.core.util.toInitials
 import com.good4.order.domain.Order
 import com.good4.order.domain.OrderItem
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.emoji_ticket
 import good4.composeapp.generated.resources.enter_code
 import good4.composeapp.generated.resources.order_code_piece_suffix
-import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.verify_code
 import good4.composeapp.generated.resources.verify_code_business_loading
 import good4.composeapp.generated.resources.verify_code_button
@@ -352,7 +351,7 @@ private fun OrderConfirmCard(
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
-    val currencySuffix = stringResource(Res.string.price_currency_suffix)
+    val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
     val pieceSuffix = stringResource(Res.string.order_code_piece_suffix)
 
     Card(
@@ -392,7 +391,6 @@ private fun OrderConfirmCard(
             order.items.forEach { item ->
                 OrderConfirmItemRow(
                     item = item,
-                    currencySuffix = currencySuffix,
                     pieceSuffix = pieceSuffix
                 )
             }
@@ -503,9 +501,10 @@ private fun OrderConfirmRow(label: String, value: String) {
 @Composable
 private fun OrderConfirmItemRow(
     item: OrderItem,
-    currencySuffix: String,
     pieceSuffix: String
 ) {
+    val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,

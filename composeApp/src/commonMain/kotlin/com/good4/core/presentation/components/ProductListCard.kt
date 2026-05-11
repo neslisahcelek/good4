@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,8 +36,8 @@ import com.good4.core.util.openMaps
 import com.good4.product.Product
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.address_icon_description
-import good4.composeapp.generated.resources.emoji_product_placeholder
 import good4.composeapp.generated.resources.business_products_stock_prefix
+import good4.composeapp.generated.resources.emoji_product_placeholder
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -162,24 +163,24 @@ fun ProductListCard(
                         when {
                             product.discountPrice != null && product.originalPrice != null -> {
                                 Text(
-                                    text = "${product.discountPrice} $currencySuffix",
+                                    text = "${product.discountPrice}$currencySuffix",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = DeepGreen
                                 )
                                 Text(
-                                    text = "${product.originalPrice} $currencySuffix",
+                                    text = "${product.originalPrice}$currencySuffix",
                                     fontSize = 12.sp,
                                     color = TextSecondary,
-                                    style = androidx.compose.ui.text.TextStyle(
-                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                    style = TextStyle(
+                                        textDecoration = TextDecoration.LineThrough
                                     )
                                 )
                             }
 
                             product.discountPrice != null -> {
                                 Text(
-                                    text = "${product.discountPrice} $currencySuffix",
+                                    text = "${product.discountPrice}$currencySuffix",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
@@ -188,7 +189,7 @@ fun ProductListCard(
 
                             product.originalPrice != null -> {
                                 Text(
-                                    text = "${product.originalPrice} $currencySuffix",
+                                    text = "${product.originalPrice}$currencySuffix",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
@@ -197,7 +198,7 @@ fun ProductListCard(
 
                             else -> {
                                 Text(
-                                    text = "${product.price} $currencySuffix",
+                                    text = "${product.price}$currencySuffix",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary

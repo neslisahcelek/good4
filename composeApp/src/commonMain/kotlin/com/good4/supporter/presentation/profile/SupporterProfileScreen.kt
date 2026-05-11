@@ -91,11 +91,10 @@ fun SupporterProfileScreen(
         Spacer(modifier = Modifier.height(28.dp))
 
         DonationStats(
-            totalDonations = state.user?.totalDonations ?: 0,
-            totalMeals = state.user?.totalMeals ?: 0
+            totalDonations = state.user?.totalDonations ?: 0
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         ProfileInfoCard(
             icon = Icons.Filled.Email,
@@ -175,13 +174,12 @@ private fun SupporterUserInfo(modifier: Modifier = Modifier, fullName: String?) 
 @Composable
 private fun DonationStats(
     modifier: Modifier = Modifier,
-    totalDonations: Int,
-    totalMeals: Int
+    totalDonations: Int
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = 2.dp)
     ) {
         StatCard(
             modifier = Modifier.fillMaxWidth(),

@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.core.domain.CurrencyConstants
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.DeepGreen
@@ -66,7 +67,6 @@ import good4.composeapp.generated.resources.order_code_store
 import good4.composeapp.generated.resources.order_code_subtitle
 import good4.composeapp.generated.resources.order_code_title
 import good4.composeapp.generated.resources.order_code_total
-import good4.composeapp.generated.resources.price_currency_suffix
 import good4.composeapp.generated.resources.product_address_maps_hint
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -120,7 +120,7 @@ fun SupporterOrderCodeScreen(
                         order = state.order,
                         businessAddress = state.businessAddress,
                         businessAddressUrl = state.businessAddressUrl,
-                        currencySuffix = stringResource(Res.string.price_currency_suffix),
+                        currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL,
                         pieceSuffix = stringResource(Res.string.order_code_piece_suffix),
                         onBackToHome = onBackToHome
                     )
