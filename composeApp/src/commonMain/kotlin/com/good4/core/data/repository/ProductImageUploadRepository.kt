@@ -9,4 +9,5 @@ import com.good4.core.domain.Result
  */
 interface ProductImageUploadRepository {
     suspend fun uploadProductImage(jpegBytes: ByteArray): Result<String, Error>
+    suspend fun deleteProductImage(imageUrl: String): Result<Unit, Error>
 }

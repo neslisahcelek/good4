@@ -457,6 +457,17 @@ class BusinessProductsViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isDeleteLoading = true, errorMessage = null) }
+            val imageDeleteResult =
+                productImageUploadRepository.deleteProductImage(product.imageUrl)
+            if (imageDeleteResult is Result.Error) {
+                _state.update {
+                    it.copy(
+                        isDeleteLoading = false,
+                        errorMessage = getString(Res.string.error_product_delete_failed)
+                    )
+                }
+                return@launch
+            }
             when (productRepository.deleteProduct(product.documentId)) {
                 is Result.Success -> {
                     _state.update {

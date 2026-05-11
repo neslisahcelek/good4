@@ -50,6 +50,41 @@ class ProductImageUploadRepositoryIOS : ProductImageUploadRepository {
             Result.Error(NetworkError(e.message ?: "Unknown"))
         }
     }
+
+    override suspend fun deleteProductImage(imageUrl: String): Result<Unit, Error> {
+        val objectPath = imageUrl.toProductImagePath() ?: return Result.Success(Unit)
+        return try {
+            FirebaseDebugLogger.request(
+                operation = "deleteProductImage",
+                path = "storage/$objectPath"
+            )
+            Firebase.storage.reference(objectPath).delete()
+            FirebaseDebugLogger.success(
+                operation = "deleteProductImage",
+                path = "storage/$objectPath"
+            )
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            FirebaseDebugLogger.error(
+                operation = "deleteProductImage",
+                path = "storage/$objectPath",
+                throwable = e
+            )
+            Result.Error(NetworkError(e.message ?: "Unknown"))
+        }
+    }
+}
+
+private fun String.toProductImagePath(): String? {
+    if (isBlank()) return null
+    val encodedPath = substringAfter("/o/", missingDelimiterValue = "")
+        .substringBefore("?")
+        .takeIf { it.isNotBlank() }
+        ?: return null
+    val path = encodedPath
+        .replace("%2F", "/")
+        .replace("%2f", "/")
+    return path.takeIf { it.startsWith("product_images/") }
 }
 
 private fun ByteArray.toNSData(): NSData {
