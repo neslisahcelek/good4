@@ -85,7 +85,9 @@ fun Good4NavGraph(
                     navController.navigateToLogin()
                 },
                 onNavigateToHome = { role ->
-                    navController.navigateToHome(role)
+                    navController.navigate(role.toHomeRoute()) {
+                        popUpTo(Route.SessionRestore) { inclusive = true }
+                    }
                 },
                 onNavigateToEmailVerification = {
                     navController.navigate(Route.EmailVerification) {
@@ -202,7 +204,7 @@ fun Good4NavGraph(
             SupporterRegisterScreenRoot(
                 viewModel = viewModel,
                 onRegisterSuccess = {
-                    navController.navigate(Route.EmailVerification)
+                    navController.navigateToHome(UserRole.SUPPORTER)
                 },
                 onBackClick = {
                     navController.popBackStack()

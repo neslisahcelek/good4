@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
+import com.good4.core.data.local.StartupSessionCache
+import com.good4.core.data.local.cacheStartupSession
+import com.good4.core.data.local.shouldCheckEmailVerificationFor
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
 import com.good4.user.data.repository.UserRepository
@@ -17,15 +20,17 @@ import good4.composeapp.generated.resources.error_user_not_logged_in
 import good4.composeapp.generated.resources.verification_email_sent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlin.time.Duration.Companion.seconds
+
 class EmailVerificationViewModel(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val startupSessionCache: StartupSessionCache
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EmailVerificationState())
@@ -36,7 +41,7 @@ class EmailVerificationViewModel(
 
     init {
         viewModelScope.launch {
-            checkVerification(showErrorIfNotVerified = false, showLoading = false)
+            resolveVerificationAccess(showErrorIfNotVerified = false, showLoading = false)
         }
     }
 
@@ -45,7 +50,7 @@ class EmailVerificationViewModel(
             EmailVerificationAction.OnResendClick -> resendVerificationEmail()
             EmailVerificationAction.OnCheckClick -> {
                 viewModelScope.launch {
-                    checkVerification(showErrorIfNotVerified = true, showLoading = true)
+                    resolveVerificationAccess(showErrorIfNotVerified = true, showLoading = true)
                 }
             }
             EmailVerificationAction.OnClearError -> {
@@ -94,6 +99,40 @@ class EmailVerificationViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
 
+            val currentUser = authRepository.currentUser
+            if (currentUser == null) {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = UiText.StringResourceId(Res.string.error_user_not_logged_in)
+                    )
+                }
+                return@launch
+            }
+
+            when (val userResult = userRepository.getUser(currentUser.uid)) {
+                is Result.Success -> {
+                    if (!shouldCheckEmailVerificationFor(userResult.data.role)) {
+                        startupSessionCache.cacheStartupSession(
+                            uid = currentUser.uid,
+                            role = userResult.data.role,
+                            isUserVerified = userResult.data.verified,
+                            isAuthEmailVerified = true
+                        )
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                isVerified = true,
+                                userRole = userResult.data.role
+                            )
+                        }
+                        return@launch
+                    }
+                }
+
+                is Result.Error -> Unit
+            }
+
             when (val result = authRepository.sendEmailVerification()) {
                 is Result.Success -> {
                     _state.update {
@@ -118,6 +157,64 @@ class EmailVerificationViewModel(
                             errorMessage = errorMessage
                         )
                     }
+                }
+            }
+        }
+    }
+
+    private suspend fun resolveVerificationAccess(
+        showErrorIfNotVerified: Boolean,
+        showLoading: Boolean
+    ) {
+        if (showLoading) {
+            _state.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
+        } else {
+            _state.update { it.copy(errorMessage = null, infoMessage = null) }
+        }
+
+        val currentUser = authRepository.currentUser
+        if (currentUser == null) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = UiText.StringResourceId(Res.string.error_user_not_logged_in)
+                )
+            }
+            return
+        }
+
+        when (val userResult = userRepository.getUser(currentUser.uid)) {
+            is Result.Success -> {
+                val user = userResult.data
+                if (!shouldCheckEmailVerificationFor(user.role)) {
+                    startupSessionCache.cacheStartupSession(
+                        uid = currentUser.uid,
+                        role = user.role,
+                        isUserVerified = user.verified,
+                        isAuthEmailVerified = true
+                    )
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isVerified = true,
+                            userRole = user.role
+                        )
+                    }
+                    return
+                }
+
+                checkVerification(
+                    showErrorIfNotVerified = showErrorIfNotVerified,
+                    showLoading = false
+                )
+            }
+
+            is Result.Error -> {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = UiText.StringResourceId(Res.string.error_please_register)
+                    )
                 }
             }
         }

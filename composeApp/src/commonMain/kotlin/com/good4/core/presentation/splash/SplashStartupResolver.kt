@@ -3,9 +3,9 @@ package com.good4.core.presentation.splash
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.data.local.cacheStartupSession
+import com.good4.core.data.local.shouldCheckEmailVerificationFor
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
-import com.good4.core.data.local.shouldCheckEmailVerificationFor
 import com.good4.navigation.Route
 import com.good4.navigation.toHomeRoute
 import com.good4.user.User
@@ -71,7 +71,7 @@ internal class SplashStartupResolver(
 
         if (cachedSession != null) {
             val route = if (cachedSession.shouldOpenEmailVerification()) {
-                Route.EmailVerification
+                Route.SessionRestore
             } else {
                 cachedSession.role.toHomeRoute()
             }
