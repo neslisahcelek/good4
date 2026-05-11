@@ -262,6 +262,9 @@
     <string name="business_products_edit_title">Ürün Bilgilerini Düzenleyin</string>
     <string name="business_products_add_button">Ürün Ekle</string>
     <string name="business_products_update_button">Güncelle</string>
+    <string name="product_form_discard_title">Ürün silinecektir, emin misiniz?</string>
+    <string name="product_form_discard_message">Girdiğiniz ürün bilgileri silinecektir. Bu işlem geri alınamaz.</string>
+    <string name="product_form_discard_confirm">Sil</string>
     <string name="business_products_add_content_desc">Yeni ürün ekle</string>
     <string name="business_products_price_unavailable">Fiyat Belirtilmedi</string>
     <string name="business_products_stock_prefix">Stok Adedi: </string>
@@ -269,6 +272,11 @@
     <string name="business_products_donation_section_title">Bağış Ürünlerim</string>
     <string name="business_products_added_message">Ürün başarıyla eklendi</string>
     <string name="business_products_updated_message">Ürün başarıyla güncellendi</string>
+    <string name="business_products_deleted_message">Ürün başarıyla silindi</string>
+    <string name="product_delete_confirm_title">Ürünü silmek istediğinize emin misiniz?</string>
+    <string name="product_delete_confirm_message">Bu ürün kalıcı olarak silinecektir. Bu işlem geri alınamaz.</string>
+    <string name="product_delete_confirm_button">Ürünü Sil</string>
+    <string name="error_product_delete_failed">Ürün silinemedi. Lütfen tekrar deneyin.</string>
     <string name="image_picker_gallery">Galeriden Seçin</string>
     <string name="image_picker_camera">Fotoğraf Çekin</string>
     <string name="image_uploading">Fotoğraf yükleniyor…</string>
@@ -377,7 +385,9 @@
     <string name="error_delete_account_failed">Hesap silme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.</string>
     <string name="error_image_upload_failed">Fotoğraf yükleme işlemi sırasında bir hata oluştu</string>
     <string name="error_image_upload_permission_denied">Fotoğraf yükleme izniniz yok. Lütfen tekrar giriş yapın veya yetkilerinizi kontrol edin.</string>
-    <string name="error_image_prepare_failed">Görsel hazırlanamadı. Lütfen başka bir fotoğraf seçin.</string>
+    <string name="error_image_prepare_failed">Fotoğraf hazırlanamadı. Lütfen başka bir fotoğraf seçin.</string>
+    <string name="error_image_picker_open_failed">Fotoğraf seçici açılamadı. Lütfen tekrar deneyin.</string>
+    <string name="error_camera_open_failed">Kamera açılamadı. Lütfen izinleri kontrol edip tekrar deneyin.</string>
     <string name="error_image_upload_timeout">Yükleme çok uzun sürdü. Bağlantınızı kontrol edip tekrar deneyin.</string>
     <string name="dismiss">Kapat</string>
     <string name="product_free">Ücretsiz</string>

@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
@@ -36,21 +37,30 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.util.singleClick
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name
+import good4.composeapp.generated.resources.daily_pending_limit
 import good4.composeapp.generated.resources.daily_pending_limit_placeholder
+import good4.composeapp.generated.resources.delete_account_cancel_button
+import good4.composeapp.generated.resources.description
 import good4.composeapp.generated.resources.discount_price_placeholder
+import good4.composeapp.generated.resources.discounted_price
 import good4.composeapp.generated.resources.donation_product_description
 import good4.composeapp.generated.resources.donation_product_title
-import good4.composeapp.generated.resources.description
-import good4.composeapp.generated.resources.daily_pending_limit
-import good4.composeapp.generated.resources.discounted_price
 import good4.composeapp.generated.resources.original_price
 import good4.composeapp.generated.resources.original_price_placeholder
+import good4.composeapp.generated.resources.product_delete_confirm_button
+import good4.composeapp.generated.resources.product_delete_confirm_message
+import good4.composeapp.generated.resources.product_delete_confirm_title
 import good4.composeapp.generated.resources.product_description_placeholder
+import good4.composeapp.generated.resources.product_form_discard_confirm
+import good4.composeapp.generated.resources.product_form_discard_message
+import good4.composeapp.generated.resources.product_form_discard_title
 import good4.composeapp.generated.resources.product_name
 import good4.composeapp.generated.resources.product_name_placeholder
 import org.jetbrains.compose.resources.stringResource
@@ -67,6 +77,11 @@ fun ProductFormFields(
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier,
     isSubmitting: Boolean = false,
+    isDeleting: Boolean = false,
+    dismissLabel: String? = null,
+    onDismiss: (() -> Unit)? = null,
+    deleteLabel: String? = null,
+    onDelete: (() -> Unit)? = null,
     submitButtonColor: Color,
     submitButtonDisabledColor: Color = submitButtonColor.copy(alpha = 0.5f),
     errorMessage: String? = null,
@@ -94,6 +109,8 @@ fun ProductFormFields(
     onImagePickerError: (String) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val onSubmitClick = remember(onSubmit) { singleClick(onClick = onSubmit) }
+    val onDeleteClick = remember(onDelete) { singleClick { onDelete?.invoke() } }
     val isDonationMode = isDonationProduct
 
     Column(
@@ -297,33 +314,140 @@ fun ProductFormFields(
             )
         }
 
-        Button(
-            onClick = onSubmit,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            enabled = !isSubmitting,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = submitButtonColor,
-                disabledContainerColor = submitButtonDisabledColor
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            if (isSubmitting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(4.dp),
-                    color = SurfaceDefault,
-                    strokeWidth = 2.dp
+        if (deleteLabel != null && onDelete != null) {
+            OutlinedButton(
+                onClick = onDeleteClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                enabled = !isSubmitting && !isDeleting,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = ErrorRed,
+                    disabledContentColor = ErrorRed.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                ProductSubmitButtonContent(
+                    isSubmitting = isDeleting,
+                    submitLabel = deleteLabel
                 )
-            } else {
-                Text(
-                    text = submitLabel,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        if (dismissLabel != null && onDismiss != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    enabled = !isSubmitting && !isDeleting,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = dismissLabel,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Button(
+                    onClick = onSubmitClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    enabled = !isSubmitting && !isDeleting,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = submitButtonColor,
+                        disabledContainerColor = submitButtonDisabledColor
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    ProductSubmitButtonContent(
+                        isSubmitting = isSubmitting,
+                        submitLabel = submitLabel
+                    )
+                }
+            }
+        } else {
+            Button(
+                onClick = onSubmitClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = !isSubmitting && !isDeleting,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = submitButtonColor,
+                    disabledContainerColor = submitButtonDisabledColor
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                ProductSubmitButtonContent(
+                    isSubmitting = isSubmitting,
+                    submitLabel = submitLabel
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+@Composable
+private fun ProductSubmitButtonContent(
+    isSubmitting: Boolean,
+    submitLabel: String
+) {
+    if (isSubmitting) {
+        CircularProgressIndicator(
+            modifier = Modifier.padding(4.dp),
+            color = SurfaceDefault,
+            strokeWidth = 2.dp
+        )
+    } else {
+        Text(
+            text = submitLabel,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+fun ProductFormDiscardConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Good4ConfirmDialog(
+        title = stringResource(Res.string.product_form_discard_title),
+        message = stringResource(Res.string.product_form_discard_message),
+        confirmLabel = stringResource(Res.string.product_form_discard_confirm),
+        dismissLabel = stringResource(Res.string.delete_account_cancel_button),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        confirmColor = ErrorRed
+    )
+}
+
+@Composable
+fun ProductDeleteConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    enabled: Boolean = true
+) {
+    Good4ConfirmDialog(
+        title = stringResource(Res.string.product_delete_confirm_title),
+        message = stringResource(Res.string.product_delete_confirm_message),
+        confirmLabel = stringResource(Res.string.product_delete_confirm_button),
+        dismissLabel = stringResource(Res.string.delete_account_cancel_button),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        confirmColor = ErrorRed,
+        enabled = enabled
+    )
 }

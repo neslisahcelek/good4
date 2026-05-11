@@ -5,13 +5,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.components.ProductDeleteConfirmDialog
 import com.good4.core.presentation.components.ProductFormFields
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_edit_title
 import good4.composeapp.generated.resources.business_products_update_button
+import good4.composeapp.generated.resources.delete
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,13 +32,10 @@ fun EditProductBottomSheet(
     onDailyPendingLimitChange: (String) -> Unit,
     onPendingProductImageChange: (ByteArray?) -> Unit,
     onImagePickerError: (String) -> Unit,
-    onUpdateProduct: () -> Unit
+    onUpdateProduct: () -> Unit,
+    onDeleteProduct: () -> Unit
 ) {
-    LaunchedEffect(state.editSuccess) {
-        if (state.editSuccess) {
-            onDismiss()
-        }
-    }
+    val showDeleteConfirmDialog = remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -47,6 +47,9 @@ fun EditProductBottomSheet(
             onSubmit = onUpdateProduct,
             modifier = modifier.fillMaxSize(),
             isSubmitting = state.isEditLoading,
+            isDeleting = state.isDeleteLoading,
+            deleteLabel = stringResource(Res.string.delete),
+            onDelete = { showDeleteConfirmDialog.value = true },
             submitButtonColor = TextPrimary,
             submitButtonDisabledColor = TextPrimary.copy(alpha = 0.5f),
             errorMessage = state.errorMessage,
@@ -68,6 +71,17 @@ fun EditProductBottomSheet(
             onPendingProductImageChange = onPendingProductImageChange,
             isImageUploading = state.isProductImageUploading,
             onImagePickerError = onImagePickerError
+        )
+    }
+
+    if (showDeleteConfirmDialog.value) {
+        ProductDeleteConfirmDialog(
+            onConfirm = {
+                showDeleteConfirmDialog.value = false
+                onDeleteProduct()
+            },
+            onDismiss = { showDeleteConfirmDialog.value = false },
+            enabled = !state.isDeleteLoading
         )
     }
 }

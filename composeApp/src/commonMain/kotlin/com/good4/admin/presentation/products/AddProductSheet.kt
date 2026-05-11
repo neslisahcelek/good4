@@ -8,6 +8,7 @@ import com.good4.core.presentation.components.ProductFormFields
 import com.good4.core.presentation.components.SelectOption
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_product
+import good4.composeapp.generated.resources.delete_account_cancel_button
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -16,11 +17,12 @@ fun AddProductSheet(
     state: AdminProductsState,
     viewModel: AdminProductsViewModel,
     onDismiss: () -> Unit,
+    onAddSuccess: () -> Unit,
     onImagePickerError: (String) -> Unit
 ) {
     LaunchedEffect(state.addSuccess) {
         if (state.addSuccess) {
-            onDismiss()
+            onAddSuccess()
         }
     }
 
@@ -34,6 +36,8 @@ fun AddProductSheet(
         onSubmit = viewModel::addProduct,
         modifier = modifier,
         isSubmitting = state.isAddLoading,
+        dismissLabel = stringResource(Res.string.delete_account_cancel_button),
+        onDismiss = onDismiss,
         submitButtonColor = DeepGreen,
         errorMessage = state.errorMessage,
         showDonationOption = true,

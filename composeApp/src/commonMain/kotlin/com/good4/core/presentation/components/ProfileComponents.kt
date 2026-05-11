@@ -21,21 +21,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -280,42 +277,17 @@ fun DeleteAccountConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(Res.string.delete_account_confirm_title),
-                color = TextPrimary
-            )
-        },
-        text = {
-            Text(
-                text = stringResource(Res.string.delete_account_confirm_message),
-                color = TextSecondary
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                enabled = !isDeleting,
-                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text(
-                    text = stringResource(
-                        if (isDeleting) Res.string.delete_account_in_progress
-                        else Res.string.delete_account_confirm_button
-                    )
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isDeleting
-            ) {
-                Text(text = stringResource(Res.string.delete_account_cancel_button))
-            }
-        }
+    Good4ConfirmDialog(
+        title = stringResource(Res.string.delete_account_confirm_title),
+        message = stringResource(Res.string.delete_account_confirm_message),
+        confirmLabel = stringResource(
+            if (isDeleting) Res.string.delete_account_in_progress
+            else Res.string.delete_account_confirm_button
+        ),
+        dismissLabel = stringResource(Res.string.delete_account_cancel_button),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        confirmColor = ErrorRed,
+        enabled = !isDeleting
     )
 }

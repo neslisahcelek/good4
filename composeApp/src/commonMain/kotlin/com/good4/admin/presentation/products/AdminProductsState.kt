@@ -3,6 +3,7 @@ package com.good4.admin.presentation.products
 import com.good4.business.domain.Business
 import com.good4.product.Product
 
+@Suppress("ArrayInDataClass")
 data class AdminProductsState(
     val isLoading: Boolean = true,
     val products: List<Product> = emptyList(),
@@ -22,5 +23,7 @@ data class AdminProductsState(
     val addSuccess: Boolean = false,
     val isEditLoading: Boolean = false,
     val editSuccess: Boolean = false,
+    val isDeleteLoading: Boolean = false,
+    val deleteSuccess: Boolean = false,
     val errorMessage: String? = null
 )

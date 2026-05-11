@@ -15,6 +15,7 @@ import good4.composeapp.generated.resources.error_discount_price_greater_than_or
 import good4.composeapp.generated.resources.error_image_upload_failed
 import good4.composeapp.generated.resources.error_image_upload_permission_denied
 import good4.composeapp.generated.resources.error_price_required
+import good4.composeapp.generated.resources.error_product_delete_failed
 import good4.composeapp.generated.resources.error_product_name_required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -196,7 +197,7 @@ class AdminProductsViewModel(
 
     fun addProduct() {
         val state = _state.value
-        if (state.isAddLoading || state.isProductImageUploading) return
+        if (state.isAddLoading || state.isProductImageUploading || state.addSuccess) return
 
         if (state.productName.isBlank()) {
             viewModelScope.launch {
@@ -308,7 +309,11 @@ class AdminProductsViewModel(
                 productDailyPendingLimit = product.dailyPendingLimit?.toString().orEmpty(),
                 productImageUrl = product.imageUrl,
                 pendingProductImageBytes = null,
-                isProductImageUploading = false
+                isProductImageUploading = false,
+                editSuccess = false,
+                isDeleteLoading = false,
+                deleteSuccess = false,
+                errorMessage = null
             )
         }
     }
@@ -316,6 +321,7 @@ class AdminProductsViewModel(
     fun updateProduct() {
         val state = _state.value
         val product = state.selectedProduct ?: return
+        if (state.isEditLoading || state.isDeleteLoading) return
 
         if (state.productName.isBlank()) {
             viewModelScope.launch {
@@ -415,6 +421,36 @@ class AdminProductsViewModel(
         }
     }
 
+    fun deleteProduct() {
+        val state = _state.value
+        val product = state.selectedProduct ?: return
+        if (state.isEditLoading || state.isDeleteLoading || state.deleteSuccess) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isDeleteLoading = true, errorMessage = null) }
+            when (productRepository.deleteProduct(product.documentId)) {
+                is Result.Success -> {
+                    _state.update {
+                        it.copy(
+                            isDeleteLoading = false,
+                            deleteSuccess = true
+                        )
+                    }
+                    loadProducts()
+                }
+
+                is Result.Error -> {
+                    _state.update {
+                        it.copy(
+                            isDeleteLoading = false,
+                            errorMessage = getString(Res.string.error_product_delete_failed)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun resetAddState() {
         _state.update {
             it.copy(
@@ -449,6 +485,8 @@ class AdminProductsViewModel(
                 pendingProductImageBytes = null,
                 isProductImageUploading = false,
                 editSuccess = false,
+                isDeleteLoading = false,
+                deleteSuccess = false,
                 errorMessage = null
             )
         }

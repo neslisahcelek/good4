@@ -16,6 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -43,6 +44,7 @@ import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_products_add_content_desc
 import good4.composeapp.generated.resources.business_products_added_message
 import good4.composeapp.generated.resources.business_products_daily_stock_prefix
+import good4.composeapp.generated.resources.business_products_deleted_message
 import good4.composeapp.generated.resources.business_products_donation_section_title
 import good4.composeapp.generated.resources.business_products_empty
 import good4.composeapp.generated.resources.business_products_title
@@ -65,18 +67,22 @@ fun BusinessProductsScreenRoot(
     val scope = rememberCoroutineScope()
     val productAddedMessage = stringResource(Res.string.business_products_added_message)
     val productUpdatedMessage = stringResource(Res.string.business_products_updated_message)
+    val productDeletedMessage = stringResource(Res.string.business_products_deleted_message)
     val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
     val dailyStockPrefix = stringResource(Res.string.business_products_daily_stock_prefix)
     val showAddSheet = remember { mutableStateOf(false) }
     val showEditSheet = remember { mutableStateOf(false) }
-    val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val addSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { it != SheetValue.Hidden }
+    )
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(state.addSuccess) {
         if (state.addSuccess) {
-            snackbarHostState.showSnackbar(productAddedMessage)
             showAddSheet.value = false
             viewModel.resetAddState()
+            snackbarHostState.showSnackbar(productAddedMessage)
         }
     }
 
@@ -85,6 +91,14 @@ fun BusinessProductsScreenRoot(
             snackbarHostState.showSnackbar(productUpdatedMessage)
             showEditSheet.value = false
             viewModel.resetEditState()
+        }
+    }
+
+    LaunchedEffect(state.deleteSuccess) {
+        if (state.deleteSuccess) {
+            showEditSheet.value = false
+            viewModel.resetEditState()
+            snackbarHostState.showSnackbar(productDeletedMessage)
         }
     }
 
@@ -237,7 +251,8 @@ fun BusinessProductsScreenRoot(
             onImagePickerError = { message ->
                 scope.launch { snackbarHostState.showSnackbar(message) }
             },
-            onUpdateProduct = viewModel::updateProduct
+            onUpdateProduct = viewModel::updateProduct,
+            onDeleteProduct = viewModel::deleteProduct
         )
     }
 }

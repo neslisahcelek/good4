@@ -1,6 +1,7 @@
 package com.good4.admin.presentation.products
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -31,6 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,11 +45,13 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import com.good4.core.presentation.components.ProductFormDiscardConfirmDialog
 import com.good4.core.presentation.components.ProductListCard
 import com.good4.core.presentation.components.ProfileTopBarAction
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.add_product
 import good4.composeapp.generated.resources.admin_products_empty
+import good4.composeapp.generated.resources.business_products_deleted_message
 import good4.composeapp.generated.resources.emoji_products_empty
 import good4.composeapp.generated.resources.manage_products
 import kotlinx.coroutines.launch
@@ -62,14 +68,20 @@ fun AdminProductsScreen(
     onProfileClick: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
     val showAddSheet = remember { mutableStateOf(false) }
     val showEditSheet = remember { mutableStateOf(false) }
-    val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val showAddDiscardConfirmDialog = remember { mutableStateOf(false) }
+    val addSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { it != SheetValue.Hidden }
+    )
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currencySuffix = CurrencyConstants.TURKISH_LIRA_SYMBOL
     val addProductLabel = stringResource(Res.string.add_product)
+    val productDeletedMessage = stringResource(Res.string.business_products_deleted_message)
 
     Good4NestedScaffold(
         modifier = modifier,
@@ -158,15 +170,29 @@ fun AdminProductsScreen(
 
         if (showAddSheet.value) {
             ModalBottomSheet(
-                onDismissRequest = { showAddSheet.value = false },
-                sheetState = addSheetState
+                onDismissRequest = {
+                    focusManager.clearFocus(force = true)
+                    showAddDiscardConfirmDialog.value = true
+                },
+                sheetState = addSheetState,
+                containerColor = SurfaceDefault
             ) {
                 AddProductSheet(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = { focusManager.clearFocus(force = true) }
+                            )
+                        },
                     state = state,
                     viewModel = viewModel,
                     onDismiss = {
+                        showAddDiscardConfirmDialog.value = true
+                    },
+                    onAddSuccess = {
                         showAddSheet.value = false
+                        showAddDiscardConfirmDialog.value = false
                         viewModel.resetAddState()
                     },
                     onImagePickerError = { message ->
@@ -176,11 +202,33 @@ fun AdminProductsScreen(
             }
         }
 
+        if (showAddDiscardConfirmDialog.value) {
+            ProductFormDiscardConfirmDialog(
+                onConfirm = {
+                    showAddDiscardConfirmDialog.value = false
+                    showAddSheet.value = false
+                    viewModel.resetAddState()
+                },
+                onDismiss = {
+                    showAddDiscardConfirmDialog.value = false
+                    scope.launch { addSheetState.show() }
+                }
+            )
+        }
+
         if (showEditSheet.value) {
             LaunchedEffect(state.editSuccess) {
                 if (state.editSuccess) {
                     showEditSheet.value = false
                     viewModel.resetEditState()
+                }
+            }
+
+            LaunchedEffect(state.deleteSuccess) {
+                if (state.deleteSuccess) {
+                    showEditSheet.value = false
+                    viewModel.resetEditState()
+                    snackbarHostState.showSnackbar(productDeletedMessage)
                 }
             }
 
@@ -203,7 +251,8 @@ fun AdminProductsScreen(
                 onImagePickerError = { message ->
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },
-                onUpdateProduct = viewModel::updateProduct
+                onUpdateProduct = viewModel::updateProduct,
+                onDeleteProduct = viewModel::deleteProduct
             )
         }
     }
