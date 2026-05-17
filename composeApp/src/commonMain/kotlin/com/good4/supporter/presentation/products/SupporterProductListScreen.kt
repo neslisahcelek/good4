@@ -33,6 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +60,7 @@ import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.core.presentation.components.ProductAddressBottomSheet
 import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.openMaps
@@ -108,6 +112,8 @@ fun SupporterProductListScreen(
     onAddToCart: (Product) -> Unit = {},
     onAction: (SupporterProductListAction) -> Unit = {}
 ) {
+    var selectedProductForSheet by remember { mutableStateOf<Product?>(null) }
+
     Good4NestedScaffold(
         modifier = modifier
     ) { paddingValues ->
@@ -152,7 +158,10 @@ fun SupporterProductListScreen(
                                         .padding(horizontal = 12.dp, vertical = 8.dp),
                                     product = product,
                                     cartCount = cartItemCounts[product.documentId] ?: 0,
-                                    onAddToCart = { onAddToCart(product) }
+                                    onAddToCart = { onAddToCart(product) },
+                                    onAddressCopied = {
+                                        selectedProductForSheet = product
+                                    }
                                 )
                             }
                         }
@@ -165,6 +174,13 @@ fun SupporterProductListScreen(
                 errorMessage = state.errorMessage,
                 onDismiss = { onAction(SupporterProductListAction.OnDismissError) }
             )
+
+            selectedProductForSheet?.let { product ->
+                ProductAddressBottomSheet(
+                    product = product,
+                    onDismiss = { selectedProductForSheet = null }
+                )
+            }
         }
     }
 }
@@ -217,7 +233,8 @@ private fun SupporterProductItem(
     modifier: Modifier = Modifier,
     product: Product,
     cartCount: Int,
-    onAddToCart: () -> Unit
+    onAddToCart: () -> Unit,
+    onAddressCopied: () -> Unit
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         Surface(
@@ -234,7 +251,8 @@ private fun SupporterProductItem(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
                 ) {
                     Box(
                         modifier = Modifier
@@ -262,22 +280,20 @@ private fun SupporterProductItem(
                                 )
                             }
                         }
-
-                        if (product.discountPercentage != null && product.discountPercentage > 0) {
-                            DiscountBadge(
-                                modifier = Modifier.align(Alignment.TopEnd),
-                                percentage = product.discountPercentage
-                            )
-                        }
                     }
 
                     ProductInfoSection(
                         modifier = Modifier.weight(1f),
                         product = product
                     )
+
+                    PriceBlock(product = product)
                 }
 
-                ProductAddressRow(product = product)
+                ProductAddressRow(
+                    product = product,
+                    onAddressCopied = onAddressCopied
+                )
 
                 AddToCartButton(
                     cartCount = cartCount,
@@ -349,26 +365,15 @@ private fun ProductInfoSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Text(
-                text = product.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = TextPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            PriceBlock(
-                product = product,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
+        Text(
+            text = product.name,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = TextPrimary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
 
         Text(
             text = product.storeName,
@@ -416,7 +421,7 @@ private fun PriceBlock(
             product.discountPrice < product.originalPrice
         ) {
             Text(
-                text = "${product.originalPrice}$currencySuffix",
+                text = "$currencySuffix${product.originalPrice}",
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 11.sp,
                 color = TextSecondary,
@@ -429,7 +434,8 @@ private fun PriceBlock(
 @Composable
 private fun ProductAddressRow(
     modifier: Modifier = Modifier,
-    product: Product
+    product: Product,
+    onAddressCopied: () -> Unit
 ) {
     val displayAddress = toDisplayAddressOrNull(product.address)
     val mapsAddress = product.addressUrl
@@ -437,14 +443,7 @@ private fun ProductAddressRow(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 16.dp)
-                .then(
-                    if (mapsAddress.isNotBlank()) {
-                        Modifier.clickable { openMaps(mapsAddress) }
-                    } else {
-                        Modifier
-                    }
-                ),
+                .padding(top = 16.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -456,11 +455,18 @@ private fun ProductAddressRow(
             )
             Text(
                 text = displayAddress,
+                modifier = Modifier.clickable {
+                    if (mapsAddress.isNotBlank()) {
+                        openMaps(mapsAddress)
+                    } else {
+                        onAddressCopied()
+                    }
+                },
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 color = TextSecondary,
-                textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
+                textDecoration = TextDecoration.Underline,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -509,7 +515,7 @@ private fun Product.currentSupporterPrice(): String {
     val priceToShow = discountPrice?.takeIf { discount ->
         originalPrice != null && discount < originalPrice
     } ?: price
-    return "$priceToShow${CurrencyConstants.TURKISH_LIRA_SYMBOL}"
+    return "${CurrencyConstants.TURKISH_LIRA_SYMBOL}$priceToShow"
 }
 
 @Preview

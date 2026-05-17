@@ -21,11 +21,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.Good4NavigationBar
@@ -167,6 +169,12 @@ fun SupporterHomeScreen(
                     }
                 }
             }
+
+            ErrorSnackbar(
+                modifier = Modifier.align(Alignment.TopCenter),
+                errorMessage = cartState.errorMessage,
+                onDismiss = { cartViewModel.onAction(SupporterCartAction.OnDismissError) }
+            )
         }
     }
 }

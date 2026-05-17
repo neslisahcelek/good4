@@ -63,14 +63,21 @@ class SupporterCartViewModel(
 
     private fun addItem(product: Product) {
         _state.update { current ->
+            val firstBusinessId = current.items.firstOrNull()?.product?.businessId
+            if (firstBusinessId != null && firstBusinessId != product.businessId) {
+                return@update current.copy(
+                    errorMessage = UiText.StringResourceId(Res.string.supporter_cart_single_business_error)
+                )
+            }
+
             val existing = current.items.find { it.product.documentId == product.documentId }
             if (existing != null) {
                 current.copy(items = current.items.map {
                     if (it.product.documentId == product.documentId) it.copy(quantity = it.quantity + 1)
                     else it
-                })
+                }, errorMessage = null)
             } else {
-                current.copy(items = current.items + CartItem(product, 1))
+                current.copy(items = current.items + CartItem(product, 1), errorMessage = null)
             }
         }
         persistCart()

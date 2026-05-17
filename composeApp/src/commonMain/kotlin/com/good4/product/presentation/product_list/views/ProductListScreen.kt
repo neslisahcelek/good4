@@ -57,6 +57,7 @@ import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.core.presentation.components.ProductAddressBottomSheet
 import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.ReservationTimeCalculator
@@ -80,6 +81,7 @@ import good4.composeapp.generated.resources.reservation_status_pending
 import good4.composeapp.generated.resources.time_minute_suffix
 import good4.composeapp.generated.resources.time_second_suffix
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -121,6 +123,7 @@ fun ProductListScreen(
     onAction: (ProductListAction) -> Unit
 ) {
     val listState = rememberLazyListState()
+    var selectedProductForSheet by remember { mutableStateOf<Product?>(null) }
 
     LaunchedEffect(state.activeReservation) {
         if (state.activeReservation != null) {
@@ -229,7 +232,10 @@ fun ProductListScreen(
                                     isReserving = state.isReserving &&
                                             state.reservingProductId == product.documentId,
                                     reservationSuccess = isReservedProduct,
-                                    isReserveEnabled = canReserve
+                                    isReserveEnabled = canReserve,
+                                    onAddressCopied = {
+                                        selectedProductForSheet = product
+                                    }
                                 )
                             }
                         }
@@ -242,6 +248,13 @@ fun ProductListScreen(
                 errorMessage = state.errorMessage,
                 onDismiss = { onAction(ProductListAction.OnDismissError) }
             )
+
+            selectedProductForSheet?.let { product ->
+                ProductAddressBottomSheet(
+                    product = product,
+                    onDismiss = { selectedProductForSheet = null }
+                )
+            }
         }
     }
 }

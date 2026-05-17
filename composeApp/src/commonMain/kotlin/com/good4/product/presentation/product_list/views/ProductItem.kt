@@ -63,6 +63,7 @@ fun ProductItem(
     modifier: Modifier = Modifier,
     product: Product,
     onReserveClick: (() -> Unit)? = null,
+    onAddressCopied: (() -> Unit)? = null,
     isReserving: Boolean = false,
     reservationSuccess: Boolean = false,
     isReserveEnabled: Boolean = true
@@ -186,16 +187,9 @@ fun ProductItem(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp, bottom = 16.dp)
-                            .then(
-                                if (mapsAddress.isNotBlank()) {
-                                    Modifier.clickable { openMaps(mapsAddress) }
-                                } else {
-                                    Modifier
-                                }
-                            ),
+                            .padding(top = 16.dp, bottom = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Place,
@@ -205,11 +199,18 @@ fun ProductItem(
                         )
                         Text(
                             text = displayAddress,
+                            modifier = Modifier.clickable {
+                                if (mapsAddress.isNotBlank()) {
+                                    openMaps(mapsAddress)
+                                } else {
+                                    onAddressCopied?.invoke()
+                                }
+                            },
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = TextSecondary,
-                            textDecoration = if (mapsAddress.isNotBlank()) TextDecoration.Underline else null,
+                            textDecoration = TextDecoration.Underline,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
