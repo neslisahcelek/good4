@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,10 +71,7 @@ import good4.composeapp.generated.resources.account_settings_business_name_label
 import good4.composeapp.generated.resources.account_settings_name_label
 import good4.composeapp.generated.resources.account_settings_phone_label
 import good4.composeapp.generated.resources.account_settings_profile_section_title
-import good4.composeapp.generated.resources.account_settings_reset_password_button
-import good4.composeapp.generated.resources.account_settings_reset_password_sent_hint
 import good4.composeapp.generated.resources.account_settings_save_button
-import good4.composeapp.generated.resources.account_settings_security_section_title
 import good4.composeapp.generated.resources.account_settings_title
 import good4.composeapp.generated.resources.education_level_1
 import good4.composeapp.generated.resources.education_level_2
@@ -305,55 +301,6 @@ fun AccountSettingsScreen(
                 }
             }
 
-            ProfileSectionCard {
-                Text(
-                    text = stringResource(Res.string.account_settings_security_section_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Button(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .widthIn(min = 220.dp)
-                        .height(StandardButtonHeight),
-                    enabled = !state.isSendingPasswordReset &&
-                            state.email.isNotBlank() &&
-                            !state.isLoading,
-                    onClick = viewModel::sendPasswordResetEmail,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen,
-                        contentColor = SurfaceDefault
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    if (state.isSendingPasswordReset) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
-                            strokeWidth = 2.dp,
-                            color = SurfaceDefault
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Email,
-                            contentDescription = null
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = stringResource(Res.string.account_settings_reset_password_button))
-                    }
-                }
-
-                if (state.isPasswordResetEmailSent) {
-                    Text(
-                        text = stringResource(Res.string.account_settings_reset_password_sent_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
-                }
-            }
 
             ProfileSectionCard(verticalSpacing = 6.dp) {
                 Text(

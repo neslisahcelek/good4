@@ -20,6 +20,8 @@ data class AccountSettingsState(
     val email: String = "",
     val universities: List<String> = emptyList(),
     val isPasswordResetEmailSent: Boolean = false,
+    val canResendPasswordReset: Boolean = true,
+    val passwordResetCooldownSeconds: Int = 0,
     val showPhoneField: Boolean = false,
     val errorMessage: UiText? = null,
     val infoMessage: UiText? = null

@@ -16,12 +16,17 @@ import good4.composeapp.generated.resources.account_settings_saved
 import good4.composeapp.generated.resources.error_delete_account_failed
 import good4.composeapp.generated.resources.error_network_connection
 import good4.composeapp.generated.resources.error_recent_login_required
+import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_logged_in
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlin.time.Duration.Companion.seconds
 
 class AccountSettingsViewModel(
     private val authRepository: AuthRepository,
@@ -32,6 +37,9 @@ class AccountSettingsViewModel(
 
     private val _state = MutableStateFlow(AccountSettingsState())
     val state = _state.asStateFlow()
+
+    private var passwordResetCooldownUntilMillis: Long = 0L
+    private var passwordResetCooldownJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -282,10 +290,47 @@ class AccountSettingsViewModel(
         }
     }
 
+
+    fun logout() {
+        viewModelScope.launch {
+            when (val result = authRepository.signOut()) {
+                is Result.Success -> {
+                    _state.update { it.copy(isLoggedOut = true) }
+                }
+
+                is Result.Error -> {
+                    _state.update { it.copy(errorMessage = result.error.toUiText()) }
+                }
+            }
+        }
+    }
+
     fun sendPasswordResetEmail() {
-        val email = _state.value.email
+        val state = _state.value
+
+        if (state.isLoading) {
+            return
+        }
+
+        val email = state.email
         if (email.isBlank()) {
             _state.update { it.copy(errorMessage = UiText.StringResourceId(Res.string.error_unknown)) }
+            return
+        }
+
+        val nowMillis = Clock.System.now().toEpochMilliseconds()
+        if (nowMillis < passwordResetCooldownUntilMillis) {
+            val remainingSeconds = ((passwordResetCooldownUntilMillis - nowMillis) / 1000L)
+                .coerceAtLeast(1L)
+                .toInt()
+            _state.update {
+                it.copy(
+                    errorMessage = UiText.StringResourceId(
+                        Res.string.error_resend_wait_seconds,
+                        arrayOf(remainingSeconds)
+                    )
+                )
+            }
             return
         }
 
@@ -308,6 +353,7 @@ class AccountSettingsViewModel(
                             isPasswordResetEmailSent = true
                         )
                     }
+                    startPasswordResetCooldown(PASSWORD_RESET_COOLDOWN_SECONDS)
                 }
 
                 is Result.Error -> {
@@ -318,20 +364,6 @@ class AccountSettingsViewModel(
                             errorMessage = result.error.toUiText()
                         )
                     }
-                }
-            }
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            when (val result = authRepository.signOut()) {
-                is Result.Success -> {
-                    _state.update { it.copy(isLoggedOut = true) }
-                }
-
-                is Result.Error -> {
-                    _state.update { it.copy(errorMessage = result.error.toUiText()) }
                 }
             }
         }
@@ -410,4 +442,31 @@ class AccountSettingsViewModel(
             UiText.DynamicString(message)
         }
     }
+
+    private fun startPasswordResetCooldown(seconds: Int) {
+        passwordResetCooldownUntilMillis = Clock.System.now().toEpochMilliseconds() + seconds * 1000L
+        passwordResetCooldownJob?.cancel()
+        passwordResetCooldownJob = viewModelScope.launch {
+            for (remaining in seconds downTo 1) {
+                _state.update {
+                    it.copy(
+                        canResendPasswordReset = false,
+                        passwordResetCooldownSeconds = remaining
+                    )
+                }
+                delay(1.seconds)
+            }
+            _state.update {
+                it.copy(
+                    canResendPasswordReset = true,
+                    passwordResetCooldownSeconds = 0
+                )
+            }
+        }
+    }
+
+    companion object {
+        private const val PASSWORD_RESET_COOLDOWN_SECONDS = 60
+    }
+
 }
