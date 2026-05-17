@@ -307,7 +307,7 @@ private fun CartItemCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "${unitPrice.toInt()}$currencySuffix",
+                text = "$currencySuffix${unitPrice.toInt()}",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen
@@ -400,7 +400,7 @@ private fun CartBottomBar(
                 color = TextSecondary
             )
             Text(
-                text = "${state.totalPrice.toInt()}$currencySuffix",
+                text = "$currencySuffix${state.totalPrice.toInt()}",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary

@@ -147,7 +147,7 @@ fun SupporterOrderSummaryScreen(
                                             ?: cartItem.product.price
                                         ).toDouble()
                                 Text(
-                                    text = "${(unitPrice * cartItem.quantity).toInt()}$currencySuffix",
+                                    text = "$currencySuffix${(unitPrice * cartItem.quantity).toInt()}",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = TextPrimary
@@ -159,12 +159,12 @@ fun SupporterOrderSummaryScreen(
 
                         SummaryRow(
                             label = stringResource(Res.string.supporter_order_summary_subtotal),
-                            value = "${state.totalPrice.toInt()}$currencySuffix",
+                            value = "$currencySuffix${state.totalPrice.toInt()}",
                             isEmphasized = false
                         )
                         SummaryRow(
                             label = stringResource(Res.string.supporter_cart_total),
-                            value = "${state.totalPrice.toInt()}$currencySuffix",
+                            value = "$currencySuffix${state.totalPrice.toInt()}",
                             isEmphasized = true
                         )
                     }
@@ -212,7 +212,7 @@ fun SupporterOrderSummaryScreen(
                     )
                 } else {
                     Text(
-                        text = "${stringResource(Res.string.supporter_order_summary_confirm)} - ${state.totalPrice.toInt()}$currencySuffix",
+                        text = "${stringResource(Res.string.supporter_order_summary_confirm)} - $currencySuffix${state.totalPrice.toInt()}",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )

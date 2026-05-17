@@ -94,6 +94,7 @@
     <string name="product_image_description">Ürün görseli</string>
     <string name="address_icon_description">Adres simgesi</string>
     <string name="product_address_maps_hint">Haritada Aç</string>
+    <string name="product_address_copied">Adres kopyalandı</string>
     <string name="amount_icon_description">Miktar simgesi</string>
     <string name="lock_icon_description">Kilit simgesi</string>
     <string name="reserve_button_label">Benim İçin Ayır</string>
@@ -160,7 +161,7 @@
     <string name="donation_product_description">Bu ürün öğrencilere ücretsiz olarak sunulacaktır. Her gece 00:00&apos;da belirlediğiniz günlük limit kadar yenilenecektir.</string>
     <string name="daily_pending_limit">Günlük Bağış Adedi</string>
     <string name="daily_pending_limit_placeholder">Örn: 4</string>
-    <string name="daily_pending_limit_helper">Bağış kotası aktif: Ürün fiyatı 0₺ olur ve kontenjan her gün otomatik yenilenir.</string>
+    <string name="daily_pending_limit_helper">Bağış kotası aktif: Ürün fiyatı ₺0 olur ve kontenjan her gün otomatik yenilenir.</string>
     <string name="image_url">Resim URL\'si</string>
     <string name="add">Ekle</string>
     <string name="cancel">İptal Et</string>
@@ -402,8 +403,9 @@
     <string name="product_list_active_reservation_title">Aktif Rezervasyon</string>
     <string name="product_list_credit_label">KALAN KREDİ</string>
     <string name="product_list_delivery_suffix"> dk teslim süresi</string>
-    <string name="product_list_price_format">%1$d %2$s</string>
+    <string name="product_list_price_format">%2$s%1$d</string>
     <string name="product_list_pending_badge">%1$d askıda</string>
+    <string name="product_list_copy_address">Kopyala</string>
     <string name="product_list_stock_units">%1$d adet</string>
     <string name="product_list_availability_in_stock">Stokta</string>
     <string name="product_list_availability_out">Tükendi</string>
@@ -428,7 +430,7 @@
     <string name="supporter_cart_item_remove">Kaldır</string>
     <string name="supporter_cart_creating_order">Sipariş oluşturuluyor…</string>
     <string name="supporter_products_tab">Ürünler</string>
-    <string name="supporter_cart_single_business_error">Sepet yalnızca tek bir işletmenin ürünlerini içerebilir.</string>
+    <string name="supporter_cart_single_business_error">Sepetinizde farklı bir işletmeden ürün var.</string>
     <string name="supporter_cart_no_session_error">Kullanıcı oturumu bulunamadı.</string>
     <string name="supporter_cart_empty_error">Sepetiniz boş.</string>
     <string name="supporter_cart_order_failed">Sipariş oluşturulamadı.</string>

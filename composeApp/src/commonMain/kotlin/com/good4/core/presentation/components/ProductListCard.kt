@@ -163,13 +163,13 @@ fun ProductListCard(
                         when {
                             product.discountPrice != null && product.originalPrice != null -> {
                                 Text(
-                                    text = "${product.discountPrice}$currencySuffix",
+                                    text = "$currencySuffix${product.discountPrice}",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = DeepGreen
                                 )
                                 Text(
-                                    text = "${product.originalPrice}$currencySuffix",
+                                    text = "$currencySuffix${product.originalPrice}",
                                     fontSize = 12.sp,
                                     color = TextSecondary,
                                     style = TextStyle(
@@ -180,7 +180,7 @@ fun ProductListCard(
 
                             product.discountPrice != null -> {
                                 Text(
-                                    text = "${product.discountPrice}$currencySuffix",
+                                    text = "$currencySuffix${product.discountPrice}",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
@@ -189,7 +189,7 @@ fun ProductListCard(
 
                             product.originalPrice != null -> {
                                 Text(
-                                    text = "${product.originalPrice}$currencySuffix",
+                                    text = "$currencySuffix${product.originalPrice}",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
@@ -198,7 +198,7 @@ fun ProductListCard(
 
                             else -> {
                                 Text(
-                                    text = "${product.price}$currencySuffix",
+                                    text = "$currencySuffix${product.price}",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary

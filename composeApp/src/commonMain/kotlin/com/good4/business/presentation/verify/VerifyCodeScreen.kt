@@ -409,7 +409,7 @@ private fun OrderConfirmCard(
                     color = TextPrimary
                 )
                 Text(
-                    text = "${order.grandTotal.toInt()}$currencySuffix",
+                    text = "$currencySuffix${order.grandTotal.toInt()}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGreen
@@ -518,13 +518,13 @@ private fun OrderConfirmItemRow(
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "${item.quantity}$pieceSuffix × ${item.unitPrice.toInt()}$currencySuffix",
+                text = "${item.quantity}$pieceSuffix × $currencySuffix${item.unitPrice.toInt()}",
                 fontSize = 12.sp,
                 color = TextSecondary
             )
         }
         Text(
-            text = "${item.totalPrice.toInt()}$currencySuffix",
+            text = "$currencySuffix${item.totalPrice.toInt()}",
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
