@@ -8,6 +8,9 @@ actual object AppEnvironment {
     actual val isEmailVerificationRequired: Boolean
         get() = !isStaging()
 
+    actual val isBusinessApprovalRequired: Boolean
+        get() = !isStaging()
+
     actual val isDebug: Boolean
         get() = Platform.isDebugBinary
 

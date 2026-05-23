@@ -1,6 +1,7 @@
 package com.good4.business.data.dto
 
 import com.good4.business.domain.Business
+import com.good4.business.domain.BusinessApprovalStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -19,7 +20,15 @@ data class BusinessDto(
     @SerialName("city")
     val city: String? = null,
     @SerialName("district")
-    val district: String? = null
+    val district: String? = null,
+    @SerialName("approvalStatus")
+    val approvalStatus: String? = null,
+    @SerialName("approvalRequestedAt")
+    val approvalRequestedAt: Long? = null,
+    @SerialName("approvedAt")
+    val approvedAt: Long? = null,
+    @SerialName("approvedBy")
+    val approvedBy: String? = null
 )
 
 fun BusinessDto.toBusiness(id: String): Business {
@@ -31,7 +40,11 @@ fun BusinessDto.toBusiness(id: String): Business {
         address = address.orEmpty(),
         addressUrl = addressUrl.orEmpty(),
         city = city.orEmpty(),
-        district = district.orEmpty()
+        district = district.orEmpty(),
+        approvalStatus = BusinessApprovalStatus.fromValue(approvalStatus),
+        approvalRequestedAt = approvalRequestedAt,
+        approvedAt = approvedAt,
+        approvedBy = approvedBy
     )
 }
 
@@ -43,6 +56,10 @@ fun Business.toDto(): BusinessDto {
         address = address,
         addressUrl = addressUrl,
         city = city,
-        district = district
+        district = district,
+        approvalStatus = approvalStatus.value,
+        approvalRequestedAt = approvalRequestedAt,
+        approvedAt = approvedAt,
+        approvedBy = approvedBy
     )
 }

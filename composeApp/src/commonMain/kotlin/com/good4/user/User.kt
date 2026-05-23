@@ -19,5 +19,6 @@ data class User(
     val registrationDate: Instant? = null,
     val createdAt: Instant? = null,
     val totalDonations: Int = 0,
-    val totalMeals: Int = 0
+    val totalMeals: Int = 0,
+    val pushToken: String? = null
 )

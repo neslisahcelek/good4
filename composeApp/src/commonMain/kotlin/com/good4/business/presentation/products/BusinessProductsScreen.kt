@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -29,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +50,8 @@ import good4.composeapp.generated.resources.business_products_daily_stock_prefix
 import good4.composeapp.generated.resources.business_products_deleted_message
 import good4.composeapp.generated.resources.business_products_donation_section_title
 import good4.composeapp.generated.resources.business_products_empty
+import good4.composeapp.generated.resources.business_products_approval_pending_body
+import good4.composeapp.generated.resources.business_products_approval_pending_title
 import good4.composeapp.generated.resources.business_products_title
 import good4.composeapp.generated.resources.business_products_updated_message
 import good4.composeapp.generated.resources.emoji_products_empty
@@ -72,6 +77,7 @@ fun BusinessProductsScreenRoot(
     val dailyStockPrefix = stringResource(Res.string.business_products_daily_stock_prefix)
     val showAddSheet = remember { mutableStateOf(false) }
     val showEditSheet = remember { mutableStateOf(false) }
+    val showApprovalInfoSheet = remember { mutableStateOf(false) }
     val addSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
         confirmValueChange = { it != SheetValue.Hidden }
@@ -116,7 +122,13 @@ fun BusinessProductsScreenRoot(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddSheet.value = true },
+                onClick = {
+                    if (state.isBusinessApproved) {
+                        showAddSheet.value = true
+                    } else {
+                        showApprovalInfoSheet.value = true
+                    }
+                },
                 containerColor = TextPrimary,
                 contentColor = SurfaceDefault
             ) {
@@ -254,6 +266,34 @@ fun BusinessProductsScreenRoot(
             onUpdateProduct = viewModel::updateProduct,
             onDeleteProduct = viewModel::deleteProduct
         )
+    }
+
+    if (showApprovalInfoSheet.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showApprovalInfoSheet.value = false },
+            containerColor = SurfaceDefault
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(Res.string.business_products_approval_pending_title),
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = stringResource(Res.string.business_products_approval_pending_body),
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                )
+            }
+        }
     }
 }
 

@@ -25,6 +25,7 @@ import com.good4.core.data.repository.FirestoreRepositoryImpl
 import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashViewModel
+import com.good4.notification.data.repository.NotificationEventRepository
 import com.good4.order.data.repository.OrderRepository
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.product.presentation.product_list.ProductListViewModel
@@ -55,6 +56,7 @@ val commonModule = module {
     single { CodeRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>(), get<AppConfigRepository>()) }
     single { SupportActivityRepository(get<FirestoreRepository>()) }
     single { OrderRepository(get<FirestoreRepository>()) }
+    single { NotificationEventRepository(get<FirestoreRepository>()) }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel {
@@ -70,6 +72,7 @@ val commonModule = module {
             get<AuthRepository>(),
             get<UserRepository>(),
             get<FirestoreBusinessRepository>(),
+            get<NotificationEventRepository>(),
             get<StartupSessionCache>()
         )
     }
@@ -113,10 +116,12 @@ val commonModule = module {
     }
     viewModel {
         AdminDashboardViewModel(
+            get<AuthRepository>(),
             get<FirestoreProductRepository>(),
             get<FirestoreBusinessRepository>(),
             get<CampaignRepository>(),
-            get<UserRepository>()
+            get<UserRepository>(),
+            get<NotificationEventRepository>()
         )
     }
     viewModel { AdminCampaignsViewModel(get<CampaignRepository>()) }

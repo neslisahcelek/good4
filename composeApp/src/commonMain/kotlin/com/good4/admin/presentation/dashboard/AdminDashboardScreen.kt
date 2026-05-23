@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +55,10 @@ import good4.composeapp.generated.resources.admin_dashboard_stock_suffix
 import good4.composeapp.generated.resources.admin_dashboard_total_products
 import good4.composeapp.generated.resources.admin_dashboard_users
 import good4.composeapp.generated.resources.admin_products_empty
+import good4.composeapp.generated.resources.admin_dashboard_pending_businesses
+import good4.composeapp.generated.resources.admin_dashboard_pending_businesses_title
+import good4.composeapp.generated.resources.admin_dashboard_approve
+import good4.composeapp.generated.resources.admin_dashboard_business_owner_id
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -114,6 +119,14 @@ fun AdminDashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
+                    state.actionMessage?.let { message ->
+                        Text(
+                            text = message,
+                            fontSize = 13.sp,
+                            color = DeepGreen
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
                 }
 
                 item {
@@ -131,6 +144,16 @@ fun AdminDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         title = stringResource(Res.string.admin_dashboard_businesses),
                         value = state.totalBusinesses.toString(),
+                        icon = Icons.Filled.Home,
+                        color = DeepGreen
+                    )
+                }
+
+                item {
+                    StatCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = stringResource(Res.string.admin_dashboard_pending_businesses),
+                        value = state.pendingBusinessesCount.toString(),
                         icon = Icons.Filled.Home,
                         color = DeepGreen
                     )
@@ -166,6 +189,58 @@ fun AdminDashboardScreen(
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(Res.string.admin_dashboard_pending_businesses_title),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                }
+
+                if (state.pendingBusinesses.isEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(Res.string.admin_products_empty),
+                            fontSize = 14.sp,
+                            color = TextSecondary
+                        )
+                    }
+                } else {
+                    items(
+                        items = state.pendingBusinesses,
+                        key = { it.id }
+                    ) { business ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceDefault)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = business.name,
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "${stringResource(Res.string.admin_dashboard_business_owner_id)} ${business.ownerId}",
+                                    color = TextSecondary,
+                                    fontSize = 13.sp
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    TextButton(onClick = { viewModel.approveBusiness(business.id) }) {
+                                        Text(stringResource(Res.string.admin_dashboard_approve))
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (state.activeProducts.isEmpty()) {

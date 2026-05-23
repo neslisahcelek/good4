@@ -8,5 +8,9 @@ data class Business(
     val address: String,
     val addressUrl: String = "",
     val city: String,
-    val district: String
+    val district: String,
+    val approvalStatus: BusinessApprovalStatus = BusinessApprovalStatus.PENDING,
+    val approvalRequestedAt: Long? = null,
+    val approvedAt: Long? = null,
+    val approvedBy: String? = null
 )

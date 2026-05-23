@@ -9,6 +9,7 @@ import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
+import com.good4.notification.data.dto.NotificationEventDto
 import com.good4.order.data.dto.OrderDto
 import com.good4.order.data.dto.OrderItemDto
 import com.good4.product.data.dto.ProductDto
@@ -506,7 +507,8 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "UniversitiesConfigDto" to UniversitiesConfigDto.serializer(),
         "OrderDto" to OrderDto.serializer(),
         "OrderItemDto" to OrderItemDto.serializer(),
-        "SupportActivityDto" to SupportActivityDto.serializer()
+        "SupportActivityDto" to SupportActivityDto.serializer(),
+        "NotificationEventDto" to NotificationEventDto.serializer()
     )
 
     @Suppress("UNCHECKED_CAST")

@@ -6,6 +6,7 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.presentation.register.mapAuthSignUpErrorToUiText
 import com.good4.business.data.dto.BusinessDto
 import com.good4.business.data.dto.FirestoreBusinessRepository
+import com.good4.business.domain.BusinessApprovalStatus
 import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
@@ -15,6 +16,7 @@ import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.normalizePersonalNameInput
 import com.good4.core.util.normalizePhoneNumberInput
 import com.good4.core.util.validateEmail
+import com.good4.notification.data.repository.NotificationEventRepository
 import com.good4.user.data.dto.UserDto
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
@@ -35,11 +37,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 class BusinessRegisterViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val businessRepository: FirestoreBusinessRepository,
+    private val notificationEventRepository: NotificationEventRepository,
     private val startupSessionCache: StartupSessionCache
 ) : ViewModel() {
 
@@ -209,6 +213,7 @@ class BusinessRegisterViewModel(
             when (val authResult = authRepository.signUp(email, state.password)) {
                 is Result.Success -> {
                     val userId = authResult.data.uid
+                    val now = Clock.System.now().epochSeconds
 
                     val businessDto = BusinessDto(
                         name = state.businessName,
@@ -217,10 +222,12 @@ class BusinessRegisterViewModel(
                         address = state.address,
                         addressUrl = state.addressUrl.ifBlank { null },
                         city = state.city,
-                        district = state.district.ifBlank { null }
+                        district = state.district.ifBlank { null },
+                        approvalStatus = BusinessApprovalStatus.PENDING.value,
+                        approvalRequestedAt = now
                     )
 
-                    when (businessRepository.addBusiness(businessDto)) {
+                    when (val businessCreateResult = businessRepository.addBusiness(businessDto)) {
                         is Result.Success -> {
                             val userDto = UserDto(
                                 email = email,
@@ -232,6 +239,12 @@ class BusinessRegisterViewModel(
 
                             when (userRepository.createUser(userId, userDto)) {
                                 is Result.Success -> {
+                                    notificationEventRepository.publishBusinessCreatedPendingEvent(
+                                        businessId = businessCreateResult.data,
+                                        ownerUserId = userId,
+                                        businessName = state.businessName,
+                                        createdAt = now
+                                    )
                                     startupSessionCache.cacheStartupSession(
                                         uid = userId,
                                         role = UserRole.BUSINESS,

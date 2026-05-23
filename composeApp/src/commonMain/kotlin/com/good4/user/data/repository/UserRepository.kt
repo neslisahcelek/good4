@@ -259,6 +259,7 @@ private fun UserDto.toUser(userId: String): User {
         registrationDate = registrationDate?.let { Instant.fromEpochSeconds(it) },
         createdAt = createdAt?.let { Instant.fromEpochSeconds(it) },
         totalDonations = totalDonations ?: 0,
-        totalMeals = totalMeals ?: 0
+        totalMeals = totalMeals ?: 0,
+        pushToken = pushToken
     )
 }

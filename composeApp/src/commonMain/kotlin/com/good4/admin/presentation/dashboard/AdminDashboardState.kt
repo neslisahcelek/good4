@@ -1,5 +1,7 @@
 package com.good4.admin.presentation.dashboard
 
+import com.good4.business.domain.Business
+
 data class ActiveProductStock(
     val id: String,
     val name: String,
@@ -12,7 +14,9 @@ data class AdminDashboardState(
     val totalBusinesses: Int = 0,
     val totalCampaigns: Int = 0,
     val totalUsers: Int = 0,
+    val pendingBusinessesCount: Int = 0,
+    val pendingBusinesses: List<Business> = emptyList(),
     val activeProducts: List<ActiveProductStock> = emptyList(),
+    val actionMessage: String? = null,
     val errorMessage: String? = null
 )
-

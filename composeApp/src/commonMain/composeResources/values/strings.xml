@@ -114,6 +114,11 @@
     <string name="admin_dashboard_summary_title">Genel Özet</string>
     <string name="admin_dashboard_total_products">Toplam ürün sayısı</string>
     <string name="admin_dashboard_businesses">İşletmeler</string>
+    <string name="admin_dashboard_pending_businesses">Onay Bekleyen İşletmeler</string>
+    <string name="admin_dashboard_pending_businesses_title">Onay Bekleyen İşletmeler</string>
+    <string name="admin_dashboard_approve">Onayla</string>
+    <string name="admin_dashboard_business_owner_id">Sahip ID:</string>
+    <string name="admin_dashboard_business_approved">İşletme onaylandı.</string>
     <string name="admin_dashboard_campaigns">Kampanyalar</string>
     <string name="admin_dashboard_users">Kullanıcılar</string>
     <string name="admin_dashboard_quick_actions_title">Hızlı İşlemler</string>
@@ -258,6 +263,8 @@
     <string name="nav_products">Ürünler</string>
     <string name="nav_profile">Profil</string>
     <string name="business_products_title">Ürünlerim</string>
+    <string name="business_products_approval_pending_title">İşletme Onayı Bekleniyor</string>
+    <string name="business_products_approval_pending_body">İşletmeniz onaylandığında ürün ekleyebilirsiniz. Onay süreci ortalama 1 gün sürer.</string>
     <string name="business_products_empty">Henüz bir ürün eklemediniz</string>
     <string name="business_products_add_title">Yeni Ürün Ekleyin</string>
     <string name="business_products_edit_title">Ürün Bilgilerini Düzenleyin</string>

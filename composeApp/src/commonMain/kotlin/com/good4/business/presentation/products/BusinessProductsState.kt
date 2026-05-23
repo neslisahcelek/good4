@@ -1,5 +1,6 @@
 package com.good4.business.presentation.products
 
+import com.good4.business.domain.BusinessApprovalStatus
 import com.good4.product.Product
 
 @Suppress("ArrayInDataClass")
@@ -22,5 +23,7 @@ data class BusinessProductsState(
     val productDailyPendingLimit: String = "",
     val productImageUrl: String = "",
     val pendingProductImageBytes: ByteArray? = null,
-    val isProductImageUploading: Boolean = false
+    val isProductImageUploading: Boolean = false,
+    val isBusinessApproved: Boolean = false,
+    val approvalStatus: BusinessApprovalStatus = BusinessApprovalStatus.PENDING
 )

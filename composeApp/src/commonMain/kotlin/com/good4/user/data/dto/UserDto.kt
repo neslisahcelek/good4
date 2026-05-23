@@ -34,6 +34,7 @@ data class UserDto(
     @SerialName("totalDonations")
     val totalDonations: Int? = null,
     @SerialName("totalMeals")
-    val totalMeals: Int? = null
+    val totalMeals: Int? = null,
+    @SerialName("pushToken")
+    val pushToken: String? = null
 )
-

@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.business.data.dto.FirestoreBusinessRepository
+import com.good4.business.domain.BusinessApprovalStatus
 import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.core.domain.Result
+import com.good4.core.util.AppEnvironment
 import com.good4.core.util.Logger
 import com.good4.product.data.dto.ProductDto
 import com.good4.product.data.repository.FirestoreProductRepository
@@ -81,6 +83,30 @@ class BusinessProductsViewModel(
                         )
                     }
                     return@launch
+                }
+
+                when (val businessResult = businessRepository.getBusinessById(currentBusinessId)) {
+                    is Result.Success -> {
+                        val isApprovedByStatus =
+                            businessResult.data.approvalStatus == BusinessApprovalStatus.APPROVED
+                        val isApprovedForCurrentEnvironment =
+                            isApprovedByStatus || !AppEnvironment.isBusinessApprovalRequired
+                        _state.update {
+                            it.copy(
+                                approvalStatus = businessResult.data.approvalStatus,
+                                isBusinessApproved = isApprovedForCurrentEnvironment
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = businessResult.error.message
+                            )
+                        }
+                        return@launch
+                    }
                 }
 
                 when (val result = productRepository.getProductsByBusinessId(
