@@ -7,8 +7,7 @@ import good4.composeapp.generated.resources.error_email_required
 import org.jetbrains.compose.resources.StringResource
 
 private const val EMAIL_REGEX_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$"
-private const val MIN_PHONE_DIGIT_COUNT = 10
-private const val MAX_PHONE_INPUT_LENGTH = 13
+private const val PHONE_DIGIT_COUNT = 10
 
 fun String.normalizeForEmail(): String {
     return this
@@ -46,16 +45,8 @@ fun String.validateStudentEmail(): StringResource? {
 }
 
 fun String.normalizePhoneNumberInput(): String {
-    val withoutWhitespace = replace(Regex("\\s+"), "")
-    val hasLeadingPlus = withoutWhitespace.startsWith("+")
-    val digits = withoutWhitespace.filter { it.isDigit() }
-    val normalized = if (hasLeadingPlus) {
-        "+$digits"
-    } else {
-        digits
-    }
-
-    return normalized.take(MAX_PHONE_INPUT_LENGTH)
+    val digits = filter { it.isDigit() }
+    return digits.take(PHONE_DIGIT_COUNT)
 }
 
 fun String.hasValidOptionalPhoneNumber(): Boolean {
@@ -63,7 +54,7 @@ fun String.hasValidOptionalPhoneNumber(): Boolean {
         return true
     }
 
-    return count { it.isDigit() } >= MIN_PHONE_DIGIT_COUNT
+    return count { it.isDigit() } == PHONE_DIGIT_COUNT
 }
 
 fun String.normalizePersonalNameInput(): String {

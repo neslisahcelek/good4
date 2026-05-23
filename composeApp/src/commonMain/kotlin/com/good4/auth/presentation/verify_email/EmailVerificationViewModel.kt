@@ -8,6 +8,7 @@ import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.data.local.shouldCheckEmailVerificationFor
 import com.good4.core.domain.Result
+import com.good4.core.presentation.CooldownTimer
 import com.good4.core.presentation.UiText
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
@@ -18,13 +19,11 @@ import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_logged_in
 import good4.composeapp.generated.resources.verification_email_sent
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlin.time.Duration.Companion.seconds
 
 class EmailVerificationViewModel(
@@ -36,8 +35,7 @@ class EmailVerificationViewModel(
     private val _state = MutableStateFlow(EmailVerificationState())
     val state = _state.asStateFlow()
 
-    private var verificationCooldownUntilMillis: Long = 0L
-    private var verificationCooldownJob: Job? = null
+    private val verificationCooldown = CooldownTimer(viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -68,23 +66,20 @@ class EmailVerificationViewModel(
     }
 
     private suspend fun logout() {
-        _state.update { it.copy(isLoading = true) }
+        _state.update { it.copy(isLoggingOut = true) }
         authRepository.signOut()
-        _state.update { it.copy(isLoading = false) }
+        _state.update { it.copy(isLoggingOut = false) }
     }
 
     private fun resendVerificationEmail() {
         val state = _state.value
-        
-        if (state.isLoading) {
+
+        if (state.isCheckingVerification || state.isResendingEmail || state.isLoggingOut) {
             return
         }
-        
-        val nowMillis = Clock.System.now().toEpochMilliseconds()
-        if (nowMillis < verificationCooldownUntilMillis) {
-            val remainingSeconds = ((verificationCooldownUntilMillis - nowMillis) / 1000L)
-                .coerceAtLeast(1L)
-                .toInt()
+
+        val remainingSeconds = verificationCooldown.remainingSeconds()
+        if (remainingSeconds > 0) {
             _state.update {
                 it.copy(
                     errorMessage = UiText.StringResourceId(
@@ -97,13 +92,19 @@ class EmailVerificationViewModel(
         }
 
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
+            _state.update {
+                it.copy(
+                    isResendingEmail = true,
+                    errorMessage = null,
+                    infoMessage = null
+                )
+            }
 
             val currentUser = authRepository.currentUser
             if (currentUser == null) {
                 _state.update {
                     it.copy(
-                        isLoading = false,
+                        isResendingEmail = false,
                         errorMessage = UiText.StringResourceId(Res.string.error_user_not_logged_in)
                     )
                 }
@@ -121,7 +122,7 @@ class EmailVerificationViewModel(
                         )
                         _state.update {
                             it.copy(
-                                isLoading = false,
+                                isResendingEmail = false,
                                 isVerified = true,
                                 userRole = userResult.data.role
                             )
@@ -137,7 +138,7 @@ class EmailVerificationViewModel(
                 is Result.Success -> {
                     _state.update {
                         it.copy(
-                            isLoading = false,
+                            isResendingEmail = false,
                             infoMessage = UiText.StringResourceId(Res.string.verification_email_sent)
                         )
                     }
@@ -153,7 +154,7 @@ class EmailVerificationViewModel(
                     }
                     _state.update {
                         it.copy(
-                            isLoading = false,
+                            isResendingEmail = false,
                             errorMessage = errorMessage
                         )
                     }
@@ -167,7 +168,13 @@ class EmailVerificationViewModel(
         showLoading: Boolean
     ) {
         if (showLoading) {
-            _state.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
+            _state.update {
+                it.copy(
+                    isCheckingVerification = true,
+                    errorMessage = null,
+                    infoMessage = null
+                )
+            }
         } else {
             _state.update { it.copy(errorMessage = null, infoMessage = null) }
         }
@@ -176,7 +183,7 @@ class EmailVerificationViewModel(
         if (currentUser == null) {
             _state.update {
                 it.copy(
-                    isLoading = false,
+                    isCheckingVerification = false,
                     errorMessage = UiText.StringResourceId(Res.string.error_user_not_logged_in)
                 )
             }
@@ -195,7 +202,7 @@ class EmailVerificationViewModel(
                     )
                     _state.update {
                         it.copy(
-                            isLoading = false,
+                            isCheckingVerification = false,
                             isVerified = true,
                             userRole = user.role
                         )
@@ -212,7 +219,7 @@ class EmailVerificationViewModel(
             is Result.Error -> {
                 _state.update {
                     it.copy(
-                        isLoading = false,
+                        isCheckingVerification = false,
                         errorMessage = UiText.StringResourceId(Res.string.error_please_register)
                     )
                 }
@@ -226,7 +233,13 @@ class EmailVerificationViewModel(
         retryCount: Int = 0
     ) {
         if (showLoading) {
-            _state.update { it.copy(isLoading = true, errorMessage = null, infoMessage = null) }
+            _state.update {
+                it.copy(
+                    isCheckingVerification = true,
+                    errorMessage = null,
+                    infoMessage = null
+                )
+            }
         } else {
             _state.update { it.copy(errorMessage = null, infoMessage = null) }
         }
@@ -242,7 +255,7 @@ class EmailVerificationViewModel(
                     }
                     _state.update {
                         it.copy(
-                            isLoading = false,
+                            isCheckingVerification = false,
                             errorMessage = if (showErrorIfNotVerified) {
                                 UiText.StringResourceId(Res.string.error_email_not_verified)
                             } else {
@@ -258,7 +271,7 @@ class EmailVerificationViewModel(
                     is Result.Error -> {
                         _state.update {
                             it.copy(
-                                isLoading = false,
+                                isCheckingVerification = false,
                                 errorMessage = UiText.StringResourceId(
                                     Res.string.error_email_not_verified
                                 )
@@ -273,7 +286,7 @@ class EmailVerificationViewModel(
                         if (!userResult.data.verified) {
                             _state.update {
                                 it.copy(
-                                    isLoading = false,
+                                    isCheckingVerification = false,
                                     errorMessage = UiText.StringResourceId(
                                         Res.string.error_email_not_verified
                                     )
@@ -281,18 +294,18 @@ class EmailVerificationViewModel(
                             }
                             return
                         }
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                isVerified = true,
-                                userRole = userResult.data.role
-                            )
+                            _state.update {
+                                it.copy(
+                                    isCheckingVerification = false,
+                                    isVerified = true,
+                                    userRole = userResult.data.role
+                                )
                         }
                     }
                     is Result.Error -> {
                         _state.update {
                             it.copy(
-                                isLoading = false,
+                                isCheckingVerification = false,
                                 errorMessage = UiText.StringResourceId(
                                     Res.string.error_please_register
                                 )
@@ -311,7 +324,7 @@ class EmailVerificationViewModel(
                 }
                 _state.update {
                     it.copy(
-                        isLoading = false,
+                        isCheckingVerification = false,
                         errorMessage = errorMessage
                     )
                 }
@@ -320,30 +333,35 @@ class EmailVerificationViewModel(
     }
 
     private fun startVerificationCooldown(seconds: Int) {
-        verificationCooldownUntilMillis = Clock.System.now().toEpochMilliseconds() + seconds * 1000L
-        verificationCooldownJob?.cancel()
-        verificationCooldownJob = viewModelScope.launch {
-            for (remaining in seconds downTo 1) {
+        verificationCooldown.start(
+            seconds = seconds,
+            onTick = { remaining ->
                 _state.update {
                     it.copy(
                         canResendEmail = false,
                         resendCooldownSeconds = remaining
                     )
                 }
-                delay(1.seconds)
+            },
+            onComplete = {
+                _state.update {
+                    it.copy(
+                        canResendEmail = true,
+                        resendCooldownSeconds = 0
+                    )
+                }
             }
-            _state.update {
-                it.copy(
-                    canResendEmail = true,
-                    resendCooldownSeconds = 0
-                )
-            }
-        }
+        )
     }
 
     companion object {
         private const val VERIFICATION_COOLDOWN_SECONDS = 60
         private const val MAX_VERIFICATION_RETRIES = 2
         private const val VERIFICATION_RETRY_DELAY_SECONDS = 2
+    }
+
+    override fun onCleared() {
+        verificationCooldown.cancel()
+        super.onCleared()
     }
 }

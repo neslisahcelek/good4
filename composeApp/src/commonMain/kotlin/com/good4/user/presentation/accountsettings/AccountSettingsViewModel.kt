@@ -7,7 +7,9 @@ import com.good4.auth.domain.AuthError
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
+import com.good4.core.presentation.CooldownTimer
 import com.good4.core.presentation.UiText
+import com.good4.core.util.normalizePhoneNumberInput
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.account_settings_business_name_required
@@ -19,14 +21,11 @@ import good4.composeapp.generated.resources.error_recent_login_required
 import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_logged_in
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import good4.composeapp.generated.resources.forgot_password_email_sent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlin.time.Duration.Companion.seconds
 
 class AccountSettingsViewModel(
     private val authRepository: AuthRepository,
@@ -38,8 +37,7 @@ class AccountSettingsViewModel(
     private val _state = MutableStateFlow(AccountSettingsState())
     val state = _state.asStateFlow()
 
-    private var passwordResetCooldownUntilMillis: Long = 0L
-    private var passwordResetCooldownJob: Job? = null
+    private val passwordResetCooldown = CooldownTimer(viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -77,7 +75,7 @@ class AccountSettingsViewModel(
                         it.copy(
                             isLoading = false,
                             fullName = user.fullName,
-                            phoneNumber = user.phoneNumber.orEmpty(),
+                            phoneNumber = user.phoneNumber.orEmpty().normalizePhoneNumberInput(),
                             university = user.university.orEmpty(),
                             major = user.major.orEmpty(),
                             educationLevel = user.educationLevel.orEmpty(),
@@ -121,7 +119,7 @@ class AccountSettingsViewModel(
                                 _state.update {
                                     it.copy(
                                         businessName = businessResult.data.name,
-                                        businessPhone = businessResult.data.phone,
+                                        businessPhone = businessResult.data.phone.normalizePhoneNumberInput(),
                                         showPhoneField = businessResult.data.phone.isNotBlank()
                                     )
                                 }
@@ -162,7 +160,7 @@ class AccountSettingsViewModel(
     }
 
     fun onPhoneNumberChange(value: String) {
-        _state.update { it.copy(phoneNumber = value) }
+        _state.update { it.copy(phoneNumber = value.normalizePhoneNumberInput()) }
     }
 
     fun onBusinessNameChange(value: String) {
@@ -170,7 +168,7 @@ class AccountSettingsViewModel(
     }
 
     fun onBusinessPhoneChange(value: String) {
-        _state.update { it.copy(businessPhone = value) }
+        _state.update { it.copy(businessPhone = value.normalizePhoneNumberInput()) }
     }
 
     fun onUniversityChange(value: String) {
@@ -308,7 +306,7 @@ class AccountSettingsViewModel(
     fun sendPasswordResetEmail() {
         val state = _state.value
 
-        if (state.isLoading) {
+        if (state.isLoading || state.isSendingPasswordReset) {
             return
         }
 
@@ -318,11 +316,8 @@ class AccountSettingsViewModel(
             return
         }
 
-        val nowMillis = Clock.System.now().toEpochMilliseconds()
-        if (nowMillis < passwordResetCooldownUntilMillis) {
-            val remainingSeconds = ((passwordResetCooldownUntilMillis - nowMillis) / 1000L)
-                .coerceAtLeast(1L)
-                .toInt()
+        val remainingSeconds = passwordResetCooldown.remainingSeconds()
+        if (remainingSeconds > 0) {
             _state.update {
                 it.copy(
                     errorMessage = UiText.StringResourceId(
@@ -349,7 +344,9 @@ class AccountSettingsViewModel(
                     _state.update {
                         it.copy(
                             isSendingPasswordReset = false,
-                            infoMessage = null,
+                            infoMessage = UiText.StringResourceId(
+                                Res.string.forgot_password_email_sent
+                            ),
                             isPasswordResetEmailSent = true
                         )
                     }
@@ -444,29 +441,34 @@ class AccountSettingsViewModel(
     }
 
     private fun startPasswordResetCooldown(seconds: Int) {
-        passwordResetCooldownUntilMillis = Clock.System.now().toEpochMilliseconds() + seconds * 1000L
-        passwordResetCooldownJob?.cancel()
-        passwordResetCooldownJob = viewModelScope.launch {
-            for (remaining in seconds downTo 1) {
+        passwordResetCooldown.start(
+            seconds = seconds,
+            onTick = { remaining ->
                 _state.update {
                     it.copy(
                         canResendPasswordReset = false,
                         passwordResetCooldownSeconds = remaining
                     )
                 }
-                delay(1.seconds)
+            },
+            onComplete = {
+                _state.update {
+                    it.copy(
+                        canResendPasswordReset = true,
+                        passwordResetCooldownSeconds = 0
+                    )
+                }
             }
-            _state.update {
-                it.copy(
-                    canResendPasswordReset = true,
-                    passwordResetCooldownSeconds = 0
-                )
-            }
-        }
+        )
     }
 
     companion object {
         private const val PASSWORD_RESET_COOLDOWN_SECONDS = 60
+    }
+
+    override fun onCleared() {
+        passwordResetCooldown.cancel()
+        super.onCleared()
     }
 
 }

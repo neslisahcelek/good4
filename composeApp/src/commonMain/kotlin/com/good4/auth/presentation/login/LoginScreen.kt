@@ -25,13 +25,16 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.DeepGreen
+import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
@@ -67,8 +71,10 @@ import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.app_name
 import good4.composeapp.generated.resources.app_tagline
+import good4.composeapp.generated.resources.dismiss
 import good4.composeapp.generated.resources.email
 import good4.composeapp.generated.resources.email_placeholder
+import good4.composeapp.generated.resources.error_email_not_verified
 import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.forgot_password
 import good4.composeapp.generated.resources.login
@@ -80,11 +86,9 @@ import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
 import good4.composeapp.generated.resources.register
 import good4.composeapp.generated.resources.splash_logo
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun LoginScreenRoot(
@@ -122,6 +126,7 @@ fun LoginScreenRoot(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
@@ -132,6 +137,10 @@ fun LoginScreen(
     val onLoginClick = remember { singleClick { onAction(LoginAction.OnLoginClick) } }
     val onForgotPasswordClick =
         remember { singleClick { onAction(LoginAction.OnForgotPasswordClick) } }
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isEmailNotVerifiedError =
+        (state.errorMessage as? com.good4.core.presentation.UiText.StringResourceId)?.id ==
+            Res.string.error_email_not_verified
 
     Good4Scaffold(
         modifier = modifier,
@@ -276,22 +285,6 @@ fun LoginScreen(
                     )
                 }
 
-                state.errorMessage?.let { error ->
-                    LaunchedEffect(error) {
-                        delay(3.seconds)
-                        onAction(LoginAction.OnClearError)
-                    }
-                    Text(
-                        text = error.asString(),
-                        color = ErrorRed,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    )
-                }
-
                 state.infoMessage?.let { info ->
                     Text(
                         text = info.asString(),
@@ -388,6 +381,55 @@ fun LoginScreen(
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            ErrorSnackbar(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                errorMessage = state.errorMessage?.takeUnless { isEmailNotVerifiedError },
+                onDismiss = { onAction(LoginAction.OnClearError) },
+                addTopSafeArea = false
+            )
+
+            if (isEmailNotVerifiedError) {
+                ModalBottomSheet(
+                    onDismissRequest = { onAction(LoginAction.OnClearError) },
+                    sheetState = bottomSheetState
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = state.errorMessage?.asString().orEmpty(),
+                            color = TextPrimary,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { onAction(LoginAction.OnClearError) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = TextPrimary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.dismiss),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = SurfaceDefault
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
             }
         }
     }

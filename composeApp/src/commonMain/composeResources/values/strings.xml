@@ -356,7 +356,7 @@
     <string name="error_email_required">Lütfen e-posta adresinizi giriniz</string>
     <string name="error_email_invalid_format">Geçersiz bir e-posta formatı girdiniz</string>
     <string name="error_email_must_be_edu_tr">E-posta adresiniz edu.tr uzantılı olmalıdır</string>
-    <string name="error_phone_invalid_format">Telefon numarası en az 10 haneli olmalıdır</string>
+    <string name="error_phone_invalid_format">Telefon numarası 10 haneli olmalıdır</string>
     <string name="error_password_required">Lütfen şifrenizi giriniz</string>
     <string name="error_full_name_required">Lütfen ad ve soyadınızı giriniz</string>
     <string name="error_password_min_length">Şifreniz en az 6 karakterden oluşmalıdır</string>

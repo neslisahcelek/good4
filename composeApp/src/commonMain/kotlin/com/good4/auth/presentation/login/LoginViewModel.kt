@@ -10,6 +10,7 @@ import com.good4.core.domain.Result
 import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.data.local.shouldCheckEmailVerificationFor
+import com.good4.core.presentation.CooldownTimer
 import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
@@ -24,15 +25,10 @@ import good4.composeapp.generated.resources.error_resend_wait_seconds
 import good4.composeapp.generated.resources.error_unknown
 import good4.composeapp.generated.resources.error_user_not_found
 import good4.composeapp.generated.resources.forgot_password_email_sent
-import good4.composeapp.generated.resources.verification_email_sent
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlin.time.Duration.Companion.seconds
 
 class LoginViewModel(
     private val authRepository: AuthRepository,
@@ -43,8 +39,7 @@ class LoginViewModel(
     private val _state = MutableStateFlow(LoginState())
     val state = _state.asStateFlow()
 
-    private var passwordResetCooldownUntilMillis: Long = 0L
-    private var passwordResetCooldownJob: Job? = null
+    private val passwordResetCooldown = CooldownTimer(viewModelScope)
 
     fun onAction(action: LoginAction) {
         when (action) {
@@ -133,17 +128,13 @@ class LoginViewModel(
                                     isUserVerified = userResult.data.verified,
                                     isAuthEmailVerified = authUser.isEmailVerified
                                 )
-                                val sendResult = authRepository.sendEmailVerification()
+                                authRepository.sendEmailVerification()
                                 _state.update { current ->
                                     current.copy(
                                         isLoading = false,
                                         isEmailVerificationRequired = true,
-                                        infoMessage = if (sendResult is Result.Success) {
-                                            UiText.StringResourceId(Res.string.verification_email_sent)
-                                        } else {
-                                            null
-                                        },
-                                        errorMessage = UiText.StringResourceId(Res.string.error_email_not_verified)
+                                        infoMessage = null,
+                                        errorMessage = null
                                     )
                                 }
                             } else {
@@ -195,11 +186,8 @@ class LoginViewModel(
             return
         }
 
-        val nowMillis = Clock.System.now().toEpochMilliseconds()
-        if (nowMillis < passwordResetCooldownUntilMillis) {
-            val remainingSeconds = ((passwordResetCooldownUntilMillis - nowMillis) / 1000L)
-                .coerceAtLeast(1L)
-                .toInt()
+        val remainingSeconds = passwordResetCooldown.remainingSeconds()
+        if (remainingSeconds > 0) {
             _state.update {
                 it.copy(
                     errorMessage = UiText.StringResourceId(
@@ -256,30 +244,34 @@ class LoginViewModel(
     }
 
     private fun startPasswordResetCooldown(seconds: Int) {
-        passwordResetCooldownUntilMillis =
-            Clock.System.now().toEpochMilliseconds() + seconds * 1000L
-        passwordResetCooldownJob?.cancel()
-        passwordResetCooldownJob = viewModelScope.launch {
-            for (remaining in seconds downTo 1) {
+        passwordResetCooldown.start(
+            seconds = seconds,
+            onTick = { remaining ->
                 _state.update {
                     it.copy(
                         canSendPasswordReset = false,
                         passwordResetCooldownSeconds = remaining
                     )
                 }
-                delay(1.seconds)
+            },
+            onComplete = {
+                _state.update {
+                    it.copy(
+                        canSendPasswordReset = true,
+                        passwordResetCooldownSeconds = 0
+                    )
+                }
             }
-            _state.update {
-                it.copy(
-                    canSendPasswordReset = true,
-                    passwordResetCooldownSeconds = 0
-                )
-            }
-        }
+        )
     }
 
     companion object {
         private const val PASSWORD_RESET_COOLDOWN_SECONDS = 60
+    }
+
+    override fun onCleared() {
+        passwordResetCooldown.cancel()
+        super.onCleared()
     }
 }
 

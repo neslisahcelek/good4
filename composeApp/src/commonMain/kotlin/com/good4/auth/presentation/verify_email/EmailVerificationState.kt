@@ -4,7 +4,9 @@ import com.good4.core.presentation.UiText
 import com.good4.user.domain.UserRole
 
 data class EmailVerificationState(
-    val isLoading: Boolean = false,
+    val isCheckingVerification: Boolean = false,
+    val isResendingEmail: Boolean = false,
+    val isLoggingOut: Boolean = false,
     val errorMessage: UiText? = null,
     val infoMessage: UiText? = null,
     val isVerified: Boolean = false,

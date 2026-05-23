@@ -2,7 +2,6 @@ package com.good4.supporter.presentation.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,13 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.PistachioGreen
-import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileInfoCard
 import com.good4.core.presentation.components.ProfilePrimaryLogoutButton
 import com.good4.core.presentation.components.ProfileScreenScaffold
-import com.good4.core.presentation.components.StatCard
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.account_info
 import good4.composeapp.generated.resources.account_settings_title
@@ -176,27 +173,12 @@ private fun DonationStats(
     modifier: Modifier = Modifier,
     totalDonations: Int
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp)
-    ) {
-        StatCard(
-            modifier = Modifier.fillMaxWidth(),
-            title = stringResource(Res.string.profile_total_donations_label),
-            value = "$totalDonations ${stringResource(Res.string.profile_donations_unit)}",
-            icon = Icons.Filled.Favorite,
-            color = PrimaryGreen
-        )
-//        Spacer(modifier = Modifier.height(12.dp))
-//        StatCard(
-//            modifier = Modifier.fillMaxWidth(),
-//            title = stringResource(Res.string.profile_total_meals_label),
-//            value = "$totalMeals ${stringResource(Res.string.profile_meals_unit)}",
-//            icon = Icons.Filled.Star,
-//            color = DeepGreen
-//        )
-    }
+    ProfileInfoCard(
+        modifier = modifier.fillMaxWidth(),
+        icon = Icons.Filled.Favorite,
+        title = stringResource(Res.string.profile_total_donations_label),
+        value = "$totalDonations ${stringResource(Res.string.profile_donations_unit)}"
+    )
 }
 
 @Preview

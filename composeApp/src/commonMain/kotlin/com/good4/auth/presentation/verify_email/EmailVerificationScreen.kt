@@ -13,9 +13,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,13 +36,19 @@ import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.UiText
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.util.singleClick
 import com.good4.user.domain.UserRole
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.dismiss
 import good4.composeapp.generated.resources.error_resend_wait_seconds
+import good4.composeapp.generated.resources.error_email_not_verified
 import good4.composeapp.generated.resources.logout
+import good4.composeapp.generated.resources.verification_email_sent
 import good4.composeapp.generated.resources.verify_email_check
 import good4.composeapp.generated.resources.verify_email_description
 import good4.composeapp.generated.resources.verify_email_resend
@@ -79,6 +88,7 @@ fun EmailVerificationScreenRoot(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun EmailVerificationScreen(
     modifier: Modifier = Modifier,
     state: EmailVerificationState,
@@ -87,6 +97,12 @@ fun EmailVerificationScreen(
     val onCheckClick = remember { singleClick { onAction(EmailVerificationAction.OnCheckClick) } }
     val onResendClick = remember { singleClick { onAction(EmailVerificationAction.OnResendClick) } }
     val onLogoutClick = remember { singleClick { onAction(EmailVerificationAction.OnLogoutClick) } }
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isNotVerifiedErrorSheet =
+        (state.errorMessage as? UiText.StringResourceId)?.id == Res.string.error_email_not_verified
+    val isVerificationSentInfoSheet =
+        (state.infoMessage as? UiText.StringResourceId)?.id == Res.string.verification_email_sent
+    val isAnyLoading = state.isCheckingVerification || state.isResendingEmail || state.isLoggingOut
 
     Good4Scaffold(
         modifier = modifier,
@@ -123,7 +139,7 @@ fun EmailVerificationScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            state.errorMessage?.let { error ->
+            state.errorMessage?.takeUnless { isNotVerifiedErrorSheet }?.let { error ->
                 LaunchedEffect(error) {
                     delay(3.seconds)
                     onAction(EmailVerificationAction.OnClearError)
@@ -139,7 +155,7 @@ fun EmailVerificationScreen(
                 )
             }
 
-            state.infoMessage?.let { info ->
+            state.infoMessage?.takeUnless { isVerificationSentInfoSheet }?.let { info ->
                 LaunchedEffect(info) {
                     delay(3.seconds)
                     onAction(EmailVerificationAction.OnClearInfo)
@@ -161,16 +177,16 @@ fun EmailVerificationScreen(
                 onClick = onCheckClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                enabled = !state.isLoading,
+                    .height(StandardButtonHeight),
+                enabled = !isAnyLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DeepGreen,
                     disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
                 )
             ) {
-                if (state.isLoading) {
+                if (state.isCheckingVerification) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
                         color = SurfaceDefault,
                         strokeWidth = 2.dp
                     )
@@ -189,19 +205,27 @@ fun EmailVerificationScreen(
                 onClick = onResendClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                enabled = !state.isLoading && state.canResendEmail,
+                    .height(StandardButtonHeight),
+                enabled = !isAnyLoading && state.canResendEmail,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = TextPrimary,
                     disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
                 )
             ) {
-                Text(
-                    text = stringResource(Res.string.verify_email_resend),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                )
+                if (state.isResendingEmail) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
+                        color = SurfaceDefault,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = stringResource(Res.string.verify_email_resend),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             if (!state.canResendEmail && state.resendCooldownSeconds > 0) {
@@ -226,7 +250,7 @@ fun EmailVerificationScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(46.dp),
-                enabled = !state.isLoading,
+                enabled = !isAnyLoading,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = TextPrimary
                 )
@@ -237,7 +261,74 @@ fun EmailVerificationScreen(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+
+            if (isNotVerifiedErrorSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { onAction(EmailVerificationAction.OnClearError) },
+                    sheetState = bottomSheetState
+                ) {
+                    BottomSheetMessageContent(
+                        message = state.errorMessage?.asString().orEmpty(),
+                        buttonLabel = stringResource(Res.string.dismiss),
+                        onButtonClick = { onAction(EmailVerificationAction.OnClearError) }
+                    )
+                }
+            }
+
+            if (isVerificationSentInfoSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { onAction(EmailVerificationAction.OnClearInfo) },
+                    sheetState = bottomSheetState
+                ) {
+                    BottomSheetMessageContent(
+                        message = state.infoMessage?.asString().orEmpty(),
+                        buttonLabel = stringResource(Res.string.dismiss),
+                        onButtonClick = { onAction(EmailVerificationAction.OnClearInfo) }
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun BottomSheetMessageContent(
+    message: String,
+    buttonLabel: String,
+    onButtonClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = message,
+            color = TextPrimary,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onButtonClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = TextPrimary)
+        ) {
+            Text(
+                text = buttonLabel,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = SurfaceDefault
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
