@@ -6,14 +6,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.*
 import com.good4.dining.presentation.AkdenizDiningMenuState
 import io.ktor.client.HttpClient
@@ -67,10 +70,10 @@ internal fun CampusSummaryCards(
     val menu = diningMenuState.menu?.days?.firstOrNull { it.date == today }
 
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Surface(Modifier.weight(1f).heightIn(min = 192.dp), shape = RoundedCornerShape(20.dp), color = PrimaryGreen, shadowElevation = 2.dp) {
+        Surface(Modifier.weight(1f).height(116.dp), shape = RoundedCornerShape(16.dp), color = PrimaryGreen, shadowElevation = 1.dp) {
             Box {
                 Image(
                     painter = painterResource(Res.drawable.akdeniz_campus_weather),
@@ -78,26 +81,37 @@ internal fun CampusSummaryCards(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize()
                 )
-                Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.42f)))
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Akdeniz Üniversitesi", style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.SemiBold)
-                Text("Antalya · Kampüs", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = .8f))
-                Text(temperature, style = MaterialTheme.typography.displaySmall, color = Color.White, fontWeight = FontWeight.Bold)
-                Text(weatherLabel, style = MaterialTheme.typography.bodySmall, color = Color.White)
-                Text("Open-Meteo", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = .8f))
-            }
+                Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.34f)))
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text("Akdeniz Üniversitesi", fontSize = 13.sp, lineHeight = 16.sp, color = Color.White, fontWeight = FontWeight.Medium, maxLines = 1)
+                    Text("Antalya · Kampüs", fontSize = 11.sp, lineHeight = 14.sp, color = Color.White.copy(alpha = .86f))
+                    Spacer(Modifier.weight(1f))
+                    Text(temperature, fontSize = 34.sp, lineHeight = 36.sp, color = Color.White, fontWeight = FontWeight.Medium)
+                    Text(weatherLabel, fontSize = 12.sp, lineHeight = 14.sp, color = Color.White)
+                }
             }
         }
-        Surface(Modifier.weight(1f).heightIn(min = 192.dp).clickable(onClick = onMenuClick), shape = RoundedCornerShape(20.dp), color = SurfaceDefault, shadowElevation = 2.dp) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Icon(Icons.Default.Restaurant, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(22.dp))
-                Text("Günün Menüsü", style = MaterialTheme.typography.titleSmall, color = TextPrimary, fontWeight = FontWeight.Bold)
+        Surface(Modifier.weight(1f).height(116.dp).clickable(onClick = onMenuClick), shape = RoundedCornerShape(16.dp), color = SurfaceDefault, shadowElevation = 1.dp) {
+            Box(Modifier.fillMaxSize()) {
+                Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = PrimaryGreen.copy(alpha = .13f), modifier = Modifier.align(Alignment.BottomEnd).offset(x = 12.dp, y = 12.dp).size(76.dp))
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Günün Menüsü", fontSize = 14.sp, lineHeight = 17.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                    }
                 if (menu != null) {
-                    menu.meals.forEach { Text(it, style = MaterialTheme.typography.labelSmall, color = TextSecondary) }
+                        menu.meals.take(3).forEach { Text(it, fontSize = 10.5.sp, lineHeight = 13.sp, color = TextSecondary, maxLines = 1) }
                 } else {
-                    Text(if (diningMenuState.isLoading) "Yükleniyor…" else "Bugün için menü yayınlanmadı", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        Text(if (diningMenuState.isLoading) "Yükleniyor…" else "Bugün için menü yayınlanmadı", fontSize = 11.sp, lineHeight = 14.sp, color = TextSecondary)
                 }
-                Text("TL yükle ↗", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+                    Spacer(Modifier.weight(1f))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("TL yükle", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium, color = PrimaryGreen)
+                        Spacer(Modifier.width(3.dp))
+                        Icon(Icons.Outlined.AddCircle, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(14.dp))
+                    }
+                }
             }
         }
     }

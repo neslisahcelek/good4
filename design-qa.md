@@ -1,48 +1,49 @@
 **Comparison Target**
 
-- Source visual truth: `/var/folders/y3/27lz9yl50msg_5wpjtdf9lw80000gn/T/codex-clipboard-f033f530-549e-4b32-be7e-0071b51df1c6.png`
-- Rendered implementation: `/tmp/good4-home-redesign-v2.png`
-- Combined comparison: `/tmp/good4-design-comparison-v2.png`
-- State: Android staging build, signed-in student home, light theme, no active reservation card.
+- Source visual truth: `/var/folders/y3/27lz9yl50msg_5wpjtdf9lw80000gn/T/codex-clipboard-350568e3-3031-4a7f-a46d-9e38678db849.png`
+- Rendered implementation: `/tmp/good4-odtu-final-v2.png`
+- Combined comparison: `/tmp/good4-odtu-design-qa-comparison-v2.png`
+- State: Android staging build, signed-in demo student home, light theme, no active reservation.
 - Viewport: Pixel 10 Pro emulator, 1280 x 2856 px at 480 dpi (approximately 427 x 952 dp).
-- Normalization: source image 692 x 1430 px; its phone-content crop was normalized to 600 x 1340 px. The 1280 x 2856 px implementation capture was downsampled to 600 x 1339 px. Both were placed in one 1224 x 1395 px comparison image. The source includes a partial device frame while the implementation is a content-only emulator capture; frame-only differences were excluded from findings.
+- Dimensions and normalization: the 588 x 1340 px source and 1280 x 2856 px implementation were drawn into equal 588 x 1340 logical-point slots. The combined macOS Retina raster is 2400 x 2680 px. The source includes a device frame edge while the implementation is a content-only emulator capture; frame-only differences were excluded.
 
 **Findings**
 
 - No actionable P0, P1, or P2 findings remain.
-- Typography: the implementation preserves the source's large centered greeting, clear section hierarchy, compact metadata, single-line quick-action labels, and legible bottom-navigation labels. The app's existing Compose typography is retained instead of introducing an unrelated font.
-- Spacing and layout rhythm: the rounded header, paired summary tiles, airy section spacing, two-column quick actions, and persistent labeled bottom navigation follow the reference composition. Radii, shadows, and margins are internally consistent at the emulator viewport.
-- Colors and visual tokens: the Good4 green, darker green, pistachio accent, warm off-white canvas, and neutral grays replace the reference's burgundy palette intentionally while preserving contrast and hierarchy.
-- Image quality and asset fidelity: the header uses a dedicated 1080 px-wide generated raster asset sized for the header slot. It is sharp at the tested density and does not contain text, logos, device chrome, or placeholder artwork.
-- Copy and content: ODTU-specific feature labels were not copied. Existing Good4 data and destinations are used: remaining credit, delivery time, today's Akdeniz University menu, TL top-up, and reservations.
-- Interaction: `TL Yükle` opens the exact Akdeniz University balance-loading URL in Chrome. `Rezervasyonlar` opens the existing reservation screen. Bottom navigation remains visible and usable.
+- Fonts and typography: Android now uses its native Roboto family through Material typography; iOS resolves to San Francisco. The medium-weight greeting, 23 sp section title, subdued empty-state copy, and 17 sp action labels reproduce the reference hierarchy without importing a mismatched display font.
+- Spacing and layout rhythm: the home screen follows the reference's sequence of rounded header, paired summary cards, upcoming-events block, six two-column actions, and persistent bottom navigation. The Good4 header remains intentionally more compact because that was a prior product requirement. Twelve-dp page gutters, low elevation, restrained radii, and the expanded event block provide a consistent vertical rhythm.
+- Colors and visual tokens: ODTU burgundy is intentionally replaced by Good4 primary green. Warm off-white, white cards, muted gray text, and pastel icon accents preserve the reference's foreground/background balance and the existing Good4 palette.
+- Image quality and asset fidelity: the supplied Akdeniz University campus photo is sharp, properly cropped, and protected by a contrast overlay. Material outline icons replace generic filled icons and are clipped at card edges in the same visual language as the reference. No placeholder or hand-drawn assets are used.
+- Copy and content: ODTU-specific feature names were not copied. Good4 content remains accurate: Akdeniz weather, today's menu, TL top-up, suspended meals, communities, and future feature placeholders. The upcoming-events copy accurately describes the connected community destination.
+- Affordances and interaction: `Tümünü Gör` opens the working Communities screen. TL top-up, suspended meals, Communities, profile, and bottom navigation retain their existing destinations. The selected bottom-navigation state no longer uses the oversized green pill.
 
 **Open Questions**
 
-- None blocking. The design intentionally has two quick actions rather than the six ODTU actions because only current Good4 functionality is represented.
+- None blocking. The compact header and Good4-specific summary content are intentional product differences rather than fidelity defects.
 
 **Implementation Checklist**
 
-- [x] Preserve the Good4 palette.
-- [x] Remove free-food product cards from the student home feed.
-- [x] Show only today's dining menu.
-- [x] Recompose the home screen around the selected reference layout.
-- [x] Keep TL top-up and reservations functional.
-- [x] Verify Android and iOS simulator compilation.
-- [x] Verify the two primary interactions on the Android emulator.
+- [x] Use platform-native typography on Android and iOS.
+- [x] Match the reference screen hierarchy and two-column layout.
+- [x] Preserve the Good4 palette and Akdeniz-specific content.
+- [x] Add the upcoming-events section and working community link.
+- [x] Replace heavy icon containers with pastel outline icons.
+- [x] Verify Android APK assembly and iOS simulator Kotlin compilation.
+- [x] Install and visually inspect the final Android build.
 
 **Comparison History**
 
-- Pass 1: the menu had an unnecessary nested tinted surface and the `Rezervasyonlar` label wrapped onto two lines. These were P2 visual-density and typography issues.
-- Fixes: removed the nested menu surface, tightened card typography/icon sizing, and constrained the action label to one line.
-- Pass 2 evidence: `/tmp/good4-home-redesign-v2.png` and `/tmp/good4-design-comparison-v2.png` show a single clean menu surface and an unbroken `Rezervasyonlar` label. No P0/P1/P2 issues remain.
+- Pass 1 evidence: `/tmp/good4-odtu-final.png` and `/tmp/good4-odtu-design-qa-comparison.png`.
+- Pass 1 finding [P2]: the upcoming-events empty state was vertically compressed, making the action grid begin too early and weakening the reference's deliberate breathing room.
+- Fix: converted the empty state to a centered 132 dp region while preserving the compact Good4 header.
+- Pass 2 evidence: `/tmp/good4-odtu-final-v2.png` and `/tmp/good4-odtu-design-qa-comparison-v2.png`. The event block now provides the intended pause between summary content and quick actions; no P0/P1/P2 findings remain.
 
 **Focused Region Evidence**
 
-- The combined comparison keeps the header, menu, quick-action row, and bottom navigation large enough to inspect text wrapping, alignment, icon treatment, radii, and spacing. Separate crops were not needed.
+- The equal-slot combined comparison keeps the header, summary cards, section header, action-card typography/icons, and bottom navigation legible enough to judge all five fidelity surfaces. Separate crops were not needed.
 
 **Follow-up Polish**
 
-- [P3] The Android status-bar icons remain dark over the green header. They are readable, but a screen-scoped light-icon status bar could more closely echo the reference.
+- [P3] A future pass could replace the four temporary `Yeni Alan` labels once their product destinations are defined; this is a content decision, not a visual defect.
 
 final result: passed

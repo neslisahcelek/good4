@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,11 +24,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,7 +82,6 @@ import com.good4.product.presentation.product_list.ProductListState
 import com.good4.product.presentation.product_list.ProductListViewModel
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.good4_home_header_background
-import good4.composeapp.generated.resources.home_quick_actions
 import good4.composeapp.generated.resources.home_delivery_time
 import good4.composeapp.generated.resources.home_top_up
 import good4.composeapp.generated.resources.home_welcome_generic
@@ -196,6 +200,12 @@ fun ProductListScreen(
                         }
 
                         item {
+                            HomeUpcomingEvents(
+                                onViewAllClick = onCommunitiesClick
+                            )
+                        }
+
+                        item {
                             HomeQuickActions(
                                 onTopUpClick = {
                                     uriHandler.openUri(AKDENIZ_BALANCE_URL)
@@ -243,8 +253,8 @@ private fun ProductListGreetingHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(138.dp)
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+            .height(112.dp)
+            .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
     ) {
         Image(
             painter = painterResource(Res.drawable.good4_home_header_background),
@@ -258,8 +268,8 @@ private fun ProductListGreetingHeader(
             } else {
                 stringResource(Res.string.home_welcome_title, userName)
             },
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.Center)
@@ -271,7 +281,7 @@ private fun ProductListGreetingHeader(
                     .align(Alignment.CenterEnd)
                     .padding(
                         top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
-                        end = 16.dp
+                        end = 12.dp
                     )
             ) {
                 ProfileTopBarAction(
@@ -360,6 +370,55 @@ private fun HomeSummaryCards(
 }
 
 @Composable
+private fun HomeUpcomingEvents(
+    onViewAllClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 14.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Yaklaşan Etkinlikler",
+                fontSize = 23.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary
+            )
+            Text(
+                text = "Tümünü Gör",
+                fontSize = 15.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = PrimaryGreen,
+                modifier = Modifier.clickable(onClick = onViewAllClick)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(132.dp)
+                .padding(horizontal = 18.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Yaklaşan topluluk etkinliklerini burada görebilirsin.",
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Normal,
+                color = TextSecondary.copy(alpha = 0.72f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun HomeQuickActions(
     onTopUpClick: () -> Unit,
     onReservationsClick: () -> Unit,
@@ -368,15 +427,8 @@ private fun HomeQuickActions(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp)
+            .padding(horizontal = 12.dp, vertical = 2.dp)
     ) {
-        Text(
-            text = stringResource(Res.string.home_quick_actions),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary
-        )
-        Spacer(modifier = Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -384,25 +436,39 @@ private fun HomeQuickActions(
             HomeQuickActionCard(
                 modifier = Modifier.weight(1f),
                 title = stringResource(Res.string.home_top_up),
-                icon = Icons.Filled.AccountBalanceWallet,
+                icon = Icons.Outlined.AccountBalanceWallet,
+                accent = Color(0xFFF2A66F),
                 onClick = onTopUpClick
             )
             HomeQuickActionCard(
                 modifier = Modifier.weight(1f),
                 title = stringResource(Res.string.student_reservations),
-                icon = Icons.Filled.ShoppingCart,
+                icon = Icons.Outlined.ShoppingCart,
+                accent = Color(0xFF8CB7ED),
                 onClick = onReservationsClick
             )
         }
         repeat(2) { row ->
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 repeat(2) { column ->
+                    val position = row * 2 + column
                     HomeQuickActionCard(
                         modifier = Modifier.weight(1f),
-                        title = if (row == 0 && column == 0) "Topluluklar" else "Yeni Alan ${row * 2 + column + 1}",
-                        icon = if (row == 0 && column == 0) Icons.Filled.Groups else Icons.Filled.Store,
-                        onClick = if (row == 0 && column == 0) onCommunitiesClick else null
+                        title = if (position == 0) "Topluluklar" else "Yeni Alan ${position + 1}",
+                        icon = when (position) {
+                            0 -> Icons.Outlined.Groups
+                            1 -> Icons.Outlined.Place
+                            2 -> Icons.Outlined.CalendarMonth
+                            else -> Icons.Outlined.Email
+                        },
+                        accent = when (position) {
+                            0 -> Color(0xFF75D9BE)
+                            1 -> Color(0xFFB997EB)
+                            2 -> Color(0xFFAAA4F2)
+                            else -> Color(0xFF68CCDC)
+                        },
+                        onClick = if (position == 0) onCommunitiesClick else null
                     )
                 }
             }
@@ -415,41 +481,39 @@ private fun HomeQuickActionCard(
     modifier: Modifier = Modifier,
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accent: Color,
     onClick: (() -> Unit)?
 ) {
     Surface(
         modifier = modifier
-            .height(94.dp)
+            .height(76.dp)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         color = SurfaceDefault,
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        Box(modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp))) {
             Text(
                 text = title,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 16.dp, end = 58.dp),
+                fontSize = 17.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Medium,
                 color = TextPrimary,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = PistachioGreen
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = PrimaryGreen,
-                    modifier = Modifier.padding(8.dp).size(22.dp)
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accent.copy(alpha = 0.72f),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 10.dp, y = 10.dp)
+                    .size(64.dp)
+            )
         }
     }
 }
