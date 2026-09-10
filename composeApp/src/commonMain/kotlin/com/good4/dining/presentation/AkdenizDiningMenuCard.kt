@@ -3,16 +3,12 @@ package com.good4.dining.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -34,7 +30,6 @@ import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
-import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.dining.domain.AkdenizDiningMenuDay
@@ -43,6 +38,7 @@ import good4.composeapp.generated.resources.akdeniz_menu_calories
 import good4.composeapp.generated.resources.akdeniz_menu_empty
 import good4.composeapp.generated.resources.akdeniz_menu_title
 import good4.composeapp.generated.resources.akdeniz_menu_today
+import good4.composeapp.generated.resources.akdeniz_menu_today_empty
 import good4.composeapp.generated.resources.akdeniz_menu_top_up
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -122,23 +118,19 @@ fun AkdenizDiningMenuCard(
                 }
 
                 else -> {
-                    val sortedDays = state.menu.days.sortedBy { it.date }
-                    val todayIndex = sortedDays.indexOfFirst { it.date == today }
-                        .coerceAtLeast(0)
-                    val menuListState = rememberLazyListState(
-                        initialFirstVisibleItemIndex = todayIndex
-                    )
-                    LazyRow(
-                        state = menuListState,
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(sortedDays, key = { it.date }) { day ->
-                            DiningMenuDayCard(
-                                day = day,
-                                isToday = day.date == today
-                            )
-                        }
+                    val todayMenu = state.menu.days.firstOrNull { it.date == today }
+                    if (todayMenu == null) {
+                        Text(
+                            text = stringResource(Res.string.akdeniz_menu_today_empty),
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    } else {
+                        DiningMenuDayCard(
+                            day = todayMenu,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
                     }
                 }
             }
@@ -170,15 +162,15 @@ fun AkdenizDiningMenuCard(
 @Composable
 private fun DiningMenuDayCard(
     day: AkdenizDiningMenuDay,
-    isToday: Boolean
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = Modifier.width(250.dp),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = if (isToday) PistachioGreen else SurfaceMuted,
+        color = PistachioGreen,
         border = BorderStroke(
             width = 1.dp,
-            color = if (isToday) PrimaryGreen else BorderMuted
+            color = PrimaryGreen
         )
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -193,14 +185,12 @@ private fun DiningMenuDayCard(
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
-                if (isToday) {
-                    Text(
-                        text = stringResource(Res.string.akdeniz_menu_today),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen
-                    )
-                }
+                Text(
+                    text = stringResource(Res.string.akdeniz_menu_today),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryGreen
+                )
             }
             Text(
                 text = day.date.toTurkishDisplayDate(),

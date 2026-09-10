@@ -414,6 +414,7 @@
     <string name="akdeniz_menu_today">BUGÜN</string>
     <string name="akdeniz_menu_calories">%1$d kcal</string>
     <string name="akdeniz_menu_empty">Bu haftanın menüsü henüz yayımlanmadı.</string>
+    <string name="akdeniz_menu_today_empty">Bugünün menüsü henüz yayımlanmadı.</string>
     <string name="akdeniz_menu_top_up">Yemekhane Kartına TL Yükle</string>
 
     <!-- Supporter Product List -->
