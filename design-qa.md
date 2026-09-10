@@ -55,4 +55,20 @@
 
 - No P3 refinement is required for this scoped dialog update.
 
+**Menu Tennis Reservation Addition**
+
+- Source visual truth: `/tmp/good4-menu-final.png`
+- Implementation screenshot: `/tmp/good4-tennis-menu.png`
+- Combined before/after comparison: `/tmp/good4-tennis-menu-comparison.png`
+- Viewport and normalization: both source and implementation are 1280 x 2856 px at 480 dpi (approximately 427 x 952 dp). They were aspect-fitted into equal 720 x 1720 logical-point cells; the macOS Retina comparison raster is 3000 x 3520 px.
+- State: signed-in demo student, light theme, main Menu sheet open.
+- Fonts and typography: the two-line 17 sp medium-weight label remains readable and does not truncate.
+- Spacing and layout rhythm: the new destination preserves the existing 2-column grid, 86 dp card height, card padding, radius, border, and icon placement.
+- Colors and visual tokens: the orange accent differentiates the sports destination while staying within the existing pastel menu palette.
+- Image quality and asset fidelity: the tennis-racket symbol uses the Material vector icon library and remains sharp at emulator density.
+- Copy and content: one generic `Yeni Alan` is replaced by the actionable `Tenis Kortu Rezervasyonu` label.
+- Interaction evidence: tapping the card produced an Android `ACTION_VIEW` intent for `https://sporalanlari.akdeniz.edu.tr/Takvim/Haftalik/3` and opened Chrome with that exact destination.
+- Comparison history: the source had one non-functional generic card; the implementation adds a product-specific label, recognizable icon, enabled styling, and verified URL action. The first visual comparison found no actionable P0/P1/P2 issue, so no additional visual iteration was required.
+- Focused region evidence: the equal-size combined comparison makes the changed first card, typography, icon crop, and unchanged surrounding grid directly readable; a separate crop was not needed.
+
 final result: passed

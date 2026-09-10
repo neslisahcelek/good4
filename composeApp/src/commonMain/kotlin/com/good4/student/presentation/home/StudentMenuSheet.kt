@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.SportsTennis
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,8 +57,13 @@ private data class StudentMenuItem(
     val title: String,
     val icon: ImageVector,
     val accent: Color,
-    val isEnabled: Boolean = false
+    val isEnabled: Boolean = false,
+    val opensNumbers: Boolean = false,
+    val url: String? = null
 )
+
+private const val TENNIS_COURT_RESERVATION_URL =
+    "https://sporalanlari.akdeniz.edu.tr/Takvim/Haftalik/3"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,12 +71,24 @@ internal fun StudentMenuSheet(onDismiss: () -> Unit) {
     var numbersOpen by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
     val menuItems = listOf(
-        StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFFF2A66F)),
+        StudentMenuItem(
+            title = "Tenis Kortu Rezervasyonu",
+            icon = Icons.Outlined.SportsTennis,
+            accent = Color(0xFFF2A66F),
+            isEnabled = true,
+            url = TENNIS_COURT_RESERVATION_URL
+        ),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFF8CB7ED)),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFF75D9BE)),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFFB997EB)),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFFAAA4F2)),
-        StudentMenuItem("Numaralar", Icons.Outlined.Phone, Color(0xFF68CCDC), isEnabled = true),
+        StudentMenuItem(
+            title = "Numaralar",
+            icon = Icons.Outlined.Phone,
+            accent = Color(0xFF68CCDC),
+            isEnabled = true,
+            opensNumbers = true
+        ),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFFF2A66F)),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFF8CB7ED)),
         StudentMenuItem("Yeni Alan", Icons.Outlined.GridView, Color(0xFF75D9BE)),
@@ -129,13 +147,17 @@ internal fun StudentMenuSheet(onDismiss: () -> Unit) {
                     contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 28.dp)
                 ) {
                     items(menuItems) { item ->
+                        val onItemClick: (() -> Unit)? = when {
+                            item.opensNumbers -> ({ numbersOpen = true })
+                            item.url != null -> {
+                                val url = item.url
+                                ({ uriHandler.openUri(url) })
+                            }
+                            else -> null
+                        }
                         StudentMenuCard(
                             item = item,
-                            onClick = if (item.title == "Numaralar") {
-                                { numbersOpen = true }
-                            } else {
-                                null
-                            }
+                            onClick = onItemClick
                         )
                     }
                 }
