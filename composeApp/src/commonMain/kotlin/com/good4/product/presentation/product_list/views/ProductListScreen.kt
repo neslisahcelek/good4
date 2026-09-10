@@ -62,6 +62,9 @@ import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.ReservationTimeCalculator
 import com.good4.core.util.openMaps
+import com.good4.dining.presentation.AkdenizDiningMenuCard
+import com.good4.dining.presentation.AkdenizDiningMenuState
+import com.good4.dining.presentation.AkdenizDiningMenuViewModel
 import com.good4.product.Product
 import com.good4.product.presentation.product_list.ProductListAction
 import com.good4.product.presentation.product_list.ProductListState
@@ -96,16 +99,20 @@ fun ProductListScreenRoot(
     onReservationCardClick: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val diningMenuViewModel: AkdenizDiningMenuViewModel = koinViewModel()
+    val diningMenuState by diningMenuViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadProductsIfNeeded()
         viewModel.loadActiveReservation()
         viewModel.loadStudentInfo()
+        diningMenuViewModel.loadMenu()
     }
 
     ProductListScreen(
         modifier = modifier,
         state = state,
+        diningMenuState = diningMenuState,
         onProfileClick = onProfileClick,
         onReservationCardClick = onReservationCardClick,
         onAction = { action ->
@@ -118,6 +125,7 @@ fun ProductListScreenRoot(
 fun ProductListScreen(
     modifier: Modifier = Modifier,
     state: ProductListState,
+    diningMenuState: AkdenizDiningMenuState = AkdenizDiningMenuState(),
     onProfileClick: (() -> Unit)? = null,
     onReservationCardClick: () -> Unit = {},
     onAction: (ProductListAction) -> Unit
@@ -178,6 +186,10 @@ fun ProductListScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
+                        }
+
+                        item {
+                            AkdenizDiningMenuCard(state = diningMenuState)
                         }
 
                         state.activeReservation?.let { reservation ->

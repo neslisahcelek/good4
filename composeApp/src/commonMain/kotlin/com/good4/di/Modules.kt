@@ -25,6 +25,8 @@ import com.good4.core.data.repository.FirestoreRepositoryImpl
 import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashViewModel
+import com.good4.dining.data.repository.AkdenizDiningMenuRepository
+import com.good4.dining.presentation.AkdenizDiningMenuViewModel
 import com.good4.order.data.repository.OrderRepository
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.product.presentation.product_list.ProductListViewModel
@@ -55,6 +57,7 @@ val commonModule = module {
     single { CodeRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>(), get<AppConfigRepository>()) }
     single { SupportActivityRepository(get<FirestoreRepository>()) }
     single { OrderRepository(get<FirestoreRepository>()) }
+    single { AkdenizDiningMenuRepository(get<FirestoreRepository>()) }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel {
@@ -150,6 +153,7 @@ val commonModule = module {
     }
     viewModel { SupporterOrderCodeViewModel(get<OrderRepository>(), get<FirestoreBusinessRepository>()) }
     viewModel { SupporterProfileViewModel(get<AuthRepository>(), get<UserRepository>()) }
+    viewModel { AkdenizDiningMenuViewModel(get<AkdenizDiningMenuRepository>()) }
     viewModel {
         AccountSettingsViewModel(
             get<AuthRepository>(),

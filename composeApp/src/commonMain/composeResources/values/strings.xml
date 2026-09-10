@@ -410,6 +410,11 @@
     <string name="product_list_availability_in_stock">Stokta</string>
     <string name="product_list_availability_out">Tükendi</string>
     <string name="product_list_delivery_icon_desc">Teslim süresi</string>
+    <string name="akdeniz_menu_title">Akdeniz Üniversitesi Yemek Menüsü</string>
+    <string name="akdeniz_menu_today">BUGÜN</string>
+    <string name="akdeniz_menu_calories">%1$d kcal</string>
+    <string name="akdeniz_menu_empty">Bu haftanın menüsü henüz yayımlanmadı.</string>
+    <string name="akdeniz_menu_top_up">Yemekhane Kartına TL Yükle</string>
 
     <!-- Supporter Product List -->
     <string name="supporter_product_list_empty">Şu anda satın alınabilecek ürün bulunmuyor.</string>
