@@ -8,12 +8,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.ManageAccounts
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -193,17 +195,21 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
         CommunityProfileEditor(community.data, state.saving, state.error, { if (!state.saving) { profileEditor = false; viewModel.clearError() } }) { data, image -> viewModel.updateProfile(data, image) { profileEditor = false } }
     }
     detail?.let { entry ->
-        AlertDialog(onDismissRequest = { detail = null }, title = { Text(entry.data.title) }, text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("${entry.data.date} ${entry.data.time}"); Text(entry.data.location); Text(entry.data.description)
-                if (entry.data.kind == "coupon" && entry.data.code.isNotBlank()) Text("Kupon kodu: ${entry.data.code}", fontWeight = FontWeight.Bold)
-                if (state.canManage) {
-                    TextButton(onClick = { editingId = entry.id; editor = entry.data; detail = null }) { Text("Düzenle") }
-                    TextButton(onClick = { viewModel.cancel(entry.id) { detail = null } }, enabled = !state.saving && entry.data.status != "cancelled") { Text("Yayından kaldır") }
-                    state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                }
+        CommunityEntryDetailDialog(
+            entry = entry,
+            canManage = state.canManage,
+            saving = state.saving,
+            error = state.error,
+            onDismiss = { detail = null },
+            onEdit = {
+                editingId = entry.id
+                editor = entry.data
+                detail = null
+            },
+            onUnpublish = {
+                viewModel.cancel(entry.id) { detail = null }
             }
-        }, confirmButton = { TextButton(onClick = { detail = null }) { Text("Kapat") } })
+        )
     }
 }
 
@@ -500,6 +506,222 @@ private fun CommunityEntryCard(entry: CommunityEntry, onClick: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CommunityEntryDetailDialog(
+    entry: CommunityEntry,
+    canManage: Boolean,
+    saving: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onUnpublish: () -> Unit
+) {
+    val isCoupon = entry.data.kind == "coupon"
+    val dateTime = listOf(entry.data.date, entry.data.time)
+        .filter { it.isNotBlank() }
+        .joinToString(" · ")
+
+    BasicAlertDialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 360.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = SurfaceDefault,
+            shadowElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = PistachioGreen
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isCoupon) Icons.Outlined.LocalOffer else Icons.Outlined.CalendarMonth,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(23.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = entry.data.title,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 7.dp),
+                        fontSize = 22.sp,
+                        lineHeight = 27.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Kapat",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(21.dp)
+                        )
+                    }
+                }
+
+                CommunityDetailInfoRow(
+                    icon = Icons.Outlined.CalendarMonth,
+                    text = dateTime
+                )
+                CommunityDetailInfoRow(
+                    icon = if (isCoupon) Icons.Outlined.Storefront else Icons.Outlined.LocationOn,
+                    text = entry.data.location
+                )
+
+                Text(
+                    text = entry.data.description,
+                    fontSize = 15.sp,
+                    lineHeight = 22.sp,
+                    color = TextSecondary
+                )
+
+                if (isCoupon && entry.data.code.isNotBlank()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        color = PistachioGreen.copy(alpha = 0.65f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            PrimaryGreen.copy(alpha = 0.14f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.LocalOffer,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(21.dp)
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "Kupon kodu",
+                                    fontSize = 12.sp,
+                                    lineHeight = 15.sp,
+                                    color = TextSecondary
+                                )
+                                Text(
+                                    text = entry.data.code,
+                                    fontSize = 17.sp,
+                                    lineHeight = 21.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary,
+                                    letterSpacing = 0.6.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (canManage) {
+                    HorizontalDivider(color = BorderMuted.copy(alpha = 0.32f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = onEdit,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(13.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryGreen,
+                                contentColor = SurfaceDefault
+                            )
+                        ) {
+                            Text("Düzenle", fontWeight = FontWeight.Medium)
+                        }
+                        OutlinedButton(
+                            onClick = onUnpublish,
+                            enabled = !saving && entry.data.status != "cancelled",
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(13.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                ErrorRed.copy(alpha = 0.45f)
+                            ),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = ErrorRed,
+                                disabledContentColor = TextSecondary.copy(alpha = 0.5f)
+                            ),
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = "Yayından kaldır",
+                                fontSize = 12.sp,
+                                lineHeight = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    error?.let {
+                        Text(
+                            text = it,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            color = ErrorRed
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityDetailInfoRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = PrimaryGreen,
+            modifier = Modifier.size(19.dp)
+        )
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            lineHeight = 19.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextPrimary
+        )
     }
 }
 
