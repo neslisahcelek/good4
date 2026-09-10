@@ -40,8 +40,6 @@ class ProductListViewModel(
     private var isLoaded: Boolean = false
 
     fun refresh() {
-        isLoaded = false
-        loadProducts()
         loadActiveReservation()
         loadStudentInfo()
     }

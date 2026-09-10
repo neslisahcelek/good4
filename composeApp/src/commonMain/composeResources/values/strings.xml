@@ -410,7 +410,12 @@
     <string name="product_list_availability_in_stock">Stokta</string>
     <string name="product_list_availability_out">Tükendi</string>
     <string name="product_list_delivery_icon_desc">Teslim süresi</string>
-    <string name="akdeniz_menu_title">Akdeniz Üniversitesi Yemek Menüsü</string>
+    <string name="home_welcome_title">Hoş geldin, %1$s</string>
+    <string name="home_welcome_generic">Hoş geldin!</string>
+    <string name="home_quick_actions">Hızlı İşlemler</string>
+    <string name="home_delivery_time">Teslim süresi</string>
+    <string name="home_top_up">TL Yükle</string>
+    <string name="akdeniz_menu_title">Bugünün Menüsü</string>
     <string name="akdeniz_menu_today">BUGÜN</string>
     <string name="akdeniz_menu_calories">%1$d kcal</string>
     <string name="akdeniz_menu_empty">Bu haftanın menüsü henüz yayımlanmadı.</string>

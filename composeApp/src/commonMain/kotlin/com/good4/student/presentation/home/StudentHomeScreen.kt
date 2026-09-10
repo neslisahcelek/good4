@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,8 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.SurfaceDefault
-import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.PistachioGreen
+import com.good4.core.presentation.PrimaryGreen
+import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.product.presentation.product_list.ProductListViewModel
@@ -118,13 +120,16 @@ fun StudentHomeScreenRoot(
                                 contentDescription = item.title
                             )
                         },
-                        alwaysShowLabel = false,
+                        label = {
+                            Text(item.title)
+                        },
+                        alwaysShowLabel = true,
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = TextPrimary,
-                            selectedTextColor = TextPrimary,
-                            unselectedIconColor = TextPrimary,
-                            unselectedTextColor = TextPrimary,
-                            indicatorColor = SurfaceDefault.copy(alpha = 0.95f)
+                            selectedIconColor = PrimaryGreen,
+                            selectedTextColor = PrimaryGreen,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary,
+                            indicatorColor = PistachioGreen
                         )
                     )
                 }

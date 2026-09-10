@@ -8,13 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,10 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
@@ -39,7 +35,6 @@ import good4.composeapp.generated.resources.akdeniz_menu_empty
 import good4.composeapp.generated.resources.akdeniz_menu_title
 import good4.composeapp.generated.resources.akdeniz_menu_today
 import good4.composeapp.generated.resources.akdeniz_menu_today_empty
-import good4.composeapp.generated.resources.akdeniz_menu_top_up
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -53,53 +48,58 @@ fun AkdenizDiningMenuCard(
     state: AkdenizDiningMenuState,
     modifier: Modifier = Modifier
 ) {
-    val uriHandler = LocalUriHandler.current
     val today = Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
         .toString()
 
-    Surface(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = SurfaceDefault,
-        border = BorderStroke(1.dp, BorderMuted),
-        shadowElevation = 1.dp
+            .padding(horizontal = 20.dp, vertical = 14.dp)
     ) {
-        Column(modifier = Modifier.padding(vertical = 16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = PistachioGreen
             ) {
                 Icon(
                     imageVector = Icons.Default.Restaurant,
                     contentDescription = null,
-                    tint = PrimaryGreen
+                    tint = PrimaryGreen,
+                    modifier = Modifier.padding(9.dp).size(22.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(Res.string.akdeniz_menu_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                state.menu?.weekLabel?.takeIf { it.isNotBlank() }?.let { weekLabel ->
                     Text(
-                        text = stringResource(Res.string.akdeniz_menu_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        text = "Akdeniz Üniversitesi · $weekLabel",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
                     )
-                    state.menu?.weekLabel?.takeIf { it.isNotBlank() }?.let { weekLabel ->
-                        Text(
-                            text = weekLabel,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
-                    }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            color = SurfaceDefault,
+            shadowElevation = 2.dp
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
             when {
                 state.isLoading -> {
                     CircularProgressIndicator(
@@ -109,11 +109,10 @@ fun AkdenizDiningMenuCard(
                 }
 
                 state.menu == null -> {
-                    Text(
-                        text = stringResource(Res.string.akdeniz_menu_empty),
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        Text(
+                            text = stringResource(Res.string.akdeniz_menu_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
                     )
                 }
 
@@ -122,38 +121,16 @@ fun AkdenizDiningMenuCard(
                     if (todayMenu == null) {
                         Text(
                             text = stringResource(Res.string.akdeniz_menu_today_empty),
-                            modifier = Modifier.padding(horizontal = 16.dp),
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
                     } else {
                         DiningMenuDayCard(
-                            day = todayMenu,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            day = todayMenu
                         )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Button(
-                onClick = { uriHandler.openUri(AKDENIZ_BALANCE_URL) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccountBalanceWallet,
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(Res.string.akdeniz_menu_top_up),
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }
@@ -164,16 +141,11 @@ private fun DiningMenuDayCard(
     day: AkdenizDiningMenuDay,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = PistachioGreen,
-        border = BorderStroke(
-            width = 1.dp,
-            color = PrimaryGreen
-        )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -185,12 +157,18 @@ private fun DiningMenuDayCard(
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
-                Text(
-                    text = stringResource(Res.string.akdeniz_menu_today),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryGreen
-                )
+                Surface(
+                    shape = RoundedCornerShape(percent = 50),
+                    color = PistachioGreen
+                ) {
+                    Text(
+                        text = stringResource(Res.string.akdeniz_menu_today),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen
+                    )
+                }
             }
             Text(
                 text = day.date.toTurkishDisplayDate(),
@@ -215,7 +193,6 @@ private fun DiningMenuDayCard(
                     color = TextSecondary
                 )
             }
-        }
     }
 }
 

@@ -1,6 +1,7 @@
 package com.good4.product.presentation.product_list.views
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,11 +20,12 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -40,8 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,11 +57,11 @@ import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.SurfaceCanvasWarm
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NestedScaffold
-import com.good4.core.presentation.components.ProductAddressBottomSheet
 import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.toDisplayAddressOrNull
 import com.good4.core.util.ReservationTimeCalculator
@@ -65,28 +69,33 @@ import com.good4.core.util.openMaps
 import com.good4.dining.presentation.AkdenizDiningMenuCard
 import com.good4.dining.presentation.AkdenizDiningMenuState
 import com.good4.dining.presentation.AkdenizDiningMenuViewModel
+import com.good4.dining.presentation.AKDENIZ_BALANCE_URL
 import com.good4.product.Product
 import com.good4.product.presentation.product_list.ProductListAction
 import com.good4.product.presentation.product_list.ProductListState
 import com.good4.product.presentation.product_list.ProductListViewModel
 import good4.composeapp.generated.resources.Res
-import good4.composeapp.generated.resources.preview_address
-import good4.composeapp.generated.resources.preview_business_name
-import good4.composeapp.generated.resources.preview_description
-import good4.composeapp.generated.resources.preview_product_name
+import good4.composeapp.generated.resources.good4_home_header_background
+import good4.composeapp.generated.resources.home_quick_actions
+import good4.composeapp.generated.resources.home_delivery_time
+import good4.composeapp.generated.resources.home_top_up
+import good4.composeapp.generated.resources.home_welcome_generic
+import good4.composeapp.generated.resources.home_welcome_title
 import good4.composeapp.generated.resources.product_list_active_reservation_title
 import good4.composeapp.generated.resources.product_list_countdown_prefix
+import good4.composeapp.generated.resources.product_list_credit_label
 import good4.composeapp.generated.resources.product_list_greeting_prefix
 import good4.composeapp.generated.resources.product_list_greeting_suffix
 import good4.composeapp.generated.resources.product_list_order_code_label
-import good4.composeapp.generated.resources.products_load_error
 import good4.composeapp.generated.resources.reservation_status_pending
+import good4.composeapp.generated.resources.student_reservations
 import good4.composeapp.generated.resources.time_minute_suffix
 import good4.composeapp.generated.resources.time_second_suffix
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Duration.Companion.seconds
@@ -103,7 +112,6 @@ fun ProductListScreenRoot(
     val diningMenuState by diningMenuViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.loadProductsIfNeeded()
         viewModel.loadActiveReservation()
         viewModel.loadStudentInfo()
         diningMenuViewModel.loadMenu()
@@ -131,7 +139,7 @@ fun ProductListScreen(
     onAction: (ProductListAction) -> Unit
 ) {
     val listState = rememberLazyListState()
-    var selectedProductForSheet by remember { mutableStateOf<Product?>(null) }
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(state.activeReservation) {
         if (state.activeReservation != null) {
@@ -145,7 +153,7 @@ fun ProductListScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppBackground)
+                .background(SurfaceCanvasWarm)
                 .padding(paddingValues)
         ) {
             when {
@@ -169,27 +177,33 @@ fun ProductListScreen(
                             bottom = 16.dp
                         )
                     ) {
-                        if (state.userName != null) {
-                            item {
-                                ProductListGreetingHeader(
-                                    userName = state.userName,
-                                    onProfileClick = onProfileClick
-                                )
-                            }
+                        item {
+                            ProductListGreetingHeader(
+                                userName = state.userName.orEmpty(),
+                                onProfileClick = onProfileClick
+                            )
                         }
 
                         if (state.remainingCredits != null && state.deliveryTimeMinutes != null) {
                             item {
-                                StudentStatusCard(
+                                HomeSummaryCards(
                                     remainingCredits = state.remainingCredits,
                                     deliveryTimeMinutes = state.deliveryTimeMinutes
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
 
                         item {
                             AkdenizDiningMenuCard(state = diningMenuState)
+                        }
+
+                        item {
+                            HomeQuickActions(
+                                onTopUpClick = {
+                                    uriHandler.openUri(AKDENIZ_BALANCE_URL)
+                                },
+                                onReservationsClick = onReservationCardClick
+                            )
                         }
 
                         state.activeReservation?.let { reservation ->
@@ -207,50 +221,6 @@ fun ProductListScreen(
                             }
                         }
 
-                        if (state.products.isEmpty()) {
-                            item {
-                                Text(
-                                    text = stringResource(Res.string.products_load_error),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp).padding(top = 60.dp),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary
-                                )
-                            }
-                        } else {
-                            items(
-                                items = state.products,
-                                key = { it.documentId }
-                            ) { product ->
-                                val isReservedProduct =
-                                    state.activeReservation?.product?.documentId == product.documentId
-                                val canReserve =
-                                    state.activeReservation == null && !state.isReserving
-
-                                ProductItem(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    product = product,
-                                    onReserveClick = {
-                                        onAction(
-                                            ProductListAction.OnReserveProduct(
-                                                product
-                                            )
-                                        )
-                                    },
-                                    isReserving = state.isReserving &&
-                                            state.reservingProductId == product.documentId,
-                                    reservationSuccess = isReservedProduct,
-                                    isReserveEnabled = canReserve,
-                                    onAddressCopied = {
-                                        selectedProductForSheet = product
-                                    }
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -261,12 +231,6 @@ fun ProductListScreen(
                 onDismiss = { onAction(ProductListAction.OnDismissError) }
             )
 
-            selectedProductForSheet?.let { product ->
-                ProductAddressBottomSheet(
-                    product = product,
-                    onDismiss = { selectedProductForSheet = null }
-                )
-            }
         }
     }
 }
@@ -277,46 +241,204 @@ private fun ProductListGreetingHeader(
     userName: String,
     onProfileClick: (() -> Unit)? = null
 ) {
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 8.dp,
-                bottom = 8.dp
-            ),
-        verticalAlignment = Alignment.CenterVertically
+            .height(184.dp)
+            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
     ) {
+        Image(
+            painter = painterResource(Res.drawable.good4_home_header_background),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
         Text(
-            text = stringResource(Res.string.product_list_greeting_prefix) +
-                    userName +
-                    stringResource(Res.string.product_list_greeting_suffix),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            modifier = Modifier.weight(1f)
+            text = if (userName.isBlank()) {
+                stringResource(Res.string.home_welcome_generic)
+            } else {
+                stringResource(Res.string.home_welcome_title, userName)
+            },
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
         )
         if (onProfileClick != null) {
-            ProfileTopBarAction(onClick = onProfileClick)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(
+                        top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
+                        end = 16.dp
+                    )
+            ) {
+                ProfileTopBarAction(
+                    onClick = onProfileClick,
+                    tint = Color.White
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ProductListSectionTitle(
+private fun HomeSummaryCards(
     modifier: Modifier = Modifier,
-    title: String
+    remainingCredits: Int,
+    deliveryTimeMinutes: Int
 ) {
-    Text(
-        text = title,
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = TextPrimary
-    )
+            .padding(horizontal = 20.dp, vertical = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .height(116.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = PrimaryGreen,
+            shadowElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(Res.string.product_list_credit_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White.copy(alpha = 0.78f)
+                )
+                Text(
+                    text = remainingCredits.toString(),
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .height(116.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = SurfaceDefault,
+            shadowElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Schedule,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(Res.string.home_delivery_time),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TextSecondary
+                    )
+                }
+                Text(
+                    text = "$deliveryTimeMinutes dk",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeQuickActions(
+    onTopUpClick: () -> Unit,
+    onReservationsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 14.dp)
+    ) {
+        Text(
+            text = stringResource(Res.string.home_quick_actions),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            HomeQuickActionCard(
+                modifier = Modifier.weight(1f),
+                title = stringResource(Res.string.home_top_up),
+                icon = Icons.Filled.AccountBalanceWallet,
+                onClick = onTopUpClick
+            )
+            HomeQuickActionCard(
+                modifier = Modifier.weight(1f),
+                title = stringResource(Res.string.student_reservations),
+                icon = Icons.Filled.ShoppingCart,
+                onClick = onReservationsClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeQuickActionCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .height(94.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = SurfaceDefault,
+        shadowElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = PistachioGreen
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.padding(8.dp).size(22.dp)
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -519,47 +641,8 @@ private fun ProductListActiveReservationCard(
 @Composable
 fun ProductListScreenPreview() {
     MaterialTheme {
-        val productName = stringResource(Res.string.preview_product_name)
-        val businessName = stringResource(Res.string.preview_business_name)
-        val address = stringResource(Res.string.preview_address)
-        val description = stringResource(Res.string.preview_description)
-
-        val sample = listOf(
-            Product(
-                id = 1,
-                documentId = "preview_doc1",
-                name = productName,
-                storeName = businessName,
-                businessId = "preview_business",
-                address = address,
-                addressUrl = "",
-                description = description,
-                price = 120,
-                originalPrice = 100,
-                discountPrice = 80,
-                discountPercentage = 20,
-                imageUrl = "",
-                pendingCount = 5
-            ),
-            Product(
-                id = 2,
-                documentId = "preview_doc2",
-                name = productName,
-                storeName = businessName,
-                businessId = "preview_business",
-                address = address,
-                addressUrl = "",
-                description = description,
-                price = 0,
-                originalPrice = null,
-                discountPrice = null,
-                discountPercentage = null,
-                imageUrl = "",
-                pendingCount = 3
-            )
-        )
         ProductListScreen(
-            state = ProductListState(products = sample),
+            state = ProductListState(),
             onAction = {}
         )
     }
