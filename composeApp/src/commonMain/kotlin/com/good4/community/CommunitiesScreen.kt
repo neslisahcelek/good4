@@ -8,8 +8,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.ManageAccounts
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,7 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.good4.core.presentation.*
@@ -42,59 +48,142 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
     var profileEditor by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<CommunityEntry?>(null) }
     val community = state.selected
-    Good4NestedScaffold(topBar = {
-        Good4TopBar(title = community?.data?.name ?: "Topluluklar", navigationIcon = {
-            IconButton(onClick = { if (community == null) onBack() else { viewModel.back(); managing = false } }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri")
-            }
-        })
-    }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Good4NestedScaffold(
+        topBar = {
+            Good4TopBar(
+                title = community?.data?.name ?: "Topluluklar",
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            if (community == null) {
+                                onBack()
+                            } else {
+                                viewModel.back()
+                                managing = false
+                            }
+                        }
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             if (community == null) {
-                item { Text("Kampüste kendine bir yer bul.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-                item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Topluluk ara") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, shape = RoundedCornerShape(16.dp)) }
-                val filtered = state.communities.filter { it.data.name.contains(query, ignoreCase = true) || it.data.description.contains(query, ignoreCase = true) }
+                item { CommunityListIntro() }
+                item {
+                    CommunitySearchField(
+                        query = query,
+                        onQueryChange = { query = it }
+                    )
+                }
+                item {
+                    Text(
+                        text = "Keşfet",
+                        fontSize = 19.sp,
+                        lineHeight = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                val filtered = state.communities.filter {
+                    it.data.name.contains(query, ignoreCase = true) ||
+                        it.data.description.contains(query, ignoreCase = true)
+                }
                 items(filtered, key = { it.id }) { item ->
-                    Surface(onClick = { tab = 0; viewModel.select(item) }, shape = RoundedCornerShape(20.dp), color = SurfaceDefault) {
-                        Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            CommunityLogo(item.data.logoUrl)
-                            Column { Text(item.data.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(item.data.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 2) }
+                    CommunityListCard(
+                        community = item,
+                        onClick = {
+                            tab = 0
+                            viewModel.select(item)
                         }
+                    )
+                }
+                if (!state.loading && state.error == null && filtered.isEmpty()) {
+                    item {
+                        EmptyCommunityContent(
+                            title = if (query.isBlank()) "Topluluklar yakında burada" else "Aramana uygun topluluk bulunamadı",
+                            subtitle = if (query.isBlank()) "Yeni topluluklar eklendikçe burada keşfedebilirsin." else "Farklı bir kelimeyle tekrar deneyebilirsin."
+                        )
                     }
                 }
-                if (!state.loading && state.error == null && filtered.isEmpty()) item { EmptyCommunityContent(if (query.isBlank()) "Topluluklar yakında burada" else "Aramanıza uygun topluluk bulunamadı", "Topluluklar eklendiğinde burada keşfedebilirsiniz.") }
             } else {
-                item { Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) { CommunityLogo(community.data.logoUrl); Text(community.data.description, color = TextSecondary) } }
+                item {
+                    CommunityDetailHeader(
+                        community = community,
+                        canManage = state.canManage,
+                        managing = managing,
+                        onManageClick = { managing = !managing }
+                    )
+                }
                 if (state.canManage) {
-                    item { OutlinedButton(onClick = { managing = !managing }, modifier = Modifier.fillMaxWidth()) { Text(if (managing) "Yönetimi kapat" else "Topluluğunu Yönet") } }
-                    if (managing) item {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { editingId = null; editor = CommunityEntryDto() }, modifier = Modifier.fillMaxWidth()) { Text("Etkinlik ekle") }
-                            OutlinedButton(onClick = { editingId = null; editor = CommunityEntryDto(kind = "coupon", status = "pending") }, modifier = Modifier.fillMaxWidth()) { Text("Kupon ekle") }
-                            TextButton(onClick = { profileEditor = true }, modifier = Modifier.fillMaxWidth()) { Text("Topluluk bilgilerini düzenle") }
+                    if (managing) {
+                        item {
+                            CommunityManagementActions(
+                                onAddEvent = {
+                                    editingId = null
+                                    editor = CommunityEntryDto()
+                                },
+                                onAddCoupon = {
+                                    editingId = null
+                                    editor = CommunityEntryDto(kind = "coupon", status = "pending")
+                                },
+                                onEditProfile = { profileEditor = true }
+                            )
                         }
                     }
                 }
-                item { TabRow(selectedTabIndex = tab, containerColor = SurfaceCanvasWarm, contentColor = PrimaryGreen) {
-                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Etkinlikler") })
-                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Topluluğa Özel Kuponlar") })
-                } }
+                item {
+                    CommunityTabs(
+                        selectedTab = tab,
+                        onTabSelected = { tab = it }
+                    )
+                }
                 val entries = state.entries.filter { it.data.kind == if (tab == 0) "event" else "coupon" }
                 items(entries, key = { it.id }) { entry ->
-                    Surface(onClick = { detail = entry }, shape = RoundedCornerShape(20.dp), color = SurfaceDefault) {
-                        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (entry.data.imageUrl.isNotBlank()) AsyncImage(entry.data.imageUrl, null, Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
-                            Text(entry.data.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text("${entry.data.date} ${entry.data.time}", color = PrimaryGreen)
-                            Text(entry.data.location, color = TextSecondary)
-                            if (entry.data.status != "published") Text(if (entry.data.status == "pending") "Onay bekliyor" else "İptal edildi", color = TextSecondary)
-                        }
+                    CommunityEntryCard(
+                        entry = entry,
+                        onClick = { detail = entry }
+                    )
+                }
+                if (!state.loading && state.error == null && entries.isEmpty()) {
+                    item {
+                        EmptyCommunityContent(
+                            title = if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok",
+                            subtitle = if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.",
+                            coupon = tab == 1
+                        )
                     }
                 }
-                if (!state.loading && state.error == null && entries.isEmpty()) item { EmptyCommunityContent(if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok", if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.") }
             }
-            if (state.loading) item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PrimaryGreen) } }
-            state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error); TextButton(onClick = { if (community == null) viewModel.load() else viewModel.select(community) }) { Text("Tekrar dene") } } }
+            if (state.loading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = PrimaryGreen)
+                    }
+                }
+            }
+            state.error?.let { error ->
+                item {
+                    Text(error, color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = { if (community == null) viewModel.load() else viewModel.select(community) }) {
+                        Text("Tekrar dene")
+                    }
+                }
+            }
         }
     }
     if (editor != null && community != null) {
@@ -119,19 +208,326 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
 }
 
 @Composable
-private fun CommunityLogo(url: String) {
-    Surface(shape = RoundedCornerShape(16.dp), color = PistachioGreen, modifier = Modifier.size(60.dp)) {
-        if (url.isNotBlank()) AsyncImage(url, null, contentScale = ContentScale.Crop)
-        else Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, null, tint = PrimaryGreen, modifier = Modifier.size(30.dp)) }
+private fun CommunityListIntro() {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "Kampüste kendine bir yer bul.",
+            fontSize = 24.sp,
+            lineHeight = 30.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
+        )
+        Text(
+            text = "Etkinlikleri keşfet, fırsatları yakala ve topluluğuna katıl.",
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            color = TextSecondary
+        )
     }
 }
 
 @Composable
-private fun EmptyCommunityContent(title: String, subtitle: String) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Icon(Icons.Default.Groups, null, tint = PrimaryGreen, modifier = Modifier.size(42.dp))
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+private fun CommunitySearchField(query: String, onQueryChange: (String) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = SurfaceDefault,
+        shadowElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Topluluk ara", color = TextSecondary) },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = TextSecondary) },
+            singleLine = true,
+            shape = RoundedCornerShape(18.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = SurfaceDefault,
+                unfocusedContainerColor = SurfaceDefault,
+                focusedBorderColor = PrimaryGreen,
+                unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent
+            )
+        )
+    }
+}
+
+@Composable
+private fun CommunityListCard(community: Community, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = SurfaceDefault,
+        shadowElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            CommunityLogo(community.data.logoUrl, size = 62.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = community.data.name,
+                    fontSize = 18.sp,
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = community.data.description,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    color = TextSecondary,
+                    maxLines = 2
+                )
+                Text(
+                    text = "Topluluğu keşfet",
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = PrimaryGreen
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityDetailHeader(
+    community: Community,
+    canManage: Boolean,
+    managing: Boolean,
+    onManageClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = SurfaceDefault,
+        shadowElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                CommunityLogo(community.data.logoUrl, size = 64.dp)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = community.data.name,
+                        fontSize = 18.sp,
+                        lineHeight = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = community.data.description,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        color = TextSecondary
+                    )
+                }
+            }
+            if (canManage) {
+                OutlinedButton(
+                    onClick = onManageClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.35f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+                ) {
+                    Icon(Icons.Outlined.ManageAccounts, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (managing) "Yönetimi kapat" else "Topluluğunu yönet", fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityManagementActions(
+    onAddEvent: () -> Unit,
+    onAddCoupon: () -> Unit,
+    onEditProfile: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = PistachioGreen.copy(alpha = 0.55f)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onAddEvent,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryGreen,
+                        contentColor = SurfaceDefault
+                    )
+                ) {
+                    Text("Etkinlik ekle")
+                }
+                OutlinedButton(
+                    onClick = onAddCoupon,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.35f))
+                ) {
+                    Text("Kupon ekle")
+                }
+            }
+            TextButton(
+                onClick = onEditProfile,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(contentColor = PrimaryGreen)
+            ) {
+                Text("Topluluk bilgilerini düzenle")
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceMuted
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            listOf("Etkinlikler", "Kuponlar").forEachIndexed { index, label ->
+                Surface(
+                    onClick = { onTabSelected(index) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(42.dp),
+                    shape = RoundedCornerShape(13.dp),
+                    color = if (selectedTab == index) SurfaceDefault else androidx.compose.ui.graphics.Color.Transparent,
+                    shadowElevation = if (selectedTab == index) 1.dp else 0.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = label,
+                            fontSize = 14.sp,
+                            fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (selectedTab == index) PrimaryGreen else TextSecondary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityEntryCard(entry: CommunityEntry, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = SurfaceDefault,
+        shadowElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            if (entry.data.imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = entry.data.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(148.dp)
+                        .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        modifier = Modifier.size(42.dp),
+                        shape = RoundedCornerShape(13.dp),
+                        color = PistachioGreen
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (entry.data.kind == "coupon") Icons.Outlined.LocalOffer else Icons.Outlined.CalendarMonth,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(entry.data.title, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        Text("${entry.data.date} ${entry.data.time}".trim(), fontSize = 13.sp, lineHeight = 18.sp, color = PrimaryGreen)
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(17.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(entry.data.location, fontSize = 13.sp, lineHeight = 18.sp, color = TextSecondary)
+                }
+                if (entry.data.status != "published") {
+                    Text(
+                        text = if (entry.data.status == "pending") "Onay bekliyor" else "İptal edildi",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextSecondary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityLogo(url: String, size: androidx.compose.ui.unit.Dp = 60.dp) {
+    Surface(shape = RoundedCornerShape(16.dp), color = PistachioGreen, modifier = Modifier.size(size)) {
+        if (url.isNotBlank()) AsyncImage(url, null, contentScale = ContentScale.Crop)
+        else Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Groups, null, tint = PrimaryGreen, modifier = Modifier.size(size * 0.5f)) }
+    }
+}
+
+@Composable
+private fun EmptyCommunityContent(title: String, subtitle: String, coupon: Boolean = false) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 34.dp, horizontal = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = if (coupon) Icons.Outlined.LocalOffer else Icons.Outlined.Groups,
+            contentDescription = null,
+            tint = PrimaryGreen.copy(alpha = 0.8f),
+            modifier = Modifier.size(40.dp)
+        )
+        Text(title, fontSize = 17.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Text(subtitle, fontSize = 13.sp, lineHeight = 18.sp, color = TextSecondary, textAlign = TextAlign.Center)
     }
 }
 
