@@ -498,6 +498,9 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
      * serializerFor ve serializerForData bu map'i kullanır.
      */
     private val dtoSerializers: Map<String, KSerializer<*>> = mapOf(
+        "CommunityDto" to com.good4.community.CommunityDto.serializer(),
+        "CommunityEntryDto" to com.good4.community.CommunityEntryDto.serializer(),
+        "CommunityAccessDto" to com.good4.community.CommunityAccessDto.serializer(),
         "ProductDto" to ProductDto.serializer(),
         "BusinessDto" to BusinessDto.serializer(),
         "CampaignDto" to CampaignDto.serializer(),

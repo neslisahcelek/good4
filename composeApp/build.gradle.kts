@@ -46,7 +46,15 @@ kotlin {
     }
 
     sourceSets {
+        androidInstrumentedTest.dependencies {
+            implementation("androidx.compose.ui:ui-test-junit4:1.9.0")
+            implementation("androidx.test:runner:1.7.0")
+            implementation("androidx.test.espresso:espresso-core:3.7.0")
+        }
         androidMain.dependencies {
+            implementation("androidx.credentials:credentials:1.3.0")
+            implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+            implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.splashscreen)
@@ -109,6 +117,7 @@ android {
     }
 
     defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         applicationId = "com.good4"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()

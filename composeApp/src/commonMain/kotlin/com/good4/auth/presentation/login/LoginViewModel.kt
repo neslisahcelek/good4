@@ -43,6 +43,8 @@ class LoginViewModel(
 
     fun onAction(action: LoginAction) {
         when (action) {
+            is LoginAction.OnGoogleToken -> login(action.token)
+            is LoginAction.OnGoogleError -> _state.update { it.copy(errorMessage = UiText.DynamicString(action.message)) }
             is LoginAction.OnEmailChange -> {
                 _state.update {
                     it.copy(
@@ -86,7 +88,7 @@ class LoginViewModel(
         }
     }
 
-    private fun login() {
+    private fun login(googleIdToken: String? = null) {
         val state = _state.value
 
         if (state.isLoading) {
@@ -96,13 +98,13 @@ class LoginViewModel(
         val email = state.email.normalizeForEmail()
         val password = state.password
 
-        if (email.isBlank()) {
+        if (googleIdToken == null && email.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_email_required))
             }
             return
         }
-        if (password.isBlank()) {
+        if (googleIdToken == null && password.isBlank()) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_password_required))
             }
@@ -112,7 +114,7 @@ class LoginViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val result = authRepository.signIn(email, password)) {
+            when (val result = if (googleIdToken == null) authRepository.signIn(email, password) else authRepository.signInWithGoogleToken(googleIdToken)) {
                 is Result.Success -> {
                     val authUser = result.data
                     val userId = result.data.uid
@@ -158,7 +160,7 @@ class LoginViewModel(
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = userResult.error.toUserFetchErrorUiText()
+                                    errorMessage = if (googleIdToken != null) UiText.DynamicString("Bu Google hesabıyla eşleşen Good4 kaydı bulunamadı veya kayda erişilemedi. Topluluk yöneticisiyseniz Good4 ekibiyle iletişime geçin.") else userResult.error.toUserFetchErrorUiText()
                                 )
                             }
                             startupSessionCache.clear(userId)

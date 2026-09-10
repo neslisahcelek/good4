@@ -175,7 +175,7 @@
     <string name="code_verified">Kod başarıyla doğrulandı!</string>
     <string name="invalid_code">Girdiğiniz kod geçersizdir</string>
     <string name="student_home">Ana Sayfa</string>
-    <string name="student_reservations">Rezervasyonlar</string>
+    <string name="student_reservations">Askıda Yemek</string>
     <string name="my_reservations">Rezervasyonlarım</string>
     <string name="no_reservations">Henüz bir rezervasyonunuz bulunmuyor</string>
     <string name="reservation_active">Aktif</string>
@@ -310,7 +310,7 @@
     <string name="verify_code_order_error_cancel">İptal sırasında bir hata oluştu</string>
     <string name="verify_code_student_reservation_title">Öğrenci Rezervasyonu</string>
     <string name="verify_code_student_label">Öğrenci</string>
-    <string name="student_reservations_title">Rezervasyonlarım</string>
+    <string name="student_reservations_title">Askıda Yemek</string>
     <string name="student_reservations_empty_title">Henüz bir rezervasyonunuz bulunmuyor</string>
     <string name="student_reservations_empty_subtitle">Bir ürün rezerve ettiğinizde\nbilgileri burada görüntüleyebilirsiniz.</string>
     <string name="student_reservations_code_title">Rezervasyon Kodunuz</string>

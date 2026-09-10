@@ -11,6 +11,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class FirebaseAuthRepositoryIOS : AuthRepository {
+    override suspend fun signInWithGoogleToken(idToken: String): Result<AuthUser, AuthError> = try {
+        val user = firebaseAuth.signInWithCredential(dev.gitlive.firebase.auth.GoogleAuthProvider.credential(idToken, null)).user
+        if (user == null) Result.Error(AuthError.UserNotFound) else Result.Success(user.toAuthUser())
+    } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+    catch (e: Exception) { Result.Error(AuthError.Unknown("Google ile giriş tamamlanamadı. Tekrar deneyin.")) }
     private val firebaseAuth: FirebaseAuth = Firebase.auth
 
     override val currentUser: AuthUser?

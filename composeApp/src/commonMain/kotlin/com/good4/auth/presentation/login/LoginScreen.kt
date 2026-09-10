@@ -326,6 +326,13 @@ fun LoginScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(8.dp))
+                GoogleSignInButton(
+                    enabled = !state.isLoading,
+                    onToken = { onAction(LoginAction.OnGoogleToken(it)) },
+                    onError = { onAction(LoginAction.OnGoogleError(it)) }
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(

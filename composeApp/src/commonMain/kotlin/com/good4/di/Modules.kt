@@ -46,6 +46,8 @@ import org.koin.dsl.module
 expect val platformModule: org.koin.core.module.Module
 
 val commonModule = module {
+    single { com.good4.community.CommunityRepository(get(), get()) }
+    viewModel { com.good4.community.CommunityViewModel(get()) }
     single<FirestoreRepository> { FirestoreRepositoryImpl() }
 
     single { AppConfigRepository(get<FirestoreRepository>()) }

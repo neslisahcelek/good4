@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -105,7 +106,8 @@ fun ProductListScreenRoot(
     modifier: Modifier = Modifier,
     viewModel: ProductListViewModel = koinViewModel(),
     onProfileClick: (() -> Unit)? = null,
-    onReservationCardClick: () -> Unit = {}
+    onReservationCardClick: () -> Unit = {},
+    onCommunitiesClick: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val diningMenuViewModel: AkdenizDiningMenuViewModel = koinViewModel()
@@ -121,6 +123,7 @@ fun ProductListScreenRoot(
         modifier = modifier,
         state = state,
         diningMenuState = diningMenuState,
+        onCommunitiesClick = onCommunitiesClick,
         onProfileClick = onProfileClick,
         onReservationCardClick = onReservationCardClick,
         onAction = { action ->
@@ -136,6 +139,7 @@ fun ProductListScreen(
     diningMenuState: AkdenizDiningMenuState = AkdenizDiningMenuState(),
     onProfileClick: (() -> Unit)? = null,
     onReservationCardClick: () -> Unit = {},
+    onCommunitiesClick: () -> Unit = {},
     onAction: (ProductListAction) -> Unit
 ) {
     val listState = rememberLazyListState()
@@ -184,17 +188,11 @@ fun ProductListScreen(
                             )
                         }
 
-                        if (state.remainingCredits != null && state.deliveryTimeMinutes != null) {
-                            item {
-                                HomeSummaryCards(
-                                    remainingCredits = state.remainingCredits,
-                                    deliveryTimeMinutes = state.deliveryTimeMinutes
-                                )
-                            }
-                        }
-
                         item {
-                            AkdenizDiningMenuCard(state = diningMenuState)
+                            CampusSummaryCards(
+                                diningMenuState = diningMenuState,
+                                onMenuClick = { uriHandler.openUri(AKDENIZ_BALANCE_URL) }
+                            )
                         }
 
                         item {
@@ -202,7 +200,8 @@ fun ProductListScreen(
                                 onTopUpClick = {
                                     uriHandler.openUri(AKDENIZ_BALANCE_URL)
                                 },
-                                onReservationsClick = onReservationCardClick
+                                onReservationsClick = onReservationCardClick,
+                                onCommunitiesClick = onCommunitiesClick
                             )
                         }
 
@@ -244,7 +243,7 @@ private fun ProductListGreetingHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(184.dp)
+            .height(138.dp)
             .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
     ) {
         Image(
@@ -363,7 +362,8 @@ private fun HomeSummaryCards(
 @Composable
 private fun HomeQuickActions(
     onTopUpClick: () -> Unit,
-    onReservationsClick: () -> Unit
+    onReservationsClick: () -> Unit,
+    onCommunitiesClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -394,6 +394,19 @@ private fun HomeQuickActions(
                 onClick = onReservationsClick
             )
         }
+        repeat(2) { row ->
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(2) { column ->
+                    HomeQuickActionCard(
+                        modifier = Modifier.weight(1f),
+                        title = if (row == 0 && column == 0) "Topluluklar" else "Yeni Alan ${row * 2 + column + 1}",
+                        icon = if (row == 0 && column == 0) Icons.Filled.Groups else Icons.Filled.Store,
+                        onClick = if (row == 0 && column == 0) onCommunitiesClick else null
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -402,12 +415,12 @@ private fun HomeQuickActionCard(
     modifier: Modifier = Modifier,
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
+    onClick: (() -> Unit)?
 ) {
     Surface(
         modifier = modifier
             .height(94.dp)
-            .clickable(onClick = onClick),
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(20.dp),
         color = SurfaceDefault,
         shadowElevation = 2.dp

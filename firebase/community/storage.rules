@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /product_images/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.resource.size < 1 * 1024 * 1024;
+      allow delete: if request.auth != null;
+    }
+    match /community_images/{communityId}/{image} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.token.email_verified == true
+        && firestore.get(/databases/(default)/documents/community_access/$(request.auth.token.email)).data.active == true
+        && communityId in firestore.get(/databases/(default)/documents/community_access/$(request.auth.token.email)).data.communityIds
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow update, delete: if false;
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

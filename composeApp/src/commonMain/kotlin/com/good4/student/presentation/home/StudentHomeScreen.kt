@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.ShoppingCart
@@ -59,13 +60,14 @@ fun StudentHomeScreenRoot(
             unselectedIcon = Icons.Outlined.Home
         ),
         BottomNavItem(
-            title = stringResource(Res.string.student_reservations),
-            selectedIcon = Icons.Filled.ShoppingCart,
-            unselectedIcon = Icons.Outlined.ShoppingCart
+            title = "Menü",
+            selectedIcon = Icons.Filled.Menu,
+            unselectedIcon = Icons.Filled.Menu
         )
     )
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
     var reservationsScrollRequestKey by rememberSaveable { mutableIntStateOf(0) }
     var pendingReservationFromHome by remember { mutableStateOf<ReservationUiModel?>(null) }
     val productListViewModel: ProductListViewModel = koinViewModel()
@@ -102,10 +104,10 @@ fun StudentHomeScreenRoot(
             Good4NavigationBar {
                 navItems.forEachIndexed { index, item ->
                     NavigationBarItem(
-                        selected = selectedItemIndex == index,
+                        selected = if (index == 1) menuOpen else selectedItemIndex == 0 && !menuOpen,
                         onClick = {
                             if (index == 1) {
-                                showReservationsTab()
+                                menuOpen = true
                             } else {
                                 selectedItemIndex = index
                             }
@@ -142,9 +144,11 @@ fun StudentHomeScreenRoot(
                 .padding(paddingValues)
         ) {
             when (selectedItemIndex) {
+                2 -> com.good4.community.CommunitiesScreen(onBack = { selectedItemIndex = 0 })
                 0 -> {
                     ProductListScreenRoot(
                         viewModel = productListViewModel,
+                        onCommunitiesClick = { selectedItemIndex = 2 },
                         onProfileClick = onNavigateToProfile,
                         onReservationCardClick = {
                             showReservationsTab()
@@ -168,6 +172,9 @@ fun StudentHomeScreenRoot(
                 }
             }
         }
+    }
+    if (menuOpen) {
+        StudentMenuSheet(onDismiss = { menuOpen = false })
     }
 }
 

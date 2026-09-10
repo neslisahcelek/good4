@@ -421,6 +421,7 @@
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.449563145023-ir6daksk0m7idh0tk83bfgf4m4hmde20";
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
