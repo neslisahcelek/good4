@@ -15,7 +15,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 @Composable
-actual fun GoogleSignInButton(enabled: Boolean, onToken: (String) -> Unit, onError: (String) -> Unit) {
+actual fun GoogleSignInButton(
+    enabled: Boolean,
+    onToken: (idToken: String, accessToken: String?) -> Unit,
+    onError: (String) -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
@@ -29,7 +33,7 @@ actual fun GoogleSignInButton(enabled: Boolean, onToken: (String) -> Unit, onErr
                 } else {
                     val option = GetSignInWithGoogleOption.Builder(context.getString(resource)).build()
                     val result = CredentialManager.create(context).getCredential(context, GetCredentialRequest.Builder().addCredentialOption(option).build())
-                    onToken(GoogleIdTokenCredential.createFrom(result.credential.data).idToken)
+                    onToken(GoogleIdTokenCredential.createFrom(result.credential.data).idToken, null)
                 }
             } catch (_: GetCredentialCancellationException) { /* Account chooser dismissed. */ }
             catch (e: CancellationException) { throw e }

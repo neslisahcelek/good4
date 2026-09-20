@@ -4,6 +4,7 @@ import com.good4.code.data.dto.CodeDto
 import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
+import com.good4.core.domain.DocumentNotFoundError
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
@@ -251,7 +252,7 @@ class FirestoreRepositoryAndroidImpl(
                     path = collectionPath,
                     detail = "documentId=$documentId not found"
                 )
-                Result.Error(NetworkError("Document not found"))
+                Result.Error(DocumentNotFoundError("Document not found"))
             }
         } catch (e: Exception) {
             FirebaseDebugLogger.error(

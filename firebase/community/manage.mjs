@@ -15,7 +15,7 @@ const id = cleanId(args[0]);
 if (command === 'create') {
   const data = JSON.parse(await readFile(args[1], 'utf8'));
   if (!data.name?.trim() || data.name.length > 120 || (data.description || '').length > 1000) throw new Error('Invalid community profile');
-  await db.doc(`communities/${id}`).create({ name: data.name.trim(), description: data.description || '', logoUrl: data.logoUrl || '' });
+  await db.doc(`communities/${id}`).create({ name: data.name.trim(), description: data.description || '', logoUrl: data.logoUrl || '', coverUrl: data.coverUrl || '' });
 } else if (command === 'assign' || command === 'revoke') {
   const email = args[1]?.trim().toLowerCase();
   if (!email || !/^[^/\s@]+@[^/\s@]+\.[^/\s@]+$/.test(email)) throw new Error('Invalid email');

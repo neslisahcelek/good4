@@ -7,7 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
 @Composable
-actual fun GoogleSignInButton(enabled: Boolean, onToken: (String) -> Unit, onError: (String) -> Unit) {
+actual fun GoogleSignInButton(
+    enabled: Boolean,
+    onToken: (idToken: String, accessToken: String?) -> Unit,
+    onError: (String) -> Unit
+) {
     var busy by remember { mutableStateOf(false) }
     OutlinedButton(enabled = enabled && !busy, modifier = Modifier.fillMaxWidth(), onClick = {
         val launcher = GoogleSignInBridge.launcher
@@ -15,10 +19,10 @@ actual fun GoogleSignInButton(enabled: Boolean, onToken: (String) -> Unit, onErr
         else {
             busy = true
             launcher.launch(object : GoogleSignInCallback {
-                override fun complete(token: String?, error: String?) {
-                busy = false
-                if (token != null) onToken(token)
-                else if (error != null) onError(error)
+                override fun complete(idToken: String?, accessToken: String?, error: String?) {
+                    busy = false
+                    if (idToken != null && accessToken != null) onToken(idToken, accessToken)
+                    else if (error != null) onError(error)
                 }
             })
         }

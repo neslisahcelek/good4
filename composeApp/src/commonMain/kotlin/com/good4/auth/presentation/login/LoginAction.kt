@@ -1,7 +1,10 @@
 package com.good4.auth.presentation.login
 
 sealed interface LoginAction {
-    data class OnGoogleToken(val token: String) : LoginAction
+    data class OnGoogleToken(
+        val idToken: String,
+        val accessToken: String?
+    ) : LoginAction
     data class OnGoogleError(val message: String) : LoginAction
     data class OnEmailChange(val email: String) : LoginAction
     data class OnPasswordChange(val password: String) : LoginAction

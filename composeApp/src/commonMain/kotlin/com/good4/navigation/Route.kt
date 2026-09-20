@@ -33,6 +33,9 @@ sealed class Route {
 
     @Serializable
     data object StudentAccountSettings : Route()
+
+    @Serializable
+    data object Notifications : Route()
     
     @Serializable
     data class ProductDetail(val productId: String) : Route()

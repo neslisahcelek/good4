@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.code.data.repository.CodeRepository
+import com.good4.community.CommunityRepository
 import com.good4.core.domain.Result
 import com.good4.order.data.repository.OrderRepository
 import com.good4.order.domain.OrderStatus
@@ -31,7 +32,8 @@ class VerifyCodeViewModel(
     private val codeRepository: CodeRepository,
     private val productRepository: FirestoreProductRepository,
     private val orderRepository: OrderRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val communityRepository: CommunityRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(VerifyCodeState())
@@ -202,22 +204,34 @@ class VerifyCodeViewModel(
                     if (order != null) {
                         orderRepository.updateOrderStatus(order.id, OrderStatus.EXPIRED)
                     }
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = getString(Res.string.verify_code_order_not_found)
-                        )
-                    }
+                    tryVerifyAsCommunityCoupon(code, bid)
                 }
             }
 
             is Result.Error -> {
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = getString(Res.string.verify_code_order_not_found)
-                    )
-                }
+                tryVerifyAsCommunityCoupon(code, bid)
+            }
+        }
+    }
+
+    private suspend fun tryVerifyAsCommunityCoupon(code: String, bid: String) {
+        val coupon = communityRepository.verifyCouponCode(code, bid)
+        if (coupon != null) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    verificationSuccess = true,
+                    verifiedProductName = coupon.title,
+                    codeInput = "",
+                    errorMessage = null
+                )
+            }
+        } else {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = getString(Res.string.verify_code_order_not_found)
+                )
             }
         }
     }

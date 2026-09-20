@@ -6,6 +6,7 @@ import com.good4.code.data.dto.CodeDto
 import com.good4.config.data.dto.AppConfigDto
 import com.good4.config.data.dto.UniversitiesConfigDto
 import com.good4.core.domain.Error
+import com.good4.core.domain.DocumentNotFoundError
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
@@ -136,7 +137,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                     path = collectionPath,
                     detail = "documentId=$documentId not found"
                 )
-                Result.Error(NetworkError("Document not found"))
+                Result.Error(DocumentNotFoundError("Document not found"))
             }
         } catch (e: Exception) {
             FirebaseDebugLogger.error(
@@ -501,6 +502,10 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "CommunityDto" to com.good4.community.CommunityDto.serializer(),
         "CommunityEntryDto" to com.good4.community.CommunityEntryDto.serializer(),
         "CommunityAccessDto" to com.good4.community.CommunityAccessDto.serializer(),
+        "CommunityFollowDto" to com.good4.community.CommunityFollowDto.serializer(),
+        "CommunityEventRegistrationDto" to com.good4.community.CommunityEventRegistrationDto.serializer(),
+        "CommunityCouponClaimDto" to com.good4.community.CommunityCouponClaimDto.serializer(),
+        "CommunityCouponCodeDto" to com.good4.community.CommunityCouponCodeDto.serializer(),
         "ProductDto" to ProductDto.serializer(),
         "BusinessDto" to BusinessDto.serializer(),
         "CampaignDto" to CampaignDto.serializer(),

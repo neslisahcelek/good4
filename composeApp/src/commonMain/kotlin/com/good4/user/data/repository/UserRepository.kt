@@ -8,6 +8,7 @@ import com.good4.core.domain.ValidationError
 import com.good4.user.User
 import com.good4.user.data.dto.UserDto
 import com.good4.user.domain.UserRole
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 class UserRepository(
@@ -22,6 +23,39 @@ class UserRepository(
         return when (val result =
             firestoreRepository.getDocument("users", userId, UserDto::class)) {
             is Result.Success -> Result.Success(result.data.toUser(userId))
+            is Result.Error -> result
+        }
+    }
+
+    suspend fun createGoogleStudent(
+        userId: String,
+        email: String?,
+        displayName: String?
+    ): Result<User, Error> {
+        val nowSecs = Clock.System.now().epochSeconds
+        val normalizedEmail = email?.trim().orEmpty()
+        val resolvedName = displayName?.trim().orEmpty().ifBlank {
+            normalizedEmail.substringBefore('@').ifBlank { "Öğrenci" }
+        }
+        val userDto = UserDto(
+            email = normalizedEmail,
+            fullName = resolvedName,
+            phoneNumber = null,
+            role = UserRole.STUDENT.value,
+            verified = false,
+            university = null,
+            major = null,
+            educationLevel = null,
+            credit = configRepository.getStudentWeeklyCredit(),
+            lastCreditResetAt = nowSecs,
+            registrationDate = nowSecs,
+            createdAt = nowSecs,
+            totalDonations = 0,
+            totalMeals = 0
+        )
+
+        return when (val result = createUser(userId, userDto)) {
+            is Result.Success -> Result.Success(userDto.toUser(userId))
             is Result.Error -> result
         }
     }

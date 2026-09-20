@@ -381,6 +381,7 @@
     <string name="error_resend_wait_seconds">Tekrar gönderebilmek için lütfen %1$d saniye bekleyiniz.</string>
     <string name="error_user_not_logged_in">Oturum açmış bir kullanıcı bulunamadı</string>
     <string name="error_recent_login_required">Güvenlik önlemleri gereği lütfen tekrar giriş yaparak işleminizi yineleyiniz.</string>
+    <string name="error_keychain_access">Güvenli oturum kaydı oluşturulamadı. Uygulamayı kapatıp yeniden açarak tekrar deneyiniz.</string>
     <string name="error_unknown">Beklenmedik bir hata oluştu</string>
     <string name="error_sign_up_generic">Kayıt tamamlanamadı. Bilgilerinizi kontrol edip tekrar deneyin.</string>
     <string name="error_delete_account_failed">Hesap silme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.</string>

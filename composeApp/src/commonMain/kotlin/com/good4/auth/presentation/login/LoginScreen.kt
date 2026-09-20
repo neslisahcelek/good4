@@ -307,7 +307,9 @@ fun LoginScreen(
                     enabled = !state.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = TextPrimary,
-                        disabledContainerColor = TextPrimary.copy(alpha = 0.5f)
+                        contentColor = SurfaceDefault,
+                        disabledContainerColor = TextPrimary.copy(alpha = 0.5f),
+                        disabledContentColor = SurfaceDefault.copy(alpha = 0.7f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -329,9 +331,12 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 GoogleSignInButton(
                     enabled = !state.isLoading,
-                    onToken = { onAction(LoginAction.OnGoogleToken(it)) },
+                    onToken = { idToken, accessToken ->
+                        onAction(LoginAction.OnGoogleToken(idToken, accessToken))
+                    },
                     onError = { onAction(LoginAction.OnGoogleError(it)) }
                 )
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 

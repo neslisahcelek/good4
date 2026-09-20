@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
+import com.good4.auth.domain.AuthUser
 import com.good4.core.domain.Error
+import com.good4.core.domain.DocumentNotFoundError
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.data.local.StartupSessionCache
@@ -15,6 +17,7 @@ import com.good4.core.presentation.UiText
 import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.validateEmail
 import com.good4.user.data.repository.UserRepository
+import com.good4.user.User
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_email_not_verified
 import good4.composeapp.generated.resources.error_email_required
@@ -43,7 +46,7 @@ class LoginViewModel(
 
     fun onAction(action: LoginAction) {
         when (action) {
-            is LoginAction.OnGoogleToken -> login(action.token)
+            is LoginAction.OnGoogleToken -> login(action.idToken, action.accessToken)
             is LoginAction.OnGoogleError -> _state.update { it.copy(errorMessage = UiText.DynamicString(action.message)) }
             is LoginAction.OnEmailChange -> {
                 _state.update {
@@ -88,7 +91,10 @@ class LoginViewModel(
         }
     }
 
-    private fun login(googleIdToken: String? = null) {
+    private fun login(
+        googleIdToken: String? = null,
+        googleAccessToken: String? = null
+    ) {
         val state = _state.value
 
         if (state.isLoading) {
@@ -114,57 +120,45 @@ class LoginViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val result = if (googleIdToken == null) authRepository.signIn(email, password) else authRepository.signInWithGoogleToken(googleIdToken)) {
+            when (
+                val result = if (googleIdToken == null) {
+                    authRepository.signIn(email, password)
+                } else {
+                    authRepository.signInWithGoogleToken(googleIdToken, googleAccessToken)
+                }
+            ) {
                 is Result.Success -> {
                     val authUser = result.data
                     val userId = result.data.uid
 
                     when (val userResult = userRepository.getUser(userId)) {
                         is Result.Success -> {
-                            val role = userResult.data.role
-                            val shouldCheckEmailVerification = shouldCheckEmailVerificationFor(role)
-                            if (shouldCheckEmailVerification && !authUser.isEmailVerified) {
-                                startupSessionCache.cacheStartupSession(
-                                    uid = userId,
-                                    role = role,
-                                    isUserVerified = userResult.data.verified,
-                                    isAuthEmailVerified = authUser.isEmailVerified
-                                )
-                                authRepository.sendEmailVerification()
-                                _state.update { current ->
-                                    current.copy(
-                                        isLoading = false,
-                                        isEmailVerificationRequired = true,
-                                        infoMessage = null,
-                                        errorMessage = null
-                                    )
-                                }
-                            } else {
-                                startupSessionCache.cacheStartupSession(
-                                    uid = userId,
-                                    role = role,
-                                    isUserVerified = userResult.data.verified,
-                                    isAuthEmailVerified = authUser.isEmailVerified
-                                )
-                                _state.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        isLoginSuccess = true,
-                                        userRole = role
-                                    )
-                                }
-                            }
+                            completeLogin(authUser, userResult.data)
                         }
 
                         is Result.Error -> {
-                            _state.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = if (googleIdToken != null) UiText.DynamicString("Bu Google hesabıyla eşleşen Good4 kaydı bulunamadı veya kayda erişilemedi. Topluluk yöneticisiyseniz Good4 ekibiyle iletişime geçin.") else userResult.error.toUserFetchErrorUiText()
+                            if (googleIdToken != null && userResult.error is DocumentNotFoundError) {
+                                when (
+                                    val createResult = userRepository.createGoogleStudent(
+                                        userId = userId,
+                                        email = authUser.email,
+                                        displayName = authUser.displayName
+                                    )
+                                ) {
+                                    is Result.Success -> completeLogin(authUser, createResult.data)
+                                    is Result.Error -> handleUserProfileError(
+                                        userId = userId,
+                                        error = createResult.error,
+                                        isGoogleLogin = true
+                                    )
+                                }
+                            } else {
+                                handleUserProfileError(
+                                    userId = userId,
+                                    error = userResult.error,
+                                    isGoogleLogin = googleIdToken != null
                                 )
                             }
-                            startupSessionCache.clear(userId)
-                            authRepository.signOut()
                         }
                     }
                 }
@@ -179,6 +173,56 @@ class LoginViewModel(
                 }
             }
         }
+    }
+
+    private suspend fun completeLogin(authUser: AuthUser, user: User) {
+        val role = user.role
+        val shouldCheckEmailVerification = shouldCheckEmailVerificationFor(role)
+        startupSessionCache.cacheStartupSession(
+            uid = authUser.uid,
+            role = role,
+            isUserVerified = user.verified,
+            isAuthEmailVerified = authUser.isEmailVerified
+        )
+
+        if (shouldCheckEmailVerification && !authUser.isEmailVerified) {
+            authRepository.sendEmailVerification()
+            _state.update { current ->
+                current.copy(
+                    isLoading = false,
+                    isEmailVerificationRequired = true,
+                    infoMessage = null,
+                    errorMessage = null
+                )
+            }
+        } else {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    isLoginSuccess = true,
+                    userRole = role
+                )
+            }
+        }
+    }
+
+    private suspend fun handleUserProfileError(
+        userId: String,
+        error: Error,
+        isGoogleLogin: Boolean
+    ) {
+        _state.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = if (isGoogleLogin) {
+                    UiText.DynamicString("Google hesabınızla öğrenci profili oluşturulamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.")
+                } else {
+                    error.toUserFetchErrorUiText()
+                }
+            )
+        }
+        startupSessionCache.clear(userId)
+        authRepository.signOut()
     }
 
     private fun sendPasswordResetEmail() {

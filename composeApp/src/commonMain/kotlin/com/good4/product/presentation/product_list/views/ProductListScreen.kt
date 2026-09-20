@@ -28,13 +28,17 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorSnackbar
+import com.good4.core.presentation.LocalThemeController
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
@@ -111,7 +116,8 @@ fun ProductListScreenRoot(
     viewModel: ProductListViewModel = koinViewModel(),
     onProfileClick: (() -> Unit)? = null,
     onReservationCardClick: () -> Unit = {},
-    onCommunitiesClick: () -> Unit = {}
+    onCommunitiesClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val diningMenuViewModel: AkdenizDiningMenuViewModel = koinViewModel()
@@ -129,6 +135,7 @@ fun ProductListScreenRoot(
         diningMenuState = diningMenuState,
         onCommunitiesClick = onCommunitiesClick,
         onProfileClick = onProfileClick,
+        onNotificationsClick = onNotificationsClick,
         onReservationCardClick = onReservationCardClick,
         onAction = { action ->
             viewModel.onAction(action)
@@ -142,6 +149,7 @@ fun ProductListScreen(
     state: ProductListState,
     diningMenuState: AkdenizDiningMenuState = AkdenizDiningMenuState(),
     onProfileClick: (() -> Unit)? = null,
+    onNotificationsClick: () -> Unit = {},
     onReservationCardClick: () -> Unit = {},
     onCommunitiesClick: () -> Unit = {},
     onAction: (ProductListAction) -> Unit
@@ -188,7 +196,8 @@ fun ProductListScreen(
                         item {
                             ProductListGreetingHeader(
                                 userName = state.userName.orEmpty(),
-                                onProfileClick = onProfileClick
+                                onProfileClick = onProfileClick,
+                                onNotificationsClick = onNotificationsClick
                             )
                         }
 
@@ -248,8 +257,11 @@ fun ProductListScreen(
 private fun ProductListGreetingHeader(
     modifier: Modifier = Modifier,
     userName: String,
-    onProfileClick: (() -> Unit)? = null
+    onProfileClick: (() -> Unit)? = null,
+    onNotificationsClick: () -> Unit = {}
 ) {
+    val theme = LocalThemeController.current
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -273,22 +285,61 @@ private fun ProductListGreetingHeader(
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
+                .padding(
+                    start = 64.dp,
+                    top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
+                    end = if (onProfileClick == null) 64.dp else 112.dp
+                ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
-        if (onProfileClick != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(
-                        top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
-                        end = 12.dp
-                    )
-            ) {
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(
+                    top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
+                    end = 8.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { theme.setDark(!theme.isDark) }) {
+                Icon(
+                    imageVector = if (theme.isDark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                    contentDescription = if (theme.isDark) "Gündüz moduna geç" else "Gece moduna geç",
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+            if (onProfileClick != null) {
                 ProfileTopBarAction(
                     onClick = onProfileClick,
                     tint = Color.White
                 )
             }
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(
+                    top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
+                    start = 12.dp
+                )
+        ) {
+            IconButton(onClick = onNotificationsClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Bildirimler",
+                    tint = Color.White,
+                    modifier = Modifier.size(27.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-8).dp, y = 7.dp)
+                    .size(8.dp)
+                    .background(Color(0xFFFFD54F), RoundedCornerShape(50))
+            )
         }
     }
 }
@@ -435,10 +486,10 @@ private fun HomeQuickActions(
         ) {
             HomeQuickActionCard(
                 modifier = Modifier.weight(1f),
-                title = stringResource(Res.string.home_top_up),
-                icon = Icons.Outlined.AccountBalanceWallet,
-                accent = Color(0xFFF2A66F),
-                onClick = onTopUpClick
+                title = "Topluluklar",
+                icon = Icons.Outlined.Groups,
+                accent = Color(0xFF75D9BE),
+                onClick = onCommunitiesClick
             )
             HomeQuickActionCard(
                 modifier = Modifier.weight(1f),
@@ -455,20 +506,20 @@ private fun HomeQuickActions(
                     val position = row * 2 + column
                     HomeQuickActionCard(
                         modifier = Modifier.weight(1f),
-                        title = if (position == 0) "Topluluklar" else "Yeni Alan ${position + 1}",
+                        title = if (position == 0) stringResource(Res.string.home_top_up) else "Yeni Alan ${position + 1}",
                         icon = when (position) {
-                            0 -> Icons.Outlined.Groups
+                            0 -> Icons.Outlined.AccountBalanceWallet
                             1 -> Icons.Outlined.Place
                             2 -> Icons.Outlined.CalendarMonth
                             else -> Icons.Outlined.Email
                         },
                         accent = when (position) {
-                            0 -> Color(0xFF75D9BE)
+                            0 -> Color(0xFFF2A66F)
                             1 -> Color(0xFFB997EB)
                             2 -> Color(0xFFAAA4F2)
                             else -> Color(0xFF68CCDC)
                         },
-                        onClick = if (position == 0) onCommunitiesClick else null
+                        onClick = if (position == 0) onTopUpClick else null
                     )
                 }
             }

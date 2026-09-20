@@ -30,6 +30,7 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.community.CommunityViewModel
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.product.presentation.product_list.views.ProductListScreenRoot
 import com.good4.student.presentation.reservations.ReservationUiModel
@@ -51,7 +52,8 @@ data class BottomNavItem(
 @Composable
 fun StudentHomeScreenRoot(
     modifier: Modifier = Modifier,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToNotifications: () -> Unit = {}
 ) {
     val navItems = listOf(
         BottomNavItem(
@@ -70,9 +72,25 @@ fun StudentHomeScreenRoot(
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     var reservationsScrollRequestKey by rememberSaveable { mutableIntStateOf(0) }
     var pendingReservationFromHome by remember { mutableStateOf<ReservationUiModel?>(null) }
+    var managerEntryHandled by rememberSaveable { mutableStateOf(false) }
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
+    val communityViewModel: CommunityViewModel = koinViewModel()
     val reservationsState by reservationsViewModel.state.collectAsStateWithLifecycle()
+    val communityState by communityViewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(communityState.loading, communityState.access, communityState.communities) {
+        if (!managerEntryHandled && !communityState.loading && communityState.access.active) {
+            val managedCommunity = communityState.communities.firstOrNull {
+                it.id in communityState.access.communityIds
+            }
+            managerEntryHandled = true
+            if (managedCommunity != null) {
+                communityViewModel.select(managedCommunity)
+                selectedItemIndex = 2
+            }
+        }
+    }
 
     fun showReservationsTab() {
         val productState = productListViewModel.state.value
@@ -144,12 +162,18 @@ fun StudentHomeScreenRoot(
                 .padding(paddingValues)
         ) {
             when (selectedItemIndex) {
-                2 -> com.good4.community.CommunitiesScreen(onBack = { selectedItemIndex = 0 })
+                2 -> com.good4.community.CommunitiesScreen(
+                    onBack = { selectedItemIndex = 0 },
+                    managerEntryMode = communityState.access.active && managerEntryHandled,
+                    onSwitchToStudent = { selectedItemIndex = 0 },
+                    viewModel = communityViewModel
+                )
                 0 -> {
                     ProductListScreenRoot(
                         viewModel = productListViewModel,
                         onCommunitiesClick = { selectedItemIndex = 2 },
                         onProfileClick = onNavigateToProfile,
+                        onNotificationsClick = onNavigateToNotifications,
                         onReservationCardClick = {
                             showReservationsTab()
                         }

@@ -50,22 +50,31 @@ private final class NativeGoogleSignInLauncher: NSObject, GoogleSignInLauncher {
         guard let clientID = FirebaseApp.app()?.options.clientID,
               let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
               var presenter = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
-            completion.complete(token: nil, error: "Google ile giriş henüz yapılandırılmadı.")
+            completion.complete(idToken: nil, accessToken: nil, error: "Google ile giriş henüz yapılandırılmadı.")
             return
         }
         let reversedID = clientID.components(separatedBy: ".").reversed().joined(separator: ".")
         let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? []
         guard urlTypes.contains(where: { ($0["CFBundleURLSchemes"] as? [String])?.contains(reversedID) == true }) else {
-            completion.complete(token: nil, error: "Google ile giriş henüz yapılandırılmadı.")
+            completion.complete(idToken: nil, accessToken: nil, error: "Google ile giriş henüz yapılandırılmadı.")
             return
         }
         while let presented = presenter.presentedViewController { presenter = presented }
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.signIn(withPresenting: presenter) { result, error in
             DispatchQueue.main.async {
-                if let token = result?.user.idToken?.tokenString { completion.complete(token: token, error: nil) }
-                else if (error as NSError?)?.code == GIDSignInErrorCode.canceled.rawValue { completion.complete(token: nil, error: nil) }
-                else { completion.complete(token: nil, error: "Google ile giriş tamamlanamadı. Tekrar deneyin.") }
+                if let idToken = result?.user.idToken?.tokenString,
+                   let accessToken = result?.user.accessToken.tokenString {
+                    completion.complete(idToken: idToken, accessToken: accessToken, error: nil)
+                }
+                else if let signInError = error as NSError?,
+                        signInError.domain == kGIDSignInErrorDomain,
+                        signInError.code == GIDSignInError.canceled.rawValue {
+                    completion.complete(idToken: nil, accessToken: nil, error: nil)
+                }
+                else {
+                    completion.complete(idToken: nil, accessToken: nil, error: "Google ile giriş tamamlanamadı. Tekrar deneyin.")
+                }
             }
         }
     }

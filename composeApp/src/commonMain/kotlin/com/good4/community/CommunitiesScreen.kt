@@ -1,7 +1,9 @@
 package com.good4.community
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +16,7 @@ import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.ManageAccounts
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.*
@@ -40,11 +43,16 @@ import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinViewModel()) {
+fun CommunitiesScreen(
+    onBack: () -> Unit,
+    managerEntryMode: Boolean = false,
+    onSwitchToStudent: () -> Unit = onBack,
+    viewModel: CommunityViewModel = koinViewModel()
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    var managing by remember { mutableStateOf(false) }
+    var managing by rememberSaveable { mutableStateOf(managerEntryMode) }
     var editor by remember { mutableStateOf<CommunityEntryDto?>(null) }
     var editingId by remember { mutableStateOf<String?>(null) }
     var profileEditor by remember { mutableStateOf(false) }
@@ -58,6 +66,8 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
                     IconButton(
                         onClick = {
                             if (community == null) {
+                                onBack()
+                            } else if (managerEntryMode) {
                                 onBack()
                             } else {
                                 viewModel.back()
@@ -123,6 +133,9 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
                         community = community,
                         canManage = state.canManage,
                         managing = managing,
+                        isFollowing = state.isFollowing,
+                        followLoading = state.followLoading,
+                        onFollowClick = viewModel::toggleFollow,
                         onManageClick = { managing = !managing }
                     )
                 }
@@ -130,6 +143,9 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
                     if (managing) {
                         item {
                             CommunityManagementActions(
+                                eventCount = state.entries.count { it.data.kind == "event" && it.data.status != "cancelled" },
+                                couponCount = state.entries.count { it.data.kind == "coupon" && it.data.status != "cancelled" },
+                                registrationCount = state.registrationsByEntry.values.sumOf { it.size },
                                 onAddEvent = {
                                     editingId = null
                                     editor = CommunityEntryDto()
@@ -138,7 +154,8 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
                                     editingId = null
                                     editor = CommunityEntryDto(kind = "coupon", status = "pending")
                                 },
-                                onEditProfile = { profileEditor = true }
+                                onEditProfile = { profileEditor = true },
+                                onSwitchToStudent = onSwitchToStudent
                             )
                         }
                     }
@@ -150,11 +167,25 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
                     )
                 }
                 val entries = state.entries.filter { it.data.kind == if (tab == 0) "event" else "coupon" }
-                items(entries, key = { it.id }) { entry ->
-                    CommunityEntryCard(
-                        entry = entry,
-                        onClick = { detail = entry }
-                    )
+                if (tab == 1 && !state.canManage && entries.isNotEmpty()) {
+                    item {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(end = 4.dp)
+                        ) {
+                            items(entries, key = { it.id }) { entry ->
+                                StudentCouponCard(entry = entry, onClick = { detail = entry })
+                            }
+                        }
+                    }
+                } else {
+                    items(entries, key = { it.id }) { entry ->
+                        CommunityEntryCard(
+                            entry = entry,
+                            registrationCount = state.registrationsByEntry[entry.id]?.size,
+                            onClick = { detail = entry }
+                        )
+                    }
                 }
                 if (!state.loading && state.error == null && entries.isEmpty()) {
                     item {
@@ -189,16 +220,21 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
         }
     }
     if (editor != null && community != null) {
-        EntryEditor(initial = editor!!, saving = state.saving, error = state.error, onDismiss = { if (!state.saving) { editor = null; viewModel.clearError() } }, onSave = { draft, image -> viewModel.save(editingId, draft, image) { editor = null } })
+        EntryEditor(initial = editor!!, businesses = state.businesses, saving = state.saving, error = state.error, onDismiss = { if (!state.saving) { editor = null; viewModel.clearError() } }, onSave = { draft, image -> viewModel.save(editingId, draft, image) { editor = null } })
     }
     if (profileEditor && community != null) {
-        CommunityProfileEditor(community.data, state.saving, state.error, { if (!state.saving) { profileEditor = false; viewModel.clearError() } }) { data, image -> viewModel.updateProfile(data, image) { profileEditor = false } }
+        CommunityProfileEditor(community.data, state.saving, state.error, { if (!state.saving) { profileEditor = false; viewModel.clearError() } }) { data, logo, cover -> viewModel.updateProfile(data, logo, cover) { profileEditor = false } }
     }
     detail?.let { entry ->
         CommunityEntryDetailDialog(
             entry = entry,
             canManage = state.canManage,
             saving = state.saving,
+            generatedCode = state.generatedCouponCode.takeIf { state.generatedCouponEntryId == entry.id },
+            codeGenerating = state.codeGenerating,
+            registrations = state.registrationsByEntry[entry.id].orEmpty(),
+            registered = entry.id in state.registeredEventIds,
+            registrationLoading = entry.id in state.registrationLoadingIds,
             error = state.error,
             onDismiss = { detail = null },
             onEdit = {
@@ -208,7 +244,9 @@ fun CommunitiesScreen(onBack: () -> Unit, viewModel: CommunityViewModel = koinVi
             },
             onUnpublish = {
                 viewModel.cancel(entry.id) { detail = null }
-            }
+            },
+            onCreateCode = { viewModel.createCouponCode(entry) },
+            onToggleRegistration = { viewModel.toggleRegistration(entry) }
         )
     }
 }
@@ -310,6 +348,9 @@ private fun CommunityDetailHeader(
     community: Community,
     canManage: Boolean,
     managing: Boolean,
+    isFollowing: Boolean,
+    followLoading: Boolean,
+    onFollowClick: () -> Unit,
     onManageClick: () -> Unit
 ) {
     Surface(
@@ -319,10 +360,33 @@ private fun CommunityDetailHeader(
         shadowElevation = 1.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .background(PistachioGreen)
+            ) {
+                if (community.data.coverUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = community.data.coverUrl,
+                        contentDescription = "${community.data.name} kapak görseli",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.Groups,
+                        contentDescription = null,
+                        tint = PrimaryGreen.copy(alpha = 0.35f),
+                        modifier = Modifier.size(58.dp).align(Alignment.Center)
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -344,6 +408,19 @@ private fun CommunityDetailHeader(
                     )
                 }
             }
+            Button(
+                onClick = onFollowClick,
+                enabled = !followLoading,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = if (isFollowing) {
+                    ButtonDefaults.buttonColors(containerColor = SurfaceMuted, contentColor = TextPrimary)
+                } else {
+                    ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = androidx.compose.ui.graphics.Color.White)
+                }
+            ) {
+                Text(if (followLoading) "Kaydediliyor…" else if (isFollowing) "Takip ediliyor" else "Takip et", fontWeight = FontWeight.SemiBold)
+            }
             if (canManage) {
                 OutlinedButton(
                     onClick = onManageClick,
@@ -357,15 +434,20 @@ private fun CommunityDetailHeader(
                     Text(if (managing) "Yönetimi kapat" else "Topluluğunu yönet", fontWeight = FontWeight.Medium)
                 }
             }
+            }
         }
     }
 }
 
 @Composable
 private fun CommunityManagementActions(
+    eventCount: Int,
+    couponCount: Int,
+    registrationCount: Int,
     onAddEvent: () -> Unit,
     onAddCoupon: () -> Unit,
-    onEditProfile: () -> Unit
+    onEditProfile: () -> Unit,
+    onSwitchToStudent: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -376,6 +458,12 @@ private fun CommunityManagementActions(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Text("Topluluğumu Yönet", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ManagementStat("Etkinlik", eventCount.toString(), Modifier.weight(1f))
+                ManagementStat("Kupon", couponCount.toString(), Modifier.weight(1f))
+                ManagementStat("Kayıt", registrationCount.toString(), Modifier.weight(1f))
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onAddEvent,
@@ -405,6 +493,23 @@ private fun CommunityManagementActions(
             ) {
                 Text("Topluluk bilgilerini düzenle")
             }
+            TextButton(
+                onClick = onSwitchToStudent,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(contentColor = TextSecondary)
+            ) {
+                Text("Öğrenci görünümüne geç")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManagementStat(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(12.dp), color = SurfaceDefault) {
+        Column(Modifier.padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+            Text(label, fontSize = 11.sp, color = TextSecondary)
         }
     }
 }
@@ -445,7 +550,7 @@ private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 }
 
 @Composable
-private fun CommunityEntryCard(entry: CommunityEntry, onClick: () -> Unit) {
+private fun CommunityEntryCard(entry: CommunityEntry, registrationCount: Int? = null, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -491,6 +596,13 @@ private fun CommunityEntryCard(entry: CommunityEntry, onClick: () -> Unit) {
                         Text("${entry.data.date} ${entry.data.time}".trim(), fontSize = 13.sp, lineHeight = 18.sp, color = PrimaryGreen)
                     }
                 }
+                if (entry.data.kind == "event" && registrationCount != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Person, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("$registrationCount kişi kayıtlı", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = PrimaryGreen)
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(17.dp))
                     Spacer(Modifier.width(6.dp))
@@ -509,16 +621,54 @@ private fun CommunityEntryCard(entry: CommunityEntry, onClick: () -> Unit) {
     }
 }
 
+@Composable
+private fun StudentCouponCard(entry: CommunityEntry, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.width(260.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = SurfaceDefault,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f)),
+        shadowElevation = 1.dp
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(modifier = Modifier.size(42.dp), shape = RoundedCornerShape(13.dp), color = PistachioGreen) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.LocalOffer, contentDescription = null, tint = PrimaryGreen)
+                }
+            }
+            val advantage = when (entry.data.discountType) {
+                "percentage" -> if (entry.data.discountValue > 0) "%${entry.data.discountValue} indirim" else "Topluluğa özel indirim"
+                "fixed" -> if (entry.data.discountValue > 0) "${entry.data.discountValue} TL indirim" else "Topluluğa özel indirim"
+                "freeItem" -> "Ücretsiz ürün"
+                else -> entry.data.title
+            }
+            Text(advantage, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+            Text(entry.data.title, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 2)
+            Text(entry.data.location, fontSize = 13.sp, color = TextSecondary, maxLines = 1)
+            Text("Son gün: ${entry.data.date}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = PrimaryGreen)
+            Text("Kuponu görüntüle", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CommunityEntryDetailDialog(
     entry: CommunityEntry,
     canManage: Boolean,
     saving: Boolean,
+    generatedCode: String?,
+    codeGenerating: Boolean,
+    registrations: List<CommunityEventRegistrationDto>,
+    registered: Boolean,
+    registrationLoading: Boolean,
     error: String?,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
-    onUnpublish: () -> Unit
+    onUnpublish: () -> Unit,
+    onCreateCode: () -> Unit,
+    onToggleRegistration: () -> Unit
 ) {
     val isCoupon = entry.data.kind == "coupon"
     val dateTime = listOf(entry.data.date, entry.data.time)
@@ -599,42 +749,65 @@ private fun CommunityEntryDetailDialog(
                     color = TextSecondary
                 )
 
-                if (isCoupon && entry.data.code.isNotBlank()) {
-                    Surface(
+                if (isCoupon && !canManage) {
+                    if (generatedCode == null) {
+                        Button(
+                            onClick = onCreateCode,
+                            enabled = !codeGenerating && entry.data.businessId.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                        ) {
+                            Text(if (codeGenerating) "Kod oluşturuluyor…" else "6 haneli kullanım kodu oluştur")
+                        }
+                        if (entry.data.businessId.isBlank()) {
+                            Text("Bu kupon henüz işletme doğrulamasına bağlanmamış.", color = TextSecondary, fontSize = 12.sp)
+                        }
+                    } else {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = PrimaryGreen.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.35f))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("Kasada göstereceğin kod", color = TextSecondary, fontSize = 12.sp)
+                                Text(generatedCode, color = TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 5.sp)
+                                Text("Kod tek kullanımlıktır.", color = TextSecondary, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+
+                if (!isCoupon && !canManage) {
+                    Button(
+                        onClick = onToggleRegistration,
+                        enabled = !registrationLoading,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
-                        color = PistachioGreen.copy(alpha = 0.65f),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            PrimaryGreen.copy(alpha = 0.14f)
-                        )
+                        colors = if (registered) {
+                            ButtonDefaults.buttonColors(containerColor = SurfaceMuted, contentColor = TextPrimary)
+                        } else ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.LocalOffer,
-                                contentDescription = null,
-                                tint = PrimaryGreen,
-                                modifier = Modifier.size(21.dp)
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(
-                                    text = "Kupon kodu",
-                                    fontSize = 12.sp,
-                                    lineHeight = 15.sp,
-                                    color = TextSecondary
-                                )
-                                Text(
-                                    text = entry.data.code,
-                                    fontSize = 17.sp,
-                                    lineHeight = 21.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary,
-                                    letterSpacing = 0.6.sp
-                                )
+                        Text(if (registrationLoading) "Kaydediliyor…" else if (registered) "Kaydımı iptal et" else "Etkinliğe katıl")
+                    }
+                }
+
+                if (!isCoupon && canManage) {
+                    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = PistachioGreen.copy(alpha = 0.55f)) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Text("${registrations.size} kişi kayıtlı", fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
+                            if (registrations.isEmpty()) {
+                                Text("Henüz katılımcı yok.", fontSize = 13.sp, color = TextSecondary)
+                            } else {
+                                registrations.take(8).forEach { registration ->
+                                    Text("• ${registration.displayName}", fontSize = 13.sp, color = TextPrimary)
+                                }
+                                if (registrations.size > 8) Text("+${registrations.size - 8} kişi daha", fontSize = 12.sp, color = TextSecondary)
                             }
                         }
                     }
@@ -757,14 +930,17 @@ internal fun validateCommunityEntry(entry: CommunityEntryDto): String? {
     if (entry.title.isBlank() || entry.description.isBlank() || entry.location.isBlank()) return "Başlık, açıklama ve ${if (entry.kind == "coupon") "işletme" else "konum"} alanlarını doldurun."
     if (runCatching { LocalDate.parse(entry.date) }.isFailure) return "Tarihi yıl-ay-gün biçiminde girin. Örnek: 2026-10-15"
     if (entry.kind == "event" && !Regex("([01][0-9]|2[0-3]):[0-5][0-9]").matches(entry.time)) return "Saati 14:30 biçiminde girin."
-    if (entry.kind == "coupon" && entry.code.isBlank()) return "Kupon kodunu girin."
+    if (entry.kind == "coupon" && entry.businessId.isBlank()) return "Kuponu doğrulayacak işletmeyi seçin."
+    if (entry.kind == "coupon" && entry.discountType !in setOf("percentage", "fixed", "freeItem")) return "Geçerli bir indirim türü seçin."
+    if (entry.kind == "coupon" && entry.discountType == "percentage" && entry.discountValue !in 1..100) return "İndirim oranını 1 ile 100 arasında girin."
+    if (entry.kind == "coupon" && entry.discountType == "fixed" && entry.discountValue <= 0) return "İndirim tutarını girin."
     if (entry.title.length > 120 || entry.description.length > 4000 || entry.location.length > 200 || entry.code.length > 80) return "Bazı alanlar çok uzun. Lütfen kısaltın."
     return null
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EntryEditor(initial: CommunityEntryDto, saving: Boolean, error: String?, onDismiss: () -> Unit, onSave: (CommunityEntryDto, ByteArray?) -> Unit) {
+private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBusiness>, saving: Boolean, error: String?, onDismiss: () -> Unit, onSave: (CommunityEntryDto, ByteArray?) -> Unit) {
     var draft by remember { mutableStateOf(initial) }
     var image by remember { mutableStateOf<ByteArray?>(null) }
     var localError by remember { mutableStateOf<String?>(null) }
@@ -782,20 +958,65 @@ private fun EntryEditor(initial: CommunityEntryDto, saving: Boolean, error: Stri
                 EditorField("Başlık", draft.title, saving) { draft = draft.copy(title = it) }
                 OutlinedButton(onClick = { datePicker = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text((if (coupon) "Son kullanım tarihi: " else "Tarih: ") + draft.date.ifBlank { "Seç" }) }
                 if (!coupon) OutlinedButton(onClick = { timePicker = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text("Saat: " + draft.time.ifBlank { "Seç" }) }
-                EditorField(if (coupon) "İşletme" else "Konum", draft.location, saving) { draft = draft.copy(location = it) }
+                if (coupon) {
+                    BusinessSelector(
+                        businesses = businesses,
+                        selectedId = draft.businessId,
+                        enabled = !saving,
+                        onSelect = { business -> draft = draft.copy(businessId = business.id, location = business.name) }
+                    )
+                    DiscountTypeSelector(
+                        selected = draft.discountType,
+                        enabled = !saving,
+                        onSelect = { draft = draft.copy(discountType = it) }
+                    )
+                    if (draft.discountType != "freeItem") {
+                        EditorField(
+                            if (draft.discountType == "percentage") "İndirim oranı (%)" else "İndirim tutarı (TL)",
+                            draft.discountValue.takeIf { it > 0 }?.toString().orEmpty(),
+                            saving
+                        ) { value -> draft = draft.copy(discountValue = value.filter(Char::isDigit).toIntOrNull() ?: 0) }
+                    }
+                    Text("Her öğrenci bu kuponu 1 kez kullanabilir.", fontSize = 12.sp, color = TextSecondary)
+                } else {
+                    EditorField("Konum", draft.location, saving) { draft = draft.copy(location = it) }
+                }
                 EditorField(if (coupon) "Avantaj ve kullanım şartları" else "Açıklama", draft.description, saving, singleLine = false) { draft = draft.copy(description = it) }
-                if (coupon) EditorField("Kupon kodu", draft.code, saving) { draft = draft.copy(code = it) }
             } else {
                 Text(draft.title, style = MaterialTheme.typography.titleLarge)
                 Text("${draft.date} ${draft.time}"); Text(draft.location); Text(draft.description)
-                if (coupon) Text("Kupon kodu: ${draft.code}")
+                if (coupon) {
+                    Text(
+                        when (draft.discountType) {
+                            "percentage" -> "%${draft.discountValue} indirim"
+                            "fixed" -> "${draft.discountValue} TL indirim"
+                            else -> "Ücretsiz ürün"
+                        },
+                        color = PrimaryGreen,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
                 TextButton(onClick = { preview = false }, enabled = !saving) { Text("Düzenlemeye dön") }
             }
             if (coupon) Text("Kuponunuz Good4 onayından sonra görünür olacak.", color = TextSecondary)
             (localError ?: error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(onClick = {
                 localError = validateCommunityEntry(draft)
-                if (localError == null) { if (preview) onSave(draft.copy(title = draft.title.trim(), description = draft.description.trim(), location = draft.location.trim()), image) else preview = true }
+                if (localError == null) {
+                    if (preview) {
+                        onSave(
+                            draft.copy(
+                                title = draft.title.trim(),
+                                description = draft.description.trim(),
+                                location = draft.location.trim(),
+                                totalLimit = 0
+                            ),
+                            image
+                        )
+                    } else {
+                        preview = true
+                    }
+                }
             }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text(if (saving) "Kaydediliyor…" else if (!preview) "Önizle" else if (coupon) "Onaya gönder" else "Yayınla") }
         }
     }
@@ -810,20 +1031,83 @@ private fun EntryEditor(initial: CommunityEntryDto, saving: Boolean, error: Stri
     }, dismissButton = { TextButton(onClick = { timePicker = false }) { Text("Vazgeç") } })
 }
 
+@Composable
+private fun DiscountTypeSelector(selected: String, enabled: Boolean, onSelect: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("İndirim türü", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(
+                "percentage" to "Yüzde",
+                "fixed" to "Sabit TL",
+                "freeItem" to "Ücretsiz"
+            ).forEach { (value, label) ->
+                FilterChip(
+                    selected = selected == value,
+                    onClick = { onSelect(value) },
+                    enabled = enabled,
+                    label = { Text(label, fontSize = 12.sp) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BusinessSelector(
+    businesses: List<CommunityBusiness>,
+    selectedId: String,
+    enabled: Boolean,
+    onSelect: (CommunityBusiness) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = businesses.firstOrNull { it.id == selectedId }
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { expanded = true },
+            enabled = enabled && businesses.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(Icons.Outlined.Storefront, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(selected?.name ?: if (businesses.isEmpty()) "Kayıtlı işletme bulunamadı" else "Doğrulayacak işletmeyi seç")
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            businesses.forEach { business ->
+                DropdownMenuItem(
+                    text = { Text(business.name) },
+                    onClick = {
+                        onSelect(business)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CommunityProfileEditor(initial: CommunityDto, saving: Boolean, error: String?, onDismiss: () -> Unit, onSave: (CommunityDto, ByteArray?) -> Unit) {
+private fun CommunityProfileEditor(initial: CommunityDto, saving: Boolean, error: String?, onDismiss: () -> Unit, onSave: (CommunityDto, ByteArray?, ByteArray?) -> Unit) {
     var draft by remember { mutableStateOf(initial) }
-    var image by remember { mutableStateOf<ByteArray?>(null) }
+    var logo by remember { mutableStateOf<ByteArray?>(null) }
+    var cover by remember { mutableStateOf<ByteArray?>(null) }
     var localError by remember { mutableStateOf<String?>(null) }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Topluluk bilgileri", style = MaterialTheme.typography.headlineSmall)
-            ProductImagePicker(currentRemoteImageUrl = draft.logoUrl, pendingImageBytes = image, isUploading = saving, onPendingImageChange = { image = it }, onError = { localError = it })
+            Text("Topluluk logosu", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            ProductImagePicker(currentRemoteImageUrl = draft.logoUrl, pendingImageBytes = logo, isUploading = saving, onPendingImageChange = { logo = it }, onError = { localError = it })
+            Text("Kapak fotoğrafı", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            ProductImagePicker(currentRemoteImageUrl = draft.coverUrl, pendingImageBytes = cover, isUploading = saving, onPendingImageChange = { cover = it }, onError = { localError = it })
             EditorField("Topluluk adı", draft.name, saving) { draft = draft.copy(name = it) }
             EditorField("Kısa açıklama", draft.description, saving, false) { draft = draft.copy(description = it) }
             (localError ?: error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(onClick = { onSave(draft.copy(name = draft.name.trim(), description = draft.description.trim()), image) }, enabled = !saving && draft.name.isNotBlank() && draft.name.length <= 120 && draft.description.length <= 1000, modifier = Modifier.fillMaxWidth()) { Text(if (saving) "Kaydediliyor…" else "Kaydet") }
+            Button(onClick = { onSave(draft.copy(name = draft.name.trim(), description = draft.description.trim()), logo, cover) }, enabled = !saving && draft.name.isNotBlank() && draft.name.length <= 120 && draft.description.length <= 1000, modifier = Modifier.fillMaxWidth()) { Text(if (saving) "Kaydediliyor…" else "Kaydet") }
         }
     }
 }

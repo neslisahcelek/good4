@@ -2,7 +2,7 @@
 
 Uygulama akışı: Ana Sayfa → Topluluklar → Etkinlikler / Topluluğa Özel Kuponlar.
 Yetkili kullanıcı kendi topluluğunda Etkinlik ekle, Kupon ekle ve Topluluk bilgilerini düzenle işlemlerini görür.
-Kuponlar `pending` durumuyla kaydedilir. Yalnızca güvenilir yönetim aracı `published` yapar. İlk sürümde yayımlanmış kuponlar giriş yapmış tüm Good4 kullanıcılarına açıktır; üyelik doğrulaması veya tek kullanımlık kupon takibi eklenmemiştir.
+Kuponlar `pending` durumuyla kaydedilir ve bir Good4 işletmesiyle eşleştirilir. Yalnızca güvenilir yönetim aracı `published` yapar. Öğrenci yayımlanmış kupondan tek kullanımlık 6 haneli kod üretir; eşleştirilen işletme bu kodu mevcut **Kod Doğrula** ekranından kullanır.
 
 ## Test ortamının durumu
 
@@ -31,17 +31,21 @@ node manage.mjs approve good4tr-test topluluk-id kupon-belge-id
 node manage.mjs unpublish good4tr-test topluluk-id icerik-belge-id
 ```
 
-`profile.json`: `{ "name": "Topluluk adı", "description": "Kısa açıklama", "logoUrl": "" }`.
+`profile.json`: `{ "name": "Topluluk adı", "description": "Kısa açıklama", "logoUrl": "", "coverUrl": "" }`.
 Atama mevcut kullanıcı profilini değiştirmez. Yeni Google yöneticisi için Firebase Auth kaydı ve sıfır yemek kredili bir Good4 öğrenci profili oluşturur; gerçek Google girişi e-postanın sahipliğini doğrular. Mevcut kayıtlar, roller ve krediler korunur. Yetkiler `community_access/{verified-email}` belgesindeki `active` ve `communityIds` alanlarında tutulur. Birden fazla topluluk/yönetici desteklenir. Good4 yöneticisi için uygulama içi ayrı atama/onay ekranı henüz yok; ilk kurulum ve kupon onayı bu araçla yapılır.
 
 ## Veri ve test
 
-- `communities/{id}`: name, description, logoUrl.
-- `communities/{id}/entries/{entryId}`: kind (`event` / `coupon`), title, description, date (ISO tarih), time, location, imageUrl, code, status (`published` / `pending` / `cancelled`).
+- `communities/{id}`: name, description, logoUrl, coverUrl.
+- `communities/{id}/followers/{userId}`: takip eden kullanıcı ve takip zamanı; belgeyi yalnızca sahibi okuyup değiştirebilir.
+- `communities/{id}/entries/{eventId}/registrations/{userId}`: öğrencinin etkinlik kaydı; öğrenci kendi kaydını yönetir, topluluk yöneticisi katılımcıları ve canlı toplamı görür.
+- `communities/{id}/entries/{couponId}/claims/{userId}`: öğrenci başına tek aktif kupon hakkı; aynı kupon için tekrar kod üretimini engeller.
+- `communities/{id}/entries/{entryId}`: kind (`event` / `coupon`), title, description, date (ISO tarih), time, location, imageUrl, code (eski kısa kodlarla uyumluluk), businessId, status (`published` / `pending` / `cancelled`).
+- `community_coupon_codes/{sixDigitCode}`: kullanıcıya özel tek kullanımlık kupon kodu. Yalnızca kod sahibi ve eşleştirilmiş işletmenin sahibi okuyabilir; yalnızca işletme `used` durumuna geçirebilir.
 - `community_images/{communityId}/{uuid}.jpg`: en fazla 5 MB görsel.
 - Yükleme başarılı olup belge kaydı başarısız olursa Storage'da kullanılmayan görsel kalabilir; periyodik temizlik henüz yok.
 - Tarih ve saat kullanıcıya seçicilerle sunulur. Görsel cihaz galerisinden seçilir.
-- `npm test`: yalnızca `demo-good4-community` Firestore emülatöründe beş yetki testi. Üretime bağlanmaz.
+- `npm test`: yalnızca `demo-good4-community` Firestore emülatöründe altı yetki testi. Üretime bağlanmaz.
 - Android `:composeApp:connectedStagingDebugAndroidTest`: öğrenci keşif/kupon akışı ve yönetici önizleme akışı, yalnızca yerel fixture repository kullanır.
 
 Gerçek Google hesap seçiciyle giriş, gerçek yöneticinin Storage yüklemesi, kupon onayının test Firebase'de görünmesi ve iOS uygulamasının tam derlemesi ayrıca uçtan uca doğrulanmalıdır. Bu modül henüz mağazaya/üretime dağıtılmadı.

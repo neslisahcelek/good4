@@ -3,6 +3,7 @@ package com.good4.auth.data.repository
 import com.good4.auth.domain.AuthError
 import com.good4.auth.domain.AuthUser
 import com.good4.core.domain.Result
+import com.good4.core.util.Logger
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
@@ -11,11 +12,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class FirebaseAuthRepositoryIOS : AuthRepository {
-    override suspend fun signInWithGoogleToken(idToken: String): Result<AuthUser, AuthError> = try {
-        val user = firebaseAuth.signInWithCredential(dev.gitlive.firebase.auth.GoogleAuthProvider.credential(idToken, null)).user
+    override suspend fun signInWithGoogleToken(
+        idToken: String,
+        accessToken: String?
+    ): Result<AuthUser, AuthError> = try {
+        val googleAccessToken = accessToken?.takeIf { it.isNotBlank() }
+            ?: return Result.Error(AuthError.Unknown("Google erişim bilgisi alınamadı. Tekrar deneyin."))
+        val credential = dev.gitlive.firebase.auth.GoogleAuthProvider.credential(idToken, googleAccessToken)
+        val user = firebaseAuth.signInWithCredential(credential).user
         if (user == null) Result.Error(AuthError.UserNotFound) else Result.Success(user.toAuthUser())
     } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-    catch (e: Exception) { Result.Error(AuthError.Unknown("Google ile giriş tamamlanamadı. Tekrar deneyin.")) }
+    catch (e: Exception) {
+        Logger.e("GoogleSignIn", "Firebase credential exchange failed", e)
+        Result.Error(AuthError.Unknown(e.message.orEmpty()))
+    }
+
     private val firebaseAuth: FirebaseAuth = Firebase.auth
 
     override val currentUser: AuthUser?

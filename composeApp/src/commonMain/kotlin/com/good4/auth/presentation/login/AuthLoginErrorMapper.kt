@@ -6,6 +6,7 @@ import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_account_disabled
 import good4.composeapp.generated.resources.error_email_invalid_format
 import good4.composeapp.generated.resources.error_invalid_credentials
+import good4.composeapp.generated.resources.error_keychain_access
 import good4.composeapp.generated.resources.error_network_connection
 import good4.composeapp.generated.resources.error_too_many_login_attempts
 import good4.composeapp.generated.resources.error_unknown
@@ -33,6 +34,14 @@ private fun uiTextFromUnknownLoginDetail(raw: String): UiText {
 
     val d = detail.lowercase()
     return when {
+        d.contains("error_keychain_error") ||
+            d.contains("accessing the keychain") ||
+            d.contains("required entitlement isn't present") ||
+            d.contains("required entitlement isn’t present") ||
+            d.contains("secitemcopymatching (-34018)") ||
+            d.contains("secitemadd (-34018)") ->
+            UiText.StringResourceId(Res.string.error_keychain_access)
+
         d.contains("user-not-found") ||
             d.contains("user_not_found") ||
             d.contains("error_user_not_found") ||

@@ -27,6 +27,7 @@ import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashScreenRoot
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.student.presentation.home.StudentHomeScreenRoot
+import com.good4.notification.NotificationsScreen
 import com.good4.student.presentation.profile.StudentProfileScreen
 import com.good4.supporter.presentation.home.SupporterHomeScreenRoot
 import com.good4.supporter.presentation.ordercode.SupporterOrderCodeScreenRoot
@@ -173,8 +174,15 @@ fun Good4NavGraph(
             StudentHomeScreenRoot(
                 onNavigateToProfile = {
                     navController.navigate(Route.StudentProfile)
+                },
+                onNavigateToNotifications = {
+                    navController.navigate(Route.Notifications)
                 }
             )
+        }
+
+        composable<Route.Notifications> {
+            NotificationsScreen(onBack = { navController.popBackStack() })
         }
 
         // Business Routes
