@@ -28,6 +28,7 @@ commonMain/dev/
 *.apk
 *.aab
 *.keystore
+!composeApp/debug.keystore
 *.jks
 
 # Firebase config 

@@ -155,6 +155,14 @@ android {
     }
 
     signingConfigs {
+        // Shared debug key: its SHA-1 is registered in Firebase, so Google sign-in works in
+        // debug builds on every developer machine. Not a release key; safe to keep in the repo.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             if (hasReleaseSigning) {
                 storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
