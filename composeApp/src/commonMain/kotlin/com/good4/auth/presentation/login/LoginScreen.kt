@@ -271,37 +271,41 @@ fun LoginScreen(
                             onError = { onAction(LoginAction.OnAppleError(it)) }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        // V2 signs in with Google/Apple only; community managers use Google too and
+                        // are assigned from the web panel. The edu e-mail form stays behind the flag.
+                        if (config.ReleaseFeatures.eduEmailAuth) {
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                        AnimatedVisibility(visible = !showEduLogin) {
-                            AuthSecondaryButton(
-                                text = stringResource(Res.string.edu_email_login),
-                                onClick = { showEduLogin = true },
-                                enabled = !state.isLoading,
-                                leading = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.School,
-                                        contentDescription = null,
-                                        tint = AuthAccent,
-                                        modifier = Modifier.size(20.dp)
+                            AnimatedVisibility(visible = !showEduLogin) {
+                                AuthSecondaryButton(
+                                    text = stringResource(Res.string.edu_email_login),
+                                    onClick = { showEduLogin = true },
+                                    enabled = !state.isLoading,
+                                    leading = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.School,
+                                            contentDescription = null,
+                                            tint = AuthAccent,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                )
+                            }
+
+                            AnimatedVisibility(visible = showEduLogin) {
+                                Column {
+                                    AuthDivider(
+                                        text = stringResource(Res.string.edu_email_login_divider),
+                                        modifier = Modifier.padding(vertical = 6.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    EmailPasswordForm(
+                                        state = state,
+                                        onAction = onAction,
+                                        onLoginClick = onLoginClick,
+                                        onForgotPasswordClick = onForgotPasswordClick
                                     )
                                 }
-                            )
-                        }
-
-                        AnimatedVisibility(visible = showEduLogin) {
-                            Column {
-                                AuthDivider(
-                                    text = stringResource(Res.string.edu_email_login_divider),
-                                    modifier = Modifier.padding(vertical = 6.dp)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                EmailPasswordForm(
-                                    state = state,
-                                    onAction = onAction,
-                                    onLoginClick = onLoginClick,
-                                    onForgotPasswordClick = onForgotPasswordClick
-                                )
                             }
                         }
                     } else {
@@ -336,7 +340,8 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                if (!state.isLegalAcknowledgementRequired) Row(
+                val showRegisterLink = !googleOnlyLogin || config.ReleaseFeatures.eduEmailAuth
+                if (!state.isLegalAcknowledgementRequired && showRegisterLink) Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -361,7 +366,7 @@ fun LoginScreen(
                     }
                 }
 
-                if (googleOnlyLogin && !state.isLegalAcknowledgementRequired) {
+                if (googleOnlyLogin && config.ReleaseFeatures.eduEmailAuth && !state.isLegalAcknowledgementRequired) {
                     AuthFootnote(
                         text = stringResource(Res.string.edu_email_helper),
                         modifier = Modifier.padding(horizontal = 16.dp)

@@ -16,6 +16,9 @@ object ReleaseFeatures {
      */
     val suspendedMeals: Boolean get() = false
 
+    /** Edu mail + password sign-in and sign-up on the V2 login screen; hidden, Google/Apple only. */
+    val eduEmailAuth: Boolean get() = false
+
     /** The in-app business and admin panels use V1 collections; V2 staff use the web panel. */
     val inAppStaffPanels: Boolean get() = !isV2
 
