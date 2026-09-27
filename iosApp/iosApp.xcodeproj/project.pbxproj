@@ -179,13 +179,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -243,13 +239,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -564,9 +556,9 @@
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
-				FIREBASE_CONFIG_FILE = "GoogleService-Info-V2.plist";
+				FIREBASE_CONFIG_FILE = "GoogleService-Info-Prod.plist";
 				GENERATE_INFOPLIST_FILE = YES;
-				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-l8cnp6cl49jmddt9a2bkffrps4ug04lr";
+				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-11unm894ckuk8nl23vmrtb9d0iq5t7bs";
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
