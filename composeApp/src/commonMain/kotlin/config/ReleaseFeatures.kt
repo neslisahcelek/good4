@@ -10,8 +10,11 @@ import com.good4.core.util.FirebaseBackend
 object ReleaseFeatures {
     private val isV2 get() = AppEnvironment.firebaseBackend == FirebaseBackend.V2
 
-    /** Askıda Yemek: V1 builds use products/codes, V2 builds the campaign screen (SuspendedMealsScreen). */
-    val suspendedMeals: Boolean get() = true
+    /**
+     * Askıda Yemek: V1 builds use products/codes, V2 builds the campaign screen (SuspendedMealsScreen).
+     * Hidden for this release: edu verification codes need the mail extension, which is not set up yet.
+     */
+    val suspendedMeals: Boolean get() = false
 
     /** The in-app business and admin panels use V1 collections; V2 staff use the web panel. */
     val inAppStaffPanels: Boolean get() = !isV2
