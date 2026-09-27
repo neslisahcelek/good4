@@ -6,9 +6,13 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
 import com.good4.business.data.dto.FirestoreBusinessRepository
 import com.good4.config.data.repository.AppConfigRepository
+import com.good4.community.Community
+import com.good4.community.CommunityRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.CooldownTimer
 import com.good4.core.presentation.UiText
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.core.util.normalizePhoneNumberInput
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
@@ -31,13 +35,15 @@ class AccountSettingsViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val businessRepository: FirestoreBusinessRepository,
-    private val configRepository: AppConfigRepository
+    private val configRepository: AppConfigRepository,
+    private val communityRepository: CommunityRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AccountSettingsState())
     val state = _state.asStateFlow()
 
     private val passwordResetCooldown = CooldownTimer(viewModelScope)
+    private var managedCommunity: Community? = null
 
     init {
         viewModelScope.launch {
@@ -71,17 +77,39 @@ class AccountSettingsViewModel(
             when (val userResult = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     val user = userResult.data
+                    val community = if (mode == AccountSettingsMode.STUDENT) {
+                        runCatching {
+                            val access = communityRepository.access()
+                            if (access.active) {
+                                communityRepository.list().firstOrNull { it.id in access.communityIds }
+                            } else {
+                                null
+                            }
+                        }.getOrNull()
+                    } else {
+                        null
+                    }
+                    managedCommunity = community
                     _state.update {
                         it.copy(
                             isLoading = false,
                             fullName = user.fullName,
+                            communityName = community?.data?.name.orEmpty(),
+                            isCommunityManager = community != null,
                             phoneNumber = user.phoneNumber.orEmpty().normalizePhoneNumberInput(),
-                            university = user.university.orEmpty(),
+                            university = if (mode == AccountSettingsMode.STUDENT) {
+                                AKDENIZ_UNIVERSITY
+                            } else {
+                                community?.data?.university?.ifBlank { user.university.orEmpty() }
+                                    ?: user.university.orEmpty()
+                            },
+                            faculty = user.faculty.orEmpty(),
                             major = user.major.orEmpty(),
+                            classYear = user.classYear.orEmpty(),
                             educationLevel = user.educationLevel.orEmpty(),
                             email = user.email,
-                            showPhoneField = mode == AccountSettingsMode.SUPPORTER ||
-                                    user.phoneNumber?.isNotBlank() == true
+                            hasPasswordSignIn = authRepository.currentUser?.hasPasswordSignIn == true,
+                            showPhoneField = user.phoneNumber?.isNotBlank() == true
                         )
                     }
                 }
@@ -159,6 +187,10 @@ class AccountSettingsViewModel(
         _state.update { it.copy(fullName = value) }
     }
 
+    fun onCommunityNameChange(value: String) {
+        _state.update { it.copy(communityName = value) }
+    }
+
     fun onPhoneNumberChange(value: String) {
         _state.update { it.copy(phoneNumber = value.normalizePhoneNumberInput()) }
     }
@@ -175,12 +207,16 @@ class AccountSettingsViewModel(
         _state.update { it.copy(university = value) }
     }
 
+    fun onFacultyChange(value: String) {
+        _state.update { it.copy(faculty = value, major = "", classYear = "") }
+    }
+
     fun onMajorChange(value: String) {
         _state.update { it.copy(major = value) }
     }
 
-    fun onEducationLevelChange(value: String) {
-        _state.update { it.copy(educationLevel = value) }
+    fun onClassYearChange(value: String) {
+        _state.update { it.copy(classYear = value) }
     }
 
     fun clearMessages() {
@@ -198,6 +234,44 @@ class AccountSettingsViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, errorMessage = null, infoMessage = null) }
+
+            if (mode == AccountSettingsMode.STUDENT && _state.value.isCommunityManager) {
+                val current = managedCommunity
+                val communityName = _state.value.communityName.trim()
+                val university = _state.value.university.trim()
+                if (current == null || communityName.isBlank() || university.isBlank()) {
+                    _state.update {
+                        it.copy(
+                            isSaving = false,
+                            errorMessage = UiText.DynamicString("Topluluk adı ve üniversite alanlarını doldurun.")
+                        )
+                    }
+                    return@launch
+                }
+                try {
+                    val updated = current.data.copy(name = communityName, university = university)
+                    communityRepository.saveCommunity(current.id, updated)
+                    managedCommunity = Community(current.id, updated)
+                    _state.update {
+                        it.copy(
+                            isSaving = false,
+                            communityName = communityName,
+                            infoMessage = UiText.StringResourceId(Res.string.account_settings_saved)
+                        )
+                    }
+                } catch (error: Exception) {
+                    _state.update {
+                        it.copy(
+                            isSaving = false,
+                            errorMessage = UiText.DynamicString(
+                                error.message?.takeIf(String::isNotBlank)
+                                    ?: "Topluluk bilgileri kaydedilemedi."
+                            )
+                        )
+                    }
+                }
+                return@launch
+            }
 
             val result = when (mode) {
                 AccountSettingsMode.BUSINESS -> {
@@ -244,7 +318,12 @@ class AccountSettingsViewModel(
                             null
                         },
                         university = if (mode == AccountSettingsMode.STUDENT) {
-                            _state.value.university
+                            AKDENIZ_UNIVERSITY
+                        } else {
+                            null
+                        },
+                        faculty = if (mode == AccountSettingsMode.STUDENT) {
+                            _state.value.faculty
                         } else {
                             null
                         },
@@ -253,8 +332,8 @@ class AccountSettingsViewModel(
                         } else {
                             null
                         },
-                        educationLevel = if (mode == AccountSettingsMode.STUDENT) {
-                            _state.value.educationLevel
+                        classYear = if (mode == AccountSettingsMode.STUDENT) {
+                            _state.value.classYear
                         } else {
                             null
                         }
@@ -267,6 +346,7 @@ class AccountSettingsViewModel(
                     _state.update {
                         it.copy(
                             isSaving = false,
+                            profileSaveCount = it.profileSaveCount + 1,
                             infoMessage = UiText.StringResourceId(Res.string.account_settings_saved)
                         )
                     }
@@ -388,7 +468,7 @@ class AccountSettingsViewModel(
 
             _state.update { it.copy(isDeleting = true, errorMessage = null) }
 
-            when (val deleteUserResult = userRepository.deleteUser(userId)) {
+            when (val deleteUserResult = userRepository.deleteAccount(userId)) {
                 is Result.Error -> {
                     _state.update {
                         it.copy(
@@ -400,6 +480,17 @@ class AccountSettingsViewModel(
                 }
 
                 is Result.Success -> Unit
+            }
+
+            if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                _state.update {
+                    it.copy(
+                        isDeleting = false,
+                        isDeleteDialogVisible = false,
+                        isAccountDeleted = true
+                    )
+                }
+                return@launch
             }
 
             when (val deleteAuthResult = authRepository.deleteCurrentUser()) {
@@ -464,6 +555,7 @@ class AccountSettingsViewModel(
 
     companion object {
         private const val PASSWORD_RESET_COOLDOWN_SECONDS = 60
+        private const val AKDENIZ_UNIVERSITY = "Akdeniz Üniversitesi"
     }
 
     override fun onCleared() {

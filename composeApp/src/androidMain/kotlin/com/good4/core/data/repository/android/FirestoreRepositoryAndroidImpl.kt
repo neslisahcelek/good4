@@ -4,10 +4,10 @@ import com.good4.code.data.dto.CodeDto
 import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
-import com.good4.core.domain.DocumentNotFoundError
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
+import com.good4.user.data.dto.UserDto
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
@@ -34,7 +34,8 @@ class FirestoreRepositoryAndroidImpl(
 
     private val timestampFieldNames = setOf(
         "createdAt", "expiresAt", "usedAt", "lastCreditResetAt", "registrationDate",
-        "startDate", "endDate"
+        "startDate", "endDate", "updatedAt", "startsAt", "endsAt", "registeredAt", "checkedInAt",
+        "followedAt", "assignedAt"
     )
 
     // --- Write helpers ---
@@ -164,7 +165,11 @@ class FirestoreRepositoryAndroidImpl(
             detail = "dataType=${data::class.simpleName}"
         )
         return try {
-            val firestoreMap = encodeToFirestoreMap(data)
+            val firestoreMap = encodeToFirestoreMap(data).toMutableMap().apply {
+                if (data is UserDto) {
+                    this["updatedAt"] = com.google.firebase.firestore.FieldValue.serverTimestamp()
+                }
+            }
             val documentReference = firestore.collection(collectionPath).add(firestoreMap).await()
             FirebaseDebugLogger.success(
                 operation = "addDocument",
@@ -252,7 +257,7 @@ class FirestoreRepositoryAndroidImpl(
                     path = collectionPath,
                     detail = "documentId=$documentId not found"
                 )
-                Result.Error(DocumentNotFoundError("Document not found"))
+                Result.Error(NetworkError("Document not found"))
             }
         } catch (e: Exception) {
             FirebaseDebugLogger.error(
@@ -284,7 +289,11 @@ class FirestoreRepositoryAndroidImpl(
             detail = "documentId=$documentId, dataType=${data::class.simpleName}"
         )
         return try {
-            val firestoreMap = encodeToFirestoreMap(data)
+            val firestoreMap = encodeToFirestoreMap(data).toMutableMap().apply {
+                if (data is UserDto) {
+                    this["updatedAt"] = com.google.firebase.firestore.FieldValue.serverTimestamp()
+                }
+            }
             firestore.collection(collectionPath)
                 .document(documentId)
                 .set(firestoreMap)
@@ -354,10 +363,17 @@ class FirestoreRepositoryAndroidImpl(
             detail = "documentId=$documentId"
         )
         return try {
-            firestore.collection(collectionPath)
-                .document(documentId)
-                .delete()
-                .await()
+            if (collectionPath == "users") {
+                firestore.runTransaction { transaction ->
+                    transaction.set(firestore.document("userTombstones/$documentId"), mapOf(
+                        "userId" to documentId,
+                        "deletedAt" to com.google.firebase.Timestamp.now()
+                    ))
+                    transaction.delete(firestore.document("users/$documentId"))
+                }.await()
+            } else {
+                firestore.collection(collectionPath).document(documentId).delete().await()
+            }
             FirebaseDebugLogger.success(
                 operation = "deleteDocument",
                 path = collectionPath,

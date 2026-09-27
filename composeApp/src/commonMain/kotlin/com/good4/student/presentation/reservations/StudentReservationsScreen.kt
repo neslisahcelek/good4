@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -24,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +47,12 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.ReservationCard
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
+import com.good4.eduverification.EduVerificationCard
+import com.good4.eduverification.EduVerificationState
+import com.good4.eduverification.EduVerificationViewModel
+import com.good4.eduverification.EduVerifiedBadge
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.cancel
 import good4.composeapp.generated.resources.preview_address
@@ -67,16 +76,30 @@ import org.koin.compose.viewmodel.koinViewModel
 fun StudentReservationsScreen(
     modifier: Modifier = Modifier,
     viewModel: StudentReservationsViewModel = koinViewModel(),
+    eduViewModel: EduVerificationViewModel = koinViewModel(),
     scrollToTopRequestKey: Int = 0,
     prioritizedReservation: ReservationUiModel? = null,
     onProfileClick: (() -> Unit)? = null,
     onReservationCancelStarted: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val eduState by eduViewModel.state.collectAsStateWithLifecycle()
+    // Only the V2 backend enforces university e-mail verification for suspended meals.
+    val eduGateEnabled = AppEnvironment.firebaseBackend == FirebaseBackend.V2
 
     StudentReservationsContent(
         modifier = modifier,
         state = state,
+        eduState = eduState.takeIf { eduGateEnabled },
+        eduActions = EduGateActions(
+            onRetry = eduViewModel::refresh,
+            onOptInChange = eduViewModel::onOptInChange,
+            onEmailChange = eduViewModel::onEmailChange,
+            onSendCode = eduViewModel::sendCode,
+            onCodeChange = eduViewModel::onCodeChange,
+            onConfirmCode = eduViewModel::confirmCode,
+            onChangeEmail = eduViewModel::changeEmail
+        ),
         scrollToTopRequestKey = scrollToTopRequestKey,
         prioritizedReservation = prioritizedReservation,
         onProfileClick = onProfileClick,
@@ -92,6 +115,8 @@ fun StudentReservationsScreen(
 private fun StudentReservationsContent(
     modifier: Modifier = Modifier,
     state: StudentReservationsState,
+    eduState: EduVerificationState? = null,
+    eduActions: EduGateActions = EduGateActions(),
     scrollToTopRequestKey: Int = 0,
     prioritizedReservation: ReservationUiModel? = null,
     onProfileClick: (() -> Unit)? = null,
@@ -131,109 +156,164 @@ private fun StudentReservationsContent(
                 .background(AppBackground)
                 .padding(paddingValues)
         ) {
-            state.remainingCredit?.let { credit ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = PistachioGreen
-                    ),
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Column(
+            if (eduState != null && !eduState.isVerified) {
+                EduGate(state = eduState, actions = eduActions)
+            } else {
+                if (eduState != null) {
+                    EduVerifiedBadge(
+                        email = eduState.verifiedEmail,
+                        modifier = Modifier.padding(start = 20.dp, end = 16.dp, top = 10.dp)
+                    )
+                }
+                state.remainingCredit?.let { credit ->
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.student_reservations_credit_label),
-                                fontSize = 14.sp,
-                                color = TextSecondary
-                            )
-                            Text(
-                                text = credit.toString(),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(Res.string.student_reservations_credit_reset_text),
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                    }
-                }
-            }
-
-            when {
-                state.isLoading && displayReservations.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = TextPrimary)
-                    }
-                }
-
-                displayReservations.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = PistachioGreen
+                        ),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.ShoppingCart,
-                                contentDescription = null,
-                                tint = TextSecondary,
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = stringResource(Res.string.student_reservations_empty_title),
-                                fontSize = 18.sp,
-                                color = TextSecondary,
-                                textAlign = TextAlign.Center
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(Res.string.student_reservations_credit_label),
+                                    fontSize = 14.sp,
+                                    color = TextSecondary
+                                )
+                                Text(
+                                    text = credit.toString(),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = stringResource(Res.string.student_reservations_empty_subtitle),
-                                fontSize = 14.sp,
-                                color = TextSecondary,
-                                textAlign = TextAlign.Center
+                                text = stringResource(Res.string.student_reservations_credit_reset_text),
+                                fontSize = 12.sp,
+                                color = TextSecondary
                             )
                         }
                     }
                 }
 
-                else -> {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(
-                            items = displayReservations,
-                            key = { it.id }
-                        ) { reservation ->
-                            ReservationItem(
-                                reservation = reservation,
-                                onCancelReservation = onCancelReservation
-                            )
+                when {
+                    state.isLoading && displayReservations.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = TextPrimary)
+                        }
+                    }
+
+                    displayReservations.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ShoppingCart,
+                                    contentDescription = null,
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(64.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(Res.string.student_reservations_empty_title),
+                                    fontSize = 18.sp,
+                                    color = TextSecondary,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(Res.string.student_reservations_empty_subtitle),
+                                    fontSize = 14.sp,
+                                    color = TextSecondary,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(
+                                items = displayReservations,
+                                key = { it.id }
+                            ) { reservation ->
+                                ReservationItem(
+                                    reservation = reservation,
+                                    onCancelReservation = onCancelReservation
+                                )
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+internal data class EduGateActions(
+    val onRetry: () -> Unit = {},
+    val onOptInChange: (Boolean) -> Unit = {},
+    val onEmailChange: (String) -> Unit = {},
+    val onSendCode: () -> Unit = {},
+    val onCodeChange: (String) -> Unit = {},
+    val onConfirmCode: () -> Unit = {},
+    val onChangeEmail: () -> Unit = {}
+)
+
+@Composable
+private fun EduGate(state: EduVerificationState, actions: EduGateActions) {
+    when {
+        state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = TextPrimary)
+        }
+
+        state.loadError != null -> Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(state.loadError, color = TextSecondary, textAlign = TextAlign.Center)
+            TextButton(onClick = actions.onRetry) { Text("Tekrar dene") }
+        }
+
+        else -> Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            EduVerificationCard(
+                state = state,
+                onOptInChange = actions.onOptInChange,
+                onEmailChange = actions.onEmailChange,
+                onSendCode = actions.onSendCode,
+                onCodeChange = actions.onCodeChange,
+                onConfirmCode = actions.onConfirmCode,
+                onChangeEmail = actions.onChangeEmail
+            )
         }
     }
 }

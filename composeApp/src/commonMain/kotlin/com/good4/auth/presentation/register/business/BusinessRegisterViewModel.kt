@@ -10,6 +10,8 @@ import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.data.local.cacheStartupSession
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.core.util.hasValidOptionalPhoneNumber
 import com.good4.core.util.normalizeForEmail
 import com.good4.core.util.normalizePersonalNameInput
@@ -120,6 +122,15 @@ class BusinessRegisterViewModel(
                 _state.update { it.copy(isTermsAccepted = !it.isTermsAccepted, errorMessage = null) }
             }
 
+            is BusinessRegisterAction.OnToggleKvkkNoticeAcknowledged -> {
+                _state.update {
+                    it.copy(
+                        isKvkkNoticeAcknowledged = !it.isKvkkNoticeAcknowledged,
+                        errorMessage = null
+                    )
+                }
+            }
+
             is BusinessRegisterAction.OnRegisterClick -> register()
             is BusinessRegisterAction.OnClearError -> {
                 _state.update { it.copy(errorMessage = null) }
@@ -196,7 +207,7 @@ class BusinessRegisterViewModel(
             }
             return
         }
-        if (!state.isTermsAccepted) {
+        if (!state.isTermsAccepted || !state.isKvkkNoticeAcknowledged) {
             _state.update {
                 it.copy(errorMessage = UiText.StringResourceId(Res.string.error_terms_not_accepted))
             }
@@ -232,6 +243,22 @@ class BusinessRegisterViewModel(
 
                             when (userRepository.createUser(userId, userDto)) {
                                 is Result.Success -> {
+                                    if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                                        when (userRepository.recordV2LegalAcknowledgements()) {
+                                            is Result.Success -> Unit
+                                            is Result.Error -> {
+                                                _state.update {
+                                                    it.copy(
+                                                        isLoading = false,
+                                                        errorMessage = UiText.StringResourceId(
+                                                            Res.string.error_register_profile_save_failed
+                                                        )
+                                                    )
+                                                }
+                                                return@launch
+                                            }
+                                        }
+                                    }
                                     startupSessionCache.cacheStartupSession(
                                         uid = userId,
                                         role = UserRole.BUSINESS,

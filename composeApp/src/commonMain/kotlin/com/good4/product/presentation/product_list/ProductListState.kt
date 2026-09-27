@@ -1,5 +1,6 @@
 package com.good4.product.presentation.product_list
 
+import com.good4.config.domain.HomeBanner
 import com.good4.core.presentation.UiText
 import com.good4.product.Product
 import kotlinx.datetime.Instant
@@ -15,7 +16,8 @@ data class ProductListState(
     val reservationExpirationMinutes: Long? = null,
     val userName: String? = null,
     val remainingCredits: Int? = null,
-    val deliveryTimeMinutes: Int? = null
+    val deliveryTimeMinutes: Int? = null,
+    val homeBanners: List<HomeBanner> = emptyList()
 )
 
 data class ReservationInfo(

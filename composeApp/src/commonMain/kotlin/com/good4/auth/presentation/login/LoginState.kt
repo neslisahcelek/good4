@@ -7,13 +7,18 @@ data class LoginState(
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
+    val federatedSignIn: FederatedSignIn? = null,
     val isPasswordVisible: Boolean = false,
     val errorMessage: UiText? = null,
     val infoMessage: UiText? = null,
     val isLoginSuccess: Boolean = false,
     val isEmailVerificationRequired: Boolean = false,
+    val isLegalAcknowledgementRequired: Boolean = false,
+    val isUserAgreementAccepted: Boolean = false,
+    val isKvkkNoticeAcknowledged: Boolean = false,
     val userRole: UserRole? = null,
     val canSendPasswordReset: Boolean = true,
     val passwordResetCooldownSeconds: Int = 0
 )
 
+enum class FederatedSignIn { Google, Apple }

@@ -19,6 +19,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.good4.core.presentation.BorderMuted
-import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
@@ -47,7 +48,7 @@ fun Good4ConfirmDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    confirmColor: Color = ErrorRed,
+    confirmColor: Color = MaterialTheme.colorScheme.error,
     enabled: Boolean = true
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -132,7 +133,7 @@ fun Good4ConfirmDialog(
                             .height(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = confirmColor,
-                            contentColor = SurfaceDefault,
+                            contentColor = contentColorFor(confirmColor),
                             disabledContainerColor = confirmColor.copy(alpha = 0.5f)
                         ),
                         shape = RoundedCornerShape(8.dp)

@@ -1,24 +1,23 @@
 package com.good4.core.data.repository
 
 import com.good4.business.data.dto.BusinessDto
+import com.good4.calendar.AcademicCalendarEventDto
 import com.good4.campaign.data.dto.CampaignDto
 import com.good4.code.data.dto.CodeDto
 import com.good4.config.data.dto.AppConfigDto
+import com.good4.config.data.dto.HomeBannerDto
 import com.good4.config.data.dto.UniversitiesConfigDto
 import com.good4.core.domain.Error
-import com.good4.core.domain.DocumentNotFoundError
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
 import com.good4.core.util.FirebaseDebugLogger
 import com.good4.dining.data.dto.AkdenizDiningMenuDto
-import com.good4.order.data.dto.OrderDto
-import com.good4.order.data.dto.OrderItemDto
 import com.good4.product.data.dto.ProductDto
-import com.good4.supportactivity.data.dto.SupportActivityDto
 import com.good4.user.data.dto.UserDto
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.Direction
 import dev.gitlive.firebase.firestore.DocumentSnapshot
+import dev.gitlive.firebase.firestore.FieldValue
 import dev.gitlive.firebase.firestore.Query
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
@@ -137,7 +136,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                     path = collectionPath,
                     detail = "documentId=$documentId not found"
                 )
-                Result.Error(DocumentNotFoundError("Document not found"))
+                Result.Error(NetworkError("Document not found"))
             }
         } catch (e: Exception) {
             FirebaseDebugLogger.error(
@@ -171,7 +170,11 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return try {
             val document = firestore.collection(collectionPath).document(documentId)
             if (data is UserDto) {
-                document.set(userDtoToFirestoreMap(data))
+                document.set(
+                    userDtoToFirestoreMap(data).toMutableMap().apply {
+                        this["updatedAt"] = FieldValue.serverTimestamp
+                    }
+                )
             } else {
                 document.set(serializerForData(data), data)
             }
@@ -239,9 +242,17 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             detail = "documentId=$documentId"
         )
         return try {
-            firestore.collection(collectionPath)
-                .document(documentId)
-                .delete()
+            if (collectionPath == "users") {
+                firestore.runTransaction {
+                    set(firestore.document("userTombstones/$documentId"), mapOf(
+                        "userId" to documentId,
+                        "deletedAt" to kotlinx.datetime.Clock.System.now().epochSeconds
+                    ))
+                    delete(firestore.document("users/$documentId"))
+                }
+            } else {
+                firestore.collection(collectionPath).document(documentId).delete()
+            }
             FirebaseDebugLogger.success(
                 operation = "deleteDocument",
                 path = collectionPath,
@@ -504,19 +515,26 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "CommunityAccessDto" to com.good4.community.CommunityAccessDto.serializer(),
         "CommunityFollowDto" to com.good4.community.CommunityFollowDto.serializer(),
         "CommunityEventRegistrationDto" to com.good4.community.CommunityEventRegistrationDto.serializer(),
+        "EventAttendanceDto" to com.good4.community.EventAttendanceDto.serializer(),
         "CommunityCouponClaimDto" to com.good4.community.CommunityCouponClaimDto.serializer(),
         "CommunityCouponCodeDto" to com.good4.community.CommunityCouponCodeDto.serializer(),
+        "V2OrganizationDto" to com.good4.community.V2OrganizationDto.serializer(),
+        "V2MembershipDto" to com.good4.community.V2MembershipDto.serializer(),
+        "V2UserRoleDto" to com.good4.community.V2UserRoleDto.serializer(),
+        "V2EventDto" to com.good4.community.V2EventDto.serializer(),
+        "V2EventRegistrationDto" to com.good4.community.V2EventRegistrationDto.serializer(),
         "ProductDto" to ProductDto.serializer(),
         "BusinessDto" to BusinessDto.serializer(),
         "CampaignDto" to CampaignDto.serializer(),
         "CodeDto" to CodeDto.serializer(),
         "UserDto" to UserDto.serializer(),
         "AppConfigDto" to AppConfigDto.serializer(),
+        "HomeBannerDto" to HomeBannerDto.serializer(),
+        "AcademicCalendarEventDto" to AcademicCalendarEventDto.serializer(),
         "UniversitiesConfigDto" to UniversitiesConfigDto.serializer(),
-        "OrderDto" to OrderDto.serializer(),
-        "OrderItemDto" to OrderItemDto.serializer(),
-        "SupportActivityDto" to SupportActivityDto.serializer(),
-        "AkdenizDiningMenuDto" to AkdenizDiningMenuDto.serializer()
+        "AkdenizDiningMenuDto" to AkdenizDiningMenuDto.serializer(),
+        "KykMenuDayDto" to com.good4.dining.data.dto.KykMenuDayDto.serializer(),
+        "FeedbackSubmissionDto" to com.good4.feedback.FeedbackSubmissionDto.serializer()
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -539,11 +557,66 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             "UserDto" -> decodeUserDto(document) as T
             "ProductDto" -> decodeProductDto(document) as T
             "CodeDto" -> decodeCodeDto(document) as T
-            "OrderDto" -> decodeOrderDto(document) as T
-            "SupportActivityDto" -> decodeSupportActivityDto(document) as T
+            "V2OrganizationDto" -> decodeV2OrganizationDto(document) as T
+            "V2MembershipDto" -> decodeV2MembershipDto(document) as T
+            "V2UserRoleDto" -> com.good4.community.V2UserRoleDto(role = document.getOrNull("role") ?: "") as T
+            "V2EventDto" -> decodeV2EventDto(document) as T
+            "V2CampaignDto" -> com.good4.suspendedmeal.V2CampaignDto(
+                organizationId = document.getOrNull("organizationId") ?: "", title = document.getOrNull("title") ?: "",
+                description = document.getOrNull("description") ?: "", startsAt = document.getEpochSeconds("startsAt") ?: 0,
+                endsAt = document.getEpochSeconds("endsAt") ?: 0, status = document.getOrNull("status") ?: "",
+                totalLimit = document.getAsInt("totalLimit"), redemptionCount = document.getAsInt("redemptionCount") ?: 0
+            ) as T
+            "V2CampaignCodeDto" -> com.good4.suspendedmeal.V2CampaignCodeDto(
+                status = document.getOrNull("status") ?: "", expiresAt = document.getEpochSeconds("expiresAt") ?: 0
+            ) as T
+            "V2EventRegistrationDto" -> decodeV2EventRegistrationDto(document) as T
+            "CommunityFollowDto" -> com.good4.community.CommunityFollowDto(
+                userId = document.getOrNull("userId") ?: "",
+                followedAt = document.getEpochSeconds("followedAt") ?: 0,
+            ) as T
+            "CampusWeatherDto" -> com.good4.weather.CampusWeatherDto(
+                temperature = document.getAsDouble("temperature"),
+                label = document.getOrNull("label"),
+                source = document.getOrNull("source"),
+                updatedAtMillis = document.getOrNull<Long>("updatedAtMillis")
+            ) as T
+            "EduStatusDto" -> com.good4.eduverification.EduStatusDto(
+                eduEmail = document.getOrNull("eduEmail"),
+                eduVerified = document.getOrNull("eduVerified")
+            ) as T
             else -> document.data(serializerFor(clazz))
         }
     }
+
+    private fun decodeV2OrganizationDto(document: DocumentSnapshot) = com.good4.community.V2OrganizationDto(
+        name = document.getOrNull("name") ?: "", type = document.getOrNull("type") ?: "",
+        status = document.getOrNull("status") ?: "", university = document.getOrNull("university") ?: "",
+        description = document.getOrNull("description") ?: "", logoUrl = document.getOrNull("logoUrl") ?: "",
+        coverUrl = document.getOrNull("coverUrl") ?: ""
+    )
+
+    private fun decodeV2MembershipDto(document: DocumentSnapshot) = com.good4.community.V2MembershipDto(
+        userId = document.getOrNull("userId") ?: "", role = document.getOrNull("role") ?: "",
+        status = document.getOrNull("status") ?: ""
+    )
+
+    private fun decodeV2EventDto(document: DocumentSnapshot) = com.good4.community.V2EventDto(
+        organizationId = document.getOrNull("organizationId") ?: "", title = document.getOrNull("title") ?: "",
+        description = document.getOrNull("description") ?: "", startsAt = document.getEpochSeconds("startsAt") ?: 0,
+        endsAt = document.getEpochSeconds("endsAt") ?: 0, timezone = document.getOrNull("timezone") ?: "Europe/Istanbul",
+        location = document.getOrNull("location") ?: "", imageUrl = document.getOrNull("imageUrl") ?: "",
+        capacity = document.getAsInt("capacity") ?: 0, registrationCount = document.getAsInt("registrationCount") ?: 0,
+        attendanceCount = document.getAsInt("attendanceCount") ?: 0, status = document.getOrNull("status") ?: "published",
+        categoryId = document.getOrNull("categoryId") ?: ""
+    )
+
+    private fun decodeV2EventRegistrationDto(document: DocumentSnapshot) = com.good4.community.V2EventRegistrationDto(
+        eventId = document.getOrNull("eventId") ?: "", organizationId = document.getOrNull("organizationId") ?: "",
+        userId = document.getOrNull("userId") ?: "", displayName = document.getOrNull("displayName") ?: "",
+        status = document.getOrNull("status") ?: "registered", registeredAt = document.getEpochSeconds("registeredAt") ?: 0,
+        updatedAt = document.getEpochSeconds("updatedAt") ?: 0
+    )
 
     private fun decodeProductDto(document: DocumentSnapshot): ProductDto {
         return ProductDto(
@@ -576,93 +649,26 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         )
     }
 
-    private fun decodeOrderDto(document: DocumentSnapshot): OrderDto {
-        val itemsList = decodeOrderItems(document)
-
-        return OrderDto(
-            businessId = document.getOrNull("businessId"),
-            businessName = document.getOrNull("businessName"),
-            code = document.getOrNull("code"),
-            createdAt = document.getEpochSeconds("createdAt"),
-            expiresAt = document.getEpochSeconds("expiresAt"),
-            grandTotal = document.getAsDouble("grandTotal"),
-            totalAmount = document.getAsDouble("totalAmount"),
-            platformDonation = document.getAsDouble("platformDonation"),
-            status = document.getOrNull("status"),
-            supporterId = document.getOrNull("supporterId"),
-            supporterName = document.getOrNull("supporterName"),
-            items = itemsList
-        )
-    }
-
-    private fun decodeOrderItems(document: DocumentSnapshot): List<OrderItemDto>? {
-        val typedItems = try {
-            document.getOrNull<List<OrderItemDto>>("items")
-        } catch (_: Exception) {
-            null
-        }
-        if (!typedItems.isNullOrEmpty()) return typedItems
-
-        val rawItems = try {
-            document.getOrNull<List<*>>("items")
-        } catch (_: Exception) {
-            null
-        } ?: return typedItems
-
-        return rawItems.mapNotNull { item ->
-            when (item) {
-                is OrderItemDto -> item
-                is Map<*, *> -> mapToOrderItemDto(item)
-                else -> null
-            }
-        }
-    }
-
-    private fun mapToOrderItemDto(map: Map<*, *>): OrderItemDto {
-        return OrderItemDto(
-            businessId = map["businessId"] as? String,
-            businessName = map["businessName"] as? String,
-            productId = map["productId"] as? String,
-            productName = map["productName"] as? String,
-            quantity = toIntOrNull(map["quantity"]),
-            unitPrice = toDoubleOrNull(map["unitPrice"]),
-            totalPrice = toDoubleOrNull(map["totalPrice"])
-        )
-    }
-
-    private fun decodeSupportActivityDto(document: DocumentSnapshot): SupportActivityDto {
-        return SupportActivityDto(
-            createdAt = document.getEpochSeconds("createdAt"),
-            creatorId = document.getOrNull("creatorId"),
-            currentCount = document.getAsInt("currentCount"),
-            description = document.getOrNull("description"),
-            endDate = document.getEpochSeconds("endDate"),
-            shareId = document.getOrNull("shareId"),
-            shareLink = document.getOrNull("shareLink"),
-            startDate = document.getEpochSeconds("startDate"),
-            status = document.getOrNull("status"),
-            targetBusinessId = document.getOrNull("targetBusinessId"),
-            targetCount = document.getAsInt("targetCount"),
-            title = document.getOrNull("title"),
-            type = document.getOrNull("type")
-        )
-    }
-
     private fun decodeUserDto(document: DocumentSnapshot): UserDto {
         return UserDto(
             email = document.getOrNull("email"),
             fullName = document.getOrNull("fullName"),
+            displayName = document.getOrNull("displayName"),
             phoneNumber = document.getOrNull("phoneNumber"),
             role = document.getOrNull("role"),
             verified = document.getOrNull("verified"),
+            status = document.getOrNull("status"),
             university = document.getOrNull("university"),
+            faculty = document.getOrNull("faculty"),
             major = document.getOrNull("major"),
+            classYear = document.getOrNull("classYear"),
             educationLevel = document.getOrNull("educationLevel"),
             credit = document.getAsInt("credit"),
             weeklyCreditOverride = document.getAsInt("weeklyCreditOverride"),
             lastCreditResetAt = document.getEpochSeconds("lastCreditResetAt"),
             registrationDate = document.getEpochSeconds("registrationDate"),
             createdAt = document.getEpochSeconds("createdAt"),
+            updatedAt = document.getEpochSeconds("updatedAt"),
             totalDonations = document.getAsInt("totalDonations"),
             totalMeals = document.getAsInt("totalMeals")
         )
@@ -672,17 +678,22 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return mapOf(
             "email" to userDto.email,
             "fullName" to userDto.fullName,
+            "displayName" to userDto.displayName,
             "phoneNumber" to userDto.phoneNumber,
             "role" to userDto.role,
             "verified" to userDto.verified,
+            "status" to userDto.status,
             "university" to userDto.university,
+            "faculty" to userDto.faculty,
             "major" to userDto.major,
+            "classYear" to userDto.classYear,
             "educationLevel" to userDto.educationLevel,
             "credit" to userDto.credit,
             "weeklyCreditOverride" to userDto.weeklyCreditOverride,
-            "lastCreditResetAt" to userDto.lastCreditResetAt?.let { Timestamp(it, 0) },
-            "registrationDate" to userDto.registrationDate?.let { Timestamp(it, 0) },
-            "createdAt" to userDto.createdAt?.let { Timestamp(it, 0) },
+            "lastCreditResetAt" to userDto.lastCreditResetAt?.toFirestoreTimestampOrNull(),
+            "registrationDate" to userDto.registrationDate?.toFirestoreTimestampOrNull(),
+            "createdAt" to userDto.createdAt?.toFirestoreTimestampOrNull(),
+            "updatedAt" to userDto.updatedAt?.toFirestoreTimestampOrNull(),
             "totalDonations" to userDto.totalDonations,
             "totalMeals" to userDto.totalMeals
         )
@@ -716,9 +727,11 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
     private fun DocumentSnapshot.getEpochSeconds(field: String): Long? {
         return try {
             if (!contains(field)) return null
-            getOrNull<Long>(field)
-                ?: getOrNull<Timestamp>(field)?.seconds
-                ?: readEpochSecondsFromMap(getOrNull<Any>(field))
+            (
+                getOrNull<Long>(field)
+                    ?: getOrNull<Timestamp>(field)?.seconds
+                    ?: readEpochSecondsFromMap(getOrNull<Any>(field))
+                )?.normalizeEpochSeconds()
         } catch (_: Exception) {
             null
         }
@@ -733,6 +746,23 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun Long.normalizeEpochSeconds(): Long? {
+        val seconds = if (this > MAX_FIRESTORE_EPOCH_SECONDS || this < MIN_FIRESTORE_EPOCH_SECONDS) {
+            this / 1_000
+        } else {
+            this
+        }
+        return seconds.takeIf { it in MIN_FIRESTORE_EPOCH_SECONDS..MAX_FIRESTORE_EPOCH_SECONDS }
+    }
+
+    private fun Long.toFirestoreTimestampOrNull(): Timestamp? =
+        normalizeEpochSeconds()?.let { Timestamp(it, 0) }
+
+    private companion object {
+        const val MIN_FIRESTORE_EPOCH_SECONDS = -62_135_596_800L
+        const val MAX_FIRESTORE_EPOCH_SECONDS = 253_402_300_799L
     }
 
     private fun toIntOrNull(value: Any?): Int? {

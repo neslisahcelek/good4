@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "good4tr-v2",
+    "production": "good4tr-v2"
+  }
+}

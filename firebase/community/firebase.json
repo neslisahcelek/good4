@@ -1,5 +1,22 @@
 {
   "firestore": { "rules": "firestore.rules" },
   "storage": { "rules": "storage.rules" },
-  "emulators": { "firestore": { "port": 8185 }, "ui": { "enabled": false }, "singleProjectMode": true }
+  "hosting": {
+    "public": "hosting/public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "/community_images/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public,max-age=3600" }
+        ]
+      }
+    ]
+  },
+  "emulators": {
+    "firestore": { "port": 8185 },
+    "storage": { "port": 9195 },
+    "ui": { "enabled": false },
+    "singleProjectMode": true
+  }
 }

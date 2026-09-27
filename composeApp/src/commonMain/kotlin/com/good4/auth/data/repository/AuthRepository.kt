@@ -10,10 +10,8 @@ interface AuthRepository {
     val authStateFlow: Flow<AuthUser?>
 
     suspend fun signIn(email: String, password: String): Result<AuthUser, AuthError>
-    suspend fun signInWithGoogleToken(
-        idToken: String,
-        accessToken: String? = null
-    ): Result<AuthUser, AuthError>
+    suspend fun signInWithGoogleToken(idToken: String, accessToken: String? = null): Result<AuthUser, AuthError>
+    suspend fun signInWithAppleToken(idToken: String, rawNonce: String): Result<AuthUser, AuthError>
     suspend fun signUp(email: String, password: String): Result<AuthUser, AuthError>
     suspend fun signOut(): Result<Unit, AuthError>
     suspend fun deleteCurrentUser(): Result<Unit, AuthError>

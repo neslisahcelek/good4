@@ -22,20 +22,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.LocalUriHandler
+import com.good4.student.home.HomeLayoutViewModel
+import com.good4.student.home.HomeShortcut
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4NavigationBar
 import com.good4.core.presentation.components.Good4NestedScaffold
+import com.good4.campus.presentation.CampusMapScreen
 import com.good4.community.CommunityViewModel
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
+import com.good4.dining.domain.DailyMeal
+import com.good4.dining.presentation.AkdenizDiningMenuViewModel
+import com.good4.dining.presentation.DailyMenuScreen
 import com.good4.product.presentation.product_list.ProductListViewModel
 import com.good4.product.presentation.product_list.views.ProductListScreenRoot
 import com.good4.student.presentation.reservations.ReservationUiModel
 import com.good4.student.presentation.reservations.StudentReservationsScreen
 import com.good4.student.presentation.reservations.StudentReservationsViewModel
+import com.good4.suspendedmeal.SuspendedMealsScreen
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.student_home
 import good4.composeapp.generated.resources.student_reservations
@@ -53,7 +63,10 @@ data class BottomNavItem(
 fun StudentHomeScreenRoot(
     modifier: Modifier = Modifier,
     onNavigateToProfile: () -> Unit,
-    onNavigateToNotifications: () -> Unit = {}
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToCalendar: () -> Unit = {},
+    onNavigateToClassSchedule: () -> Unit = {},
+    onNavigateToEditHome: (Boolean) -> Unit = {}
 ) {
     val navItems = listOf(
         BottomNavItem(
@@ -69,7 +82,13 @@ fun StudentHomeScreenRoot(
     )
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+    var dailyMenuMeal by rememberSaveable { mutableStateOf(DailyMeal.CAFETERIA) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var menuInitialShortcutId by rememberSaveable { mutableStateOf<String?>(null) }
+    var editHomeRequested by remember { mutableStateOf(false) }
+    val layoutViewModel: HomeLayoutViewModel = koinViewModel()
+    val layoutState by layoutViewModel.state.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
     var reservationsScrollRequestKey by rememberSaveable { mutableIntStateOf(0) }
     var pendingReservationFromHome by remember { mutableStateOf<ReservationUiModel?>(null) }
     var managerEntryHandled by rememberSaveable { mutableStateOf(false) }
@@ -78,6 +97,21 @@ fun StudentHomeScreenRoot(
     val communityViewModel: CommunityViewModel = koinViewModel()
     val reservationsState by reservationsViewModel.state.collectAsStateWithLifecycle()
     val communityState by communityViewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(editHomeRequested) {
+        if (editHomeRequested) {
+            // Let rememberSaveable capture the closed sheet before this route leaves composition.
+            // Otherwise popping the editor can restore the menu over the home screen.
+            withFrameNanos { }
+            editHomeRequested = false
+            onNavigateToEditHome(communityState.access.active && communityState.access.communityIds.isNotEmpty())
+        }
+    }
+
+    fun editHome() {
+        menuOpen = false
+        editHomeRequested = true
+    }
 
     LaunchedEffect(communityState.loading, communityState.access, communityState.communities) {
         if (!managerEntryHandled && !communityState.loading && communityState.access.active) {
@@ -125,6 +159,7 @@ fun StudentHomeScreenRoot(
                         selected = if (index == 1) menuOpen else selectedItemIndex == 0 && !menuOpen,
                         onClick = {
                             if (index == 1) {
+                                menuInitialShortcutId = null
                                 menuOpen = true
                             } else {
                                 selectedItemIndex = index
@@ -145,8 +180,8 @@ fun StudentHomeScreenRoot(
                         },
                         alwaysShowLabel = true,
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = PrimaryGreen,
-                            selectedTextColor = PrimaryGreen,
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
                             unselectedIconColor = TextSecondary,
                             unselectedTextColor = TextSecondary,
                             indicatorColor = Color.Transparent
@@ -170,12 +205,36 @@ fun StudentHomeScreenRoot(
                 )
                 0 -> {
                     ProductListScreenRoot(
+                        communityManager = communityState.access.active && communityState.access.communityIds.isNotEmpty(),
                         viewModel = productListViewModel,
-                        onCommunitiesClick = { selectedItemIndex = 2 },
+                        homeShortcuts = layoutState.layout.visible.mapNotNull { id -> layoutState.shortcuts.firstOrNull { it.id == id } },
+                        onEditHomeClick = ::editHome,
+                        onMenuShortcutClick = { shortcut ->
+                            val url = shortcut.externalUrl
+                            if (url != null) uriHandler.openUri(url)
+                            else {
+                                menuInitialShortcutId = shortcut.id
+                                menuOpen = true
+                            }
+                        },
+                        onCommunitiesClick = {
+                            val managed = communityState.communities.filter { communityState.access.active && it.id in communityState.access.communityIds }
+                            if (managed.size == 1) communityViewModel.select(managed.first()) else communityViewModel.back()
+                            selectedItemIndex = 2
+                        },
                         onProfileClick = onNavigateToProfile,
                         onNotificationsClick = onNavigateToNotifications,
+                        onCalendarClick = onNavigateToCalendar,
+                        onClassScheduleClick = onNavigateToClassSchedule,
+                        onCampusMapClick = { selectedItemIndex = 3 },
+                        onDailyMenuClick = { meal ->
+                            dailyMenuMeal = meal
+                            selectedItemIndex = 4
+                        },
                         onReservationCardClick = {
-                            showReservationsTab()
+                            // V2 has its own campaign-based flow; the V1 reservation tab reads collections V2 denies.
+                            if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) selectedItemIndex = 5
+                            else showReservationsTab()
                         }
                     )
                 }
@@ -194,11 +253,29 @@ fun StudentHomeScreenRoot(
                         }
                     )
                 }
+
+                3 -> CampusMapScreen(onBackClick = { selectedItemIndex = 0 })
+                5 -> SuspendedMealsScreen(onBackClick = { selectedItemIndex = 0 })
+                4 -> {
+                    // Same view model instance as the home widget, so the page opens without reloading.
+                    val diningMenuViewModel: AkdenizDiningMenuViewModel = koinViewModel()
+                    val diningMenuState by diningMenuViewModel.state.collectAsStateWithLifecycle()
+                    DailyMenuScreen(
+                        state = diningMenuState,
+                        initialMeal = dailyMenuMeal,
+                        onRefreshIfDayChanged = diningMenuViewModel::refreshIfDayChanged,
+                        onBackClick = { selectedItemIndex = 0 }
+                    )
+                }
             }
         }
     }
     if (menuOpen) {
-        StudentMenuSheet(onDismiss = { menuOpen = false })
+        StudentMenuSheet(
+            onDismiss = { menuOpen = false },
+            initialShortcut = HomeShortcut.entries.firstOrNull { it.id == menuInitialShortcutId },
+            onEditHome = ::editHome
+        )
     }
 }
 

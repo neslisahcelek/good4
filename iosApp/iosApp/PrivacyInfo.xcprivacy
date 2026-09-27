@@ -35,16 +35,6 @@
             </array>
         </dict>
 
-        <!-- System Boot Time — Firebase Analytics / Crashlytics event timing -->
-        <dict>
-            <key>NSPrivacyAccessedAPIType</key>
-            <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
-            <key>NSPrivacyAccessedAPITypeReasons</key>
-            <array>
-                <string>35F9.1</string>
-            </array>
-        </dict>
-
         <!-- Disk Space — Firebase Storage yükleme öncesi kontrol -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
@@ -137,34 +127,6 @@
             <string>NSPrivacyCollectedDataTypeOtherUserContent</string>
             <key>NSPrivacyCollectedDataTypeLinked</key>
             <true/>
-            <key>NSPrivacyCollectedDataTypeTracking</key>
-            <false/>
-            <key>NSPrivacyCollectedDataTypePurposes</key>
-            <array>
-                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
-            </array>
-        </dict>
-
-        <!-- Firebase Analytics -->
-        <dict>
-            <key>NSPrivacyCollectedDataType</key>
-            <string>NSPrivacyCollectedDataTypeProductInteraction</string>
-            <key>NSPrivacyCollectedDataTypeLinked</key>
-            <true/>
-            <key>NSPrivacyCollectedDataTypeTracking</key>
-            <false/>
-            <key>NSPrivacyCollectedDataTypePurposes</key>
-            <array>
-                <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
-            </array>
-        </dict>
-
-        <!-- Firebase Crashlytics -->
-        <dict>
-            <key>NSPrivacyCollectedDataType</key>
-            <string>NSPrivacyCollectedDataTypeCrashData</string>
-            <key>NSPrivacyCollectedDataTypeLinked</key>
-            <false/>
             <key>NSPrivacyCollectedDataTypeTracking</key>
             <false/>
             <key>NSPrivacyCollectedDataTypePurposes</key>

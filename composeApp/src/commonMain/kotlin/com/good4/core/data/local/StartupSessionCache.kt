@@ -35,7 +35,7 @@ fun shouldCheckEmailVerificationFor(role: UserRole): Boolean {
 }
 
 fun UserRole.requiresEmailVerification(): Boolean {
-    return this == UserRole.STUDENT || this == UserRole.SUPPORTER
+    return this == UserRole.STUDENT
 }
 
 fun StartupSessionCache.cacheStartupSession(

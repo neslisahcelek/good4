@@ -11,6 +11,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED</key>
+	<true/>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<false/>
 </dict>

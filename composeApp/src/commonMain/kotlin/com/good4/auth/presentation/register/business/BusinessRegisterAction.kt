@@ -16,6 +16,7 @@ sealed interface BusinessRegisterAction {
 
     data object OnTogglePasswordVisibility : BusinessRegisterAction
     data object OnToggleTermsAccepted : BusinessRegisterAction
+    data object OnToggleKvkkNoticeAcknowledged : BusinessRegisterAction
     data object OnRegisterClick : BusinessRegisterAction
     data object OnBackClick : BusinessRegisterAction
     data object OnClearError : BusinessRegisterAction

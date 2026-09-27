@@ -1,10 +1,7 @@
 package com.good4.auth.presentation.login
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
+import com.good4.auth.presentation.components.GoogleButtonContent
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -15,15 +12,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 @Composable
-actual fun GoogleSignInButton(
-    enabled: Boolean,
-    onToken: (idToken: String, accessToken: String?) -> Unit,
-    onError: (String) -> Unit
-) {
+actual fun GoogleSignInButton(enabled: Boolean, loading: Boolean, onToken: (String, String?) -> Unit, onError: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
-    OutlinedButton(enabled = enabled && !busy, modifier = Modifier.fillMaxWidth(), onClick = {
+    GoogleButtonContent(text = if (busy) "Google açılıyor…" else "Google ile devam et", enabled = enabled && !busy, loading = loading, onClick = {
         scope.launch {
             busy = true
             try {
@@ -40,5 +33,5 @@ actual fun GoogleSignInButton(
             catch (_: Exception) { onError("Google hesabı açılamadı. Bağlantınızı kontrol edip tekrar deneyin.") }
             finally { busy = false }
         }
-    }) { Text(if (busy) "Google açılıyor…" else "Google ile devam et") }
+    })
 }

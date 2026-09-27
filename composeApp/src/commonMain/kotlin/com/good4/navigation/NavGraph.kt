@@ -16,23 +16,22 @@ import com.good4.auth.presentation.register.business.BusinessRegisterScreenRoot
 import com.good4.auth.presentation.register.business.BusinessRegisterViewModel
 import com.good4.auth.presentation.register.student.StudentRegisterScreenRoot
 import com.good4.auth.presentation.register.student.StudentRegisterViewModel
-import com.good4.auth.presentation.register.supporter.SupporterRegisterScreenRoot
-import com.good4.auth.presentation.register.supporter.SupporterRegisterViewModel
 import com.good4.auth.presentation.verify_email.EmailVerificationScreenRoot
 import com.good4.auth.presentation.verify_email.EmailVerificationViewModel
 import com.good4.business.presentation.home.BusinessHomeScreenRoot
 import com.good4.business.presentation.profile.BusinessProfileScreen
+import com.good4.calendar.AcademicCalendarScreen
 import com.good4.core.presentation.sessionrestore.SessionRestoreScreenRoot
 import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashScreenRoot
 import com.good4.core.presentation.splash.SplashViewModel
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.student.presentation.home.StudentHomeScreenRoot
+import com.good4.student.presentation.home.EditHomeScreen
 import com.good4.notification.NotificationsScreen
 import com.good4.student.presentation.profile.StudentProfileScreen
-import com.good4.supporter.presentation.home.SupporterHomeScreenRoot
-import com.good4.supporter.presentation.ordercode.SupporterOrderCodeScreenRoot
-import com.good4.supporter.presentation.ordercode.SupporterOrderCodeViewModel
-import com.good4.supporter.presentation.profile.SupporterProfileScreen
+import com.good4.schedule.presentation.ClassScheduleScreen
 import com.good4.user.domain.UserRole
 import com.good4.user.presentation.accountsettings.AccountSettingsMode
 import com.good4.user.presentation.accountsettings.AccountSettingsScreen
@@ -107,7 +106,11 @@ fun Good4NavGraph(
                     navController.navigateToHome(userRole)
                 },
                 onNavigateToRegisterOptions = {
-                    navController.navigate(Route.RegisterOptions)
+                    if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                        navController.navigate(Route.StudentRegister)
+                    } else {
+                        navController.navigate(Route.RegisterOptions)
+                    }
                 },
                 onNavigateToEmailVerification = {
                     navController.navigate(Route.EmailVerification)
@@ -123,9 +126,6 @@ fun Good4NavGraph(
                 },
                 onNavigateToBusinessRegister = {
                     navController.navigate(Route.BusinessRegister)
-                },
-                onNavigateToSupporterRegister = {
-                    navController.navigate(Route.SupporterRegister)
                 }
             )
         }
@@ -177,6 +177,36 @@ fun Good4NavGraph(
                 },
                 onNavigateToNotifications = {
                     navController.navigate(Route.Notifications)
+                },
+                onNavigateToCalendar = {
+                    navController.navigate(Route.AcademicCalendar)
+                },
+                onNavigateToClassSchedule = {
+                    navController.navigate(Route.ClassSchedule)
+                },
+                onNavigateToEditHome = { communityManager ->
+                    navController.navigate(Route.EditHome(communityManager))
+                }
+            )
+        }
+
+        composable<Route.EditHome> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.EditHome>()
+            EditHomeScreen(
+                onBack = { navController.popBackStack() },
+                communityManager = route.communityManager
+            )
+        }
+
+        composable<Route.AcademicCalendar> {
+            AcademicCalendarScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Route.ClassSchedule> {
+            ClassScheduleScreen(
+                onBackClick = { navController.popBackStack() },
+                onSelectAcademicProfile = {
+                    navController.navigate(Route.StudentAccountSettings(academicSelectionPrompt = true))
                 }
             )
         }
@@ -197,6 +227,12 @@ fun Good4NavGraph(
             )
         }
 
+        composable<Route.WebPanelNotice> {
+            com.good4.auth.presentation.webpanel.WebPanelNoticeScreen(
+                onSignedOut = { navController.navigateToLogin() }
+            )
+        }
+
         // Admin Routes
         composable<Route.AdminHome> {
             AdminHomeScreenRoot(
@@ -206,44 +242,22 @@ fun Good4NavGraph(
             )
         }
 
-        // Supporter Routes
-        composable<Route.SupporterRegister> {
-            val viewModel: SupporterRegisterViewModel = koinViewModel()
-            SupporterRegisterScreenRoot(
-                viewModel = viewModel,
-                onRegisterSuccess = {
-                    navController.navigateToHome(UserRole.SUPPORTER)
-                },
-                onBackClick = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable<Route.SupporterHome> {
-            SupporterHomeScreenRoot(
-                onNavigateToProfile = {
-                    navController.navigate(Route.SupporterProfile)
-                },
-                onNavigateToOrderCode = { orderId ->
-                    navController.navigate(Route.SupporterOrderCode(orderId))
-                }
-            )
-        }
-
         composable<Route.StudentProfile> {
             StudentProfileScreen(
                 onBackClick = { navController.popBackStack() },
                 onLogout = { navController.navigateToLogin() },
                 onOpenAccountSettings = {
-                    navController.navigate(Route.StudentAccountSettings)
+                    navController.navigate(Route.StudentAccountSettings())
                 }
             )
         }
 
-        composable<Route.StudentAccountSettings> {
+        composable<Route.StudentAccountSettings> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.StudentAccountSettings>()
             AccountSettingsScreen(
                 mode = AccountSettingsMode.STUDENT,
+                academicSelectionPrompt = route.academicSelectionPrompt,
+                onAcademicSelectionSaved = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },
                 onLogout = { navController.navigateToLogin() }
             )
@@ -267,24 +281,6 @@ fun Good4NavGraph(
             )
         }
 
-        composable<Route.SupporterProfile> {
-            SupporterProfileScreen(
-                onBackClick = { navController.popBackStack() },
-                onLogout = { navController.navigateToLogin() },
-                onOpenAccountSettings = {
-                    navController.navigate(Route.SupporterAccountSettings)
-                }
-            )
-        }
-
-        composable<Route.SupporterAccountSettings> {
-            AccountSettingsScreen(
-                mode = AccountSettingsMode.SUPPORTER,
-                onBackClick = { navController.popBackStack() },
-                onLogout = { navController.navigateToLogin() }
-            )
-        }
-
         composable<Route.AdminProfile> {
             AdminProfileScreen(
                 onBackClick = { navController.popBackStack() },
@@ -303,22 +299,6 @@ fun Good4NavGraph(
             )
         }
 
-        composable<Route.SupporterOrderCode> { backStackEntry ->
-            val route = backStackEntry.toRoute<Route.SupporterOrderCode>()
-            val viewModel: SupporterOrderCodeViewModel = koinViewModel()
-            SupporterOrderCodeScreenRoot(
-                orderId = route.orderId,
-                viewModel = viewModel,
-                onBackToHome = {
-                    val popped = navController.popBackStack()
-                    if (!popped) {
-                        navController.navigate(Route.SupporterHome) {
-                            launchSingleTop = true
-                        }
-                    }
-                }
-            )
-        }
     }
 }
 

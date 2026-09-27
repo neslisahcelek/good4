@@ -4,49 +4,50 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.core.domain.Result
 import com.good4.dining.data.repository.AkdenizDiningMenuRepository
+import com.good4.dining.data.repository.KykMenuRepository
 import com.good4.dining.domain.AkdenizDiningMenu
 import com.good4.dining.domain.AkdenizDiningMenuDay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 class AkdenizDiningMenuViewModel(
-    private val repository: AkdenizDiningMenuRepository
+    private val repository: AkdenizDiningMenuRepository,
+    private val kykRepository: KykMenuRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(AkdenizDiningMenuState())
     val state = _state.asStateFlow()
 
     fun loadMenu() {
+        val today = todayInIstanbul()
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            when (val result = repository.getCurrentMenu()) {
-                is Result.Success -> {
-                    val menu = result.data.takeIf { it.days.isNotEmpty() && it.isCurrentWeek() }
-                    _state.value = AkdenizDiningMenuState(
-                        menu = menu ?: currentWeekFallback(),
-                        isLoading = false
-                    )
-                }
-
-                is Result.Error -> {
-                    _state.value = AkdenizDiningMenuState(
-                        menu = currentWeekFallback(),
-                        isLoading = false
-                    )
-                }
+            val kykDay = async { kykRepository.getDayOrNext(today) }
+            val menu = when (val result = repository.getCurrentMenu()) {
+                is Result.Success -> result.data.takeIf { it.days.isNotEmpty() && it.isCurrentWeek() }
+                is Result.Error -> null
             }
+            _state.value = AkdenizDiningMenuState(
+                menu = menu ?: currentWeekFallback(),
+                kykDay = kykDay.await(),
+                loadedDate = today,
+                isLoading = false
+            )
         }
     }
 
+    /** Reloads when the calendar day has changed since the last load, so the page always shows today. */
+    fun refreshIfDayChanged() {
+        if (!_state.value.isLoading && _state.value.loadedDate != todayInIstanbul()) loadMenu()
+    }
+
     private fun AkdenizDiningMenu.isCurrentWeek(): Boolean {
-        val today = Clock.System.now()
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
-            .toString()
+        val today = todayInIstanbul()
         return weekStart.isNotBlank() && weekEnd.isNotBlank() && today in weekStart..weekEnd
     }
 
@@ -116,3 +117,7 @@ class AkdenizDiningMenuViewModel(
         return menu.takeIf { it.isCurrentWeek() }
     }
 }
+
+/** Menus are published for Antalya, so "today" follows Istanbul time rather than the phone's zone. */
+fun todayInIstanbul(): String =
+    Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul")).date.toString()

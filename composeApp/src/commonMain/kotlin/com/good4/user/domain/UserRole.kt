@@ -8,8 +8,12 @@ enum class UserRole(val value: String) {
 
     companion object {
         fun fromValue(value: String?): UserRole {
-            return entries.find { it.value == value } ?: STUDENT
+            return when (value) {
+                "good4Admin" -> ADMIN
+                "businessOwner", "businessStaff" -> BUSINESS
+                "communityManager", "communityStaff" -> STUDENT
+                else -> entries.find { it.value == value } ?: STUDENT
+            }
         }
     }
 }
-

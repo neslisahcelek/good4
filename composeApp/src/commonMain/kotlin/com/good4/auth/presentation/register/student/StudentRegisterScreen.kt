@@ -22,10 +22,9 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -46,10 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -57,12 +52,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.auth.presentation.components.AuthAccent
+import com.good4.auth.presentation.components.AuthErrorBanner
+import com.good4.auth.presentation.components.AuthFieldShape
+import com.good4.auth.presentation.components.AuthFootnote
+import com.good4.auth.presentation.components.AuthFormHeader
+import com.good4.auth.presentation.components.AuthPrimaryButton
+import com.good4.auth.presentation.components.AuthSection
+import com.good4.auth.presentation.components.authTextFieldColors
 import com.good4.auth.presentation.register.RegisterScreenContentContainer
+import com.good4.auth.presentation.register.RegistrationLegalAcknowledgements
 import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
@@ -73,7 +75,6 @@ import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.StandardButtonHeight
 import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.util.singleClick
-import config.LegalLinks
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.back
 import good4.composeapp.generated.resources.education_level
@@ -94,14 +95,15 @@ import good4.composeapp.generated.resources.password_confirm
 import good4.composeapp.generated.resources.password_required
 import good4.composeapp.generated.resources.password_visibility_hide
 import good4.composeapp.generated.resources.password_visibility_show
-import good4.composeapp.generated.resources.privacy_policy
 import good4.composeapp.generated.resources.register
+import good4.composeapp.generated.resources.register_section_education
+import good4.composeapp.generated.resources.register_section_password
+import good4.composeapp.generated.resources.register_section_personal
 import good4.composeapp.generated.resources.required_fields
 import good4.composeapp.generated.resources.student_email_edu_hint
+import good4.composeapp.generated.resources.student_register_subtitle
+import good4.composeapp.generated.resources.student_register_title
 import good4.composeapp.generated.resources.student_registration
-import good4.composeapp.generated.resources.terms_accept_middle
-import good4.composeapp.generated.resources.terms_accept_suffix
-import good4.composeapp.generated.resources.terms_of_service
 import good4.composeapp.generated.resources.university
 import good4.composeapp.generated.resources.university_dropdown_empty
 import good4.composeapp.generated.resources.university_placeholder
@@ -172,194 +174,171 @@ fun StudentRegisterScreen(
             modifier = modifier,
             paddingValues = paddingValues
         ) {
-                OutlinedTextField(
-                    value = state.fullName,
-                    onValueChange = { onAction(StudentRegisterAction.OnFullNameChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.full_name)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
+            AuthFormHeader(
+                icon = Icons.Outlined.School,
+                title = stringResource(Res.string.student_register_title),
+                subtitle = stringResource(Res.string.student_register_subtitle)
+            )
 
-                OutlinedTextField(
-                    value = state.email,
-                    onValueChange = { onAction(StudentRegisterAction.OnEmailChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.email_required)) },
-                    placeholder = { Text(stringResource(Res.string.email_placeholder)) },
-                    supportingText = { Text(stringResource(Res.string.student_email_edu_hint)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
+            Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                SelectionDropdown(
-                    selectedValue = state.university,
-                    onValueChange = { onAction(StudentRegisterAction.OnUniversityChange(it)) },
-                    options = universities,
-                    label = stringResource(Res.string.university),
-                    placeholder = stringResource(Res.string.university_placeholder),
-                    emptyText = stringResource(Res.string.university_dropdown_empty),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.major,
-                    onValueChange = { onAction(StudentRegisterAction.OnMajorChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.major)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                EducationLevelDropdown(
-                    selectedValue = state.educationLevel,
-                    onValueChange = { onAction(StudentRegisterAction.OnEducationLevelChange(it)) },
-                    educationLevels = educationLevels,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.password,
-                    onValueChange = { onAction(StudentRegisterAction.OnPasswordChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.password_required)) },
-                    singleLine = true,
-                    visualTransformation = if (state.isPasswordVisible) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Next
-                    ),
-                    trailingIcon = {
-                        IconButton(onClick = { onAction(StudentRegisterAction.OnTogglePasswordVisibility) }) {
-                            val contentDescription = if (state.isPasswordVisible) {
-                                stringResource(Res.string.password_visibility_hide)
-                            } else {
-                                stringResource(Res.string.password_visibility_show)
-                            }
-                            Icon(
-                                imageVector = if (state.isPasswordVisible) {
-                                    Icons.Filled.VisibilityOff
-                                } else {
-                                    Icons.Filled.Visibility
-                                },
-                                contentDescription = contentDescription
-                            )
-                        }
-                    },
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.confirmPassword,
-                    onValueChange = { onAction(StudentRegisterAction.OnConfirmPasswordChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.password_confirm)) },
-                    singleLine = true,
-                    visualTransformation = if (state.isPasswordVisible) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            onAction(StudentRegisterAction.OnRegisterClick)
-                        }
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TermsCheckbox(
-                    isChecked = state.isTermsAccepted,
-                    onToggle = { onAction(StudentRegisterAction.OnToggleTermsAccepted) }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                state.errorMessage?.let { error ->
-                    Text(
-                        text = error.asString(),
-                        color = ErrorRed,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+            AuthSection(title = stringResource(Res.string.register_section_personal)) {
+                    OutlinedTextField(
+                        value = state.fullName,
+                        onValueChange = { onAction(StudentRegisterAction.OnFullNameChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.full_name)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
                     )
+                    OutlinedTextField(
+                        value = state.email,
+                        onValueChange = { onAction(StudentRegisterAction.OnEmailChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.email_required)) },
+                        placeholder = { Text(stringResource(Res.string.email_placeholder)) },
+                        supportingText = { Text(stringResource(Res.string.student_email_edu_hint)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrectEnabled = false,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AuthSection(title = stringResource(Res.string.register_section_education)) {
+                    SelectionDropdown(
+                        selectedValue = state.university,
+                        onValueChange = { onAction(StudentRegisterAction.OnUniversityChange(it)) },
+                        options = universities,
+                        label = stringResource(Res.string.university),
+                        placeholder = stringResource(Res.string.university_placeholder),
+                        emptyText = stringResource(Res.string.university_dropdown_empty),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = state.major,
+                        onValueChange = { onAction(StudentRegisterAction.OnMajorChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.major)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+                    EducationLevelDropdown(
+                        selectedValue = state.educationLevel,
+                        onValueChange = { onAction(StudentRegisterAction.OnEducationLevelChange(it)) },
+                        educationLevels = educationLevels,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AuthSection(title = stringResource(Res.string.register_section_password)) {
+                    OutlinedTextField(
+                        value = state.password,
+                        onValueChange = { onAction(StudentRegisterAction.OnPasswordChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.password_required)) },
+                        singleLine = true,
+                        visualTransformation = if (state.isPasswordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Next
+                        ),
+                        trailingIcon = {
+                            IconButton(onClick = { onAction(StudentRegisterAction.OnTogglePasswordVisibility) }) {
+                                val contentDescription = if (state.isPasswordVisible) {
+                                    stringResource(Res.string.password_visibility_hide)
+                                } else {
+                                    stringResource(Res.string.password_visibility_show)
+                                }
+                                Icon(
+                                    imageVector = if (state.isPasswordVisible) {
+                                        Icons.Filled.VisibilityOff
+                                    } else {
+                                        Icons.Filled.Visibility
+                                    },
+                                    contentDescription = contentDescription
+                                )
+                            }
+                        },
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+                    OutlinedTextField(
+                        value = state.confirmPassword,
+                        onValueChange = { onAction(StudentRegisterAction.OnConfirmPasswordChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.password_confirm)) },
+                        singleLine = true,
+                        visualTransformation = if (state.isPasswordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                onAction(StudentRegisterAction.OnRegisterClick)
+                            }
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            RegistrationLegalAcknowledgements(
+                userAgreementAccepted = state.isTermsAccepted,
+                kvkkNoticeAcknowledged = state.isKvkkNoticeAcknowledged,
+                onUserAgreementToggle = { onAction(StudentRegisterAction.OnToggleTermsAccepted) },
+                onKvkkNoticeToggle = {
+                    onAction(StudentRegisterAction.OnToggleKvkkNoticeAcknowledged)
                 }
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onRegisterClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StandardButtonHeight),
-                    enabled = !state.isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DeepGreen,
-                        disabledContainerColor = DeepGreen.copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
-                            color = SurfaceDefault,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(Res.string.register),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(Res.string.required_fields),
-                    fontSize = 12.sp,
-                    color = TextSecondary
+            state.errorMessage?.let { error ->
+                AuthErrorBanner(
+                    text = error.asString(),
+                    modifier = Modifier.padding(top = 12.dp)
                 )
+            }
 
-                Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AuthPrimaryButton(
+                text = stringResource(Res.string.register),
+                onClick = onRegisterClick,
+                loading = state.isLoading
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            AuthFootnote(text = stringResource(Res.string.required_fields))
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -415,8 +394,8 @@ private fun SelectionDropdown(
                     contentDescription = null
                 )
             },
-            colors = textFieldColors(),
-            shape = RoundedCornerShape(12.dp),
+            colors = authTextFieldColors(),
+            shape = AuthFieldShape,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -471,7 +450,7 @@ private fun SelectionDropdown(
                                     Icon(
                                         imageVector = Icons.Filled.Check,
                                         contentDescription = null,
-                                        tint = DeepGreen
+                                        tint = AuthAccent
                                     )
                                 }
                             },
@@ -494,71 +473,6 @@ private fun SelectionDropdown(
         }
     }
 }
-
-@Composable
-internal fun TermsCheckbox(
-    isChecked: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val termsText = stringResource(Res.string.terms_of_service)
-    val middle = stringResource(Res.string.terms_accept_middle)
-    val privacyText = stringResource(Res.string.privacy_policy)
-    val suffix = stringResource(Res.string.terms_accept_suffix)
-
-    val annotatedText = buildAnnotatedString {
-        withLink(
-            LinkAnnotation.Url(
-                url = LegalLinks.TERMS,
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = DeepGreen, textDecoration = TextDecoration.Underline)
-                )
-            )
-        ) {
-            append(termsText)
-        }
-        append(middle)
-        withLink(
-            LinkAnnotation.Url(
-                url = LegalLinks.PRIVACY,
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = DeepGreen, textDecoration = TextDecoration.Underline)
-                )
-            )
-        ) {
-            append(privacyText)
-        }
-        append(suffix)
-    }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top
-    ) {
-        Checkbox(
-            checked = isChecked,
-            onCheckedChange = { onToggle() },
-            colors = CheckboxDefaults.colors(checkedColor = DeepGreen)
-        )
-        Text(
-            text = annotatedText,
-            style = androidx.compose.ui.text.TextStyle(
-                fontSize = 13.sp,
-                color = TextSecondary
-            ),
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(end = 8.dp)
-        )
-    }
-}
-
-@Composable
-private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = TextPrimary,
-    focusedLabelColor = TextPrimary,
-    cursorColor = TextPrimary
-)
 
 @Preview
 @Composable

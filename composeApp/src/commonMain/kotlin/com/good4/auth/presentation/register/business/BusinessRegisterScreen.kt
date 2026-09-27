@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,8 +39,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.auth.presentation.components.AuthErrorBanner
+import com.good4.auth.presentation.components.AuthFieldShape
+import com.good4.auth.presentation.components.AuthFootnote
+import com.good4.auth.presentation.components.AuthFormHeader
+import com.good4.auth.presentation.components.AuthPrimaryButton
+import com.good4.auth.presentation.components.AuthSection
+import com.good4.auth.presentation.components.authTextFieldColors
 import com.good4.auth.presentation.register.RegisterScreenContentContainer
-import com.good4.auth.presentation.register.student.TermsCheckbox
+import com.good4.auth.presentation.register.RegistrationLegalAcknowledgements
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
@@ -54,6 +62,8 @@ import good4.composeapp.generated.resources.back
 import good4.composeapp.generated.resources.business_information
 import good4.composeapp.generated.resources.business_name
 import good4.composeapp.generated.resources.business_phone
+import good4.composeapp.generated.resources.business_register_subtitle
+import good4.composeapp.generated.resources.business_register_title
 import good4.composeapp.generated.resources.business_registration
 import good4.composeapp.generated.resources.city
 import good4.composeapp.generated.resources.district
@@ -129,303 +139,237 @@ fun BusinessRegisterScreen(
             modifier = modifier,
             paddingValues = paddingValues
         ) {
-            SectionTitle(stringResource(Res.string.personal_information))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
+            AuthFormHeader(
+                icon = Icons.Outlined.Storefront,
+                title = stringResource(Res.string.business_register_title),
+                subtitle = stringResource(Res.string.business_register_subtitle)
+            )
 
-                OutlinedTextField(
-                    value = state.fullName,
-                    onValueChange = { onAction(BusinessRegisterAction.OnFullNameChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.full_name)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
+            Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.email,
-                    onValueChange = { onAction(BusinessRegisterAction.OnEmailChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.email_required)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.phoneNumber,
-                    onValueChange = { onAction(BusinessRegisterAction.OnPhoneNumberChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.phone)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                HorizontalDivider(color = BorderMuted)
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SectionTitle(stringResource(Res.string.business_information))
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.businessName,
-                    onValueChange = { onAction(BusinessRegisterAction.OnBusinessNameChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.business_name)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.businessPhone,
-                    onValueChange = { onAction(BusinessRegisterAction.OnBusinessPhoneChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.business_phone)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.address,
-                    onValueChange = { onAction(BusinessRegisterAction.OnAddressChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.open_address)) },
-                    singleLine = false,
-                    minLines = 2,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.addressUrl,
-                    onValueChange = { onAction(BusinessRegisterAction.OnAddressUrlChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.map_address_url_optional)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.city,
-                    onValueChange = { onAction(BusinessRegisterAction.OnCityChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.city)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.district,
-                    onValueChange = { onAction(BusinessRegisterAction.OnDistrictChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.district)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                HorizontalDivider(color = BorderMuted)
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SectionTitle(stringResource(Res.string.security))
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.password,
-                    onValueChange = { onAction(BusinessRegisterAction.OnPasswordChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.password_required)) },
-                    singleLine = true,
-                    visualTransformation = if (state.isPasswordVisible) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Next
-                    ),
-                    trailingIcon = {
-                        IconButton(onClick = { onAction(BusinessRegisterAction.OnTogglePasswordVisibility) }) {
-                            val contentDescription = if (state.isPasswordVisible) {
-                                stringResource(Res.string.password_visibility_hide)
-                            } else {
-                                stringResource(Res.string.password_visibility_show)
-                            }
-                            Icon(
-                                imageVector = if (state.isPasswordVisible) {
-                                    Icons.Filled.VisibilityOff
-                                } else {
-                                    Icons.Filled.Visibility
-                                },
-                                contentDescription = contentDescription
-                            )
-                        }
-                    },
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.confirmPassword,
-                    onValueChange = { onAction(BusinessRegisterAction.OnConfirmPasswordChange(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(Res.string.password_confirm)) },
-                    singleLine = true,
-                    visualTransformation = if (state.isPasswordVisible) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            onAction(BusinessRegisterAction.OnRegisterClick)
-                        }
-                    ),
-                    colors = textFieldColors(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TermsCheckbox(
-                    isChecked = state.isTermsAccepted,
-                    onToggle = { onAction(BusinessRegisterAction.OnToggleTermsAccepted) }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                state.errorMessage?.let { error ->
-                    Text(
-                        text = error.asString(),
-                        color = ErrorRed,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+            AuthSection(title = stringResource(Res.string.personal_information)) {
+                    OutlinedTextField(
+                        value = state.fullName,
+                        onValueChange = { onAction(BusinessRegisterAction.OnFullNameChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.full_name)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
                     )
+
+                    OutlinedTextField(
+                        value = state.email,
+                        onValueChange = { onAction(BusinessRegisterAction.OnEmailChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.email_required)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrectEnabled = false,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.phoneNumber,
+                        onValueChange = { onAction(BusinessRegisterAction.OnPhoneNumberChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.phone)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AuthSection(title = stringResource(Res.string.business_information)) {
+                    OutlinedTextField(
+                        value = state.businessName,
+                        onValueChange = { onAction(BusinessRegisterAction.OnBusinessNameChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.business_name)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.businessPhone,
+                        onValueChange = { onAction(BusinessRegisterAction.OnBusinessPhoneChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.business_phone)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.address,
+                        onValueChange = { onAction(BusinessRegisterAction.OnAddressChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.open_address)) },
+                        singleLine = false,
+                        minLines = 2,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.addressUrl,
+                        onValueChange = { onAction(BusinessRegisterAction.OnAddressUrlChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.map_address_url_optional)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrectEnabled = false,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.city,
+                        onValueChange = { onAction(BusinessRegisterAction.OnCityChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.city)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.district,
+                        onValueChange = { onAction(BusinessRegisterAction.OnDistrictChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.district)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AuthSection(title = stringResource(Res.string.security)) {
+                    OutlinedTextField(
+                        value = state.password,
+                        onValueChange = { onAction(BusinessRegisterAction.OnPasswordChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.password_required)) },
+                        singleLine = true,
+                        visualTransformation = if (state.isPasswordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Next
+                        ),
+                        trailingIcon = {
+                            IconButton(onClick = { onAction(BusinessRegisterAction.OnTogglePasswordVisibility) }) {
+                                val contentDescription = if (state.isPasswordVisible) {
+                                    stringResource(Res.string.password_visibility_hide)
+                                } else {
+                                    stringResource(Res.string.password_visibility_show)
+                                }
+                                Icon(
+                                    imageVector = if (state.isPasswordVisible) {
+                                        Icons.Filled.VisibilityOff
+                                    } else {
+                                        Icons.Filled.Visibility
+                                    },
+                                    contentDescription = contentDescription
+                                )
+                            }
+                        },
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+
+                    OutlinedTextField(
+                        value = state.confirmPassword,
+                        onValueChange = { onAction(BusinessRegisterAction.OnConfirmPasswordChange(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(Res.string.password_confirm)) },
+                        singleLine = true,
+                        visualTransformation = if (state.isPasswordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                onAction(BusinessRegisterAction.OnRegisterClick)
+                            }
+                        ),
+                        colors = authTextFieldColors(),
+                        shape = AuthFieldShape
+                    )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            RegistrationLegalAcknowledgements(
+                userAgreementAccepted = state.isTermsAccepted,
+                kvkkNoticeAcknowledged = state.isKvkkNoticeAcknowledged,
+                onUserAgreementToggle = { onAction(BusinessRegisterAction.OnToggleTermsAccepted) },
+                onKvkkNoticeToggle = {
+                    onAction(BusinessRegisterAction.OnToggleKvkkNoticeAcknowledged)
                 }
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = { onAction(BusinessRegisterAction.OnRegisterClick) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StandardButtonHeight),
-                    enabled = !state.isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PistachioGreen,
-                        contentColor = TextPrimary,
-                        disabledContainerColor = PistachioGreen.copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(StandardButtonLoadingIndicatorSize),
-                            color = TextPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(Res.string.register),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(Res.string.required_fields),
-                    fontSize = 12.sp,
-                    color = TextSecondary
+            state.errorMessage?.let { error ->
+                AuthErrorBanner(
+                    text = error.asString(),
+                    modifier = Modifier.padding(top = 12.dp)
                 )
+            }
 
-                Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AuthPrimaryButton(
+                text = stringResource(Res.string.register),
+                onClick = { onAction(BusinessRegisterAction.OnRegisterClick) },
+                loading = state.isLoading
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            AuthFootnote(text = stringResource(Res.string.required_fields))
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
-
-@Composable
-private fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = TextPrimary,
-        modifier = Modifier.fillMaxWidth()
-    )
-}
-
-@Composable
-private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = TextPrimary,
-    focusedLabelColor = TextPrimary,
-    cursorColor = TextPrimary
-)
 
 @Preview
 @Composable

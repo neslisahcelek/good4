@@ -9,15 +9,9 @@ import com.good4.code.data.repository.statusEnum
 import com.good4.code.domain.CodeStatus
 import com.good4.core.domain.Result
 import com.good4.core.util.userFriendlyErrorMessage
-import com.good4.order.data.repository.OrderRepository
-import com.good4.order.domain.OrderStatus
-import com.good4.order.domain.isActivePending
-import com.good4.order.domain.isVisibleOnBusinessDashboard
 import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.business_name_fallback
-import good4.composeapp.generated.resources.business_order_detail_cancel_failed
-import good4.composeapp.generated.resources.business_order_detail_cancel_success
 import good4.composeapp.generated.resources.error_business_not_found
 import good4.composeapp.generated.resources.error_data_load_failed
 import good4.composeapp.generated.resources.product_name_fallback
@@ -31,8 +25,7 @@ class BusinessDashboardViewModel(
     private val authRepository: AuthRepository,
     private val businessRepository: FirestoreBusinessRepository,
     private val codeRepository: CodeRepository,
-    private val productRepository: FirestoreProductRepository,
-    private val orderRepository: OrderRepository
+    private val productRepository: FirestoreProductRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BusinessDashboardState())
@@ -53,136 +46,6 @@ class BusinessDashboardViewModel(
         _state.update { it.copy(errorMessage = null) }
     }
 
-    fun dismissOrderDetail() {
-        _state.update {
-            it.copy(
-                orderDetailSheetVisible = false,
-                orderDetailLoading = false,
-                isCancellingOrderDetail = false,
-                orderDetail = null
-            )
-        }
-    }
-
-    fun cancelOrderFromDetail() {
-        val snapshot = _state.value
-        val order = snapshot.orderDetail ?: return
-        if (order.status != OrderStatus.PENDING || snapshot.isCancellingOrderDetail || snapshot.orderDetailLoading) {
-            return
-        }
-
-        viewModelScope.launch {
-            _state.update { it.copy(isCancellingOrderDetail = true, errorMessage = null) }
-
-            when (val result = orderRepository.updateOrderStatus(order.id, OrderStatus.CANCELLED)) {
-                is Result.Error -> {
-                    _state.update {
-                        it.copy(
-                            isCancellingOrderDetail = false,
-                            errorMessage = userFriendlyErrorMessage(
-                                result.error.message,
-                                getString(Res.string.business_order_detail_cancel_failed)
-                            )
-                        )
-                    }
-                    return@launch
-                }
-
-                is Result.Success -> Unit
-            }
-
-            order.items.forEach { item ->
-                productRepository.incrementProductSuspendedCount(item.productId, item.quantity)
-            }
-
-            _state.update { current ->
-                current.copy(
-                    isCancellingOrderDetail = false,
-                    orderDetail = order.copy(status = OrderStatus.CANCELLED),
-                    supporterPendingCount = (current.supporterPendingCount - 1).coerceAtLeast(0),
-                    recentOrders = current.recentOrders.map { recentOrder ->
-                        if (recentOrder.id == order.id) {
-                            recentOrder.copy(orderStatus = OrderStatus.CANCELLED)
-                        } else {
-                            recentOrder
-                        }
-                    },
-                    errorMessage = getString(Res.string.business_order_detail_cancel_success)
-                )
-            }
-        }
-    }
-
-    fun startOrderDetail(orderId: String) {
-        viewModelScope.launch {
-            _state.update {
-                it.copy(
-                    orderDetailSheetVisible = true,
-                    orderDetailLoading = true,
-                    isCancellingOrderDetail = false,
-                    orderDetail = null
-                )
-            }
-            val loadErrorFallback = getString(Res.string.error_data_load_failed)
-            when (val result = orderRepository.getOrder(orderId)) {
-                is Result.Success -> {
-                    _state.update {
-                        it.copy(
-                            orderDetail = result.data,
-                            orderDetailLoading = false
-                        )
-                    }
-                }
-
-                is Result.Error -> {
-                    _state.update {
-                        it.copy(
-                            orderDetailSheetVisible = false,
-                            orderDetailLoading = false,
-                            errorMessage = userFriendlyErrorMessage(
-                                result.error.message,
-                                loadErrorFallback
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    fun openFirstPendingOrderDetail() {
-        val businessId = cachedBusinessId ?: return
-        viewModelScope.launch {
-            orderRepository.checkAndExpireOrdersByBusiness(businessId)
-            when (val result = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
-                is Result.Success -> {
-                    val first = result.data.firstOrNull { order -> order.isActivePending() }
-                    if (first != null) {
-                        _state.update {
-                            it.copy(
-                                orderDetailSheetVisible = true,
-                                orderDetailLoading = false,
-                                orderDetail = first
-                            )
-                        }
-                    }
-                }
-
-                is Result.Error -> {
-                    val loadErrorFallback = getString(Res.string.error_data_load_failed)
-                    _state.update {
-                        it.copy(
-                            errorMessage = userFriendlyErrorMessage(
-                                result.error.message,
-                                loadErrorFallback
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     private fun loadDashboard(showLoading: Boolean = true) {
         val userId = authRepository.currentUser?.uid ?: return
 
@@ -191,11 +54,7 @@ class BusinessDashboardViewModel(
                 _state.update { current ->
                     current.copy(
                         isLoading = showLoading,
-                        errorMessage = null,
-                        orderDetailSheetVisible = false,
-                        orderDetailLoading = false,
-                        isCancellingOrderDetail = false,
-                        orderDetail = null
+                        errorMessage = null
                     )
                 }
                 val loadErrorFallback = getString(Res.string.error_data_load_failed)
@@ -232,7 +91,6 @@ class BusinessDashboardViewModel(
                         val fallbackName = getString(Res.string.business_name_fallback)
 
                         codeRepository.checkAndExpireCodes()
-                        orderRepository.checkAndExpireOrdersByBusiness(businessId)
 
                     when (val businessResult = businessRepository.getBusinessById(businessId)) {
                         is Result.Success -> {
@@ -308,44 +166,6 @@ class BusinessDashboardViewModel(
                         }
                     }
 
-                    var supporterPending = 0
-                    var supporterConfirmed = 0
-                    var recentOrdersUi = emptyList<RecentOrderUiModel>()
-                    val orderProductFallback = getString(Res.string.product_name_fallback)
-
-                        when (val recentOrdersResult =
-                            orderRepository.getRecentOrdersByBusiness(businessId, limit = 20)) {
-                        is Result.Success -> {
-                            recentOrdersUi = recentOrdersResult.data
-                                .filter { order -> order.isVisibleOnBusinessDashboard() }
-                                .take(5)
-                                .map { order ->
-                                    RecentOrderUiModel(
-                                        id = order.id,
-                                        productName = order.items.firstOrNull()?.productName?.ifBlank { orderProductFallback }
-                                            ?: orderProductFallback,
-                                        code = order.code,
-                                        orderStatus = order.status
-                                    )
-                                }
-                        }
-
-                        is Result.Error -> Unit
-                    }
-
-                    when (val pendingOrders = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.PENDING)) {
-                        is Result.Success -> {
-                            supporterPending =
-                                pendingOrders.data.count { order -> order.isActivePending() }
-                        }
-                        is Result.Error -> Unit
-                    }
-
-                    when (val confirmedOrders = orderRepository.getOrdersByBusinessAndStatus(businessId, OrderStatus.CONFIRMED)) {
-                        is Result.Success -> supporterConfirmed = confirmedOrders.data.size
-                        is Result.Error -> Unit
-                    }
-
                     when (val productsResult = productRepository.getProductsByBusinessId(businessId, includeOutOfStock = true)) {
                         is Result.Success -> {
                             _state.update {
@@ -353,9 +173,6 @@ class BusinessDashboardViewModel(
                                     isLoading = false,
                                     recentCodes = recentCodes,
                                     totalProducts = productsResult.data.size,
-                                    supporterPendingCount = supporterPending,
-                                    supporterConfirmedCount = supporterConfirmed,
-                                    recentOrders = recentOrdersUi,
                                     errorMessage = null
                                 )
                             }
@@ -367,9 +184,6 @@ class BusinessDashboardViewModel(
                                     isLoading = false,
                                     recentCodes = recentCodes,
                                     totalProducts = 0,
-                                    supporterPendingCount = supporterPending,
-                                    supporterConfirmedCount = supporterConfirmed,
-                                    recentOrders = recentOrdersUi,
                                     errorMessage = userFriendlyErrorMessage(
                                         productsResult.error.message,
                                         loadErrorFallback

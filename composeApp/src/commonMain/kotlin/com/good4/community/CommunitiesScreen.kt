@@ -1,16 +1,25 @@
 package com.good4.community
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocationOn
@@ -25,21 +34,28 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import coil3.compose.AsyncImage
 import com.good4.core.presentation.*
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProductImagePicker
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Instant
+import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -52,26 +68,73 @@ fun CommunitiesScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    var managing by rememberSaveable { mutableStateOf(managerEntryMode) }
+    var eventFilter by rememberSaveable { mutableIntStateOf(0) }
+    var previewAsStudent by rememberSaveable { mutableStateOf(false) }
     var editor by remember { mutableStateOf<CommunityEntryDto?>(null) }
     var editingId by remember { mutableStateOf<String?>(null) }
     var profileEditor by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<CommunityEntry?>(null) }
+    var pendingRemoval by remember { mutableStateOf<CommunityEntry?>(null) }
+    var admissionEntry by remember { mutableStateOf<CommunityEntry?>(null) }
+    var registeredOnly by remember { mutableStateOf(false) }
+    var pendingFeaturedEvent by remember { mutableStateOf<CommunityFeaturedEvent?>(null) }
+    var reportTarget by remember { mutableStateOf<CommunityEntry?>(null) }
+    var pendingBlock by remember { mutableStateOf<Community?>(null) }
     val community = state.selected
+    val managerView = state.canManage && !previewAsStudent
+    val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
+    val featuredEvents = state.filteredFeaturedEvents
+    var today by remember { mutableStateOf(currentCampusDate()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            today = currentCampusDate()
+        }
+    }
+    LaunchedEffect(state.loading, state.communities, state.selected, today) {
+        if (!state.loading && community == null) {
+            viewModel.refreshFeaturedEvents(today)
+        }
+    }
+    LaunchedEffect(pendingFeaturedEvent?.entry?.id, state.selected?.id, state.loading, state.entries) {
+        val pending = pendingFeaturedEvent ?: return@LaunchedEffect
+        if (!state.loading) {
+            val selected = state.selected
+            when {
+                selected?.id == pending.community.id -> {
+                    detail = state.entries.firstOrNull { it.id == pending.entry.id }
+                    pendingFeaturedEvent = null
+                }
+                selected == null || selected.id != pending.community.id -> pendingFeaturedEvent = null
+            }
+        }
+    }
+    LifecycleResumeEffect(community?.id, state.canManage) {
+        viewModel.resumeUpdates()
+        if (community == null) {
+            viewModel.refreshFeaturedEvents(today, force = true)
+        }
+        onPauseOrDispose { viewModel.pauseUpdates() }
+    }
     Good4NestedScaffold(
         topBar = {
             Good4TopBar(
-                title = community?.data?.name ?: "Topluluklar",
+                title = when {
+                    community == null -> "Topluluklar"
+                    managerView -> "Topluluğumu Yönet"
+                    else -> community.data.name
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            if (community == null) {
+                            if (previewAsStudent) {
+                                previewAsStudent = false
+                            } else if (community == null) {
                                 onBack()
                             } else if (managerEntryMode) {
                                 onBack()
                             } else {
                                 viewModel.back()
-                                managing = false
                             }
                         }
                     ) {
@@ -85,30 +148,84 @@ fun CommunitiesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 28.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (community == null) {
-                item { CommunityListIntro() }
+                if (isV2) item(key = "community-event-filters") {
+                    CommunityEventFilterRow(
+                        selectedId = state.selectedCategoryId,
+                        enabled = !state.loading,
+                        onSelect = viewModel::selectCategory,
+                        followedOnly = state.followedOnly,
+                        onFollowedOnlyChange = viewModel::setFollowedOnly,
+                    )
+                }
+                item(key = "featured-community-events") {
+                    if (state.followedOnly && (state.followingLoading || state.followingError != null || !state.followingLoaded)) {
+                        CommunityEventsBannerPlaceholder(
+                            loading = state.followingLoading,
+                            hasError = state.followingError != null,
+                            message = state.followingError ?: "Takip ettiğiniz topluluklar yükleniyor.",
+                            onRetry = { viewModel.refreshFollowing(force = true) },
+                        )
+                    } else if (featuredEvents.isNotEmpty()) {
+                        FeaturedCommunityEventsCarousel(
+                            events = featuredEvents,
+                            onEventClick = { featured ->
+                                pendingFeaturedEvent = featured
+                                viewModel.select(featured.community)
+                            }
+                        )
+                    } else if ((state.selectedCategoryId.isNotEmpty() || state.followedOnly)
+                        && !state.featuredEventsLoading && state.featuredEventsError == null && !state.loading) {
+                        EmptyCommunityContent(
+                            title = "Filtrelere uygun etkinlik bulunamadı",
+                            subtitle = if (state.followedOnly && state.followedCommunityIds.isEmpty())
+                                "Takip ettiğin bir topluluk yok. Toplulukları keşfedip takip edebilirsin."
+                            else "Farklı bir kategori seçebilir veya filtreleri kaldırabilirsin.",
+                        )
+                    } else if (AppEnvironment.isDebug && state.selectedCategoryId.isEmpty() && !state.followedOnly) {
+                        DemoCommunityEventsCarousel()
+                    } else {
+                        CommunityEventsBannerPlaceholder(
+                            loading = state.featuredEventsLoading,
+                            hasError = state.featuredEventsError != null,
+                            onRetry = { viewModel.refreshFeaturedEvents(today, force = true) }
+                        )
+                    }
+                }
                 item {
                     CommunitySearchField(
                         query = query,
                         onQueryChange = { query = it }
                     )
                 }
-                item {
-                    Text(
-                        text = "Keşfet",
-                        fontSize = 19.sp,
-                        lineHeight = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
                 val filtered = state.communities.filter {
                     it.data.name.contains(query, ignoreCase = true) ||
                         it.data.description.contains(query, ignoreCase = true)
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Keşfet",
+                            fontSize = 19.sp,
+                            lineHeight = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                        if (!state.loading) {
+                            Text(
+                                text = "${filtered.size} topluluk",
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
                 }
                 items(filtered, key = { it.id }) { item ->
                     CommunityListCard(
@@ -119,6 +236,20 @@ fun CommunitiesScreen(
                         }
                     )
                 }
+                if (state.blockedCommunityIds.isNotEmpty()) {
+                    item {
+                        TextButton(
+                            onClick = viewModel::unblockAllCommunities,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                "Engellediğiniz ${state.blockedCommunityIds.size} topluluğu yeniden göster",
+                                fontSize = 13.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                }
                 if (!state.loading && state.error == null && filtered.isEmpty()) {
                     item {
                         EmptyCommunityContent(
@@ -128,46 +259,93 @@ fun CommunitiesScreen(
                     }
                 }
             } else {
-                item {
-                    CommunityDetailHeader(
-                        community = community,
-                        canManage = state.canManage,
-                        managing = managing,
-                        isFollowing = state.isFollowing,
-                        followLoading = state.followLoading,
-                        onFollowClick = viewModel::toggleFollow,
-                        onManageClick = { managing = !managing }
-                    )
-                }
-                if (state.canManage) {
-                    if (managing) {
+                if (managerView) {
+                    item {
+                        ManagerCommunityIdentity(
+                            community = community,
+                            onEditProfile = { profileEditor = true }
+                        )
+                    }
+                    item {
+                        val upcomingEvents = state.entries.count {
+                            it.data.kind == "event" && it.data.status == "published" && it.data.date >= today
+                        }
+                        val currentMonth = today.take(7)
+                        CommunityManagementActions(
+                            upcomingEventCount = upcomingEvents,
+                            registrationCount = state.registrationsByEntry.values.sumOf { it.size },
+                            monthlyAttendanceCount = state.entries
+                                .filter { it.data.kind == "event" && it.data.date.startsWith(currentMonth) }
+                                .sumOf { state.attendanceByEntry[it.id]?.size ?: 0 },
+                            followerCount = state.followerCount,
+                            onAddEvent = {
+                                editingId = null
+                                editor = CommunityEntryDto()
+                            },
+                            onAddCoupon = {
+                                editingId = null
+                                editor = CommunityEntryDto(kind = "coupon", status = "pending")
+                            },
+                            onEditProfile = { profileEditor = true },
+                            onSwitchToStudent = { previewAsStudent = true }
+                        )
+                    }
+                } else {
+                    item {
+                        CommunityDetailHeader(
+                            community = community,
+                            canManage = state.canManage,
+                            previewAsStudent = previewAsStudent,
+                            isFollowing = state.isFollowing,
+                            followLoading = state.followLoading,
+                            onFollowClick = viewModel::toggleFollow,
+                            onBlockClick = { pendingBlock = community }
+                        )
+                    }
+                    if (previewAsStudent) {
                         item {
-                            CommunityManagementActions(
-                                eventCount = state.entries.count { it.data.kind == "event" && it.data.status != "cancelled" },
-                                couponCount = state.entries.count { it.data.kind == "coupon" && it.data.status != "cancelled" },
-                                registrationCount = state.registrationsByEntry.values.sumOf { it.size },
-                                onAddEvent = {
-                                    editingId = null
-                                    editor = CommunityEntryDto()
-                                },
-                                onAddCoupon = {
-                                    editingId = null
-                                    editor = CommunityEntryDto(kind = "coupon", status = "pending")
-                                },
-                                onEditProfile = { profileEditor = true },
-                                onSwitchToStudent = onSwitchToStudent
-                            )
+                            StudentPreviewBanner(onReturnToManagement = { previewAsStudent = false })
                         }
                     }
                 }
                 item {
                     CommunityTabs(
                         selectedTab = tab,
-                        onTabSelected = { tab = it }
+                        onTabSelected = { tab = it },
+                        manager = managerView
                     )
                 }
-                val entries = state.entries.filter { it.data.kind == if (tab == 0) "event" else "coupon" }
-                if (tab == 1 && !state.canManage && entries.isNotEmpty()) {
+                if (managerView && tab == 0) item {
+                    ManagerEventFilters(
+                        selected = eventFilter,
+                        onSelected = { eventFilter = it }
+                    )
+                }
+                if (!managerView && tab == 0) item {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (isV2) EventCategorySelector(state.selectedCategoryId, true, !state.loading, viewModel::selectCategory)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            CommunityEventFilterChip(!registeredOnly, true, "Tüm etkinlikler", onClick = { registeredOnly = false })
+                            CommunityEventFilterChip(registeredOnly, true, "Etkinlik kayıtlarım", onClick = { registeredOnly = true })
+                        }
+                    }
+                }
+                val entries = state.entries.filter { entry ->
+                    val kindMatches = entry.data.kind == (if (tab == 0) "event" else "coupon")
+                    val visibilityMatches = if (managerView) true else entry.data.status == "published"
+                    val registrationMatches = managerView || tab != 0 || !registeredOnly || entry.id in state.registeredEventIds
+                    val categoryMatches = managerView || tab != 0 || matchesEventCategory(entry.data.categoryId, state.selectedCategoryId)
+                    val managerFilterMatches = !managerView || tab != 0 || when (eventFilter) {
+                        0 -> entry.data.status == "published" && entry.data.date >= today
+                        1 -> entry.data.status == "draft"
+                        else -> entry.data.status == "cancelled" || (entry.data.status == "published" && entry.data.date < today)
+                    }
+                    kindMatches && visibilityMatches && registrationMatches && categoryMatches && managerFilterMatches
+                }.let { filtered ->
+                    if (managerView && tab == 0 && eventFilter == 2) filtered.sortedByDescending { it.data.date + it.data.time }
+                    else filtered
+                }
+                if (tab == 1 && !managerView && entries.isNotEmpty()) {
                     item {
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -183,15 +361,36 @@ fun CommunitiesScreen(
                         CommunityEntryCard(
                             entry = entry,
                             registrationCount = state.registrationsByEntry[entry.id]?.size,
+                            attendanceCount = state.attendanceByEntry[entry.id]?.size,
+                            canManage = managerView,
+                            onManageAttendees = {
+                                viewModel.clearAdmissionMessage()
+                                admissionEntry = entry
+                            },
+                            onEdit = {
+                                editingId = entry.id
+                                editor = entry.data
+                            },
+                            onUnpublish = { pendingRemoval = entry },
                             onClick = { detail = entry }
                         )
                     }
                 }
                 if (!state.loading && state.error == null && entries.isEmpty()) {
                     item {
+                        val managerEventTitle = when (eventFilter) {
+                            0 -> "Yaklaşan etkinlik yok"
+                            1 -> "Kaydedilmiş taslak yok"
+                            else -> "Geçmiş etkinlik yok"
+                        }
+                        val managerEventSubtitle = when (eventFilter) {
+                            0 -> "Yeni bir etkinlik oluşturduğunda burada görünecek."
+                            1 -> "Hazırlamaya ara verdiğin etkinlikleri taslak olarak kaydedebilirsin."
+                            else -> "Tamamlanan ve yayından kaldırılan etkinlikler burada tutulur."
+                        }
                         EmptyCommunityContent(
-                            title = if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok",
-                            subtitle = if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.",
+                            title = if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Filtrelere uygun etkinlik bulunamadı" else if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok",
+                            subtitle = if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Kategori veya kayıt filtresini değiştirerek tekrar deneyebilirsin." else if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.",
                             coupon = tab == 1
                         )
                     }
@@ -205,7 +404,7 @@ fun CommunitiesScreen(
                             .padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = PrimaryGreen)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -225,10 +424,21 @@ fun CommunitiesScreen(
     if (profileEditor && community != null) {
         CommunityProfileEditor(community.data, state.saving, state.error, { if (!state.saving) { profileEditor = false; viewModel.clearError() } }) { data, logo, cover -> viewModel.updateProfile(data, logo, cover) { profileEditor = false } }
     }
+    state.ticket?.let { ticket ->
+        val entry = state.entries.firstOrNull { it.id == state.ticketEventId }
+        if (community != null && entry != null) EventTicketDialog(community.id, entry, ticket, viewModel::closeTicket)
+    }
+    admissionEntry?.let { entry ->
+        EventAdmissionScreen(entry, state.registrationsByEntry[entry.id].orEmpty(), state.attendanceByEntry[entry.id].orEmpty(),
+            state.admissionBusy, state.admissionMessage, state.error,
+            onDismiss = { admissionEntry = null; viewModel.clearAdmissionMessage() },
+            onScanned = { viewModel.admit(entry, scanned = it) }, onError = viewModel::reportError,
+            onAdmit = { userId, undo -> viewModel.admit(entry, userId = userId, undo = undo) })
+    }
     detail?.let { entry ->
         CommunityEntryDetailDialog(
             entry = entry,
-            canManage = state.canManage,
+            canManage = managerView,
             saving = state.saving,
             generatedCode = state.generatedCouponCode.takeIf { state.generatedCouponEntryId == entry.id },
             codeGenerating = state.codeGenerating,
@@ -243,58 +453,291 @@ fun CommunitiesScreen(
                 detail = null
             },
             onUnpublish = {
-                viewModel.cancel(entry.id) { detail = null }
+                detail = null
+                pendingRemoval = entry
             },
             onCreateCode = { viewModel.createCouponCode(entry) },
-            onToggleRegistration = { viewModel.toggleRegistration(entry) }
+            onToggleRegistration = { viewModel.toggleRegistration(entry) },
+            onShowTicket = { viewModel.showTicket(entry) },
+            onManageAttendees = { detail = null; viewModel.clearAdmissionMessage(); admissionEntry = entry },
+            onReport = { viewModel.clearReportStatus(); reportTarget = entry }
+        )
+    }
+    reportTarget?.let { entry ->
+        ReportContentDialog(
+            title = entry.data.title,
+            sending = state.reportSending,
+            sent = state.reportSentEntryId == entry.id,
+            error = state.reportError,
+            onDismiss = { if (!state.reportSending) { reportTarget = null; viewModel.clearReportStatus() } },
+            onSubmit = { reason, details -> viewModel.reportEntry(entry, reason, details) }
+        )
+    }
+    pendingBlock?.let { target ->
+        AlertDialog(
+            onDismissRequest = { pendingBlock = null },
+            title = { Text("Topluluğu engelle") },
+            text = {
+                Text("${target.data.name} topluluğunun etkinliklerini ve kuponlarını artık görmeyeceksiniz. Engeli Topluluklar listesinin altından kaldırabilirsiniz.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingBlock = null
+                    detail = null
+                    viewModel.blockCommunity(target)
+                }) { Text("Engelle", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { pendingBlock = null }) { Text("Vazgeç") } }
+        )
+    }
+    pendingRemoval?.let { entry ->
+        EntryRemovalConfirmation(
+            entry = entry,
+            saving = state.saving,
+            onDismiss = { if (!state.saving) pendingRemoval = null },
+            onConfirm = {
+                viewModel.cancel(entry.id) { pendingRemoval = null }
+            }
         )
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CommunityListIntro() {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = "Kampüste kendine bir yer bul.",
-            fontSize = 24.sp,
-            lineHeight = 30.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextPrimary
-        )
-        Text(
-            text = "Etkinlikleri keşfet, fırsatları yakala ve topluluğuna katıl.",
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
-            color = TextSecondary
-        )
+private fun FeaturedCommunityEventsCarousel(
+    events: List<CommunityFeaturedEvent>,
+    onEventClick: (CommunityFeaturedEvent) -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { events.size })
+    val currentPage by remember { derivedStateOf { pagerState.currentPage } }
+    LaunchedEffect(events.size) {
+        if (events.size > 1) {
+            while (true) {
+                delay(4_500)
+                pagerState.animateScrollToPage((pagerState.currentPage + 1) % events.size)
+            }
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().aspectRatio(12f / 5f)
+        ) { page ->
+            val event = events[page]
+            FeaturedCommunityEventCard(event = event, onClick = { onEventClick(event) })
+        }
+        if (events.size > 1) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(events.size) { index ->
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp)
+                            .width(if (index == currentPage) 18.dp else 6.dp)
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(if (index == currentPage) MaterialTheme.colorScheme.primary else BorderMuted)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class DemoCommunitySlide(
+    val title: String,
+    val subtitle: String,
+    val startColor: Color,
+    val endColor: Color
+)
+
+private val demoCommunitySlides = listOf(
+    DemoCommunitySlide("Kampüs Buluşması", "Tanışma ve sohbet", Color(0xFF006C4C), Color(0xFF17A579)),
+    DemoCommunitySlide("Tasarım Atölyesi", "Birlikte üretelim", Color(0xFF184B83), Color(0xFF4A8DCF)),
+    DemoCommunitySlide("Sahne Gecesi", "Kampüste sanat", Color(0xFF4B6400), Color(0xFF8DAA37))
+)
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DemoCommunityEventsCarousel() {
+    val pagerState = rememberPagerState(pageCount = { demoCommunitySlides.size })
+    val currentPage by remember { derivedStateOf { pagerState.currentPage } }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(4_500)
+            pagerState.animateScrollToPage((pagerState.currentPage + 1) % demoCommunitySlides.size)
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().aspectRatio(12f / 5f)
+        ) { page ->
+            DemoCommunityEventCard(demoCommunitySlides[page], page + 1)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(demoCommunitySlides.size) { index ->
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .width(if (index == currentPage) 18.dp else 6.dp)
+                        .height(6.dp)
+                        .clip(CircleShape)
+                        .background(if (index == currentPage) MaterialTheme.colorScheme.primary else BorderMuted)
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun CommunitySearchField(query: String, onQueryChange: (String) -> Unit) {
+private fun DemoCommunityEventCard(slide: DemoCommunitySlide, number: Int) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         shape = RoundedCornerShape(18.dp),
-        color = SurfaceDefault,
+        color = slide.startColor
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(
+                Brush.linearGradient(listOf(slide.startColor, slide.endColor))
+            )
+        ) {
+            Box(
+                modifier = Modifier.align(Alignment.CenterEnd)
+                    .offset(x = 46.dp)
+                    .size(180.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.12f))
+            )
+            Column(
+                modifier = Modifier.align(Alignment.CenterStart).padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "ÖRNEK ETKİNLİK 0$number",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = slide.title,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    lineHeight = 25.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = slide.subtitle,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 13.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityEventsBannerPlaceholder(
+    loading: Boolean,
+    hasError: Boolean,
+    onRetry: () -> Unit,
+    message: String? = null,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().aspectRatio(12f / 5f),
+        shape = RoundedCornerShape(18.dp),
+        color = SurfaceMuted,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.45f))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CalendarMonth,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(30.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = "Etkinlikler",
+                    color = TextPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = message ?: when {
+                        hasError -> "Etkinlikler yüklenemedi."
+                        loading -> "Yaklaşan etkinlikler yükleniyor."
+                        else -> "Yaklaşan etkinlik afişleri burada gösterilir."
+                    },
+                    color = TextSecondary,
+                    fontSize = 12.sp
+                )
+                if (hasError) {
+                    TextButton(onClick = onRetry) { Text("Tekrar dene", color = MaterialTheme.colorScheme.primary) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturedCommunityEventCard(event: CommunityFeaturedEvent, onClick: () -> Unit) {
+    val entry = event.entry.data
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxSize(),
+        shape = RoundedCornerShape(18.dp),
+        color = PistachioGreen,
         shadowElevation = 1.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
     ) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Topluluk ara", color = TextSecondary) },
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = TextSecondary) },
-            singleLine = true,
-            shape = RoundedCornerShape(18.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = SurfaceDefault,
-                unfocusedContainerColor = SurfaceDefault,
-                focusedBorderColor = PrimaryGreen,
-                unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent
-            )
+        AsyncImage(
+            model = entry.imageUrl,
+            contentDescription = "${entry.title} etkinlik afişi",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
     }
+}
+
+private fun currentCampusDate(): String =
+    Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul")).date.toString()
+
+@Composable
+private fun CommunitySearchField(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("Topluluk ara", color = TextSecondary) },
+        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = TextSecondary) },
+        trailingIcon = if (query.isNotBlank()) {
+            {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Aramayı temizle", tint = TextSecondary)
+                }
+            }
+        } else null,
+        singleLine = true,
+        shape = RoundedCornerShape(18.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = SurfaceDefault,
+            unfocusedContainerColor = SurfaceDefault,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = BorderMuted.copy(alpha = 0.35f)
+        )
+    )
 }
 
 @Composable
@@ -308,37 +751,39 @@ private fun CommunityListCard(community: Community, onClick: () -> Unit) {
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            CommunityLogo(community.data.logoUrl, size = 62.dp)
+            CommunityLogo(community.data.logoUrl, size = 54.dp)
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
                     text = community.data.name,
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp,
+                    fontSize = 17.sp,
+                    lineHeight = 21.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
-                Text(
-                    text = community.data.description,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                    color = TextSecondary,
-                    maxLines = 2
-                )
-                Text(
-                    text = "Topluluğu keşfet",
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = PrimaryGreen
-                )
+                val supportingText = community.data.description.ifBlank { community.data.university }
+                if (supportingText.isNotBlank()) {
+                    Text(
+                        text = supportingText,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        color = TextSecondary,
+                        maxLines = 2
+                    )
+                }
             }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -347,11 +792,11 @@ private fun CommunityListCard(community: Community, onClick: () -> Unit) {
 private fun CommunityDetailHeader(
     community: Community,
     canManage: Boolean,
-    managing: Boolean,
+    previewAsStudent: Boolean,
     isFollowing: Boolean,
     followLoading: Boolean,
     onFollowClick: () -> Unit,
-    onManageClick: () -> Unit
+    onBlockClick: (() -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -378,7 +823,7 @@ private fun CommunityDetailHeader(
                     Icon(
                         Icons.Outlined.Groups,
                         contentDescription = null,
-                        tint = PrimaryGreen.copy(alpha = 0.35f),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                         modifier = Modifier.size(58.dp).align(Alignment.Center)
                     )
                 }
@@ -408,7 +853,7 @@ private fun CommunityDetailHeader(
                     )
                 }
             }
-            Button(
+            if (!canManage) Button(
                 onClick = onFollowClick,
                 enabled = !followLoading,
                 modifier = Modifier.fillMaxWidth(),
@@ -416,24 +861,65 @@ private fun CommunityDetailHeader(
                 colors = if (isFollowing) {
                     ButtonDefaults.buttonColors(containerColor = SurfaceMuted, contentColor = TextPrimary)
                 } else {
-                    ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = androidx.compose.ui.graphics.Color.White)
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
                 }
             ) {
                 Text(if (followLoading) "Kaydediliyor…" else if (isFollowing) "Takip ediliyor" else "Takip et", fontWeight = FontWeight.SemiBold)
             }
-            if (canManage) {
-                OutlinedButton(
-                    onClick = onManageClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.35f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+            if (!canManage && onBlockClick != null) {
+                TextButton(
+                    onClick = onBlockClick,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
-                    Icon(Icons.Outlined.ManageAccounts, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (managing) "Yönetimi kapat" else "Topluluğunu yönet", fontWeight = FontWeight.Medium)
+                    Icon(Icons.Outlined.Block, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Bu topluluğu engelle", fontSize = 13.sp, color = TextSecondary)
                 }
             }
+            if (canManage && previewAsStudent) {
+                Text(
+                    "Bu alan yalnızca önizlemedir; kendi topluluğunu takip edemezsin.",
+                    fontSize = 12.sp,
+                    color = TextSecondary
+                )
+            }
+            if (community.data.university.isNotBlank()) Text(community.data.university, color = TextSecondary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManagerCommunityIdentity(
+    community: Community,
+    onEditProfile: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = SurfaceDefault,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.22f)),
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CommunityLogo(community.data.logoUrl, size = 56.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text("YÖNETİCİ PANELİ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(community.data.name, fontSize = 19.sp, lineHeight = 23.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                if (community.data.university.isNotBlank()) {
+                    Text(community.data.university, fontSize = 13.sp, color = TextSecondary, maxLines = 1)
+                }
+                Text("Yönetim yetkin aktif", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = onEditProfile) {
+                Icon(Icons.Outlined.ManageAccounts, contentDescription = "Topluluk bilgilerini düzenle", tint = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -441,9 +927,10 @@ private fun CommunityDetailHeader(
 
 @Composable
 private fun CommunityManagementActions(
-    eventCount: Int,
-    couponCount: Int,
+    upcomingEventCount: Int,
     registrationCount: Int,
+    monthlyAttendanceCount: Int,
+    followerCount: Int?,
     onAddEvent: () -> Unit,
     onAddCoupon: () -> Unit,
     onEditProfile: () -> Unit,
@@ -452,26 +939,34 @@ private fun CommunityManagementActions(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = PistachioGreen.copy(alpha = 0.55f)
+        color = SurfaceDefault,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.22f)),
+        shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Topluluğumu Yönet", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Text("Genel bakış", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Text("Topluluğunun güncel durumunu ve etkinlik hareketlerini buradan takip et.", fontSize = 13.sp, lineHeight = 18.sp, color = TextSecondary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ManagementStat("Etkinlik", eventCount.toString(), Modifier.weight(1f))
-                ManagementStat("Kupon", couponCount.toString(), Modifier.weight(1f))
-                ManagementStat("Kayıt", registrationCount.toString(), Modifier.weight(1f))
+                ManagementStat("Takipçi", followerCount?.toString() ?: "…", Modifier.weight(1f))
+                ManagementStat("Yaklaşan etkinlik", upcomingEventCount.toString(), Modifier.weight(1f))
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ManagementStat("Toplam kayıt", registrationCount.toString(), Modifier.weight(1f))
+                ManagementStat("Bu ay gelen", monthlyAttendanceCount.toString(), Modifier.weight(1f))
+            }
+            HorizontalDivider(color = BorderMuted.copy(alpha = 0.25f))
+            Text("Hızlı işlemler", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onAddEvent,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen,
-                        contentColor = SurfaceDefault
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text("Etkinlik ekle")
@@ -480,8 +975,8 @@ private fun CommunityManagementActions(
                     onClick = onAddCoupon,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.35f))
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                 ) {
                     Text("Kupon ekle")
                 }
@@ -489,7 +984,7 @@ private fun CommunityManagementActions(
             TextButton(
                 onClick = onEditProfile,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(contentColor = PrimaryGreen)
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Topluluk bilgilerini düzenle")
             }
@@ -498,24 +993,64 @@ private fun CommunityManagementActions(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.textButtonColors(contentColor = TextSecondary)
             ) {
-                Text("Öğrenci görünümüne geç")
+                Text("Öğrenci görünümünü aç")
             }
         }
     }
 }
 
 @Composable
-private fun ManagementStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, shape = RoundedCornerShape(12.dp), color = SurfaceDefault) {
-        Column(Modifier.padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
-            Text(label, fontSize = 11.sp, color = TextSecondary)
+private fun StudentPreviewBanner(onReturnToManagement: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = PistachioGreen.copy(alpha = 0.55f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Öğrenci görünümü", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Text("Yayınlanan içeriklerin öğrencilerdeki görünümü", fontSize = 12.sp, color = TextSecondary)
+            }
+            TextButton(onClick = onReturnToManagement) { Text("Yönetime dön") }
         }
     }
 }
 
 @Composable
-private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
+private fun ManagerEventFilters(selected: Int, onSelected: (Int) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(listOf("Yaklaşanlar", "Taslaklar", "Geçmiş")) { label ->
+            val index = when (label) {
+                "Yaklaşanlar" -> 0
+                "Taslaklar" -> 1
+                else -> 2
+            }
+            FilterChip(
+                selected = selected == index,
+                onClick = { onSelected(index) },
+                label = { Text(label) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ManagementStat(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(14.dp), color = PistachioGreen.copy(alpha = 0.42f)) {
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 13.dp), horizontalAlignment = Alignment.Start) {
+            Text(value, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text(label, fontSize = 11.sp, lineHeight = 14.sp, color = TextSecondary)
+        }
+    }
+}
+
+@Composable
+private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit, manager: Boolean = false) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -525,7 +1060,8 @@ private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
             modifier = Modifier.padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            listOf("Etkinlikler", "Kuponlar").forEachIndexed { index, label ->
+            val labels = if (manager) listOf("Etkinlik yönetimi", "Kupon yönetimi") else listOf("Etkinlikler", "Kuponlar")
+            labels.forEachIndexed { index, label ->
                 Surface(
                     onClick = { onTabSelected(index) },
                     modifier = Modifier
@@ -540,7 +1076,7 @@ private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
                             text = label,
                             fontSize = 14.sp,
                             fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium,
-                            color = if (selectedTab == index) PrimaryGreen else TextSecondary
+                            color = if (selectedTab == index) MaterialTheme.colorScheme.primary else TextSecondary
                         )
                     }
                 }
@@ -550,7 +1086,16 @@ private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 }
 
 @Composable
-private fun CommunityEntryCard(entry: CommunityEntry, registrationCount: Int? = null, onClick: () -> Unit) {
+private fun CommunityEntryCard(
+    entry: CommunityEntry,
+    registrationCount: Int? = null,
+    attendanceCount: Int? = null,
+    canManage: Boolean = false,
+    onManageAttendees: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onUnpublish: () -> Unit = {},
+    onClick: () -> Unit
+) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -585,7 +1130,7 @@ private fun CommunityEntryCard(entry: CommunityEntry, registrationCount: Int? = 
                             Icon(
                                 imageVector = if (entry.data.kind == "coupon") Icons.Outlined.LocalOffer else Icons.Outlined.CalendarMonth,
                                 contentDescription = null,
-                                tint = PrimaryGreen,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -593,14 +1138,44 @@ private fun CommunityEntryCard(entry: CommunityEntry, registrationCount: Int? = 
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(entry.data.title, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                        Text("${entry.data.date} ${entry.data.time}".trim(), fontSize = 13.sp, lineHeight = 18.sp, color = PrimaryGreen)
+                        Text("${entry.data.date} ${entry.data.time}".trim(), fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (canManage) {
+                        Surface(
+                            shape = RoundedCornerShape(9.dp),
+                            color = when (entry.data.status) {
+                                "published" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                "draft" -> PistachioGreen
+                                else -> MaterialTheme.colorScheme.error.copy(alpha = 0.10f)
+                            }
+                        ) {
+                            Text(
+                                text = when (entry.data.status) {
+                                    "published" -> "Yayında"
+                                    "draft" -> "Taslak"
+                                    "pending" -> "Onayda"
+                                    else -> "Kaldırıldı"
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (entry.data.status == "cancelled") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
                 if (entry.data.kind == "event" && registrationCount != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Person, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(17.dp))
+                        Icon(Icons.Outlined.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("$registrationCount kişi kayıtlı", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = PrimaryGreen)
+                        Text("$registrationCount kayıtlı · ${attendanceCount?.toString() ?: "…"} giriş yaptı", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (entry.data.capacity > 0) {
+                        Text(
+                            "${entry.data.capacity} kişilik kontenjan · %${(registrationCount * 100 / entry.data.capacity).coerceAtMost(100)} dolu",
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -615,6 +1190,119 @@ private fun CommunityEntryCard(entry: CommunityEntry, registrationCount: Int? = 
                         fontWeight = FontWeight.Medium,
                         color = TextSecondary
                     )
+                }
+                if (canManage) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (entry.data.kind == "event") {
+                            Button(
+                                onClick = onManageAttendees,
+                                enabled = entry.data.status == "published",
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Text("Katılımcılar · QR", fontSize = 12.sp)
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = onEdit,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            Text("Düzenle", fontSize = 12.sp)
+                        }
+                    }
+                    if (entry.data.status != "cancelled") {
+                        OutlinedButton(
+                            onClick = onUnpublish,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.45f)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text(
+                                if (entry.data.status == "draft") "Taslağı kaldır" else "Yayından kaldır",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EntryRemovalConfirmation(
+    entry: CommunityEntry,
+    saving: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    val isDraft = entry.data.status == "draft"
+    val isCoupon = entry.data.kind == "coupon"
+    BasicAlertDialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().widthIn(max = 360.dp),
+            shape = RoundedCornerShape(22.dp),
+            color = SurfaceDefault,
+            shadowElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    when {
+                        isDraft -> "Taslak kaldırılsın mı?"
+                        isCoupon -> "Kupon kaldırılsın mı?"
+                        else -> "Etkinlik yayından kaldırılsın mı?"
+                    },
+                    fontSize = 20.sp,
+                    lineHeight = 25.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Text(entry.data.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Text(
+                    if (isDraft) {
+                        "Bu taslak aktif listeden çıkarılacak ve Geçmiş bölümünde saklanacak."
+                    } else if (isCoupon) {
+                        "Öğrenciler artık bu kuponu göremeyecek ve yeni kullanım kodu oluşturulamayacak."
+                    } else {
+                        "Öğrenciler artık bu etkinliği göremeyecek ve yeni kayıt alınmayacak. Mevcut kayıt ve katılım geçmişi korunacak."
+                    },
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = TextSecondary
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        enabled = !saving,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(13.dp)
+                    ) {
+                        Text("Vazgeç")
+                    }
+                    Button(
+                        onClick = onConfirm,
+                        enabled = !saving,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(13.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)
+                    ) {
+                        Text(if (saving) "Kaldırılıyor…" else "Kaldır")
+                    }
                 }
             }
         }
@@ -634,7 +1322,7 @@ private fun StudentCouponCard(entry: CommunityEntry, onClick: () -> Unit) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Surface(modifier = Modifier.size(42.dp), shape = RoundedCornerShape(13.dp), color = PistachioGreen) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.LocalOffer, contentDescription = null, tint = PrimaryGreen)
+                    Icon(Icons.Outlined.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
             val advantage = when (entry.data.discountType) {
@@ -643,11 +1331,11 @@ private fun StudentCouponCard(entry: CommunityEntry, onClick: () -> Unit) {
                 "freeItem" -> "Ücretsiz ürün"
                 else -> entry.data.title
             }
-            Text(advantage, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+            Text(advantage, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Text(entry.data.title, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 2)
             Text(entry.data.location, fontSize = 13.sp, color = TextSecondary, maxLines = 1)
-            Text("Son gün: ${entry.data.date}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = PrimaryGreen)
-            Text("Kuponu görüntüle", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
+            Text("Son gün: ${entry.data.date}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+            Text("Kuponu görüntüle", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -668,7 +1356,10 @@ private fun CommunityEntryDetailDialog(
     onEdit: () -> Unit,
     onUnpublish: () -> Unit,
     onCreateCode: () -> Unit,
-    onToggleRegistration: () -> Unit
+    onToggleRegistration: () -> Unit,
+    onShowTicket: () -> Unit,
+    onManageAttendees: () -> Unit,
+    onReport: (() -> Unit)? = null
 ) {
     val isCoupon = entry.data.kind == "coupon"
     val dateTime = listOf(entry.data.date, entry.data.time)
@@ -705,7 +1396,7 @@ private fun CommunityEntryDetailDialog(
                             Icon(
                                 imageVector = if (isCoupon) Icons.Outlined.LocalOffer else Icons.Outlined.CalendarMonth,
                                 contentDescription = null,
-                                tint = PrimaryGreen,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(23.dp)
                             )
                         }
@@ -733,6 +1424,9 @@ private fun CommunityEntryDetailDialog(
                     }
                 }
 
+                if (!isCoupon && AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                    CommunityDetailInfoRow(icon = Icons.Outlined.LocalOffer, text = EventCategory.labelFor(entry.data.categoryId))
+                }
                 CommunityDetailInfoRow(
                     icon = Icons.Outlined.CalendarMonth,
                     text = dateTime
@@ -756,7 +1450,7 @@ private fun CommunityEntryDetailDialog(
                             enabled = !codeGenerating && entry.data.businessId.isNotBlank(),
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text(if (codeGenerating) "Kod oluşturuluyor…" else "6 haneli kullanım kodu oluştur")
                         }
@@ -767,8 +1461,8 @@ private fun CommunityEntryDetailDialog(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            color = PrimaryGreen.copy(alpha = 0.12f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.35f))
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
@@ -784,6 +1478,7 @@ private fun CommunityEntryDetailDialog(
                 }
 
                 if (!isCoupon && !canManage) {
+                    if (registered) Button(onClick = onShowTicket, modifier = Modifier.fillMaxWidth()) { Text("QR biletimi göster") }
                     Button(
                         onClick = onToggleRegistration,
                         enabled = !registrationLoading,
@@ -791,16 +1486,17 @@ private fun CommunityEntryDetailDialog(
                         shape = RoundedCornerShape(14.dp),
                         colors = if (registered) {
                             ButtonDefaults.buttonColors(containerColor = SurfaceMuted, contentColor = TextPrimary)
-                        } else ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                        } else ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text(if (registrationLoading) "Kaydediliyor…" else if (registered) "Kaydımı iptal et" else "Etkinliğe katıl")
+                        Text(if (registrationLoading) "Kaydediliyor…" else if (registered) "Kaydımı iptal et" else "Etkinliğe kayıt ol")
                     }
                 }
 
                 if (!isCoupon && canManage) {
+                    Button(onClick = onManageAttendees, modifier = Modifier.fillMaxWidth()) { Text("Katılımcıları Yönet · QR giriş") }
                     Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = PistachioGreen.copy(alpha = 0.55f)) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                            Text("${registrations.size} kişi kayıtlı", fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
+                            Text("${registrations.size} kişi kayıtlı", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                             if (registrations.isEmpty()) {
                                 Text("Henüz katılımcı yok.", fontSize = 13.sp, color = TextSecondary)
                             } else {
@@ -826,8 +1522,8 @@ private fun CommunityEntryDetailDialog(
                                 .height(46.dp),
                             shape = RoundedCornerShape(13.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryGreen,
-                                contentColor = SurfaceDefault
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
                             Text("Düzenle", fontWeight = FontWeight.Medium)
@@ -841,10 +1537,10 @@ private fun CommunityEntryDetailDialog(
                             shape = RoundedCornerShape(13.dp),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                ErrorRed.copy(alpha = 0.45f)
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.45f)
                             ),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = ErrorRed,
+                                contentColor = MaterialTheme.colorScheme.error,
                                 disabledContentColor = TextSecondary.copy(alpha = 0.5f)
                             ),
                             contentPadding = PaddingValues(horizontal = 8.dp)
@@ -858,18 +1554,93 @@ private fun CommunityEntryDetailDialog(
                             )
                         }
                     }
-                    error?.let {
-                        Text(
-                            text = it,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp,
-                            color = ErrorRed
-                        )
+                }
+                if (!canManage && onReport != null) {
+                    TextButton(
+                        onClick = onReport,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Icon(Icons.Outlined.Flag, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Bu içeriği bildir", fontSize = 13.sp, color = TextSecondary)
                     }
                 }
+                error?.let { Text(it, fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.error) }
             }
         }
     }
+}
+
+private val reportReasons = listOf(
+    "Uygunsuz veya rahatsız edici içerik",
+    "Yanıltıcı ya da sahte bilgi",
+    "Spam veya reklam",
+    "Taciz, nefret söylemi veya şiddet",
+    "Diğer"
+)
+
+@Composable
+private fun ReportContentDialog(
+    title: String,
+    sending: Boolean,
+    sent: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onSubmit: (reason: String, details: String) -> Unit
+) {
+    var reason by remember { mutableStateOf<String?>(null) }
+    var details by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (sent) "Bildiriminiz alındı" else "İçeriği bildir") },
+        text = {
+            if (sent) {
+                Text("Teşekkürler. Good4 ekibi \"$title\" içeriğini inceleyecek ve gerekirse yayından kaldıracak.")
+            } else {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("\"$title\" için bir neden seçin.", fontSize = 14.sp, color = TextSecondary)
+                    reportReasons.forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable(enabled = !sending) { reason = option }
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = reason == option, onClick = { reason = option }, enabled = !sending)
+                            Text(option, fontSize = 14.sp, color = TextPrimary)
+                        }
+                    }
+                    OutlinedTextField(
+                        value = details,
+                        onValueChange = { details = it.take(500) },
+                        enabled = !sending,
+                        label = { Text("Açıklama (isteğe bağlı)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+                    error?.let { Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        },
+        confirmButton = {
+            if (sent) {
+                TextButton(onClick = onDismiss) { Text("Tamam") }
+            } else {
+                TextButton(
+                    onClick = { reason?.let { onSubmit(it, details) } },
+                    enabled = reason != null && !sending
+                ) { Text(if (sending) "Gönderiliyor…" else "Gönder") }
+            }
+        },
+        dismissButton = {
+            if (!sent) TextButton(onClick = onDismiss, enabled = !sending) { Text("Vazgeç") }
+        }
+    )
 }
 
 @Composable
@@ -885,7 +1656,7 @@ private fun CommunityDetailInfoRow(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = PrimaryGreen,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(19.dp)
         )
         Text(
@@ -902,7 +1673,7 @@ private fun CommunityDetailInfoRow(
 private fun CommunityLogo(url: String, size: androidx.compose.ui.unit.Dp = 60.dp) {
     Surface(shape = RoundedCornerShape(16.dp), color = PistachioGreen, modifier = Modifier.size(size)) {
         if (url.isNotBlank()) AsyncImage(url, null, contentScale = ContentScale.Crop)
-        else Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Groups, null, tint = PrimaryGreen, modifier = Modifier.size(size * 0.5f)) }
+        else Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Groups, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(size * 0.5f)) }
     }
 }
 
@@ -918,7 +1689,7 @@ private fun EmptyCommunityContent(title: String, subtitle: String, coupon: Boole
         Icon(
             imageVector = if (coupon) Icons.Outlined.LocalOffer else Icons.Outlined.Groups,
             contentDescription = null,
-            tint = PrimaryGreen.copy(alpha = 0.8f),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
             modifier = Modifier.size(40.dp)
         )
         Text(title, fontSize = 17.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
@@ -927,9 +1698,11 @@ private fun EmptyCommunityContent(title: String, subtitle: String, coupon: Boole
 }
 
 internal fun validateCommunityEntry(entry: CommunityEntryDto): String? {
+    if (entry.kind == "event" && AppEnvironment.firebaseBackend == FirebaseBackend.V2 && EventCategory.fromId(entry.categoryId) == null) return "Etkinlik kategorisini seçin."
     if (entry.title.isBlank() || entry.description.isBlank() || entry.location.isBlank()) return "Başlık, açıklama ve ${if (entry.kind == "coupon") "işletme" else "konum"} alanlarını doldurun."
     if (runCatching { LocalDate.parse(entry.date) }.isFailure) return "Tarihi yıl-ay-gün biçiminde girin. Örnek: 2026-10-15"
     if (entry.kind == "event" && !Regex("([01][0-9]|2[0-3]):[0-5][0-9]").matches(entry.time)) return "Saati 14:30 biçiminde girin."
+    if (entry.kind == "event" && entry.capacity > 100_000) return "Kontenjan 100.000 kişiden fazla olamaz."
     if (entry.kind == "coupon" && entry.businessId.isBlank()) return "Kuponu doğrulayacak işletmeyi seçin."
     if (entry.kind == "coupon" && entry.discountType !in setOf("percentage", "fixed", "freeItem")) return "Geçerli bir indirim türü seçin."
     if (entry.kind == "coupon" && entry.discountType == "percentage" && entry.discountValue !in 1..100) return "İndirim oranını 1 ile 100 arasında girin."
@@ -956,6 +1729,9 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
             if (!preview) {
                 ProductImagePicker(currentRemoteImageUrl = draft.imageUrl, pendingImageBytes = image, isUploading = saving, onPendingImageChange = { image = it }, onError = { localError = it })
                 EditorField("Başlık", draft.title, saving) { draft = draft.copy(title = it) }
+                if (!coupon && AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                    EventCategorySelector(draft.categoryId, false, !saving) { draft = draft.copy(categoryId = it) }
+                }
                 OutlinedButton(onClick = { datePicker = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text((if (coupon) "Son kullanım tarihi: " else "Tarih: ") + draft.date.ifBlank { "Seç" }) }
                 if (!coupon) OutlinedButton(onClick = { timePicker = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text("Saat: " + draft.time.ifBlank { "Seç" }) }
                 if (coupon) {
@@ -980,11 +1756,20 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
                     Text("Her öğrenci bu kuponu 1 kez kullanabilir.", fontSize = 12.sp, color = TextSecondary)
                 } else {
                     EditorField("Konum", draft.location, saving) { draft = draft.copy(location = it) }
+                    EditorField(
+                        "Kontenjan (sınırsız için boş bırak)",
+                        draft.capacity.takeIf { it > 0 }?.toString().orEmpty(),
+                        saving
+                    ) { value ->
+                        draft = draft.copy(capacity = value.filter(Char::isDigit).toIntOrNull() ?: 0)
+                    }
                 }
                 EditorField(if (coupon) "Avantaj ve kullanım şartları" else "Açıklama", draft.description, saving, singleLine = false) { draft = draft.copy(description = it) }
             } else {
                 Text(draft.title, style = MaterialTheme.typography.titleLarge)
+                if (!coupon && AppEnvironment.firebaseBackend == FirebaseBackend.V2) Text(EventCategory.labelFor(draft.categoryId), color = MaterialTheme.colorScheme.primary)
                 Text("${draft.date} ${draft.time}"); Text(draft.location); Text(draft.description)
+                if (!coupon) Text(if (draft.capacity > 0) "Kontenjan: ${draft.capacity} kişi" else "Kontenjan: Sınırsız")
                 if (coupon) {
                     Text(
                         when (draft.discountType) {
@@ -992,7 +1777,7 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
                             "fixed" -> "${draft.discountValue} TL indirim"
                             else -> "Ücretsiz ürün"
                         },
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -1000,6 +1785,33 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
             }
             if (coupon) Text("Kuponunuz Good4 onayından sonra görünür olacak.", color = TextSecondary)
             (localError ?: error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            if (!coupon && !preview) {
+                OutlinedButton(
+                    onClick = {
+                        localError = when {
+                            draft.title.isBlank() -> "Taslak için en az etkinlik başlığını girin."
+                            AppEnvironment.firebaseBackend == FirebaseBackend.V2 && EventCategory.fromId(draft.categoryId) == null -> "Etkinlik kategorisini seçin."
+                            else -> null
+                        }
+                        if (localError == null) {
+                            onSave(
+                                draft.copy(
+                                    title = draft.title.trim(),
+                                    description = draft.description.trim(),
+                                    location = draft.location.trim(),
+                                    status = "draft"
+                                ),
+                                image
+                            )
+                        }
+                    },
+                    enabled = !saving,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Taslak olarak kaydet")
+                }
+            }
             Button(onClick = {
                 localError = validateCommunityEntry(draft)
                 if (localError == null) {
@@ -1009,7 +1821,8 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
                                 title = draft.title.trim(),
                                 description = draft.description.trim(),
                                 location = draft.location.trim(),
-                                totalLimit = 0
+                                totalLimit = 0,
+                                status = if (coupon) "pending" else "published"
                             ),
                             image
                         )
@@ -1029,6 +1842,120 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
     if (timePicker) AlertDialog(onDismissRequest = { timePicker = false }, title = { Text("Saat seç") }, text = { TimeInput(timeState) }, confirmButton = {
         TextButton(onClick = { draft = draft.copy(time = "${timeState.hour.toString().padStart(2, '0')}:${timeState.minute.toString().padStart(2, '0')}"); timePicker = false }) { Text("Seç") }
     }, dismissButton = { TextButton(onClick = { timePicker = false }) { Text("Vazgeç") } })
+}
+
+@Composable
+internal fun EventCategorySelector(selectedId: String, filter: Boolean, enabled: Boolean, onSelect: (String) -> Unit) {
+    if (filter) {
+        CommunityEventFilterRow(selectedId, enabled, onSelect)
+        return
+    }
+    var expanded by remember { mutableStateOf(false) }
+    val label = when {
+        selectedId.isEmpty() -> "Seç"
+        else -> EventCategory.labelFor(selectedId)
+    }
+    Box(Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { expanded = true }, enabled = enabled,
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
+        ) {
+            Icon(Icons.Outlined.LocalOffer, null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Kategori: $label")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            EventCategory.entries.forEach { category ->
+                DropdownMenuItem(text = { Text(category.label) }, onClick = { onSelect(category.id); expanded = false })
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityEventFilterRow(
+    selectedId: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+    followedOnly: Boolean = false,
+    onFollowedOnlyChange: ((Boolean) -> Unit)? = null,
+) {
+    val categories = remember {
+        listOf("" to "Tümü") + EventCategory.entries.map { it.id to it.label } +
+            (EventCategory.UNCATEGORIZED to "Kategori belirtilmemiş")
+    }
+    val listState = rememberLazyListState()
+    var previousCategory by remember { mutableStateOf<String?>(null) }
+    var previousFollowedOnly by remember { mutableStateOf(followedOnly) }
+    val hasFollowFilter = onFollowedOnlyChange != null
+
+    LaunchedEffect(selectedId, followedOnly, hasFollowFilter) {
+        val categoryChanged = previousCategory != selectedId
+        val followChanged = previousFollowedOnly != followedOnly
+        val initialDefault = previousCategory == null && selectedId.isEmpty()
+        previousCategory = selectedId
+        previousFollowedOnly = followedOnly
+        val index = if (hasFollowFilter && ((followChanged && !categoryChanged) || initialDefault)) {
+            0
+        } else {
+            categories.indexOfFirst { it.first == selectedId }.coerceAtLeast(0) + if (hasFollowFilter) 1 else 0
+        }
+        listState.animateScrollToItem(index)
+    }
+
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 4.dp),
+    ) {
+        if (onFollowedOnlyChange != null) item(key = "followed") {
+            CommunityEventFilterChip(
+                selected = followedOnly,
+                enabled = true,
+                label = "Takip ettiklerim",
+                onClick = { onFollowedOnlyChange(!followedOnly) },
+                leadingIcon = { Icon(Icons.Outlined.Groups, null, Modifier.size(18.dp)) },
+            )
+        }
+        items(categories, key = { "category-${it.first}" }) { (id, label) ->
+            CommunityEventFilterChip(selectedId == id, enabled, label, onClick = { onSelect(id) })
+        }
+    }
+}
+
+@Composable
+private fun CommunityEventFilterChip(
+    selected: Boolean,
+    enabled: Boolean,
+    label: String,
+    onClick: () -> Unit,
+    leadingIcon: (@Composable () -> Unit)? = null,
+) {
+    val colors = MaterialTheme.colorScheme
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        enabled = enabled,
+        label = { Text(label, maxLines = 1) },
+        leadingIcon = leadingIcon,
+        shape = RoundedCornerShape(16.dp),
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = SurfaceDefault,
+            labelColor = TextSecondary,
+            iconColor = TextSecondary,
+            selectedContainerColor = colors.primary,
+            selectedLabelColor = colors.onPrimary,
+            selectedLeadingIconColor = colors.onPrimary,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = enabled,
+            selected = selected,
+            borderColor = BorderMuted,
+            selectedBorderColor = colors.primary,
+            selectedBorderWidth = 1.dp,
+        ),
+    )
 }
 
 @Composable

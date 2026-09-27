@@ -2,6 +2,7 @@ package com.good4.core.util
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -17,3 +18,6 @@ actual fun Modifier.systemBarsPadding(): Modifier {
 actual fun Modifier.topSafeAreaPadding(): Modifier {
     return this.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
 }
+
+@Composable
+actual fun Modifier.keyboardPadding(): Modifier = this.imePadding()

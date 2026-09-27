@@ -10,6 +10,8 @@ import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.product.data.repository.FirestoreProductRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_code_not_found
@@ -42,7 +44,12 @@ class CodeRepository(
     private val productRepository: FirestoreProductRepository,
     private val configRepository: AppConfigRepository
 ) {
+    // Legacy product reservation codes are not migrated to V2 and its rules deny them,
+    // so V2 reads report "no codes" instead of failing with permission-denied.
+    private val legacyCodesAvailable get() = AppEnvironment.firebaseBackend != FirebaseBackend.V2
+
     suspend fun getPendingCodeByUserId(userId: String): Result<CodeDto?, Error> {
+        if (!legacyCodesAvailable) return Result.Success(null)
         return when (val result = firestoreRepository.queryCollectionWithMultipleConditions(
             collectionPath = "codes",
             conditions = mapOf(
@@ -101,6 +108,7 @@ class CodeRepository(
     }
 
     suspend fun getCodesByUserId(userId: String): Result<List<CodeWithDetails>, Error> {
+        if (!legacyCodesAvailable) return Result.Success(emptyList())
         return when (val result = firestoreRepository.queryCollectionWithIds("codes", "userId", userId, CodeDto::class)) {
             is Result.Success -> {
                 Result.Success(buildCodesWithDetails(result.data))
@@ -113,6 +121,7 @@ class CodeRepository(
         userId: String,
         limit: Long
     ): Result<List<CodeWithDetails>, Error> {
+        if (!legacyCodesAvailable) return Result.Success(emptyList())
         return when (val result = firestoreRepository.queryCollectionWithMultipleConditionsAndLimit(
             collectionPath = "codes",
             conditions = mapOf("userId" to userId),
@@ -133,6 +142,7 @@ class CodeRepository(
         orderByField: String? = null,
         descending: Boolean = false
     ): Result<List<CodeWithDetails>, Error> {
+        if (!legacyCodesAvailable) return Result.Success(emptyList())
         val conditions = mapOf(
             "userId" to userId,
             "status" to status.value
@@ -163,6 +173,7 @@ class CodeRepository(
 
     @Suppress("unused")
     suspend fun getCodesByBusinessId(businessId: String): Result<List<CodeWithDetails>, Error> {
+        if (!legacyCodesAvailable) return Result.Success(emptyList())
         return when (val result = firestoreRepository.queryCollectionWithIds("codes", "businessId", businessId, CodeDto::class)) {
             is Result.Success -> {
                 val businessCodes = result.data
@@ -200,6 +211,7 @@ class CodeRepository(
     }
 
     suspend fun getCodeCountsByBusinessId(businessId: String): Result<CodeCounts, Error> {
+        if (!legacyCodesAvailable) return Result.Success(CodeCounts(pending = 0, completed = 0))
         return when (val result = firestoreRepository.queryCollectionWithIds("codes", "businessId", businessId, CodeDto::class)) {
             is Result.Success -> {
                 val pending = result.data.count { it.data.statusEnum == CodeStatus.PENDING }
@@ -214,6 +226,7 @@ class CodeRepository(
         businessId: String,
         limit: Long
     ): Result<List<CodeWithDetails>, Error> {
+        if (!legacyCodesAvailable) return Result.Success(emptyList())
         return when (val result = firestoreRepository.queryCollectionWithMultipleConditionsAndLimit(
             collectionPath = "codes",
             conditions = mapOf("businessId" to businessId),
@@ -316,6 +329,7 @@ class CodeRepository(
     }
 
     suspend fun checkAndExpireCodes(): Result<Unit, Error> {
+        if (!legacyCodesAvailable) return Result.Success(Unit)
         return when (val result = firestoreRepository.getCollectionWithIds("codes", CodeDto::class)) {
             is Result.Success -> {
                 val nowSecs = kotlinx.datetime.Clock.System.now().epochSeconds

@@ -17,3 +17,6 @@ actual fun Modifier.systemBarsPadding(): Modifier {
 actual fun Modifier.topSafeAreaPadding(): Modifier {
     return this.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
 }
+
+@Composable
+actual fun Modifier.keyboardPadding(): Modifier = this

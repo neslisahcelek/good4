@@ -1,0 +1,3832 @@
+[
+  {
+    "id": "medicine-d6-special",
+    "title": "Özel Öğrenci (Gelen ve Giden) Son Başvuru Tarihi",
+    "description": "Dönem 6; gelen ve giden öğrenciler.",
+    "startDate": "2026-06-19",
+    "endDate": "2026-06-19",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d6-advisor",
+    "title": "Danışman Onayı",
+    "description": "Dönem 6.",
+    "startDate": "2026-06-22",
+    "endDate": "2026-06-28",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d6-registration",
+    "title": "Öğrenci Katkı Payı/Öğrenim Ücretleri 1. Taksitleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 6, 1. taksit.",
+    "startDate": "2026-06-22",
+    "endDate": "2026-06-26",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d6-leave",
+    "title": "Öğrenime Ara İzni Başvurusu için Son Gün",
+    "description": "Dönem 6.",
+    "startDate": "2026-06-26",
+    "endDate": "2026-06-26",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d6-add-drop-approval",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 6.",
+    "startDate": "2026-06-29",
+    "endDate": "2026-07-05",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d6-add-drop",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 6.",
+    "startDate": "2026-06-29",
+    "endDate": "2026-07-03",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d6-education-start",
+    "title": "Eğitim Öğretimin Başlaması",
+    "description": "Dönem 6.",
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-01",
+    "faculty": "Tıp Fakültesi",
+    "category": "Ders",
+    "sourcePage": 1
+  },
+  {
+    "id": "grad-fen-application-fall",
+    "title": "Yeni Adayların ve Yatay Geçiş Başvurusu Yapacak Adaylar için Başvuru Tarihleri (Online)",
+    "description": "Fen Bilimleri Enstitüsü; online, güz yarıyılı.",
+    "startDate": "2026-07-06",
+    "endDate": "2026-07-24",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-application-fall",
+    "title": "Yeni Adayların ve Yatay Geçiş Başvurusu Yapacak Adaylar için Başvuru Tarihleri (Online)",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; online, güz yarıyılı.",
+    "startDate": "2026-07-13",
+    "endDate": "2026-07-27",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "conservatory-application",
+    "title": "Başvuru Tarihleri (Online)",
+    "description": "Online başvuru.",
+    "startDate": "2026-07-27",
+    "endDate": "2026-08-07",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Başvuru",
+    "sourcePage": 8
+  },
+  {
+    "id": "conservatory-parttime-prereg",
+    "title": "Ön Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-07-27",
+    "endDate": "2026-08-07",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Başvuru",
+    "sourcePage": 8
+  },
+  {
+    "id": "arts-highschool-prereg",
+    "title": "Ön Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-07-27",
+    "endDate": "2026-08-07",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "grad-common-correction-fall",
+    "title": "Başvurularda Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-07-28",
+    "endDate": "2026-07-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-correction-fall",
+    "title": "Başvurularda Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-07-28",
+    "endDate": "2026-07-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-correction-fall",
+    "title": "Başvurularda Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-07-28",
+    "endDate": "2026-07-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "medicine-transfer-app",
+    "title": "Dönem 1 (*),2,3,4,5 ve 6 (*) için Yatay Geçiş Başvuru Tarihleri",
+    "description": "Dönem 1, 2, 3, 4, 5 ve 6.",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-15",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 1
+  },
+  {
+    "id": "transfer-ek1-application",
+    "title": "Yatay Geçiş Başvuru Tarihleri",
+    "description": "Tıp Fakültesi hariç ön lisans ve lisans birimleri.",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-15",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "transfer-gano-application-fall",
+    "title": "Yatay Geçiş Başvuru Tarihleri",
+    "description": "Güz yarıyılı; Tıp Fakültesi hariç ön lisans ve lisans birimleri.",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-15",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "fine-arts-application",
+    "title": "Başvuru Tarihleri (Online)",
+    "description": "Online başvuru.",
+    "startDate": "2026-08-03",
+    "endDate": "2026-08-14",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 8
+  },
+  {
+    "id": "grad-fine-application-fall",
+    "title": "Yeni Adayların ve Yatay Geçiş Başvurusu Yapacak Adaylar için Başvuru Tarihleri (Online)",
+    "description": "Güzel Sanatlar Enstitüsü; online, güz yarıyılı.",
+    "startDate": "2026-08-03",
+    "endDate": "2026-08-14",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-prelim-fall",
+    "title": "Tezli Yüksek Lisans Ön Eleme Sonuçlarının Duyurulması Son Günü",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-08-06",
+    "endDate": "2026-08-06",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-prelim-fall",
+    "title": "Tezli Yüksek Lisans Ön Eleme Sonuçlarının Duyurulması Son Günü",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-06",
+    "endDate": "2026-08-06",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-interview-fall",
+    "title": "Yeni Adayların Bilim / Mülakat Sınavı Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-interview-fall",
+    "title": "Yeni Adayların Bilim / Mülakat Sınavı Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-10",
+    "endDate": "2026-08-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "conservatory-exams",
+    "title": "Sınav Tarihleri",
+    "description": "",
+    "startDate": "2026-08-13",
+    "endDate": "2026-08-28",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "general-assignments-fall",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesinin Son Günü",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-08-14",
+    "endDate": "2026-08-14",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-assignments-fall",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesi ve Ders Şubelerinin Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-08-14",
+    "endDate": "2026-08-14",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Ders",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-assignments-fall",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesinin Son Günü",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-08-14",
+    "endDate": "2026-08-14",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "conservatory-music-stage1",
+    "title": "Müzik Bölümü Özel Yetenek Sınav Tarihleri",
+    "description": "I. aşama.",
+    "startDate": "2026-08-17",
+    "endDate": "2026-08-17",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "medicine-transfer-correction",
+    "title": "Yatay Geçiş Başvurularında Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "",
+    "startDate": "2026-08-17",
+    "endDate": "2026-08-18",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 1
+  },
+  {
+    "id": "transfer-ek1-correction",
+    "title": "Yatay Geçiş Başvurularında Eksik veya Yanlış Evrak Düzeltme Tarihleri",
+    "description": "",
+    "startDate": "2026-08-17",
+    "endDate": "2026-08-18",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "transfer-gano-correction-fall",
+    "title": "Yatay Geçiş Başvurularında Eksik veya Yanlış Evrak Düzeltme Tarihleri",
+    "description": "Güz yarıyılı; Tıp Fakültesi hariç ön lisans ve lisans birimleri.",
+    "startDate": "2026-08-17",
+    "endDate": "2026-08-18",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "conservatory-music-stage2",
+    "title": "Müzik Bölümü Özel Yetenek Sınav Tarihleri",
+    "description": "II. aşama.",
+    "startDate": "2026-08-18",
+    "endDate": "2026-08-18",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "fine-arts-exam",
+    "title": "Sınav Tarihi",
+    "description": "",
+    "startDate": "2026-08-18",
+    "endDate": "2026-08-20",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "arts-highschool-music-exam",
+    "title": "Müzik Bölümü Özel Yetenek Sınav Tarihi",
+    "description": "Müzik ve Sahne Sanatları Lisesi.",
+    "startDate": "2026-08-19",
+    "endDate": "2026-08-19",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sınav",
+    "sourcePage": 9
+  },
+  {
+    "id": "arts-highschool-ballet-exam",
+    "title": "Bale Ana Sanat Dalı Özel Yetenek Sınav Tarihi",
+    "description": "Müzik ve Sahne Sanatları Lisesi.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sınav",
+    "sourcePage": 9
+  },
+  {
+    "id": "conservatory-music-results",
+    "title": "Müzik Bölümü Sınav Sonuçlarının Duyurulması",
+    "description": "",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sonuç",
+    "sourcePage": 8
+  },
+  {
+    "id": "arts-highschool-music-results",
+    "title": "Müzik Bölümü Sınav Sonuçlarının Duyurulması",
+    "description": "Müzik ve Sahne Sanatları Lisesi.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sonuç",
+    "sourcePage": 9
+  },
+  {
+    "id": "dentistry-d123-special",
+    "title": "Özel Öğrenci (Gelen ve Giden) Başvurularının Son Günü",
+    "description": "Dönem 1, 2 ve 3; gelen ve giden öğrenciler.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-special",
+    "title": "Özel Öğrenci (Gelen ve Giden) Başvurularının Son Günü",
+    "description": "Dönem 4 ve 5; gelen ve giden öğrenciler.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-special-fall",
+    "title": "Özel Öğrenci Başvurusu (gelen ve giden) İçin Son Gün",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "fine-arts-results",
+    "title": "Sınav Sonuçlarının Duyurulması",
+    "description": "",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 8
+  },
+  {
+    "id": "law-special",
+    "title": "Özel Öğrenci (Gelen ve Giden) Başvurusu İçin Son Gün",
+    "description": "Gelen ve giden öğrenciler.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 3
+  },
+  {
+    "id": "grad-fine-prelim-fall",
+    "title": "Tezli Yüksek Lisans Ön Eleme Sonuçlarının Duyurulması Son Günü",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-results-fall",
+    "title": "Yeni Adayların Sınav Sonuçları ile Yatay Geçiş Başvuru Sonuçlarının Duyurulmasının Son Günü",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-results-fall",
+    "title": "Yeni Adayların Sınav Sonuçları ile Yatay Geçiş Başvuru Sonuçlarının Duyurulmasının Son Günü",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "medicine-d45-special",
+    "title": "Özel Öğrenci (Gelen ve Giden) Son Başvuru Tarihi",
+    "description": "Dönem 4 ve 5; gelen ve giden öğrenciler.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d123-special",
+    "title": "Özel Öğrenci (Gelen ve Giden) Son Başvuru Tarihi",
+    "description": "Dönem 1, 2 ve 3; gelen ve giden öğrenciler.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "remote-special-fall",
+    "title": "Özel Öğrenci Başvurusu (gelen ve giden) İçin Son Gün",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-21",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "conservatory-music-main-registration",
+    "title": "Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-08-24",
+    "endDate": "2026-08-28",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "conservatory-ballet-exam",
+    "title": "Bale Ana Sanat Dalı Özel Yetenek Sınav Tarihi (1. aşama-baraj aşaması-2.aşama-kesin kabul aşaması)",
+    "description": "Baraj ve kesin kabul aşamaları.",
+    "startDate": "2026-08-24",
+    "endDate": "2026-08-24",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sınav",
+    "sourcePage": 9
+  },
+  {
+    "id": "arts-highschool-ballet-results",
+    "title": "Bale Ana Sanat Dalı Sınav Sonuçlarının Duyurulması",
+    "description": "Müzik ve Sahne Sanatları Lisesi.",
+    "startDate": "2026-08-24",
+    "endDate": "2026-08-24",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sonuç",
+    "sourcePage": 9
+  },
+  {
+    "id": "fine-arts-appeal",
+    "title": "Sınav Sonuçlarına İtiraz (Sınav Sonuçlarının İlanından İtibaren 2(iki) İş Günü)",
+    "description": "Sonuç ilanından itibaren iki iş günü.",
+    "startDate": "2026-08-24",
+    "endDate": "2026-08-25",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 8
+  },
+  {
+    "id": "arts-highschool-main-registration",
+    "title": "Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-08-25",
+    "endDate": "2026-08-28",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "grad-fine-interview-fall",
+    "title": "Yeni Adayların Bilim / Mülakat Sınavı Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-26",
+    "endDate": "2026-08-27",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "conservatory-ballet-results",
+    "title": "Bale Ana Sanat Dalı Sınav Sonuçlarının Duyurulması",
+    "description": "",
+    "startDate": "2026-08-28",
+    "endDate": "2026-08-28",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Sonuç",
+    "sourcePage": 9
+  },
+  {
+    "id": "medicine-transfer-results",
+    "title": "Dönem 1 (*),2,3,4,5 ve 6 (*) için Yatay Geçiş Sonuçlarının Duyurulması",
+    "description": "Dönem 1, 2, 3, 4, 5 ve 6.",
+    "startDate": "2026-08-28",
+    "endDate": "2026-08-28",
+    "faculty": "Tıp Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 1
+  },
+  {
+    "id": "transfer-ek1-results",
+    "title": "Yatay Geçiş Sonuçlarının Birimlerce Duyurulması",
+    "description": "",
+    "startDate": "2026-08-28",
+    "endDate": "2026-08-28",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Sonuç",
+    "sourcePage": 9
+  },
+  {
+    "id": "transfer-gano-results-fall",
+    "title": "Yatay Geçiş Sonuçlarının Birimlerce Duyurulması",
+    "description": "Güz yarıyılı; Tıp Fakültesi hariç ön lisans ve lisans birimleri.",
+    "startDate": "2026-08-28",
+    "endDate": "2026-08-28",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Sonuç",
+    "sourcePage": 9
+  },
+  {
+    "id": "exchange-free-mover-fall",
+    "title": "Free Mover Programı Gelen Öğrenci Başvuru Tarihleri",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-08-29",
+    "endDate": "2026-08-29",
+    "faculty": "Değişim Programları",
+    "category": "Başvuru",
+    "sourcePage": 10
+  },
+  {
+    "id": "conservatory-ballet-main-registration",
+    "title": "Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "fine-arts-main-registration",
+    "title": "Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-02",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "grad-fine-results-fall",
+    "title": "Yeni Adayların Sınav Sonuçları ile Yatay Geçiş Başvuru Sonuçlarının Duyurulmasının Son Günü",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-08-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fen-main-course-fall",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Ders Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-main-registration-fall",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-main-registration-fall",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "medicine-d45-advisor",
+    "title": "Danışman Onayı",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-06",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-transfer-registration",
+    "title": "Dönem 1,2,3,4,5 ve 6 için Yatay Geçiş Kesin Kayıt Tarihleri",
+    "description": "Dönem 1, 2, 3, 4, 5 ve 6.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-02",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d45-registration",
+    "title": "Öğrenci Katkı Payı/Öğrenim Ücretleri 1. Taksitleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 4 ve 5, 1. taksit.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "transfer-ek1-registration",
+    "title": "Yatay Geçiş Başvurusu Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "transfer-gano-main-fall",
+    "title": "Yatay Geçiş Başvurusu Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Güz yarıyılı; Tıp Fakültesi hariç ön lisans ve lisans birimleri.",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "arts-highschool-reserve-registration",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-09-01",
+    "endDate": "2026-09-03",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "grad-fine-main-registration-fall",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-09-01",
+    "endDate": "2026-09-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "conservatory-main-registration",
+    "title": "Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-09-02",
+    "endDate": "2026-09-09",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "conservatory-music-reserve-registration",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-09-02",
+    "endDate": "2026-09-04",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "fine-arts-reserve-1",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri (1. Yedek)",
+    "description": "",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-04",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "medicine-transfer-reserve-d45",
+    "title": "Dönem 4 ve 5 için Yatay Geçiş Yedek Kayıt Tarihleri",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-04",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d45-leave",
+    "title": "Öğrenime Ara İzni Başvurusu için Son Gün",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-09-04",
+    "endDate": "2026-09-04",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "conservatory-ballet-reserve-registration",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-08",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "dentistry-d123-advisor-fall",
+    "title": "Danışman Onayı",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-advisor-fall",
+    "title": "Danışman Onayı",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-registration-fall",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-registration-fall",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-advisor-fall",
+    "title": "Danışman Onayı",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "general-registration-fall",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "fine-arts-reserve-2",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri (2. Yedek)",
+    "description": "",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-08",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "law-advisor-fall",
+    "title": "Danışman Onayı",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "law-registration-fall",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "graduate-advisor-fall",
+    "title": "Danışman Onayı",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-registration-fall",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-main-course-fall",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Ders Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fine-main-course-fall",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Ders Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-reserve-course-fall",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Ders Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-reserve-course-fall",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Ders Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-reserve-course-fall",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Ders Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-reserve-registration-fall",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-reserve-registration-fall",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-reserve-registration-fall",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "medicine-d123-advisor",
+    "title": "Danışman Onayı",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d45-add-drop-approval",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d45-add-drop",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-transfer-reserve-d23",
+    "title": "Dönem 2 ve 3 için Yatay Geçiş Yedek Kayıt Tarihleri",
+    "description": "Dönem 2 ve 3.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-08",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d45-education-start",
+    "title": "Eğitim Öğretimin Başlaması",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-07",
+    "faculty": "Tıp Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d123-registration",
+    "title": "Öğrenci Katkı Payı/Öğrenim Ücretleri 1. Taksitleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 1, 2 ve 3, 1. taksit.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "remote-advisor-fall",
+    "title": "Danışman Onayı",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-registration-fall",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "double-major-application-fall",
+    "title": "Başvuru Tarihleri",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 10
+  },
+  {
+    "id": "transfer-gano-reserve-fall",
+    "title": "Yatay Geçiş Başvurusu Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri (Yedek adaylar ilgili birim tarafından ilan edilecek sırayla çağrılır)",
+    "description": "Güz yarıyılı; Tıp Fakültesi hariç ön lisans ve lisans birimleri.",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-11",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "prep-placement-written",
+    "title": "Hazırlık Programı Yabancı Dil Düzey Belirleme ve Yeterlik Sınavı (Yazma ve Test Bölümü)",
+    "description": "Yazma ve test bölümü.",
+    "startDate": "2026-09-08",
+    "endDate": "2026-09-08",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sınav",
+    "sourcePage": 1
+  },
+  {
+    "id": "fine-arts-reserve-3",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri (3. Yedek)",
+    "description": "",
+    "startDate": "2026-09-09",
+    "endDate": "2026-09-10",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "prep-placement-speaking",
+    "title": "Hazırlık Programı Yabancı Dil Düzey Belirleme ve Yeterlik Sınavı (Konuşma Bölümü)",
+    "description": "Konuşma bölümü.",
+    "startDate": "2026-09-09",
+    "endDate": "2026-09-09",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sınav",
+    "sourcePage": 1
+  },
+  {
+    "id": "conservatory-reserve-registration",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2026-09-10",
+    "endDate": "2026-09-11",
+    "faculty": "Antalya Devlet Konservatuvarı",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "dentistry-d123-leave",
+    "title": "Öğrenime Ara İzni Başvurusu İçin Son Gün",
+    "description": "Dönem 1, 2 ve 3",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-leave",
+    "title": "Öğrenime Ara İzni Başvurusu İçin Son Gün",
+    "description": "Dönem 4 ve 5",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-leave-fall",
+    "title": "Öğrenime Ara İzni Başvurusu İçin Son Gün",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "fine-arts-reserve-4",
+    "title": "Yedek Adayların Kesin Kayıt Tarihleri (4. Yedek)",
+    "description": "",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Güzel Sanatlar Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "medicine-d123-leave",
+    "title": "Öğrenime Ara İzni Başvurusu için Son Gün",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "remote-leave-fall",
+    "title": "Öğrenime Ara İzni Başvurusu İçin Son Gün",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "prep-placement-results",
+    "title": "Hazırlık Programı Yabancı Dil Düzey Belirleme ve Yeterlik Sınavı Sonuçlarının Duyurulması",
+    "description": "",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-11",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sonuç",
+    "sourcePage": 1
+  },
+  {
+    "id": "dentistry-d123-start-fall",
+    "title": "Derslerin Başlaması",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-start-fall",
+    "title": "Derslerin Başlaması",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-clinical-start-fall",
+    "title": "Klinik Eğitim Başlaması",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-social",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Dönem 1, 2 ve 3",
+    "startDate": "2026-09-14",
+    "endDate": "2027-05-28",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-social",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Dönem 4 ve 5",
+    "startDate": "2026-09-14",
+    "endDate": "2027-05-28",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-classes-start-fall",
+    "title": "Derslerin Başlaması",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 4
+  },
+  {
+    "id": "general-section-notice-fall",
+    "title": "Kapatılacak veya Şubelere Ayrılan Derslerin Rektörlüğe Bildirilmesinin Son Günü*",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 4
+  },
+  {
+    "id": "general-social-fall",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-12-20",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-start-fall",
+    "title": "Derslerin Başlaması",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "law-social-fall",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-12-20",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 3
+  },
+  {
+    "id": "graduate-approval-fall",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-20",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-add-drop-fall",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-18",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-classes-start-fall",
+    "title": "Derslerin Başlaması",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Ders",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-doctorate-fall",
+    "title": "Doktora Yeterlik Sınavı Tarihleri",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-14",
+    "endDate": "2027-01-22",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-social-fall",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-12-20",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "medicine-d123-add-drop-approval",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-20",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d123-add-drop",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-18",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d123-education-start",
+    "title": "Eğitim Öğretimin Başlaması",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Tıp Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d6-social",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Dönem 6.",
+    "startDate": "2026-09-14",
+    "endDate": "2027-06-30",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d45-social",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2026-09-14",
+    "endDate": "2027-06-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d123-social",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2026-09-14",
+    "endDate": "2027-06-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 2
+  },
+  {
+    "id": "remote-classes-start-fall",
+    "title": "Derslerin Başlaması",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-social-fall",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-12-20",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "prep-module-one-start",
+    "title": "I. Modül Hazırlık Programı Derslerinin Başlaması",
+    "description": "",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Ders",
+    "sourcePage": 1
+  },
+  {
+    "id": "double-major-results-fall",
+    "title": "Başvurusu Kabul Edilen Öğrencilerin Birimlerce Duyurulması",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-14",
+    "endDate": "2026-09-14",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Sonuç",
+    "sourcePage": 10
+  },
+  {
+    "id": "dentistry-d123-approval-fall",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-20",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-approval-fall",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-20",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-add-drop-fall",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-add-drop-fall",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-approval-fall",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-20",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "general-add-drop-fall",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar) / Mazeretli Ders Kaydı",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-approval-fall",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-20",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "law-add-drop-fall",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "remote-approval-fall",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-20",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-add-drop-fall",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "prep-transfer-placement",
+    "title": "Yatay Geçiş ile Gelen Öğrencilerin Hazırlık Programı Yabancı Dil Düzey Belirleme ve Yeterlik Sınavı",
+    "description": "",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-16",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sınav",
+    "sourcePage": 1
+  },
+  {
+    "id": "double-major-registration-fall",
+    "title": "Kesin Kayıt Tarihleri",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 10
+  },
+  {
+    "id": "prep-transfer-results",
+    "title": "Yatay Geçiş ile Gelen Öğrencilerin Hazırlık Programı Yabancı Dil Düzey Belirleme ve Yeterlik Sınavı Sonuçlarının Duyurulması",
+    "description": "",
+    "startDate": "2026-09-17",
+    "endDate": "2026-09-17",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sonuç",
+    "sourcePage": 1
+  },
+  {
+    "id": "general-withdraw-fall",
+    "title": "Dersten Çekilmenin Son Günü",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-10-02",
+    "endDate": "2026-10-02",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-withdraw-fall",
+    "title": "Dersten Çekilmenin Son Günü",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-10-02",
+    "endDate": "2026-10-02",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "remote-withdraw-fall",
+    "title": "Dersten Çekilmenin Son Günü",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-10-02",
+    "endDate": "2026-10-02",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "holiday-republic-eve",
+    "title": "Cumhuriyet Bayramı Yarım gün",
+    "description": "Öğleden sonra resmî tatil.",
+    "startDate": "2026-10-28",
+    "endDate": "2026-10-28",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "holiday-republic",
+    "title": "Cumhuriyet Bayramı",
+    "description": "",
+    "startDate": "2026-10-29",
+    "endDate": "2026-10-29",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "dentistry-d123-midterm-fall",
+    "title": "Ara Sınav Tarihleri",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-11-09",
+    "endDate": "2026-11-20",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-midterm-fall",
+    "title": "Ara Sınav Tarihleri",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-11-09",
+    "endDate": "2026-11-20",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-midterm-results-fall",
+    "title": "Ara Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-11-27",
+    "endDate": "2026-11-27",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-midterm-results-fall",
+    "title": "Ara Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-11-27",
+    "endDate": "2026-11-27",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-makeup-fall",
+    "title": "Mazeret Sınavları",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2026-12-02",
+    "endDate": "2026-12-03",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-makeup-fall",
+    "title": "Mazeret Sınavları",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2026-12-02",
+    "endDate": "2026-12-03",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-assessment-results-fall",
+    "title": "Ara Sınav Sonuçlarının ve Diğer Yıl/Yarıyıl İçi Ölçme Araçları Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Genel",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "general-classes-end-fall",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-end-fall",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "law-assessment-results-fall",
+    "title": "Yarıyıllık (Dönemlik) Derslerin Ara Sınav Sonuçlarının ve Diğer Yıl/Yarıyıl İçi Ölçme Araçları Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Yarıyıllık dersler; otomasyon sistemine giriş.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "graduate-classes-end-fall",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Ders",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-assessment-results-fall",
+    "title": "Ara Sınav Sonuçlarının ve Diğer Yıl/Yarıyıl İçi Ölçme Araçları Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-classes-end-fall",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-12-20",
+    "endDate": "2026-12-20",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-finals-fall",
+    "title": "Yarıyıl Sonu Sınavları",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-12-21",
+    "endDate": "2026-12-31",
+    "faculty": "Genel",
+    "category": "Sınav",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-finals-fall",
+    "title": "Yıllık Derslerin Ara Sınavları- Yarıyıllık (Dönemlik) Derslerin Yarıyıl Sonu Sınavları (3 Hafta)",
+    "description": "Üç hafta.",
+    "startDate": "2026-12-21",
+    "endDate": "2027-01-08",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "graduate-finals-fall",
+    "title": "Yarıyıl Sonu Sınav Tarihleri",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2026-12-21",
+    "endDate": "2026-12-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-application-spring",
+    "title": "Yeni Adayların ve Yatay Geçiş Başvurusu Yapacak Adaylar için Başvuru Tarihleri (Online)",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; online, bahar yarıyılı.",
+    "startDate": "2026-12-21",
+    "endDate": "2026-12-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-application-spring",
+    "title": "Yeni Adayların ve Yatay Geçiş Başvurusu Yapacak Adaylar için Başvuru Tarihleri (Online)",
+    "description": "Fen Bilimleri Enstitüsü; online, bahar yarıyılı.",
+    "startDate": "2026-12-21",
+    "endDate": "2026-12-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-application-spring",
+    "title": "Yeni Adayların ve Yatay Geçiş Başvurusu Yapacak Adaylar için Başvuru Tarihleri (Online)",
+    "description": "Güzel Sanatlar Enstitüsü; online, bahar yarıyılı.",
+    "startDate": "2026-12-21",
+    "endDate": "2026-12-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-finals-fall",
+    "title": "Yarıyıl Sonu Sınavları",
+    "description": "Güz yarıyılı.",
+    "startDate": "2026-12-26",
+    "endDate": "2026-12-27",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sınav",
+    "sourcePage": 5
+  },
+  {
+    "id": "exchange-free-mover-spring",
+    "title": "Free Mover Programı Gelen Öğrenci Başvuru Tarihleri",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2026-12-31",
+    "endDate": "2026-12-31",
+    "faculty": "Değişim Programları",
+    "category": "Başvuru",
+    "sourcePage": 10
+  },
+  {
+    "id": "dentistry-clinical-d4-end-fall",
+    "title": "Klinik Eğitim Sona Ermesi (4. Sınıf)",
+    "description": "4. sınıf; güz yarıyılı.",
+    "startDate": "2026-12-31",
+    "endDate": "2026-12-31",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-assignments-spring",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesinin Son Günü",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2026-12-31",
+    "endDate": "2026-12-31",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "graduate-assignments-spring",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesi ve Ders Şubelerinin Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2026-12-31",
+    "endDate": "2026-12-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Ders",
+    "sourcePage": 8
+  },
+  {
+    "id": "remote-assignments-spring",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesinin Son Günü",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2026-12-31",
+    "endDate": "2026-12-31",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "holiday-new-year",
+    "title": "Yılbaşı",
+    "description": "",
+    "startDate": "2027-01-01",
+    "endDate": "2027-01-01",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "general-resit-app-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-02",
+    "endDate": "2027-01-09",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-resit-app-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-02",
+    "endDate": "2027-01-09",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-resit-app-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-02",
+    "endDate": "2027-01-09",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "dentistry-d123-end-fall",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2027-01-03",
+    "endDate": "2027-01-03",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-end-fall",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2027-01-03",
+    "endDate": "2027-01-03",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-clinical-start-spring",
+    "title": "Klinik Eğitim Başlaması",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-04",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-final-fall",
+    "title": "Yıl/Yarıyıl Sonu Sınavları",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-08",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-final-fall",
+    "title": "Yıl/Yarıyıl Sonu Sınavları",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-08",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-final-results-fall",
+    "title": "Yarıyıl Sonu Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-04",
+    "faculty": "Genel",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "grad-common-correction-spring",
+    "title": "Başvurularda Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-05",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-correction-spring",
+    "title": "Başvurularda Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-05",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-correction-spring",
+    "title": "Başvurularda Eksik veya Yanlış Evrak Düzeltme Tarihi",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-05",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-final-results-fall",
+    "title": "Yarıyıl Sonu Sınavları Sonuçların Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-final-results-fall",
+    "title": "Yarıyıl Sonu Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-04",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "transfer-gano-application-spring",
+    "title": "Yatay Geçiş Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; ön lisans birimleri.",
+    "startDate": "2027-01-04",
+    "endDate": "2027-01-15",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "graduate-thesis-submit-fall",
+    "title": "Tez Savunma Öncesi Tezlerin Enstitüye Tesliminin Son Günü",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-05",
+    "endDate": "2027-01-05",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Tez",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-project-submit-fall",
+    "title": "Tezsiz Yüksek Lisans Dönem Projelerinin Ana Bilim Dalı Dönem Projesi Komisyonuna Tesliminin Son Günü",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-08",
+    "endDate": "2027-01-08",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Proje",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-resits-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Tarihleri",
+    "description": "Güz yarıyılı.",
+    "startDate": "2027-01-10",
+    "endDate": "2027-01-10",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sınav",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-resits-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Tarihleri",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-11",
+    "endDate": "2027-01-15",
+    "faculty": "Genel",
+    "category": "Sınav",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-final-results-fall",
+    "title": "Yarıyıllık (Dönemlik) Derslerin Yarıyıl Sonu Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-01-11",
+    "endDate": "2027-01-11",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-resits-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınav Tarihleri",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-11",
+    "endDate": "2027-01-15",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "law-resit-app-fall",
+    "title": "Yarıyıllık (Dönemlik) Derslerin Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "",
+    "startDate": "2027-01-12",
+    "endDate": "2027-01-16",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "grad-common-prelim-spring",
+    "title": "Tezli Yüksek Lisans Ön Eleme Sonuçlarının Duyurulması Son Günü",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-01-12",
+    "endDate": "2027-01-12",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-prelim-spring",
+    "title": "Tezli Yüksek Lisans Ön Eleme Sonuçlarının Duyurulması Son Günü",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-12",
+    "endDate": "2027-01-12",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-prelim-spring",
+    "title": "Tezli Yüksek Lisans Ön Eleme Sonuçlarının Duyurulması Son Günü",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-12",
+    "endDate": "2027-01-12",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "dentistry-d123-final-results-fall",
+    "title": "Yıl/Yarıyıl Sonu Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 1, 2 ve 3; güz yarıyılı.",
+    "startDate": "2027-01-14",
+    "endDate": "2027-01-14",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-final-results-fall",
+    "title": "Yıl/Yarıyıl Sonu Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 4 ve 5; güz yarıyılı.",
+    "startDate": "2027-01-14",
+    "endDate": "2027-01-14",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "grad-common-interview-spring",
+    "title": "Yeni Adayların Bilim / Mülakat Sınavı Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-01-14",
+    "endDate": "2027-01-15",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-interview-spring",
+    "title": "Yeni Adayların Bilim / Mülakat Sınavı Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-14",
+    "endDate": "2027-01-15",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-interview-spring",
+    "title": "Yeni Adayların Bilim / Mülakat Sınavı Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-14",
+    "endDate": "2027-01-15",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 7
+  },
+  {
+    "id": "general-special-spring",
+    "title": "Özel Öğrenci Başvurusu (gelen ve giden) İçin Son Gün",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-15",
+    "endDate": "2027-01-15",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-special-spring",
+    "title": "Özel Öğrenci Başvurusu (gelen ve giden) İçin Son Gün",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-15",
+    "endDate": "2027-01-15",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "prep-module-one-end",
+    "title": "I. Modül Hazırlık Programı Derslerinin Sona Ermesi",
+    "description": "",
+    "startDate": "2027-01-15",
+    "endDate": "2027-01-15",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Ders",
+    "sourcePage": 1
+  },
+  {
+    "id": "dentistry-d123-advisor-spring",
+    "title": "Danışman Onayı",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-24",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-advisor-spring",
+    "title": "Danışman Onayı",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-24",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-registration-spring",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-22",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-registration-spring",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma Süresi ve Ders Kayıtları",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-22",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-resit-results-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-18",
+    "faculty": "Genel",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-resits-fall",
+    "title": "Yarıyıllık (Dönemlik) Derslerin Yarıyıl Sonu İkinci Sınavı (Bütünleme) Tarihleri",
+    "description": "",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-22",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-project-evaluate-fall",
+    "title": "Tezsiz Yüksek Lisans Dönem Projelerinin Dönem Projesi Komisyonu Tarafından Değerlendirilmesinin ve Enstitüye Tesliminin Son Günü",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-18",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Proje",
+    "sourcePage": 7
+  },
+  {
+    "id": "graduate-resit-results-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-18",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-resit-results-fall",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-18",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "transfer-gano-correction-spring",
+    "title": "Yatay Geçiş Başvurularında Eksik veya Yanlış Evrak Düzeltme Tarihleri",
+    "description": "Bahar yarıyılı; ön lisans birimleri.",
+    "startDate": "2027-01-18",
+    "endDate": "2027-01-19",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 9
+  },
+  {
+    "id": "extra-first-app-fall",
+    "title": "1. Ek Sınav Başvuru tarihleri",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-01-19",
+    "endDate": "2027-01-21",
+    "faculty": "2547 Ek Sınav",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-common-results-spring",
+    "title": "Yeni Adayların Sınav Sonuçları ile Yatay Geçiş Başvuru Sonuçlarının Duyurulmasının Son Günü",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-01-22",
+    "endDate": "2027-01-22",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-results-spring",
+    "title": "Yeni Adayların Sınav Sonuçları ile Yatay Geçiş Başvuru Sonuçlarının Duyurulmasının Son Günü",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-22",
+    "endDate": "2027-01-22",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-results-spring",
+    "title": "Yeni Adayların Sınav Sonuçları ile Yatay Geçiş Başvuru Sonuçlarının Duyurulmasının Son Günü",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-22",
+    "endDate": "2027-01-22",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 7
+  },
+  {
+    "id": "transfer-gano-results-spring",
+    "title": "Yatay Geçiş Sonuçlarının Birimlerce Duyurulması",
+    "description": "Bahar yarıyılı; ön lisans birimleri.",
+    "startDate": "2027-01-22",
+    "endDate": "2027-01-22",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Sonuç",
+    "sourcePage": 9
+  },
+  {
+    "id": "law-resit-results-fall",
+    "title": "Yarıyıllık (Dönemlik) Derslerin Yarıyıl Sonu İkinci Sınavı (Bütünleme) Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-01-24",
+    "endDate": "2027-01-24",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "extra-first-exam-fall",
+    "title": "1. Ek Sınav tarihleri",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "dentistry-d123-approval-spring",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-31",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-approval-spring",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-31",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-add-drop-spring",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-add-drop-spring",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-start-spring",
+    "title": "Derslerin Başlaması",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-25",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-start-spring",
+    "title": "Derslerin Başlaması",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-25",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-advisor-spring",
+    "title": "Danışman Onayı",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-31",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-registration-spring",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "law-advisor-spring",
+    "title": "Danışman Onayı",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-31",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-registration-spring",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-advisor-spring",
+    "title": "Danışman Onayı",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-31",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-registration-spring",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "grad-common-main-course-spring",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Ders Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-main-course-spring",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Ders Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-main-course-spring",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Ders Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-main-registration-spring",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-main-registration-spring",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-main-registration-spring",
+    "title": "Yeni Kazanan Asıl Adayların ve Yatay Geçiş ile Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "medicine-second-installment",
+    "title": "Katkı Payı/Öğrenim Ücretleri 2. Taksitlerinin Yatırılma Süresi",
+    "description": "Dönem 1, 2, 3, 4, 5 ve 6.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Tıp Fakültesi",
+    "category": "Kayıt",
+    "sourcePage": 2
+  },
+  {
+    "id": "remote-advisor-spring",
+    "title": "Danışman Onayı",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-31",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-registration-spring",
+    "title": "Katkı Payı/Öğrenim Ücretleri Yatırma ve Kayıt Yenileme Süresi",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "double-major-application-spring",
+    "title": "Başvuru Tarihleri",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-29",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Başvuru",
+    "sourcePage": 10
+  },
+  {
+    "id": "transfer-gano-main-spring",
+    "title": "Yatay Geçiş Başvurusu Kabul Edilen Asıl Adayların Kesin Kayıt Tarihleri",
+    "description": "Bahar yarıyılı; ön lisans birimleri.",
+    "startDate": "2027-01-25",
+    "endDate": "2027-01-27",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "transfer-gano-reserve-spring",
+    "title": "Yatay Geçiş Başvurusu Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri (Yedek adaylar ilgili birim tarafından ilan edilecek sırayla çağrılır)",
+    "description": "Bahar yarıyılı; ön lisans birimleri.",
+    "startDate": "2027-01-28",
+    "endDate": "2027-01-29",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 9
+  },
+  {
+    "id": "general-leave-spring",
+    "title": "Öğrenime Ara İzni Başvurusu İçin Son Gün",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-01-29",
+    "endDate": "2027-01-29",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-leave-spring",
+    "title": "Öğrenime Ara İzni Başvurusu İçin Son Gün",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-01-29",
+    "endDate": "2027-01-29",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "extra-first-results-fall",
+    "title": "1. Ek Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "general-classes-start-spring",
+    "title": "Derslerin Başlaması",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-section-notice-spring",
+    "title": "Kapatılacak veya Şubelere Ayrılan Derslerin Rektörlüğe Bildirilmesinin Son Günü*",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-social-spring",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-05-14",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "law-start-spring",
+    "title": "Derslerin Başlaması",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Ders",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-social-spring",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-05-14",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-approval-spring",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-07",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-add-drop-spring",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-05",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-classes-start-spring",
+    "title": "Derslerin Başlaması",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Ders",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-doctorate-spring",
+    "title": "Doktora Yeterlik Sınavı Tarihleri",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-06-25",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-social-spring",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-05-14",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 8
+  },
+  {
+    "id": "grad-common-reserve-course-spring",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Ders Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-03",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-reserve-course-spring",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Ders Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-03",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-reserve-course-spring",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Ders Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-03",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-common-reserve-registration-spring",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "Sosyal, Eğitim, Akdeniz Uygarlıkları, Sağlık ve Organ Nakli enstitüleri; bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-03",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "grad-fen-reserve-registration-spring",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "Fen Bilimleri Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-03",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "grad-fine-reserve-registration-spring",
+    "title": "Yeni Kazanan Yedek Adayların ve Yatay Geçiş ile Kabul Edilen Yedek Adayların Kesin Kayıt Tarihleri",
+    "description": "Güzel Sanatlar Enstitüsü; bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-03",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 7
+  },
+  {
+    "id": "remote-classes-start-spring",
+    "title": "Derslerin Başlaması",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-social-spring",
+    "title": "Sosyal Transkript Etkinlik Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-05-14",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "prep-module-two-start",
+    "title": "II. Modül Hazırlık Programı Derslerinin Başlaması",
+    "description": "",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Ders",
+    "sourcePage": 1
+  },
+  {
+    "id": "double-major-results-spring",
+    "title": "Başvurusu Kabul Edilen Öğrencilerin Birimlerce Duyurulması",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-02-01",
+    "endDate": "2027-02-01",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Sonuç",
+    "sourcePage": 10
+  },
+  {
+    "id": "extra-second-app-fall",
+    "title": "2. Ek Sınav Başvuru tarihleri",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-02-02",
+    "endDate": "2027-02-04",
+    "faculty": "2547 Ek Sınav",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "general-approval-spring",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-02-02",
+    "endDate": "2027-02-07",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-add-drop-spring",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar) / Mazeretli Ders Kaydı",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-02-02",
+    "endDate": "2027-02-05",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-approval-spring",
+    "title": "Ders Bırakma ve Ders Ekleme (Ekle-Çıkar) Danışman Onayı",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-02-02",
+    "endDate": "2027-02-07",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-add-drop-spring",
+    "title": "Ders Bırakma ve Ders Ekleme Süresi (Ekle-Çıkar)/Mazeretli Ders Kaydı",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-02-02",
+    "endDate": "2027-02-05",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "double-major-registration-spring",
+    "title": "Kesin Kayıt Tarihleri",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-02-02",
+    "endDate": "2027-02-05",
+    "faculty": "Yatay Geçiş ve ÇAP",
+    "category": "Kayıt",
+    "sourcePage": 10
+  },
+  {
+    "id": "extra-second-exam-fall",
+    "title": "2. Ek Sınav Tarihleri",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-02-08",
+    "endDate": "2027-02-12",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "law-annual-makeup",
+    "title": "Yıllık Derslerin Ara Sınavlarının Mazeret Sınavları ve Sonuçlarının Otomasyon Sistemine Girilmesi",
+    "description": "Sonuçların otomasyon sistemine girişi dahildir.",
+    "startDate": "2027-02-10",
+    "endDate": "2027-02-12",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 4
+  },
+  {
+    "id": "extra-second-results-fall",
+    "title": "2. Ek Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-02-15",
+    "endDate": "2027-02-15",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-registration-fall",
+    "title": "Ek Sınavlar Sonrası Ders Kayıt Tarihleri",
+    "description": "Güz yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-02-16",
+    "endDate": "2027-02-19",
+    "faculty": "2547 Ek Sınav",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "general-withdraw-spring",
+    "title": "Dersten Çekilmenin Son Günü",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-02-19",
+    "endDate": "2027-02-19",
+    "faculty": "Genel",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-withdraw-spring",
+    "title": "Dersten Çekilmenin Son Günü",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-02-19",
+    "endDate": "2027-02-19",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Kayıt",
+    "sourcePage": 5
+  },
+  {
+    "id": "holiday-ramadan-eve",
+    "title": "Ramazan Bayramı Arefe Yarım Gün",
+    "description": "Öğleden sonra resmî tatil.",
+    "startDate": "2027-03-08",
+    "endDate": "2027-03-08",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "holiday-ramadan",
+    "title": "Ramazan Bayramı",
+    "description": "",
+    "startDate": "2027-03-09",
+    "endDate": "2027-03-11",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "law-annual-midterm-results",
+    "title": "Yıllık Derslerin Ara Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-03-21",
+    "endDate": "2027-03-21",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "dentistry-d123-midterm-spring",
+    "title": "Ara Sınav Tarihleri",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-03-29",
+    "endDate": "2027-04-09",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-midterm-spring",
+    "title": "Ara Sınav Tarihleri",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-03-29",
+    "endDate": "2027-04-09",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-midterm-results-spring",
+    "title": "Ara Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-04-16",
+    "endDate": "2027-04-16",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-midterm-results-spring",
+    "title": "Ara Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-04-16",
+    "endDate": "2027-04-16",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-makeup-spring",
+    "title": "Mazeret Sınavları",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-04-20",
+    "endDate": "2027-04-21",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-makeup-spring",
+    "title": "Mazeret Sınavları",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-04-20",
+    "endDate": "2027-04-21",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "holiday-april23",
+    "title": "Ulusal Egemenlik ve Çocuk Bayramı",
+    "description": "",
+    "startDate": "2027-04-23",
+    "endDate": "2027-04-23",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "holiday-may1",
+    "title": "Emek ve Dayanışma Günü",
+    "description": "",
+    "startDate": "2027-05-01",
+    "endDate": "2027-05-01",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "general-assessment-results-spring",
+    "title": "Ara Sınav Sonuçlarının ve Diğer Yıl/Yarıyıl İçi Ölçme Araçları Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Genel",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-classes-end-spring",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Genel",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "law-end-spring",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Ders",
+    "sourcePage": 4
+  },
+  {
+    "id": "law-assessment-results-spring",
+    "title": "Yarıyıllık (Dönemlik) Derslerin Ara Sınav ve Diğer Yıl/Yarıyıl İçi Ölçme Araçları Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Yarıyıllık dersler; otomasyon sistemine giriş.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-classes-end-spring",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Ders",
+    "sourcePage": 8
+  },
+  {
+    "id": "remote-assessment-results-spring",
+    "title": "Ara Sınav Sonuçlarının ve Diğer Yıl/Yarıyıl İçi Ölçme Araçları Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "remote-classes-end-spring",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-05-14",
+    "endDate": "2027-05-14",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Ders",
+    "sourcePage": 5
+  },
+  {
+    "id": "holiday-sacrifice-eve",
+    "title": "Kurban Bayramı Arefe Yarım Gün",
+    "description": "Öğleden sonra resmî tatil.",
+    "startDate": "2027-05-15",
+    "endDate": "2027-05-15",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "holiday-sacrifice",
+    "title": "Kurban Bayramı",
+    "description": "",
+    "startDate": "2027-05-16",
+    "endDate": "2027-05-19",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "holiday-may19",
+    "title": "Atatürk'ü Anma, Gençlik ve Spor Bayramı",
+    "description": "",
+    "startDate": "2027-05-19",
+    "endDate": "2027-05-19",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "general-finals-spring",
+    "title": "Yarıyıl Sonu Sınavları",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-05-24",
+    "endDate": "2027-06-04",
+    "faculty": "Genel",
+    "category": "Sınav",
+    "sourcePage": 5
+  },
+  {
+    "id": "graduate-project-submit-spring",
+    "title": "Tezsiz Yüksek Lisans Dönem Projelerinin Ana Bilim Dalı Dönem Projesi Komisyonuna Tesliminin Son Günü",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-05-24",
+    "endDate": "2027-05-24",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Proje",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-finals-spring",
+    "title": "Yarıyıl Sonu Sınav Tarihleri",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-05-24",
+    "endDate": "2027-06-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "dentistry-d123-end-spring",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-05-28",
+    "endDate": "2027-05-28",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-end-spring",
+    "title": "Derslerin Sona Ermesi",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-05-28",
+    "endDate": "2027-05-28",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "prep-module-two-end",
+    "title": "II. Modül Hazırlık Programı Derslerinin Sona Ermesi",
+    "description": "",
+    "startDate": "2027-05-28",
+    "endDate": "2027-05-28",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Ders",
+    "sourcePage": 1
+  },
+  {
+    "id": "remote-finals-spring",
+    "title": "Yarıyıl Sonu Sınavları",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-05-29",
+    "endDate": "2027-05-30",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sınav",
+    "sourcePage": 5
+  },
+  {
+    "id": "dentistry-d123-final-spring",
+    "title": "Yıl/Yarıyıl Sonu Sınavları",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-05-31",
+    "endDate": "2027-06-18",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 2
+  },
+  {
+    "id": "dentistry-d45-final-spring",
+    "title": "Yıl/Yarıyıl Sonu Sınavları",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-05-31",
+    "endDate": "2027-06-18",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "law-finals-spring",
+    "title": "Yıllık ve Yarıyıllık (Dönemlik) Derslerin Yıl/yarıyıl Sonu Sınavı Tarihleri (3 Hafta)",
+    "description": "Üç hafta.",
+    "startDate": "2027-05-31",
+    "endDate": "2027-06-18",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 4
+  },
+  {
+    "id": "prep-year-end-exam",
+    "title": "Yabancı Dil Hazırlık Sınıfları için Yıl Sonu Sınavı",
+    "description": "",
+    "startDate": "2027-06-01",
+    "endDate": "2027-06-02",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sınav",
+    "sourcePage": 1
+  },
+  {
+    "id": "dentistry-clinical-d4-end-spring",
+    "title": "Klinik Eğitim Sona Ermesi (4. Sınıf)",
+    "description": "4. sınıf; bahar yarıyılı.",
+    "startDate": "2027-06-04",
+    "endDate": "2027-06-04",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "graduate-project-evaluate-spring",
+    "title": "Tezsiz Yüksek Lisans Dönem Projelerinin Dönem Projesi Komisyonu Tarafından Değerlendirilmesinin ve Enstitüye Tesliminin Son Günü",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-06-04",
+    "endDate": "2027-06-04",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Proje",
+    "sourcePage": 8
+  },
+  {
+    "id": "prep-year-end-results",
+    "title": "Yabancı Dil Hazırlık Sınıfları için Yıl Sonu Sınavı Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Sonuçların otomasyon sistemine girilmesi için son tarih.",
+    "startDate": "2027-06-04",
+    "endDate": "2027-06-04",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sonuç",
+    "sourcePage": 1
+  },
+  {
+    "id": "general-resit-app-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-06-05",
+    "endDate": "2027-06-12",
+    "faculty": "Genel",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "graduate-resit-app-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-06-05",
+    "endDate": "2027-06-12",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 8
+  },
+  {
+    "id": "remote-resit-app-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-06-05",
+    "endDate": "2027-06-12",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Başvuru",
+    "sourcePage": 5
+  },
+  {
+    "id": "general-final-results-spring",
+    "title": "Yarıyıl Sonu Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-06-07",
+    "endDate": "2027-06-07",
+    "faculty": "Genel",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "graduate-final-results-spring",
+    "title": "Yarıyıl Sonu Sınavları Sonuçların Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-06-07",
+    "endDate": "2027-06-07",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 8
+  },
+  {
+    "id": "remote-final-results-spring",
+    "title": "Yarıyıl Sonu Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-06-07",
+    "endDate": "2027-06-07",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "prep-second-exam",
+    "title": "Yabancı Dil Hazırlık Sınıfları için Yıl/Yarıyıl Sonu İkinci Sınavı",
+    "description": "",
+    "startDate": "2027-06-08",
+    "endDate": "2027-06-08",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sınav",
+    "sourcePage": 1
+  },
+  {
+    "id": "medicine-d45-education-end",
+    "title": "Eğitim Öğretimin Sona Ermesi",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2027-06-11",
+    "endDate": "2027-06-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "medicine-d123-education-end",
+    "title": "Eğitim Öğretimin Sona Ermesi",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2027-06-11",
+    "endDate": "2027-06-11",
+    "faculty": "Tıp Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "prep-second-results",
+    "title": "Yabancı Dil Hazırlık Sınıfları için Yıl/Yarıyıl Sonu İkinci Sınavı Sonuçlarının Otomasyon Sistemine Girilmesinin Son Tarihi",
+    "description": "Sonuçların otomasyon sistemine girilmesi için son tarih.",
+    "startDate": "2027-06-11",
+    "endDate": "2027-06-11",
+    "faculty": "Yabancı Diller Yüksekokulu",
+    "category": "Sonuç",
+    "sourcePage": 1
+  },
+  {
+    "id": "remote-resits-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Tarihleri",
+    "description": "Bahar yarıyılı.",
+    "startDate": "2027-06-13",
+    "endDate": "2027-06-13",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sınav",
+    "sourcePage": 5
+  },
+  {
+    "id": "dentistry-clinical-d4-repeat",
+    "title": "4. Sınıf Tek Klinik Eğitim Tekrarı Başlaması ve Sona Ermesi",
+    "description": "4. sınıf.",
+    "startDate": "2027-06-14",
+    "endDate": "2027-07-09",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "general-resits-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Tarihleri",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-06-14",
+    "endDate": "2027-06-18",
+    "faculty": "Genel",
+    "category": "Sınav",
+    "sourcePage": 5
+  },
+  {
+    "id": "graduate-resits-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınav Tarihleri",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-06-14",
+    "endDate": "2027-06-18",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sınav",
+    "sourcePage": 8
+  },
+  {
+    "id": "graduate-thesis-submit-spring",
+    "title": "Tez Savunma Öncesi Tezlerin Enstitüye Tesliminin Son Günü",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-06-15",
+    "endDate": "2027-06-15",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Tez",
+    "sourcePage": 8
+  },
+  {
+    "id": "law-resit-app-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Başvuru Tarihleri",
+    "description": "",
+    "startDate": "2027-06-19",
+    "endDate": "2027-06-26",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Başvuru",
+    "sourcePage": 4
+  },
+  {
+    "id": "general-resit-results-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; yarıyıllık eğitim veren birimler.",
+    "startDate": "2027-06-21",
+    "endDate": "2027-06-21",
+    "faculty": "Genel",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "law-final-results-spring",
+    "title": "Yıllık ve Yarıyıllık (Dönemlik) Derslerin Yıl/yarıyıl Sonu Sınavı Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-06-21",
+    "endDate": "2027-06-21",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "graduate-resit-results-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; tüm enstitüler.",
+    "startDate": "2027-06-21",
+    "endDate": "2027-06-21",
+    "faculty": "Lisansüstü Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 8
+  },
+  {
+    "id": "remote-resit-results-spring",
+    "title": "Yıl/Yarıyıl Sonu İkinci Sınavı (Bütünleme) Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı; uzaktan öğretim diploma programları.",
+    "startDate": "2027-06-21",
+    "endDate": "2027-06-21",
+    "faculty": "Uzaktan Eğitim",
+    "category": "Sonuç",
+    "sourcePage": 5
+  },
+  {
+    "id": "dentistry-d45-final-results-spring",
+    "title": "Yıl/Yarıyıl Sonu Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 4 ve 5; bahar yarıyılı.",
+    "startDate": "2027-06-24",
+    "endDate": "2027-06-24",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-clinical-d5-end",
+    "title": "Klinik Eğitim Sona Ermesi (5. Sınıf)",
+    "description": "5. sınıf.",
+    "startDate": "2027-06-25",
+    "endDate": "2027-06-25",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-final-results-spring",
+    "title": "Yıl/Yarıyıl Sonu Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 1, 2 ve 3; bahar yarıyılı.",
+    "startDate": "2027-06-25",
+    "endDate": "2027-06-25",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 2
+  },
+  {
+    "id": "summer-assignments",
+    "title": "Ders Görevlendirmelerinin Rektörlüğe Bildirilmesi ve Ders Şubelerinin Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-06-25",
+    "endDate": "2027-06-25",
+    "faculty": "Yaz Okulu",
+    "category": "Ders",
+    "sourcePage": 6
+  },
+  {
+    "id": "law-resits-spring",
+    "title": "Yıllık ve Yarıyıllık (Dönemlik) Derslerin Yıl/yarıyıl Sonu İkinci Sınavı Tarihleri",
+    "description": "",
+    "startDate": "2027-06-28",
+    "endDate": "2027-07-02",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 4
+  },
+  {
+    "id": "medicine-d6-education-end",
+    "title": "Eğitim Öğretimin Sona Ermesi",
+    "description": "Dönem 6.",
+    "startDate": "2027-06-30",
+    "endDate": "2027-06-30",
+    "faculty": "Tıp Fakültesi",
+    "category": "Ders",
+    "sourcePage": 2
+  },
+  {
+    "id": "summer-courses-announced",
+    "title": "Açılacak Derslerin Duyurulması",
+    "description": "",
+    "startDate": "2027-07-02",
+    "endDate": "2027-07-02",
+    "faculty": "Yaz Okulu",
+    "category": "Ders",
+    "sourcePage": 6
+  },
+  {
+    "id": "dentistry-clinical-d5-repeat",
+    "title": "5. Sınıf Tek Klinik Eğitim Tekrarı Başlaması ve Sona Ermesi",
+    "description": "5. sınıf.",
+    "startDate": "2027-07-05",
+    "endDate": "2027-07-30",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Ders",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-second-exam",
+    "title": "Yıl Sonu İkinci Sınavları",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2027-07-05",
+    "endDate": "2027-07-16",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d45-second-exam",
+    "title": "Yıl Sonu İkinci Sınavları",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2027-07-05",
+    "endDate": "2027-07-16",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "law-resit-results-spring",
+    "title": "Yıllık ve Yarıyıllık (Dönemlik) Derslerin Yıl/yarıyıl Sonu İkinci Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-07-05",
+    "endDate": "2027-07-05",
+    "faculty": "Hukuk Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 4
+  },
+  {
+    "id": "summer-registration",
+    "title": "Öğrenim Ücreti Yatırılması ve Kesin Kayıt Tarihleri",
+    "description": "",
+    "startDate": "2027-07-05",
+    "endDate": "2027-07-09",
+    "faculty": "Yaz Okulu",
+    "category": "Kayıt",
+    "sourcePage": 6
+  },
+  {
+    "id": "summer-education",
+    "title": "Eğitim Öğretim Dönemi (5 Hafta)",
+    "description": "Beş hafta.",
+    "startDate": "2027-07-12",
+    "endDate": "2027-08-13",
+    "faculty": "Yaz Okulu",
+    "category": "Ders",
+    "sourcePage": 6
+  },
+  {
+    "id": "holiday-july15",
+    "title": "Demokrasi ve Milli Birlik Günü",
+    "description": "",
+    "startDate": "2027-07-15",
+    "endDate": "2027-07-15",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "dentistry-d123-second-results",
+    "title": "Yıl Sonu İkinci Sınav Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2027-07-23",
+    "endDate": "2027-07-23",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-single-course",
+    "title": "Tek Ders Sınıf Geçme Sınavı",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2027-07-26",
+    "endDate": "2027-07-26",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d123-single-course-results",
+    "title": "Tek Ders Sınıf Geçme Sınavı Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 1, 2 ve 3.",
+    "startDate": "2027-07-28",
+    "endDate": "2027-07-28",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d45-second-results",
+    "title": "Yıl Sonu İkinci Sınavlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2027-07-30",
+    "endDate": "2027-07-30",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d45-single-course",
+    "title": "Tek Ders Sınıf Geçme Sınavı",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2027-08-03",
+    "endDate": "2027-08-03",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sınav",
+    "sourcePage": 3
+  },
+  {
+    "id": "dentistry-d45-single-course-results",
+    "title": "Tek Ders Sınıf Geçme Sınavı Sonuçlarının Otomasyona Girişinin Son Günü",
+    "description": "Dönem 4 ve 5.",
+    "startDate": "2027-08-05",
+    "endDate": "2027-08-05",
+    "faculty": "Diş Hekimliği Fakültesi",
+    "category": "Sonuç",
+    "sourcePage": 3
+  },
+  {
+    "id": "summer-midterm-results",
+    "title": "Ara Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-08-13",
+    "endDate": "2027-08-13",
+    "faculty": "Yaz Okulu",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "summer-finals",
+    "title": "Dönem Sonu Sınav Tarihleri",
+    "description": "",
+    "startDate": "2027-08-16",
+    "endDate": "2027-08-20",
+    "faculty": "Yaz Okulu",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "summer-results",
+    "title": "Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Otomasyon sistemine giriş.",
+    "startDate": "2027-08-27",
+    "endDate": "2027-08-27",
+    "faculty": "Yaz Okulu",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "holiday-august30",
+    "title": "Zafer Bayramı",
+    "description": "",
+    "startDate": "2027-08-30",
+    "endDate": "2027-08-30",
+    "faculty": "Genel",
+    "category": "Tatil",
+    "sourcePage": 10
+  },
+  {
+    "id": "extra-first-app-spring",
+    "title": "1. Ek Sınav Başvuru tarihleri",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-08-31",
+    "endDate": "2027-09-02",
+    "faculty": "2547 Ek Sınav",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-first-exam-spring",
+    "title": "1. Ek Sınav tarihleri",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-09-06",
+    "endDate": "2027-09-10",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-first-results-spring",
+    "title": "1. Ek Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-09-13",
+    "endDate": "2027-09-13",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-second-app-spring",
+    "title": "2. Ek Sınav Başvuru tarihleri",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-09-14",
+    "endDate": "2027-09-16",
+    "faculty": "2547 Ek Sınav",
+    "category": "Başvuru",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-second-exam-spring",
+    "title": "2. Ek Sınav Tarihleri",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-09-20",
+    "endDate": "2027-09-24",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sınav",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-second-results-spring",
+    "title": "2. Ek Sınav Sonuçlarının Otomasyon Sistemine Girilmesinin Son Günü",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-09-27",
+    "endDate": "2027-09-27",
+    "faculty": "2547 Ek Sınav",
+    "category": "Sonuç",
+    "sourcePage": 6
+  },
+  {
+    "id": "extra-registration-spring",
+    "title": "Ek Sınavlar Sonrası Ders Kayıt Tarihleri",
+    "description": "Bahar yarıyılı takvimi; ön lisans ve lisans programları.",
+    "startDate": "2027-09-28",
+    "endDate": "2027-10-01",
+    "faculty": "2547 Ek Sınav",
+    "category": "Kayıt",
+    "sourcePage": 6
+  }
+]

@@ -47,6 +47,7 @@ val AccentYellow = Color(0xFFFFE600)
 val BorderMuted: Color @Composable get() = LocalGood4Colors.current.borderMuted
 val PistachioGreen: Color @Composable get() = LocalGood4Colors.current.pistachioGreen
 val PrimaryGreen = Color(0xFF008556)
+val PrimaryGreenDark = Color(0xFF5CD6A9)
 val ErrorRed = Color(0xFFD6483B)
 val SurfaceDefault: Color @Composable get() = LocalGood4Colors.current.surfaceDefault
 val SurfaceMuted: Color @Composable get() = LocalGood4Colors.current.surfaceMuted

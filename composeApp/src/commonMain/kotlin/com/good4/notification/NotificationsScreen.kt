@@ -18,17 +18,20 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
+import com.good4.core.presentation.LocalThemeController
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
@@ -49,7 +53,11 @@ import com.good4.core.presentation.TextSecondary
 
 @Composable
 fun NotificationsScreen(onBack: () -> Unit) {
-    var unread by remember { mutableStateOf(true) }
+    // Highlight what was new when the screen opened; opening it counts as seeing everything,
+    // which clears the dot on the home bell.
+    var unreadIds by remember { mutableStateOf(NotificationInbox.unseenIds()) }
+    LaunchedEffect(Unit) { NotificationInbox.markAllSeen() }
+    val theme = LocalThemeController.current
 
     Column(
         modifier = Modifier
@@ -79,7 +87,10 @@ fun NotificationsScreen(onBack: () -> Unit) {
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-                IconButton(onClick = { unread = false }) {
+                IconButton(onClick = { theme.setDark(!theme.isDark) }) {
+                    Icon(Icons.Outlined.DarkMode, "Gece modunu değiştir", tint = Color.White)
+                }
+                IconButton(onClick = { unreadIds = emptySet() }) {
                     Icon(Icons.Filled.DoneAll, "Tümünü okundu işaretle", tint = Color.White)
                 }
             }
@@ -90,14 +101,14 @@ fun NotificationsScreen(onBack: () -> Unit) {
             contentPadding = PaddingValues(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item {
+            items(studentNotifications, key = { it.id }) { notification ->
                 NotificationCard(
-                    title = "Topluluk günleri yaklaşıyor!",
-                    source = "Good4 Topluluklar",
-                    date = "11 Eyl 2026, 12:00",
-                    body = "Kampüsteki topluluklarla tanışmaya hazır mısın? Topluluk günleri çok yakında. Etkinlikleri keşfetmek ve favori topluluklarını takip etmek için Topluluklar sayfasına göz at.",
-                    unread = unread,
-                    onClick = { unread = false }
+                    title = notification.title,
+                    source = notification.source,
+                    date = notification.date,
+                    body = notification.body,
+                    unread = notification.id in unreadIds,
+                    onClick = { unreadIds = unreadIds - notification.id }
                 )
             }
         }
@@ -128,14 +139,14 @@ private fun NotificationCard(
             Row(verticalAlignment = Alignment.Top) {
                 Surface(
                     modifier = Modifier.size(46.dp),
-                    color = PrimaryGreen.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Outlined.Campaign,
                             contentDescription = null,
-                            tint = PrimaryGreen,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(25.dp)
                         )
                     }
@@ -157,7 +168,7 @@ private fun NotificationCard(
                         modifier = Modifier
                             .padding(top = 5.dp)
                             .size(9.dp)
-                            .background(PrimaryGreen, RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
                     )
                 }
             }

@@ -10,8 +10,8 @@ sealed interface StudentRegisterAction {
     data class OnEducationLevelChange(val educationLevel: String) : StudentRegisterAction
     data object OnTogglePasswordVisibility : StudentRegisterAction
     data object OnToggleTermsAccepted : StudentRegisterAction
+    data object OnToggleKvkkNoticeAcknowledged : StudentRegisterAction
     data object OnRegisterClick : StudentRegisterAction
     data object OnBackClick : StudentRegisterAction
     data object OnClearError : StudentRegisterAction
 }
-

@@ -40,3 +40,11 @@ expect fun Modifier.systemBarsPadding(): Modifier
  */
 @Composable
 expect fun Modifier.topSafeAreaPadding(): Modifier
+
+/**
+ * Keeps focused fields above the software keyboard.
+ * On Android this applies IME insets. On iOS it does nothing: Compose already moves the focused
+ * field above the keyboard there, and adding IME padding as well made screens jump and over-scroll.
+ */
+@Composable
+expect fun Modifier.keyboardPadding(): Modifier

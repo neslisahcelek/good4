@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,28 +48,16 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileTopBarAction
 import com.good4.core.presentation.components.StatCard
-import com.good4.order.domain.OrderStatus
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.dashboard_code_prefix
 import good4.composeapp.generated.resources.dashboard_completed_codes_label
 import good4.composeapp.generated.resources.dashboard_no_actions
-import good4.composeapp.generated.resources.dashboard_no_orders
-import good4.composeapp.generated.resources.dashboard_order_code_prefix
-import good4.composeapp.generated.resources.dashboard_order_status_cancelled
-import good4.composeapp.generated.resources.dashboard_order_status_confirmed
-import good4.composeapp.generated.resources.dashboard_order_status_expired
-import good4.composeapp.generated.resources.dashboard_order_status_pending
 import good4.composeapp.generated.resources.dashboard_pending_codes_label
-import good4.composeapp.generated.resources.dashboard_pending_orders_open_detail
 import good4.composeapp.generated.resources.dashboard_recent_actions
-import good4.composeapp.generated.resources.dashboard_recent_orders
 import good4.composeapp.generated.resources.dashboard_section_products
 import good4.composeapp.generated.resources.dashboard_section_student_codes
-import good4.composeapp.generated.resources.dashboard_section_supporter_orders
 import good4.composeapp.generated.resources.dashboard_status_pending
 import good4.composeapp.generated.resources.dashboard_status_used
-import good4.composeapp.generated.resources.dashboard_supporter_confirmed_orders
-import good4.composeapp.generated.resources.dashboard_supporter_pending_orders
 import good4.composeapp.generated.resources.dashboard_total_products
 import good4.composeapp.generated.resources.dashboard_verify_tab_hint
 import good4.composeapp.generated.resources.dashboard_welcome_prefix
@@ -209,74 +196,6 @@ fun BusinessDashboardScreen(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    DashboardSectionTitle(
-                        text = stringResource(Res.string.dashboard_section_supporter_orders)
-                    )
-                }
-
-                item {
-                    StatCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        title = stringResource(Res.string.dashboard_supporter_pending_orders),
-                        value = state.supporterPendingCount.toString(),
-                        icon = Icons.Filled.ShoppingCart,
-                        color = AccentYellow,
-                        onClick = if (state.supporterPendingCount > 0) {
-                            { viewModel.openFirstPendingOrderDetail() }
-                        } else {
-                            null
-                        },
-                        clickLabel = stringResource(Res.string.dashboard_pending_orders_open_detail)
-                    )
-                }
-
-                item {
-                    StatCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        title = stringResource(Res.string.dashboard_supporter_confirmed_orders),
-                        value = state.supporterConfirmedCount.toString(),
-                        icon = Icons.Filled.Check,
-                        color = DeepGreen
-                    )
-                }
-
-                item {
-                    Text(
-                        text = stringResource(Res.string.dashboard_recent_orders),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
-                }
-
-                if (state.recentOrders.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.dashboard_no_orders),
-                                color = TextSecondary
-                            )
-                        }
-                    }
-                } else {
-                    items(state.recentOrders, key = { it.id }) { order ->
-                        RecentOrderCard(
-                            order = order,
-                            onPendingOrderClick = viewModel::startOrderDetail
-                        )
-                    }
-                }
-
-                item {
                     Text(
                         modifier = Modifier.padding(vertical = 8.dp),
                         text = stringResource(Res.string.dashboard_verify_tab_hint),
@@ -287,15 +206,6 @@ fun BusinessDashboardScreen(
             }
         }
     }
-
-    BusinessOrderDetailBottomSheet(
-        visible = state.orderDetailSheetVisible,
-        isLoading = state.orderDetailLoading,
-        isCancellingOrder = state.isCancellingOrderDetail,
-        order = state.orderDetail,
-        onDismiss = viewModel::dismissOrderDetail,
-        onCancelOrder = viewModel::cancelOrderFromDetail
-    )
 }
 
 @Composable
@@ -310,90 +220,6 @@ private fun DashboardSectionTitle(
         fontWeight = FontWeight.SemiBold,
         color = TextPrimary
     )
-}
-
-@Composable
-private fun RecentOrderCard(
-    modifier: Modifier = Modifier,
-    order: RecentOrderUiModel,
-    onPendingOrderClick: (String) -> Unit
-) {
-    val isPending = order.orderStatus == OrderStatus.PENDING
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(
-                if (isPending) {
-                    Modifier.clickable(
-                        onClick = { onPendingOrderClick(order.id) },
-                        onClickLabel = stringResource(Res.string.dashboard_pending_orders_open_detail)
-                    )
-                } else {
-                    Modifier
-                }
-            ),
-        colors = CardDefaults.cardColors(
-            containerColor = SurfaceDefault
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = order.productName,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = stringResource(Res.string.dashboard_order_code_prefix) + order.code,
-                    fontSize = 12.sp,
-                    color = TextSecondary
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        when (order.orderStatus) {
-                            OrderStatus.CONFIRMED -> DeepGreen.copy(alpha = 0.1f)
-                            OrderStatus.CANCELLED -> TextSecondary.copy(alpha = 0.15f)
-                            OrderStatus.EXPIRED -> TextSecondary.copy(alpha = 0.15f)
-                            else -> PistachioGreen.copy(alpha = 0.3f)
-                        }
-                    )
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = OrderStatusLabel(order.orderStatus),
-                    fontSize = 12.sp,
-                    color = when (order.orderStatus) {
-                        OrderStatus.CONFIRMED -> DeepGreen
-                        OrderStatus.CANCELLED -> TextSecondary
-                        OrderStatus.EXPIRED -> TextSecondary
-                        else -> TextPrimary
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun OrderStatusLabel(status: OrderStatus): String {
-    return when (status) {
-        OrderStatus.PENDING -> stringResource(Res.string.dashboard_order_status_pending)
-        OrderStatus.CONFIRMED -> stringResource(Res.string.dashboard_order_status_confirmed)
-        OrderStatus.CANCELLED -> stringResource(Res.string.dashboard_order_status_cancelled)
-        OrderStatus.COMPLETED -> stringResource(Res.string.dashboard_order_status_confirmed)
-        OrderStatus.EXPIRED -> stringResource(Res.string.dashboard_order_status_expired)
-    }
 }
 
 @Composable

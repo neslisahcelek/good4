@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Good4</string>
-    <string name="app_tagline">Öğrenciler ve işletmeler arasında köprü kurarak, herkes için fayda sağlayan bir ekosistem oluşturuyoruz.</string>
+    <string name="app_tagline">Etkinliklerden öğrenci fırsatlarına, kampüs hizmetlerinden günlük ihtiyaçlarına kadar hepsi Good4’da.</string>
     <string name="back">Geri</string>
     <string name="or">veya</string>
     <string name="loading">Yükleniyor…</string>
@@ -17,18 +17,29 @@
     <string name="forgot_password_email_sent">Şifre sıfırlama e-postası gönderildi. Lütfen gelen kutunuzu kontrol edin.</string>
     <string name="verification_email_sent">Doğrulama e-postası tarafınıza gönderildi</string>
     <string name="login">Giriş Yap</string>
-    <string name="no_account">Henüz bir hesabınız yok mu?</string>
+    <string name="edu_email_login">Edu mail ile giriş yap</string>
+    <string name="edu_email_login_divider">edu mail ile giriş</string>
+    <string name="login_welcome_title">Kampüs hayatını kolaylaştıran, her gün kullandığın şeylerin tek bir uygulamada olduğunu düşün.</string>
+    <string name="edu_email_register">Edu mail ile kaydol</string>
+    <string name="edu_email_helper">Üniversitenizin edu.tr uzantılı öğrenci e-postasını kullanın.</string>
+    <string name="no_account">Hesabınız yok mu?</string>
     <string name="register_options_title">Kayıt Türü</string>
-    <string name="register_options_description">Lütfen rolünüzü seçin.</string>
-    <string name="student_register">🎓 Öğrenci Olarak Kayıt Olun</string>
-    <string name="business_register">🏪 İşletme Olarak Kayıt Olun</string>
-    <string name="supporter_register">💚 Destekçi Olarak Kayıt Olun</string>
+    <string name="register_options_heading">Good4'a nasıl katılmak istersiniz?</string>
+    <string name="register_options_description">Hesap türünüzü seçin, size uygun kayıt adımlarına geçelim.</string>
+    <string name="student_register">Öğrenciyim</string>
+    <string name="student_register_description">Üniversite (.edu.tr) e-postanızla kayıt olun, kampüs avantajlarından yararlanın.</string>
+    <string name="business_register">İşletmeyim</string>
+    <string name="student_register_title">Öğrenci hesabı oluşturun</string>
+    <string name="student_register_subtitle">Doğrulama bağlantısı .edu.tr adresinize gönderilecek.</string>
+    <string name="business_register_title">İşletme hesabı oluşturun</string>
+    <string name="business_register_subtitle">İşletmenizi ekleyin, öğrencilerle buluşmaya başlayın.</string>
+    <string name="register_section_personal">Kişisel bilgiler</string>
+    <string name="register_section_education">Eğitim</string>
+    <string name="register_section_password">Şifre</string>
+    <string name="business_register_description">İşletmenizi ekleyin, öğrencilere kampanyalar ve Askıda Yemek ile ulaşın.</string>
     <string name="student_registration">Öğrenci Kaydı</string>
     <string name="student_emoji">🎓</string>
     <string name="create_student_account">Öğrenci hesabı oluşturun</string>
-    <string name="supporter_registration">Destekçi Kaydı</string>
-    <string name="supporter_emoji">💚</string>
-    <string name="create_supporter_account">Destekçi hesabı oluşturun</string>
     <string name="full_name">Ad Soyad *</string>
     <string name="email_required">E-posta Adresi *</string>
     <string name="phone">Telefon Numaranız</string>
@@ -70,7 +81,7 @@
     <string name="security">Güvenlik</string>
     <string name="description">Açıklama</string>
     <string name="business_description_placeholder">İşletmeniz hakkında kısa bir bilgi veriniz</string>
-    <string name="products_load_error">Şu anda askıda ürünümüz bulunmuyor. \nDestekçiler ürün bağışladığında burada görünecektir.</string>
+    <string name="products_load_error">Şu anda görüntülenecek ürün bulunmuyor.</string>
     <string name="product_detail">Ürün Detayı</string>
     <string name="product_description">Ürün Açıklaması</string>
     <string name="store_info">Mağaza Bilgileri</string>
@@ -146,7 +157,6 @@
     <string name="profile_title_admin">Profil</string>
     <string name="profile_role_label">Yetki Rolü</string>
     <string name="role_admin">Admin</string>
-    <string name="role_supporter">Destekçi</string>
     <string name="admin_products_empty">Henüz ürün eklenmemiş</string>
     <string name="admin_products_edit_title">Ürün Bilgilerini Düzenleyin</string>
     <string name="admin_products_update_button">Güncelleyin</string>
@@ -170,7 +180,7 @@
     <string name="edit">Düzenle</string>
     <string name="business_dashboard">İşletme Paneli</string>
     <string name="verify_code">Kod Doğrulama</string>
-    <string name="enter_code">Öğrenci veya Destekçiden aldığınız kodu giriniz.</string>
+    <string name="enter_code">İşletmenin verdiği kodu giriniz.</string>
     <string name="verify">Doğrula</string>
     <string name="code_verified">Kod başarıyla doğrulandı!</string>
     <string name="invalid_code">Girdiğiniz kod geçersizdir</string>
@@ -227,24 +237,10 @@
     <string name="dashboard_title">Panel</string>
     <string name="dashboard_welcome_prefix">Hoş geldiniz, </string>
     <string name="dashboard_section_student_codes">Öğrenci Rezervasyonları</string>
-    <string name="dashboard_section_supporter_orders">Destekçi Rezervasyonları</string>
     <string name="dashboard_section_products">Ürün Özeti</string>
     <string name="dashboard_pending_codes_label">Bekleyen</string>
     <string name="dashboard_completed_codes_label">Tamamlanan</string>
-    <string name="dashboard_supporter_pending_orders">Bekleyen</string>
-    <string name="dashboard_supporter_confirmed_orders">Onaylanan</string>
-    <string name="dashboard_recent_orders">Son işlemler</string>
-    <string name="dashboard_no_orders">Henüz sipariş bulunmuyor</string>
-    <string name="dashboard_order_code_prefix">Sipariş kodu: </string>
-    <string name="dashboard_order_status_pending">Ödeme bekliyor</string>
-    <string name="dashboard_order_status_confirmed">Onaylandı</string>
-    <string name="dashboard_order_status_cancelled">İptal edildi</string>
-    <string name="dashboard_order_status_expired">Süresi doldu</string>
-    <string name="dashboard_verify_tab_hint">Sipariş onayı veya iptali için alttaki Kod Doğrula sekmesini kullanın.</string>
-    <string name="business_order_detail_title">Sipariş detayı</string>
-    <string name="business_order_detail_cancel_success">Sipariş iptal edildi.</string>
-    <string name="business_order_detail_cancel_failed">Sipariş iptal edilemedi.</string>
-    <string name="dashboard_pending_orders_open_detail">Bekleyen sipariş detayını aç</string>
+    <string name="dashboard_verify_tab_hint">Öğrenci kodlarını doğrulamak için alttaki Kod Doğrula sekmesini kullanın.</string>
     <string name="dashboard_pending">Bekleyenler</string>
     <string name="dashboard_completed">Tamamlananlar</string>
     <string name="dashboard_total_products">Toplam Ürün</string>
@@ -295,19 +291,7 @@
     <string name="verify_code_business_loading">İşletme bilgileri yükleniyor…</string>
     <string name="verify_code_error_invalid">Rezervasyon kodu 4 veya 6 haneli olmalıdır</string>
     <string name="verify_code_error_failed">Kod doğrulanırken bir hata oluştu</string>
-    <string name="verify_code_order_title">Destekçi Siparişi</string>
-    <string name="verify_code_order_supporter_label">Destekçi</string>
-    <string name="verify_code_order_items_label">Ürünler</string>
-    <string name="verify_code_order_total_label">Toplam</string>
-    <string name="verify_code_order_confirm">Onayla</string>
-    <string name="verify_code_order_confirming">Onaylanıyor…</string>
-    <string name="verify_code_order_confirmed">Ödeme onaylandı! Ürünler askıya alındı.</string>
-    <string name="verify_code_order_cancel">İptal Et</string>
-    <string name="verify_code_order_canceling">Sipariş iptal ediliyor…</string>
-    <string name="verify_code_order_cancelled">Sipariş iptal edildi.</string>
-    <string name="verify_code_order_not_found">Sipariş bulunamadı veya süresi dolmuş</string>
-    <string name="verify_code_order_error_confirm">Onaylama sırasında bir hata oluştu</string>
-    <string name="verify_code_order_error_cancel">İptal sırasında bir hata oluştu</string>
+    <string name="verify_code_not_found">Kod bulunamadı veya süresi dolmuş</string>
     <string name="verify_code_student_reservation_title">Öğrenci Rezervasyonu</string>
     <string name="verify_code_student_label">Öğrenci</string>
     <string name="student_reservations_title">Askıda Yemek</string>
@@ -370,6 +354,7 @@
     <string name="error_invalid_credentials">Hatalı e-posta veya şifre girdiniz. Lütfen bilgilerinizi kontrol ediniz.</string>
     <string name="error_user_not_found">Kullanıcı kaydı bulunamadı. Lütfen kayıt olmayı deneyiniz.</string>
     <string name="error_email_not_verified">E-posta adresiniz doğrulanmadı. Lütfen e-postanızı doğrulayıp tekrar deneyiniz.</string>
+    <string name="error_supporter_role_unavailable">Destekçi hesabı özelliği kaldırıldı. Öğrenci veya işletme hesabınızla giriş yapın.</string>
     <string name="error_email_already_in_use">Bu e-posta ile zaten bir hesap var. Giriş yapmayı deneyebilir veya farklı bir adres kullanabilirsiniz.</string>
     <string name="error_weak_password">Belirlediğiniz şifre çok zayıf. Lütfen daha güçlü bir şifre seçiniz.</string>
     <string name="error_account_disabled">Hesabınız geçici olarak devre dışı bırakılmış. Destek ile iletişime geçiniz.</string>
@@ -381,7 +366,6 @@
     <string name="error_resend_wait_seconds">Tekrar gönderebilmek için lütfen %1$d saniye bekleyiniz.</string>
     <string name="error_user_not_logged_in">Oturum açmış bir kullanıcı bulunamadı</string>
     <string name="error_recent_login_required">Güvenlik önlemleri gereği lütfen tekrar giriş yaparak işleminizi yineleyiniz.</string>
-    <string name="error_keychain_access">Güvenli oturum kaydı oluşturulamadı. Uygulamayı kapatıp yeniden açarak tekrar deneyiniz.</string>
     <string name="error_unknown">Beklenmedik bir hata oluştu</string>
     <string name="error_sign_up_generic">Kayıt tamamlanamadı. Bilgilerinizi kontrol edip tekrar deneyin.</string>
     <string name="error_delete_account_failed">Hesap silme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.</string>
@@ -423,68 +407,11 @@
     <string name="akdeniz_menu_today_empty">Bugünün menüsü henüz yayımlanmadı.</string>
     <string name="akdeniz_menu_top_up">Yemekhane Kartına TL Yükle</string>
 
-    <!-- Supporter Product List -->
-    <string name="supporter_product_list_empty">Şu anda satın alınabilecek ürün bulunmuyor.</string>
-    <string name="supporter_products_greeting_prefix">Hoş geldin </string>
-    <string name="supporter_products_greeting_suffix">,</string>
-    <string name="supporter_products_prompt">Bugün öğrencilere ne hediye etmek istersin?</string>
-    <string name="supporter_products_name_fallback">Destekçi</string>
-    <string name="add_to_cart">Sepete Ekle</string>
-    <string name="in_cart_label">Sepette</string>
-
-    <!-- Supporter Cart -->
-    <string name="supporter_cart">Sepet</string>
-    <string name="supporter_cart_empty">Sepetiniz boş.</string>
-    <string name="supporter_cart_empty_subtitle">Ürünler sekmesinden ürün ekleyebilirsiniz.</string>
-    <string name="supporter_cart_active_orders_title">Aktif Rezervasyonlar</string>
-    <string name="supporter_cart_total">Toplam</string>
-    <string name="supporter_cart_create_order">Sipariş Oluştur</string>
-    <string name="supporter_cart_item_remove">Kaldır</string>
-    <string name="supporter_cart_creating_order">Sipariş oluşturuluyor…</string>
-    <string name="supporter_products_tab">Ürünler</string>
-    <string name="supporter_cart_single_business_error">Sepetinizde farklı bir işletmeden ürün var.</string>
-    <string name="supporter_cart_no_session_error">Kullanıcı oturumu bulunamadı.</string>
-    <string name="supporter_cart_empty_error">Sepetiniz boş.</string>
-    <string name="supporter_cart_order_failed">Sipariş oluşturulamadı.</string>
-    <string name="supporter_cart_order_canceling">Rezervasyon iptal ediliyor…</string>
-    <string name="supporter_cart_order_cancel_failed">Rezervasyon iptal edilemedi.</string>
-    <string name="supporter_order_summary_title">Sipariş Onayı</string>
-    <string name="supporter_order_summary_card_title">Sipariş Özeti</string>
-    <string name="supporter_order_summary_subtotal">Ara Toplam</string>
-    <string name="supporter_order_summary_info_title">Nasıl Çalışır?</string>
-    <string name="supporter_order_summary_info_text">Siparişinizi onayladığınızda 4 haneli kod alırsınız. Bu kodu kasadaki görevliye söyleyip ödemenizi yapabilirsiniz.</string>
-    <string name="supporter_order_summary_confirm">Siparişi Onayla</string>
-    <string name="supporter_order_summary_cancel">Vazgeç</string>
-
-    <!-- Supporter Home & Profile -->
-    <string name="supporter_home_tab_dashboard">Ana Sayfa</string>
-    <string name="supporter_home_tab_cart">Sepet</string>
-    <string name="supporter_home_tab_profile">Profil</string>
-    <string name="profile_title_supporter">Profil</string>
-    <string name="profile_total_donations_label">Toplam Bağış</string>
-    <string name="profile_total_meals_label">Bağışlanan Öğün</string>
-    <string name="profile_donations_unit">bağış</string>
-    <string name="profile_meals_unit">öğün</string>
-
-    <!-- Supporter Order Code -->
-    <string name="order_code_title">Sipariş Kodunuz</string>
-    <string name="order_code_subtitle">Siparişinizin onaylanması için bu kodu kasadaki görevliye söylemelisiniz.</string>
-    <string name="order_code_store">İşletme</string>
-    <string name="order_code_address">Adres</string>
-    <string name="order_code_items_title">Sipariş Özeti</string>
-    <string name="order_code_total">Toplam Tutar</string>
-    <string name="order_code_expires">Son geçerlilik</string>
-    <string name="order_code_status_pending">Onay bekleniyor</string>
-    <string name="order_code_back_to_home">Ana Sayfaya Dön</string>
-    <string name="order_code_loading_error">Sipariş yüklenemedi.</string>
-    <string name="order_code_piece_suffix"> adet</string>
-
     <!-- Terms -->
-    <string name="terms_of_service">Üyelik Sözleşmesi</string>
-    <string name="terms_accept_middle">'ni ve </string>
-    <string name="privacy_policy">Gizlilik Politikası</string>
-    <string name="terms_accept_suffix">'nı okudum ve kabul ediyorum.</string>
-    <string name="error_terms_not_accepted">Devam etmek için Üyelik Sözleşmesi ve Gizlilik Politikası'nı kabul edin.</string>
+    <string name="error_terms_not_accepted">Devam etmek için Kullanıcı Sözleşmesi ve Aydınlatma Metni hakkındaki seçimlerinizi tamamlayın.</string>
+    <string name="legal_registration_intro">Good4 hesabınızı oluşturmak için aşağıdaki iki belge hakkındaki seçiminizi tamamlayın.</string>
+    <string name="legal_registration_continue">Kayıt ol ve devam et</string>
+    <string name="legal_registration_cancel">Vazgeç</string>
     <string name="session_restore_title">Oturumun yeniden bağlanması bekleniyor</string>
     <string name="session_restore_retry">Tekrar Dene</string>
 </resources>

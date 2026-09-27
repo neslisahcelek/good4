@@ -29,6 +29,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,10 +40,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.ErrorSnackbar
 import com.good4.core.presentation.PistachioGreen
-import com.good4.core.presentation.PrimaryGreen
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
@@ -200,12 +199,12 @@ fun ProfileSectionCard(
             color = TextSecondary.copy(alpha = 0.2f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(18.dp),
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(verticalSpacing),
             content = content
         )
@@ -223,8 +222,8 @@ fun ProfilePrimaryLogoutButton(
             .wrapContentWidth()
             .height(StandardButtonHeight),
         colors = ButtonDefaults.buttonColors(
-            containerColor = PrimaryGreen,
-            contentColor = SurfaceDefault
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
         ),
         shape = RoundedCornerShape(28.dp)
     ) {
@@ -250,11 +249,11 @@ fun ProfileDeleteAccountButton(
         onClick = onClick,
         modifier = modifier.height(40.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = ErrorRed
+            contentColor = MaterialTheme.colorScheme.error
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = ErrorRed
+            color = MaterialTheme.colorScheme.error
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -287,7 +286,7 @@ fun DeleteAccountConfirmDialog(
         dismissLabel = stringResource(Res.string.delete_account_cancel_button),
         onConfirm = onConfirm,
         onDismiss = onDismiss,
-        confirmColor = ErrorRed,
+        confirmColor = MaterialTheme.colorScheme.error,
         enabled = !isDeleting
     )
 }

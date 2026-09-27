@@ -6,10 +6,12 @@ import com.good4.user.User
 data class StudentProfileState(
     val isLoading: Boolean = true,
     val user: User? = null,
+    val isCommunityManager: Boolean = false,
+    val communityName: String = "",
+    val communityUniversity: String = "",
     val errorMessage: String? = null,
     val deleteErrorMessage: UiText? = null,
     val isDeleteDialogVisible: Boolean = false,
     val isDeleting: Boolean = false,
     val isAccountDeleted: Boolean = false
 )
-

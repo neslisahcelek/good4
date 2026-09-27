@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import java.util.Properties
 
 plugins {
@@ -10,7 +11,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
 }
 
 kotlin {
@@ -43,15 +43,20 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+        xcodeConfigurationToNativeBuildType["DebugV2"] = NativeBuildType.DEBUG
     }
 
     sourceSets {
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
         androidInstrumentedTest.dependencies {
             implementation("androidx.compose.ui:ui-test-junit4:1.9.0")
             implementation("androidx.test:runner:1.7.0")
             implementation("androidx.test.espresso:espresso-core:3.7.0")
         }
         androidMain.dependencies {
+            implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
             implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
@@ -87,6 +92,7 @@ kotlin {
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.coil)
             implementation(libs.qrose)
+            implementation(libs.maplibre.compose)
         }
         
         iosMain.dependencies {
@@ -132,14 +138,31 @@ android {
             applicationIdSuffix = ".test"
             versionNameSuffix = "-test"
             buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "false")
+            buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-test\"")
+        }
+        create("v2") {
+            dimension = "env"
+            applicationIdSuffix = ".v2"
+            versionNameSuffix = "-v2"
+            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
+            buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-v2\"")
         }
         create("prod") {
             dimension = "env"
             buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
+            buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-v2\"")
         }
     }
 
     signingConfigs {
+        // Shared debug key: its SHA-1 is registered in Firebase, so Google sign-in works in
+        // debug builds on every developer machine. Not a release key; safe to keep in the repo.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             if (hasReleaseSigning) {
                 storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
@@ -178,6 +201,4 @@ dependencies {
     debugImplementation(compose.uiTooling)
     debugImplementation(libs.firebase.appcheck.debug)
     "prodImplementation"(platform(libs.firebase.bom))
-    "prodImplementation"(libs.firebase.analytics.ktx)
-    "prodImplementation"(libs.firebase.crashlytics.ktx)
 }

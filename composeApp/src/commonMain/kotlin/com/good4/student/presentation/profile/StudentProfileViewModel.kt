@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.auth.domain.AuthError
+import com.good4.community.CommunityRepository
 import com.good4.core.domain.Result
 import com.good4.core.presentation.UiText
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_delete_account_failed
@@ -20,7 +23,8 @@ import kotlinx.coroutines.launch
 
 class StudentProfileViewModel(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val communityRepository: CommunityRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StudentProfileState())
@@ -46,10 +50,21 @@ class StudentProfileViewModel(
             when (val result = userRepository.getUser(userId)) {
                 is Result.Success -> {
                     hasLoadedOnce = true
+                    val managedCommunity = runCatching {
+                        val access = communityRepository.access()
+                        if (access.active) {
+                            communityRepository.list().firstOrNull { it.id in access.communityIds }
+                        } else {
+                            null
+                        }
+                    }.getOrNull()
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            user = result.data
+                            user = result.data,
+                            isCommunityManager = managedCommunity != null,
+                            communityName = managedCommunity?.data?.name.orEmpty(),
+                            communityUniversity = managedCommunity?.data?.university.orEmpty()
                         )
                     }
                 }
@@ -100,7 +115,7 @@ class StudentProfileViewModel(
 
             _state.update { it.copy(isDeleting = true, deleteErrorMessage = null) }
 
-            when (val deleteUserResult = userRepository.deleteUser(userId)) {
+            when (val deleteUserResult = userRepository.deleteAccount(userId)) {
                 is Result.Error -> {
                     _state.update {
                         it.copy(
@@ -111,6 +126,17 @@ class StudentProfileViewModel(
                     return@launch
                 }
                 is Result.Success -> Unit
+            }
+
+            if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                _state.update {
+                    it.copy(
+                        isDeleting = false,
+                        isDeleteDialogVisible = false,
+                        isAccountDeleted = true
+                    )
+                }
+                return@launch
             }
 
             when (val deleteAuthResult = authRepository.deleteCurrentUser()) {

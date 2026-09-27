@@ -10,6 +10,8 @@ import com.good4.core.data.local.shouldCheckEmailVerificationFor
 import com.good4.core.domain.Result
 import com.good4.core.presentation.CooldownTimer
 import com.good4.core.presentation.UiText
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.user.data.repository.UserRepository
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.error_email_not_verified
@@ -266,7 +268,12 @@ class EmailVerificationViewModel(
                     return
                 }
 
-                when (val markResult = userRepository.markUserVerified(authUser.uid)) {
+                val profileResult = if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                    userRepository.ensureV2StudentProfile()
+                } else {
+                    userRepository.markUserVerified(authUser.uid)
+                }
+                when (profileResult) {
                     is Result.Success -> Unit
                     is Result.Error -> {
                         _state.update {
