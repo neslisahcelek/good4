@@ -179,9 +179,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -239,9 +243,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -390,7 +398,7 @@
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = 5N68564396;
+				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Staging.plist";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -438,7 +446,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CADisableMinimumFrameDurationOnPhone = YES;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = NM79R577GW;
@@ -447,7 +454,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-11unm894ckuk8nl23vmrtb9d0iq5t7bs";
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Good4;
+				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Ürün görseli eklemek için galerinize erişmemiz gerekmektedir.";
@@ -478,7 +485,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				VALIDATE_PRODUCT = NO;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -555,13 +562,13 @@
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = 5N68564396;
+				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-V2.plist";
 				GENERATE_INFOPLIST_FILE = YES;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-l8cnp6cl49jmddt9a2bkffrps4ug04lr";
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Good4 V2";
+				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Ürün görseli eklemek için galerinize erişmemiz gerekmektedir.";
@@ -578,7 +585,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.good4.iosApp.v2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.good4.iosApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
