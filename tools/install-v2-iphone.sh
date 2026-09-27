@@ -2,7 +2,8 @@
 set -euo pipefail
 
 expected_source='/Users/cankilinc/Desktop/Good4/Good4 dev'
-expected_bundle='com.good4.iosApp.v2'
+# DebugV2 builds the store bundle id against good4tr-v2 (Xcode project settings, Sep 2026).
+expected_bundle='com.good4.iosApp'
 device_id="${1:-00008120-001831543C42601E}"
 source_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
