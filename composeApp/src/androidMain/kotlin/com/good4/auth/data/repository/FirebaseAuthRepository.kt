@@ -279,7 +279,8 @@ class FirebaseAuthRepository : AuthRepository {
             uid = uid,
             email = email,
             displayName = displayName,
-            isEmailVerified = isEmailVerified
+            isEmailVerified = isEmailVerified,
+            providerIds = providerData.map { it.providerId }
         )
     }
 }

@@ -25,6 +25,8 @@ data class AccountSettingsState(
     val universities: List<String> = emptyList(),
     val isPasswordResetEmailSent: Boolean = false,
     val canResendPasswordReset: Boolean = true,
+    /** Google/Apple accounts have no password, so the reset card is hidden for them. */
+    val hasPasswordSignIn: Boolean = false,
     val passwordResetCooldownSeconds: Int = 0,
     val showPhoneField: Boolean = false,
     val profileSaveCount: Int = 0,

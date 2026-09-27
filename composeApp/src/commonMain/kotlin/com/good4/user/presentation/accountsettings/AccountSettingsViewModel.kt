@@ -108,6 +108,7 @@ class AccountSettingsViewModel(
                             classYear = user.classYear.orEmpty(),
                             educationLevel = user.educationLevel.orEmpty(),
                             email = user.email,
+                            hasPasswordSignIn = authRepository.currentUser?.hasPasswordSignIn == true,
                             showPhoneField = user.phoneNumber?.isNotBlank() == true
                         )
                     }

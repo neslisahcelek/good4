@@ -501,7 +501,8 @@ fun AccountSettingsScreen(
             }
 
 
-            ProfileSectionCard(verticalSpacing = 14.dp) {
+            // Google and Apple accounts have no password to reset.
+            if (state.hasPasswordSignIn) ProfileSectionCard(verticalSpacing = 14.dp) {
                 AccountSettingsSectionHeader(
                     icon = Icons.Filled.Email,
                     title = stringResource(Res.string.account_settings_security_section_title),
