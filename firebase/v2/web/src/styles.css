@@ -90,7 +90,21 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); box-shad
 .inline-message { margin-top: 14px; padding: 10px 12px; border-left: 3px solid; border-radius: 6px; font-size: 13px; line-height: 1.45; }
 .inline-message--error { color: #812b25; background: #fff4f2; border-color: var(--error); }
 .inline-message--success { color: #005f3e; background: #edf7f2; border-color: var(--green); }
-.support-copy { margin: 22px 0 0; color: var(--text-secondary); text-align: center; font-size: 12px; }
+.support-copy { margin: 22px 0 0; color: var(--text-secondary); text-align: center; font-size: 12px; line-height: 1.6; }
+.support-copy a { color: var(--green-dark); font-weight: 500; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 14px; color: var(--text-secondary); font-size: 12px; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.google-button { color: var(--text); border-color: #c9c8c2; }
+.google-button:hover:not(:disabled) { background: var(--subtle); }
+.application-card { width: min(100%, 520px); }
+.application-card textarea { min-height: 88px; }
+.application-status { margin-top: 4px; padding: 16px; background: var(--subtle); border-radius: 8px; }
+.application-status h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+.application-status p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.55; }
+.application-status .primary-button { margin-top: 16px; text-decoration: none; }
+.application-edit { margin-top: 14px; }
+.application-account { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: -12px 0 22px; color: var(--text-secondary); font-size: 13px; overflow-wrap: anywhere; }
+.application-review-card .coupon-tags a, .field-help a, .section-title-row p a { color: var(--green-dark); }
 .field-help { margin: 7px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
 
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.38); border-top-color: #fff; border-radius: 50%; animation: spin 650ms linear infinite; }
