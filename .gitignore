@@ -35,10 +35,6 @@ commonMain/dev/
 **/google-services*.json
 **/GoogleService-Info.plist
 **/firebase-debug.json
-**/firebase.json
-firestore.rules
-!firebase/v2/firebase.json
-!firebase/v2/firestore.rules
 keystore.properties
 
 # Gradle local and signing

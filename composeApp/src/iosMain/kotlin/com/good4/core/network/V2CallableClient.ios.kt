@@ -5,3 +5,6 @@ import dev.gitlive.firebase.auth.auth
 
 actual suspend fun currentFirebaseIdToken(): String =
     Firebase.auth.currentUser?.getIdToken(false) ?: error("Giriş oturumu bulunamadı.")
+
+actual suspend fun currentAppCheckToken(): String? = null
+

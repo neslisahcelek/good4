@@ -1,0 +1,206 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userExists(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function userData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function currentUserIsActive() {
+      return signedIn()
+        && userExists(request.auth.uid)
+        && userData(request.auth.uid).status == 'active';
+    }
+
+    function isGood4Admin() {
+      return currentUserIsActive()
+        && userData(request.auth.uid).role == 'good4Admin';
+    }
+
+    function membershipExists(organizationId, uid) {
+      return exists(/databases/$(database)/documents/organizations/$(organizationId)/members/$(uid));
+    }
+
+    function membershipData(organizationId, uid) {
+      return get(/databases/$(database)/documents/organizations/$(organizationId)/members/$(uid)).data;
+    }
+
+    function isActiveOrganizationMember(organizationId) {
+      return currentUserIsActive()
+        && membershipExists(organizationId, request.auth.uid)
+        && membershipData(organizationId, request.auth.uid).status == 'active';
+    }
+
+    function hasOrganizationRole(organizationId, roles) {
+      return isActiveOrganizationMember(organizationId)
+        && membershipData(organizationId, request.auth.uid).role in roles;
+    }
+
+    function optionalString(data, fieldName, maxLength) {
+      return data.get(fieldName, null) == null
+        || (data.get(fieldName, null) is string
+          && data.get(fieldName, null).size() <= maxLength);
+    }
+
+    function canManageOrganizationMembers(organizationId) {
+      return isGood4Admin()
+        || hasOrganizationRole(organizationId, ['owner', 'manager']);
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isGood4Admin());
+      allow list: if isGood4Admin();
+
+      // Profiles are created only by the ensureStudentProfile callable, which
+      // enforces the sign-in provider and university e-mail policy.
+      allow create: if false;
+
+      allow update: if currentUserIsActive()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'displayName', 'fullName', 'phoneNumber', 'university',
+            'faculty', 'major', 'classYear', 'educationLevel', 'updatedAt'
+          ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 120
+        && optionalString(request.resource.data, 'fullName', 120)
+        && optionalString(request.resource.data, 'phoneNumber', 40)
+        && optionalString(request.resource.data, 'university', 160)
+        && optionalString(request.resource.data, 'faculty', 160)
+        && optionalString(request.resource.data, 'major', 160)
+        && optionalString(request.resource.data, 'classYear', 40)
+        && optionalString(request.resource.data, 'educationLevel', 80)
+        && (
+          request.resource.data.updatedAt == request.time
+          || request.resource.data.updatedAt == resource.data.updatedAt
+        );
+
+      allow delete: if false;
+    }
+
+    match /organizations/{organizationId} {
+      allow get, list: if isGood4Admin()
+        || isActiveOrganizationMember(organizationId)
+        || (signedIn()
+          && resource.data.status == 'active'
+          && resource.data.type in ['business', 'community']);
+      allow create, update, delete: if false;
+
+      match /members/{memberId} {
+        allow get: if signedIn()
+          && (request.auth.uid == memberId
+            || canManageOrganizationMembers(organizationId));
+        allow list: if canManageOrganizationMembers(organizationId);
+        allow create, update, delete: if false;
+      }
+
+      match /followers/{userId} {
+        allow get: if signedIn()
+          && (request.auth.uid == userId
+            || isActiveOrganizationMember(organizationId)
+            || isGood4Admin());
+        allow list: if isActiveOrganizationMember(organizationId) || isGood4Admin();
+        // setCommunityFollowing owns the follower document and count in one transaction.
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /campaigns/{campaignId} {
+      allow get, list: if isGood4Admin()
+        || isActiveOrganizationMember(resource.data.organizationId)
+        || (signedIn() && resource.data.status == 'published');
+      allow create, update, delete: if false;
+    }
+
+    match /campaignCodes/{codeId} {
+      allow get: if currentUserIsActive()
+        && (resource.data.studentId == request.auth.uid || isGood4Admin());
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    match /redemptions/{redemptionId} {
+      allow get, list: if isGood4Admin()
+        || (currentUserIsActive() && resource.data.studentId == request.auth.uid)
+        || isActiveOrganizationMember(resource.data.organizationId);
+      allow create, update, delete: if false;
+    }
+
+    match /events/{eventId} {
+      allow get, list: if isGood4Admin()
+        || isActiveOrganizationMember(resource.data.organizationId)
+        || (signedIn() && resource.data.status == 'published');
+      allow create, update, delete: if false;
+
+      match /registrations/{registrationId} {
+        allow get: if signedIn()
+          && (resource.data.userId == request.auth.uid
+            || isGood4Admin()
+            || isActiveOrganizationMember(
+              get(/databases/$(database)/documents/events/$(eventId)).data.organizationId
+            ));
+        allow list: if (currentUserIsActive() && resource.data.userId == request.auth.uid)
+          || isGood4Admin()
+          || isActiveOrganizationMember(
+            get(/databases/$(database)/documents/events/$(eventId)).data.organizationId
+          );
+        allow create, update, delete: if false;
+      }
+
+      match /checkins/{registrationId} {
+        allow get: if signedIn()
+          && (resource.data.userId == request.auth.uid
+            || isGood4Admin()
+            || isActiveOrganizationMember(
+              get(/databases/$(database)/documents/events/$(eventId)).data.organizationId
+            ));
+        allow list: if (currentUserIsActive() && resource.data.userId == request.auth.uid)
+          || isGood4Admin()
+          || isActiveOrganizationMember(
+            get(/databases/$(database)/documents/events/$(eventId)).data.organizationId
+          );
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /system/{documentId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Monthly KYK dorm menu, one document per day; written only by the saveKykMenu function.
+    match /kyk_menu_days/{date} {
+      allow get: if signedIn();
+      allow list, create, update, delete: if false;
+    }
+
+    match /app_config/{documentId} {
+      allow get: if signedIn() && documentId in ['akdeniz_dining_menu', 'home_banner', 'home_banner_2',
+        'home_banner_3', 'home_banner_4', 'campus_weather'];
+      allow list, create, update, delete: if false;
+    }
+
+    match /academic_calendar_events/{eventId} {
+      allow get, list: if signedIn() && resource.data.active == true;
+      allow create, update, delete: if false;
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isGood4Admin();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
