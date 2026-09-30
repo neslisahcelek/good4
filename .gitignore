@@ -69,6 +69,9 @@ iosApp/iosApp.xcworkspace/
 /tmp/
 /output/
 
+# AI review status
+.ai_approved
+
 # Finder duplicate copies ("file 2.ext")
 * 2
 * 2.*

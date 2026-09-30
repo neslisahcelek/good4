@@ -7,18 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D04AA3E82F9A6FD300F5B5B4 /* Pods_iosApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F56604FF739FBE4363E22854 /* Pods_iosApp.framework */; };
+		BLD000012F30FC02007C3994 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000012F30FC02007C3994 /* FirebaseCore */; };
+		BLD000022F30FC02007C3994 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000022F30FC02007C3994 /* FirebaseAuth */; };
+		BLD000032F30FC02007C3994 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000032F30FC02007C3994 /* FirebaseFirestore */; };
+		BLD000042F30FC02007C3994 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000042F30FC02007C3994 /* FirebaseStorage */; };
+		BLD000052F30FC02007C3994 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000052F30FC02007C3994 /* GoogleSignIn */; };
+		BLD000062F30FC02007C3994 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000062F30FC02007C3994 /* MapLibre */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		BC4D02CC854247582BB17281 /* Pods-iosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.release.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.release.xcconfig"; sourceTree = "<group>"; };
-		C2B5BEEAF2D83F246AA8E077 /* Pods-iosApp.debugv2.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.debugv2.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.debugv2.xcconfig"; sourceTree = "<group>"; };
-		C6817285B8B286807B302913 /* Pods-iosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.debug.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.debug.xcconfig"; sourceTree = "<group>"; };
 		D09141472F30FC02007C3994 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0A012D52F3CE1E3008E499E /* GoogleService-Info-Prod.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-Prod.plist"; sourceTree = "<group>"; };
 		D0A012D62F3CE1E3008E499E /* GoogleService-Info-Staging.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-Staging.plist"; sourceTree = "<group>"; };
 		D0A012E02F3CE1E3008E499E /* GoogleService-Info-V2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-V2.plist"; sourceTree = "<group>"; };
-		F56604FF739FBE4363E22854 /* Pods_iosApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iosApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -47,30 +48,23 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D04AA3E82F9A6FD300F5B5B4 /* Pods_iosApp.framework in Frameworks */,
+				BLD000012F30FC02007C3994 /* FirebaseCore in Frameworks */,
+				BLD000022F30FC02007C3994 /* FirebaseAuth in Frameworks */,
+				BLD000032F30FC02007C3994 /* FirebaseFirestore in Frameworks */,
+				BLD000042F30FC02007C3994 /* FirebaseStorage in Frameworks */,
+				BLD000052F30FC02007C3994 /* GoogleSignIn in Frameworks */,
+				BLD000062F30FC02007C3994 /* MapLibre in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2A7CBA6F7114B2044F8DA0C1 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				C6817285B8B286807B302913 /* Pods-iosApp.debug.xcconfig */,
-				BC4D02CC854247582BB17281 /* Pods-iosApp.release.xcconfig */,
-				C2B5BEEAF2D83F246AA8E077 /* Pods-iosApp.debugv2.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		D091413E2F30FC02007C3994 = {
 			isa = PBXGroup;
 			children = (
 				D09141492F30FC02007C3994 /* iosApp */,
 				D09141482F30FC02007C3994 /* Products */,
-				2A7CBA6F7114B2044F8DA0C1 /* Pods */,
-				D5A6E04AE4F79E23F93036ED /* Frameworks */,
 				D0A012D52F3CE1E3008E499E /* GoogleService-Info-Prod.plist */,
 				D0A012D62F3CE1E3008E499E /* GoogleService-Info-Staging.plist */,
 				D0A012E02F3CE1E3008E499E /* GoogleService-Info-V2.plist */,
@@ -85,14 +79,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D5A6E04AE4F79E23F93036ED /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				F56604FF739FBE4363E22854 /* Pods_iosApp.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -100,13 +86,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D09141522F30FC03007C3994 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
-				B3B29A90BEFD149FD3619FAE /* [CP] Check Pods Manifest.lock */,
+				FD0000012F30FC02007C3994 /* [Kotlin] Embed and Pack Apple Framework */,
 				A1B2C3D4E5F60718293A4B5C /* [Firebase] Copy GoogleService-Info.plist */,
 				D09141432F30FC02007C3994 /* Sources */,
 				D09141442F30FC02007C3994 /* Frameworks */,
 				D09141452F30FC02007C3994 /* Resources */,
-				6F80662190CEE6281208E9A3 /* [CP] Copy Pods Resources */,
-				BE9B8E771A41670DDAFB99EA /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -116,6 +100,14 @@
 				D09141492F30FC02007C3994 /* iosApp */,
 			);
 			name = iosApp;
+			packageProductDependencies = (
+				SPM000012F30FC02007C3994 /* FirebaseCore */,
+				SPM000022F30FC02007C3994 /* FirebaseAuth */,
+				SPM000032F30FC02007C3994 /* FirebaseFirestore */,
+				SPM000042F30FC02007C3994 /* FirebaseStorage */,
+				SPM000052F30FC02007C3994 /* GoogleSignIn */,
+				SPM000062F30FC02007C3994 /* MapLibre */,
+			);
 			productName = iosApp;
 			productReference = D09141472F30FC02007C3994 /* iosApp.app */;
 			productType = "com.apple.product-type.application";
@@ -150,6 +142,11 @@
 			mainGroup = D091413E2F30FC02007C3994;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
+			packageReferences = (
+				PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				PKG000022F30FC02007C3994 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				PKG000032F30FC02007C3994 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
 			productRefGroup = D09141482F30FC02007C3994 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -170,26 +167,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		6F80662190CEE6281208E9A3 /* [CP] Copy Pods Resources */ = {
+		FD0000012F30FC02007C3994 /* [Kotlin] Embed and Pack Apple Framework */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			inputPaths = (
 			);
-			name = "[CP] Copy Pods Resources";
+			name = "[Kotlin] Embed and Pack Apple Framework";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources.sh\"\n";
+			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndPackAppleFrameworkForXcode\n";
 			showEnvVarsInLog = 0;
 		};
 		A1B2C3D4E5F60718293A4B5C /* [Firebase] Copy GoogleService-Info.plist */ = {
@@ -211,49 +205,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Copy the Firebase plist selected by the active build configuration.\nSOURCE=\"${SRCROOT}/${FIREBASE_CONFIG_FILE}\"\nDEST=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\nif [ ! -f \"${SOURCE}\" ]; then\n  echo \"error: Missing Firebase config: ${SOURCE}\"\n  exit 1\nfi\nmkdir -p \"$(dirname \"${DEST}\")\"\ncp \"${SOURCE}\" \"${DEST}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		B3B29A90BEFD149FD3619FAE /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-iosApp-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		BE9B8E771A41670DDAFB99EA /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -390,7 +341,6 @@
 		};
 		D09141532F30FC03007C3994 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6817285B8B286807B302913 /* Pods-iosApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -441,7 +391,6 @@
 		};
 		D09141542F30FC03007C3994 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BC4D02CC854247582BB17281 /* Pods-iosApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -468,6 +417,10 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)",
+				);
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -556,7 +509,6 @@
 		};
 		D09141562F30FC03007C3994 /* DebugV2 */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C2B5BEEAF2D83F246AA8E077 /* Pods-iosApp.debugv2.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -583,6 +535,10 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)",
+				);
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -629,6 +585,65 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.9.0;
+			};
+		};
+		PKG000022F30FC02007C3994 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.0.0;
+			};
+		};
+		PKG000032F30FC02007C3994 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.17.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		SPM000012F30FC02007C3994 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		SPM000022F30FC02007C3994 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		SPM000032F30FC02007C3994 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		SPM000042F30FC02007C3994 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		SPM000052F30FC02007C3994 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000022F30FC02007C3994 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		SPM000062F30FC02007C3994 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000032F30FC02007C3994 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D091413F2F30FC02007C3994 /* Project object */;
 }

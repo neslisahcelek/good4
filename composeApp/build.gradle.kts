@@ -1,11 +1,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinNativeCocoapods)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.kotlin.serialization)
@@ -30,20 +28,6 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
-    }
-
-    cocoapods {
-        name = "ComposeApp"
-        summary = "Good4 iOS App"
-        homepage = "https://example.com"
-        version = "1.0.0"
-        ios.deploymentTarget = "16.0"
-        podfile = project.file("../iosApp/Podfile")
-        framework {
-            baseName = "ComposeApp"
-            isStatic = true
-        }
-        xcodeConfigurationToNativeBuildType["DebugV2"] = NativeBuildType.DEBUG
     }
 
     sourceSets {
