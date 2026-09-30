@@ -179,9 +179,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -239,9 +243,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -399,6 +407,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Ürün görseli eklemek için galerinize erişmemiz gerekmektedir.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -439,7 +448,7 @@
 				CADisableMinimumFrameDurationOnPhone = YES;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Prod.plist";
@@ -449,6 +458,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Good4;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Ürün görseli eklemek için galerinize erişmemiz gerekmektedir.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -563,6 +573,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Ürün görseli eklemek için galerinize erişmemiz gerekmektedir.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
