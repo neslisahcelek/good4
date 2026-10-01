@@ -29,6 +29,14 @@ class ClassScheduleViewModel(
     private val _state = MutableStateFlow(ClassScheduleState())
     val state = _state.asStateFlow()
 
+    /** The academic selection prompt opens by itself only once, so backing out of it does not loop. */
+    var hasPromptedAcademicSelection = false
+        private set
+
+    fun onAcademicSelectionPrompted() {
+        hasPromptedAcademicSelection = true
+    }
+
     init {
         refresh()
     }
