@@ -43,7 +43,6 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
-        xcodeConfigurationToNativeBuildType["DebugV2"] = NativeBuildType.DEBUG
     }
 
     sourceSets {

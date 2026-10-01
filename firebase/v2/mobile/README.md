@@ -1,20 +1,21 @@
-# Good4 V2 mobile environment
+# Good4 mobile environments
 
-The V2 mobile clients are deliberately separate from the existing Good4Test
-clients. This prevents development against `good4tr-v2` from overwriting or
-silently reading `good4tr-test` data.
+Production and test clients use separate Firebase projects. This prevents test
+builds from overwriting or silently reading production data.
 
 ## Firebase applications
 
 | Platform | Application identifier | Firebase app ID |
 | --- | --- | --- |
 | Android | `com.good4.v2` | `1:654697131931:android:92249864df761520603b3e` |
-| iOS | `com.good4.iosApp.v2` | `1:654697131931:ios:a224075631fa42e3603b3e` |
+| iOS production | `com.good4.iosApp` | `1:654697131931:ios:c7e28c28e33731d1603b3e` |
+| iOS test | `com.good4.iosApp.test` | `1:449563145023:ios:dff46396477949a419d98a` |
 
 Local Firebase configuration files:
 
 - Android: `composeApp/src/v2/google-services.json`
-- iOS: `iosApp/GoogleService-Info-V2.plist`
+- iOS production: `iosApp/GoogleService-Info-Prod.plist`
+- iOS test: `iosApp/GoogleService-Info-Test.plist`
 
 These client configuration files are intentionally ignored by Git with the
 other Firebase app configurations. Keep them in the local `Good4 dev` folder.
@@ -35,11 +36,11 @@ Command-line checks:
 
 ### iOS
 
-- Choose the shared `iosApp V2` scheme for `good4tr-v2`.
-- Choose `iosApp Staging` to continue using `good4tr-test`.
+- Choose `iosApp Prod` for `good4tr-v2` and App Store archives.
+- Choose `iosApp Test` for `good4tr-test` and test archives.
 
-The V2 configuration builds a separate `Good4 V2` app with bundle identifier
-`com.good4.iosApp.v2`, so it can be installed alongside Good4Test.
+The two schemes use separate bundle identifiers, Firebase plist files and
+Google sign-in client IDs, so they can be installed side by side.
 
 ## Compatibility boundary
 
