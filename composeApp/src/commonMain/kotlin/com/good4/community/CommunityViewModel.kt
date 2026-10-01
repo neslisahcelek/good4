@@ -125,10 +125,19 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         }
     }
 
-    fun load() {
+    /**
+     * Reloads the list in place when the student comes back to it, so a community approved while the
+     * app stayed open shows up without a restart. A load that is already running is left alone.
+     */
+    fun refreshCommunities() {
+        if (mutable.value.loading || repository.currentUserId == null) return
+        load(silent = true)
+    }
+
+    fun load(silent: Boolean = false) {
         loadingJob?.cancel()
         loadingJob = viewModelScope.launch {
-            mutable.update { it.copy(loading = true, error = null) }
+            if (!silent) mutable.update { it.copy(loading = true, error = null) }
             try {
                 val communities = repository.list()
                 val access = repository.access()
@@ -141,11 +150,15 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                         blockedCommunityIds = blocked,
                         access = access,
                         businesses = businesses,
-                        loading = false
+                        loading = false,
+                        error = null
                     )
                 }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { mutable.update { it.copy(loading = false, error = e.message) } }
+            catch (e: Exception) {
+                // A failed background refresh keeps the list that is already on screen.
+                if (!silent) mutable.update { it.copy(loading = false, error = e.message) }
+            }
         }
     }
 
