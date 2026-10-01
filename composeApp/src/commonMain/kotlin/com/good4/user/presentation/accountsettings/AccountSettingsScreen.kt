@@ -134,6 +134,7 @@ fun AccountSettingsScreen(
         "Spor Bilimleri Fakültesi",
         "Güzel Sanatlar Fakültesi",
         "Su Ürünleri Fakültesi",
+        "Kemer Denizcilik Fakültesi",
         "İlahiyat Fakültesi",
         "Diş Hekimliği Fakültesi"
     )
@@ -229,6 +230,7 @@ fun AccountSettingsScreen(
         )
         "Hukuk Fakültesi" -> listOf("Hukuk")
         "Su Ürünleri Fakültesi" -> listOf("Su Ürünleri Mühendisliği")
+        "Kemer Denizcilik Fakültesi" -> listOf("Denizcilik İşletmeleri Yönetimi")
         "İlahiyat Fakültesi" -> listOf("İlahiyat")
         "Diş Hekimliği Fakültesi" -> listOf("Diş Hekimliği")
         "Spor Bilimleri Fakültesi" -> listOf(

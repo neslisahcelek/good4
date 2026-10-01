@@ -50,6 +50,7 @@ object ClassSchedules {
     const val SPORT_SCIENCES_FACULTY = "Spor Bilimleri Fakültesi"
     const val FINE_ARTS_FACULTY = "Güzel Sanatlar Fakültesi"
     const val FISHERIES_FACULTY = "Su Ürünleri Fakültesi"
+    const val MARITIME_FACULTY = "Kemer Denizcilik Fakültesi"
     const val THEOLOGY_FACULTY = "İlahiyat Fakültesi"
     const val DENTAL_FACULTY = "Diş Hekimliği Fakültesi"
     const val BIOLOGY_DEPARTMENT = "Biyoloji"
@@ -138,6 +139,7 @@ object ClassSchedules {
     const val ADVERTISING_DEPARTMENT = "Reklamcılık"
     const val LAW_DEPARTMENT = "Hukuk"
     const val FISHERIES_ENGINEERING_DEPARTMENT = "Su Ürünleri Mühendisliği"
+    const val MARITIME_BUSINESS_DEPARTMENT = "Denizcilik İşletmeleri Yönetimi"
     const val THEOLOGY_DEPARTMENT = "İlahiyat"
     const val DENTAL_DEPARTMENT = "Diş Hekimliği"
     const val FIRST_YEAR = "1. Sınıf"
@@ -3585,6 +3587,7 @@ object ClassSchedules {
             SPORT_SCIENCES_FACULTY -> SportsScienceSchedules.schedulesFor(department) ?: return null
             FINE_ARTS_FACULTY -> FineArtsSchedules.schedulesFor(department) ?: return null
             FISHERIES_FACULTY -> FisheriesSchedules.schedulesFor(department) ?: return null
+            MARITIME_FACULTY -> MaritimeSchedules.schedulesFor(department) ?: return null
             THEOLOGY_FACULTY -> TheologySchedules.schedulesFor(department) ?: return null
             DENTAL_FACULTY -> DentalSchedules.schedulesFor(department) ?: return null
             LITERATURE_FACULTY -> LiteratureSchedules.schedulesFor(department) ?: return null
