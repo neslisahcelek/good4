@@ -214,6 +214,7 @@ AKŞAM YEMEĞİ
 KAHVALTI
 - Haşlanmış yumurta
 - Patates kroket
+- Karışık pizza
 - Beyaz peynir
 - Siyah/yeşil zeytin
 - Çeyrek ekmek
