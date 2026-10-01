@@ -1607,9 +1607,9 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [calendarActive, setCalendarActive] = useState(true);
   const [savingCalendar, setSavingCalendar] = useState(false);
 
-  async function refresh(showLoader = true) {
+  async function refresh(showLoader = true, clearExistingError = true) {
     if (showLoader) setLoading(true);
-    setError("");
+    if (clearExistingError) setError("");
     try {
       const response = await getAdminDashboard();
       setData(response.data);
@@ -1619,7 +1619,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       setMenuWeekEnd(response.data.diningMenu?.weekEnd ?? "");
       setMenuDays(diningDaysForForm(response.data.diningMenu));
       fillBannerForm(bannerForSlot(response.data, bannerSlot));
-      await loadCommunityApplications();
+      await loadCommunityApplications(false);
     } catch (requestError) {
       setError(functionErrorMessage(requestError));
     } finally {
@@ -1627,11 +1627,12 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
     }
   }
 
-  async function loadCommunityApplications() {
+  async function loadCommunityApplications(clearExistingError = true) {
+    if (clearExistingError) setError("");
     try {
       setCommunityApplications((await listCommunityApplications()).data.applications);
     } catch (requestError) {
-      console.error("[admin] Community applications failed to load", requestError);
+      setError(`Topluluk başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
     }
   }
 
@@ -1656,7 +1657,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       setError(functionErrorMessage(requestError));
     } finally {
       setReviewing("");
-      await refresh(false);
+      await refresh(false, false);
     }
   }
 
