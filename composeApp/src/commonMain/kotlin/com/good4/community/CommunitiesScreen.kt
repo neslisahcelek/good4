@@ -112,6 +112,7 @@ fun CommunitiesScreen(
     LifecycleResumeEffect(community?.id, state.canManage) {
         viewModel.resumeUpdates()
         if (community == null) {
+            viewModel.refreshCommunities()
             viewModel.refreshFeaturedEvents(today, force = true)
         }
         onPauseOrDispose { viewModel.pauseUpdates() }
