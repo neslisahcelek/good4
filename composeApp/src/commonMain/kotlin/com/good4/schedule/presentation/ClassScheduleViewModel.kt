@@ -13,14 +13,40 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class AcademicProfileField { FACULTY, DEPARTMENT, CLASS_YEAR }
+
 data class ClassScheduleState(
     val isLoading: Boolean = true,
     val user: User? = null,
     val schedule: ClassSchedule? = null,
     val isProfileSelectionComplete: Boolean = false,
-    val isAcademicProfileMissing: Boolean = false,
+    val missingAcademicFields: List<AcademicProfileField> = emptyList(),
+    val isAcademicSelectionSheetVisible: Boolean = false,
+    val hasPromptedAcademicSelection: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    val isAcademicProfileMissing: Boolean get() = missingAcademicFields.isNotEmpty()
+
+    internal fun withLoadedUser(user: User): ClassScheduleState {
+        val missingFields = buildList {
+            if (user.faculty.isNullOrBlank()) add(AcademicProfileField.FACULTY)
+            if (user.major.isNullOrBlank()) add(AcademicProfileField.DEPARTMENT)
+            if (user.classYear.isNullOrBlank()) add(AcademicProfileField.CLASS_YEAR)
+        }
+        val selectedSchedule = ClassSchedules.find(user.faculty, user.major, user.classYear)
+        val shouldPrompt = missingFields.isNotEmpty() && !hasPromptedAcademicSelection
+        return copy(
+            isLoading = false,
+            user = user,
+            schedule = selectedSchedule ?: ClassSchedules.businessFirstYear,
+            isProfileSelectionComplete = selectedSchedule != null && missingFields.isEmpty(),
+            missingAcademicFields = missingFields,
+            isAcademicSelectionSheetVisible = missingFields.isNotEmpty() && (isAcademicSelectionSheetVisible || shouldPrompt),
+            hasPromptedAcademicSelection = hasPromptedAcademicSelection || shouldPrompt,
+            errorMessage = null
+        )
+    }
+}
 
 class ClassScheduleViewModel(
     private val authRepository: AuthRepository,
@@ -29,12 +55,14 @@ class ClassScheduleViewModel(
     private val _state = MutableStateFlow(ClassScheduleState())
     val state = _state.asStateFlow()
 
-    /** The academic selection prompt opens by itself only once, so backing out of it does not loop. */
-    var hasPromptedAcademicSelection = false
-        private set
+    fun showAcademicSelectionSheet() {
+        _state.update {
+            it.copy(isAcademicSelectionSheetVisible = it.isAcademicProfileMissing)
+        }
+    }
 
-    fun onAcademicSelectionPrompted() {
-        hasPromptedAcademicSelection = true
+    fun dismissAcademicSelectionSheet() {
+        _state.update { it.copy(isAcademicSelectionSheetVisible = false) }
     }
 
     init {
@@ -54,24 +82,7 @@ class ClassScheduleViewModel(
             _state.update { it.copy(isLoading = !hasLoadedUser, errorMessage = null) }
             when (val result = userRepository.getUser(userId)) {
                 is Result.Success -> {
-                    val user = result.data
-                    val selectedSchedule = ClassSchedules.find(
-                        faculty = user.faculty,
-                        department = user.major,
-                        classYear = user.classYear
-                    )
-                    val hasCompleteSelection = selectedSchedule != null
-                    val isAcademicProfileMissing = listOf(user.faculty, user.major, user.classYear)
-                        .any { it.isNullOrBlank() }
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            user = user,
-                            schedule = selectedSchedule ?: ClassSchedules.businessFirstYear,
-                            isProfileSelectionComplete = hasCompleteSelection,
-                            isAcademicProfileMissing = isAcademicProfileMissing
-                        )
-                    }
+                    _state.update { it.withLoadedUser(result.data) }
                 }
 
                 is Result.Error -> {

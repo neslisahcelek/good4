@@ -414,4 +414,22 @@
     <string name="legal_registration_cancel">Vazgeç</string>
     <string name="session_restore_title">Oturumun yeniden bağlanması bekleniyor</string>
     <string name="session_restore_retry">Tekrar Dene</string>
+    <!-- Class schedule academic selection -->
+    <string name="schedule_title">Ders Programı</string>
+    <string name="schedule_selection_title">Kendi programını gör</string>
+    <string name="schedule_missing_faculty">Ders programını görebilmek için önce fakülteni seçmelisin.</string>
+    <string name="schedule_missing_department">Ders programını görebilmek için önce bölümünü seçmelisin.</string>
+    <string name="schedule_missing_class">Ders programını görebilmek için önce sınıfını seçmelisin.</string>
+    <string name="schedule_missing_faculty_department">Kendi ders programın için önce fakülteni ve bölümünü seçmelisin.</string>
+    <string name="schedule_missing_faculty_class">Kendi ders programın için önce fakülteni ve sınıfını seçmelisin.</string>
+    <string name="schedule_missing_department_class">Kendi ders programın için önce bölümünü ve sınıfını seçmelisin.</string>
+    <string name="schedule_missing_all">Kendi ders programın için önce fakülteni, bölümünü ve sınıfını seçmelisin.</string>
+    <string name="schedule_selection_return_hint">Kaydedince ders programına geri döneceksin.</string>
+    <string name="schedule_go_to_settings">Ayarlara git</string>
+    <string name="schedule_select_action">Bölümünü Seç</string>
+    <string name="schedule_skip_selection">Şimdilik geç</string>
+    <string name="schedule_close_selection">Paneli kapat</string>
+    <string name="schedule_settings_selection_hint">Ders programını görmek için fakülte, bölüm ve sınıfını seçip kaydet.</string>
+    <string name="schedule_unavailable_fallback">Seçtiğin bölüm ve sınıf için henüz program eklenmedi; İşletme 1. sınıf programı gösteriliyor.</string>
+    <string name="schedule_select_profile">Bölümünü ve sınıfını seç</string>
 </resources>
