@@ -20,6 +20,13 @@ target 'iosApp' do
 end
 
 post_install do |installer|
+  maplibre_target = installer.pod_targets.find { |target| target.pod_name == 'MapLibre' }
+  maplibre_version = maplibre_target.root_spec.version.to_s
+  symbols_script = File.join(__dir__, 'scripts', 'maplibre-dsym.sh')
+  unless system('/bin/bash', symbols_script, 'prepare', maplibre_version, installer.sandbox.root.to_s)
+    raise 'Could not prepare matching MapLibre device symbols.'
+  end
+
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
@@ -39,11 +46,23 @@ post_install do |installer|
 
   installer.aggregate_targets.each do |aggregate_target|
     aggregate_target.user_project.targets.each do |target|
+      next unless target.name == 'iosApp'
+
       target.build_phases.each do |build_phase|
         next unless build_phase.respond_to?(:name)
         next unless ['[CP-User] Build ComposeApp', '[CP] Copy Pods Resources'].include?(build_phase.name)
         build_phase.always_out_of_date = '1'
       end
+
+      phase_name = '[MapLibre] Copy Archive dSYM'
+      symbols_phase = target.shell_script_build_phases.find { |phase| phase.name == phase_name }
+      symbols_phase ||= target.new_shell_script_build_phase(phase_name)
+      symbols_phase.shell_script = "/bin/bash \"${SRCROOT}/scripts/maplibre-dsym.sh\" embed #{maplibre_version}\n"
+      symbols_phase.always_out_of_date = '1'
+      # Must run after CocoaPods embeds MapLibre so UUID verification uses the
+      # actual framework that will be shipped in the archive.
+      target.build_phases.delete(symbols_phase)
+      target.build_phases << symbols_phase
     end
     aggregate_target.user_project.save
   end

@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
@@ -20,6 +21,7 @@ struct IOSApp: App {
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
         FirebaseApp.configure()
+        StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
         GoogleSignInBridge.shared.launcher = NativeGoogleSignInLauncher()
         let appleLauncher = NativeAppleSignInLauncher()
         AppleSignInBridge.shared.launcher = appleLauncher
@@ -319,6 +321,20 @@ private struct NativeLaunchPlaceholderView: View {
                     .progressViewStyle(.circular)
                     .tint(Color.black)
             }
+        }
+    }
+}
+
+private final class NativeStoreReviewLauncher: NSObject, NativeReviewLauncher {
+    func launch(approval: NativeReviewApproval) {
+        DispatchQueue.main.async {
+            guard let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }),
+                let presenter = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController,
+                presenter.presentedViewController == nil,
+                approval.approve() else { return }
+            AppStore.requestReview(in: scene)
         }
     }
 }

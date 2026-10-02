@@ -64,6 +64,9 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.PrimaryGreen as BrandGreen
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.review.StoreReviewCard
+import com.good4.review.StoreReviewState
+import com.good4.review.StoreReviewViewModel
 import com.good4.feedback.FeedbackUiState
 import com.good4.feedback.FeedbackViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,6 +88,7 @@ internal fun StudentMenuSheet(
     onDismiss: () -> Unit,
     onEditHome: () -> Unit = {},
     initialShortcut: HomeShortcut? = null,
+    reviewViewModel: StoreReviewViewModel = koinViewModel(),
     feedbackViewModel: FeedbackViewModel = koinViewModel()
 ) {
     var numbersOpen by rememberSaveable(initialShortcut) { mutableStateOf(initialShortcut == HomeShortcut.PHONE_NUMBERS) }
@@ -93,6 +97,7 @@ internal fun StudentMenuSheet(
         if (initialShortcut == HomeShortcut.FEEDBACK) feedbackViewModel.startNew()
     }
     val feedbackState by feedbackViewModel.state.collectAsStateWithLifecycle()
+    val reviewState by reviewViewModel.state.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val menuItems = listOf(HomeShortcut.TOP_UP, HomeShortcut.TENNIS, HomeShortcut.PHONE_NUMBERS, HomeShortcut.FEEDBACK).map { shortcut ->
         val appearance = shortcut.appearance()
@@ -121,12 +126,13 @@ internal fun StudentMenuSheet(
         ) {
             if (feedbackOpen) {
                 MenuSheetHeader(
-                    title = "Geri Bildirim",
-                    subtitle = "Görüşlerini doğrudan Good4 ekibiyle paylaş",
+                    subtitle = "Görüşlerini Good4 ekibiyle paylaş",
                     onBack = { feedbackOpen = false }
                 )
                 FeedbackForm(
                     state = feedbackState,
+                    reviewState = reviewState,
+                    onReview = reviewViewModel::openStore,
                     onSubjectChange = feedbackViewModel::onSubjectChange,
                     onMessageChange = feedbackViewModel::onMessageChange,
                     onSubmit = feedbackViewModel::submit,
@@ -202,6 +208,8 @@ internal fun StudentMenuSheet(
 @Composable
 private fun FeedbackForm(
     state: FeedbackUiState,
+    reviewState: StoreReviewState,
+    onReview: () -> Unit,
     onSubjectChange: (String) -> Unit,
     onMessageChange: (String) -> Unit,
     onSubmit: () -> Unit,
@@ -214,6 +222,7 @@ private fun FeedbackForm(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        StoreReviewCard(state = reviewState, onReview = onReview)
         if (state.isSubmitted) {
             Spacer(Modifier.height(22.dp))
             Icon(
@@ -334,11 +343,13 @@ private fun feedbackFieldColors() = OutlinedTextFieldDefaults.colors(
 
 @Composable
 private fun MenuSheetHeader(
-    title: String,
-    subtitle: String,
+    title: String? = null,
+    subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null
 ) {
+    if (title == null && subtitle == null && onBack == null && onClose == null) return
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -357,19 +368,23 @@ private fun MenuSheetHeader(
             Spacer(Modifier.size(48.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 24.sp,
-                lineHeight = 28.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
-            )
-            Text(
-                text = subtitle,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-                color = TextSecondary
-            )
+            if (title != null) {
+                Text(
+                    text = title,
+                    fontSize = 24.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+            }
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    color = TextSecondary
+                )
+            }
         }
         if (onClose != null) {
             IconButton(onClick = onClose) {

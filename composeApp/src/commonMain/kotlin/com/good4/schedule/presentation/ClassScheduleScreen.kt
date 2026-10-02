@@ -84,7 +84,14 @@ fun ClassScheduleScreen(
     val selectedDate = LocalDate.parse(selectedDateValue)
     val selectedDay = selectedDate.toScheduleDay()
     val uriHandler = LocalUriHandler.current
+    val reviewListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val schedule = state.schedule
+    com.good4.review.ReviewFeaturePrompt(
+        feature = com.good4.review.ReviewFeature.CLASS_SCHEDULE,
+        contentReady = !state.isLoading && state.errorMessage == null && !schedule?.entries.isNullOrEmpty(),
+        isScrolling = reviewListState.isScrollInProgress,
+        canPrompt = !state.isAcademicSelectionSheetVisible
+    )
     val availableSections = schedule?.entries.orEmpty().mapNotNull { it.section }.distinct()
     var selectedSection by rememberSaveable { mutableStateOf("Tümü") }
     var awaitingProfileUpdate by rememberSaveable { mutableStateOf(false) }
@@ -126,6 +133,7 @@ fun ClassScheduleScreen(
         }
     ) { paddingValues ->
         LazyColumn(
+            state = reviewListState,
             modifier = Modifier
                 .fillMaxSize()
                 .background(SurfaceCanvasWarm)

@@ -14,6 +14,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.good4.review.StoreReviewViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,6 +100,13 @@ fun StudentHomeScreenRoot(
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
     val communityViewModel: CommunityViewModel = koinViewModel()
+    val reviewViewModel: StoreReviewViewModel = koinViewModel()
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    SideEffect { reviewViewModel.updateHome(lifecycleState == Lifecycle.State.RESUMED) }
+    DisposableEffect(reviewViewModel) {
+        onDispose { reviewViewModel.leaveScreen() }
+    }
+    com.good4.review.ReviewModalBlocker(menuOpen)
     val reservationsState by reservationsViewModel.state.collectAsStateWithLifecycle()
     val communityState by communityViewModel.state.collectAsStateWithLifecycle()
 
@@ -274,6 +286,7 @@ fun StudentHomeScreenRoot(
         StudentMenuSheet(
             onDismiss = { menuOpen = false },
             initialShortcut = HomeShortcut.entries.firstOrNull { it.id == menuInitialShortcutId },
+            reviewViewModel = reviewViewModel,
             onEditHome = ::editHome
         )
     }

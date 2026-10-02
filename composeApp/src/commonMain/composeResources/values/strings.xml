@@ -19,7 +19,7 @@
     <string name="login">Giriş Yap</string>
     <string name="edu_email_login">Edu mail ile giriş yap</string>
     <string name="edu_email_login_divider">edu mail ile giriş</string>
-    <string name="login_welcome_title">Kampüs hayatını kolaylaştıran, her gün kullandığın şeylerin tek bir uygulamada olduğunu düşün.</string>
+    <string name="login_welcome_title">Kampüs hayatını kolaylaştıran, her gün kullandığın özelliklerin tek bir uygulamada olduğunu düşün.</string>
     <string name="edu_email_register">Edu mail ile kaydol</string>
     <string name="edu_email_helper">Üniversitenizin edu.tr uzantılı öğrenci e-postasını kullanın.</string>
     <string name="no_account">Hesabınız yok mu?</string>
@@ -432,4 +432,10 @@
     <string name="schedule_settings_selection_hint">Ders programını görmek için fakülte, bölüm ve sınıfını seçip kaydet.</string>
     <string name="schedule_unavailable_fallback">Seçtiğin bölüm ve sınıf için henüz program eklenmedi; İşletme 1. sınıf programı gösteriliyor.</string>
     <string name="schedule_select_profile">Bölümünü ve sınıfını seç</string>
+    <string name="store_review_title">Good4’u değerlendir</string>
+    <string name="store_review_description">Görüşlerin bizim için çok değerli. Puanın ve yorumunla Good4’u birlikte geliştirelim.</string>
+    <string name="store_review_button">Mağazada değerlendir</string>
+    <string name="store_review_hint">Mağazada puan ver.</string>
+    <string name="store_review_not_configured">Mağazada değerlendirme yakında kullanıma açılacak. Görüşlerini aşağıdaki formdan bizimle paylaşabilirsin.</string>
+    <string name="store_review_open_failed">Mağaza açılamadı. Lütfen daha sonra tekrar dene.</string>
 </resources>

@@ -1,6 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import java.util.Properties
 
 plugins {
@@ -48,6 +47,7 @@ kotlin {
     sourceSets {
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
         }
         androidInstrumentedTest.dependencies {
             implementation("androidx.compose.ui:ui-test-junit4:1.9.0")
@@ -55,6 +55,7 @@ kotlin {
             implementation("androidx.test.espresso:espresso-core:3.7.0")
         }
         androidMain.dependencies {
+            implementation("com.google.android.play:review:2.0.2")
             implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
@@ -138,13 +139,6 @@ android {
             versionNameSuffix = "-test"
             buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "false")
             buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-test\"")
-        }
-        create("v2") {
-            dimension = "env"
-            applicationIdSuffix = ".v2"
-            versionNameSuffix = "-v2"
-            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
-            buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-v2\"")
         }
         create("prod") {
             dimension = "env"
