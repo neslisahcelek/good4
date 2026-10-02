@@ -1,5 +1,7 @@
 # Good4 mobile environments
 
+For local acceptance testing, **Android `stagingDebug` and iOS `iosApp Test` / Debug now default to `demo-good4-v2` emulators**. They do not fall back to the cloud when emulators are unavailable. Follow [the local test and rollout handoff](../COST_TESTING.md). The table below describes the cloud registrations; the debug emulator override takes precedence. Android `prodDebug` still connects to production.
+
 There are two supported environments: production (`good4tr-v2`) and test
 (`good4tr-test`). Android debug/release build types control debugging, signing,
 and optimization; the product flavor selects the Firebase project. On iOS the
@@ -19,9 +21,59 @@ code under `firebase/v2`.
 | iOS production | `iosApp Prod` / `Release` | `com.good4.iosApp` | `good4tr-v2` | `1:654697131931:ios:c7e28c28e33731d1603b3e` |
 | iOS test | `iosApp Test` / `Debug` | `com.good4.iosApp.test` | `good4tr-test` | `1:449563145023:ios:dff46396477949a419d98a` |
 
-The test project uses the legacy data model. Running `stagingDebug` does not
-exercise production V2 callable functions or its Google-only login flow.
-Running `prodDebug` uses production data, even though it is a debug build.
+Both environments use the V2 data model, role checks, and sign-in flow.
+Cloud test builds read `good4tr-test` and call that project's `europe-west1`
+functions. Local debug test builds use the emulator override described above;
+`prodDebug` uses production data even though it is a debug build. Test Auth
+identities and data remain separate from production.
+
+### Provisioning the test backend
+
+The live audit on 2 October 2026 found legacy records/rules/indexes in
+`good4tr-test`, no Cloud Functions, and billing disabled. The new client
+configuration requires completing this backend transition before using
+a cloud-connected test build. Local debug tests do not require the transition.
+Cloud Functions deployment requires Blaze billing;
+linking a billing account must be approved by the project owner.
+
+The billing link was approved during this audit, but Google Cloud returned
+`403: The caller does not have permission` for the existing CLI session.
+Consequently, the test Functions deployment stopped at the Blaze requirement;
+the live Firestore migration and rule/index replacement have not run. An
+account with billing-assignment permission must complete the link first.
+
+The test Android SDK JSON was refreshed from Firebase after the audit. Debug
+and local release SHA-1/SHA-256 certificates are registered on its existing
+`com.good4.test` application. The test Auth Apple provider is enabled for the
+native iOS flow, matching production; provider credentials remain separate.
+
+Use the same backend source and rules as production, with an explicit test
+project. From `firebase/v2`:
+
+```shell
+node scripts/align-test-schema.mjs           # read-only migration preview
+npm run test:schema
+# After enabling Blaze for good4tr-test:
+npx firebase deploy --only functions --project test
+node scripts/align-test-schema.mjs --apply   # checks callable readiness, then backs up and migrates
+npx firebase deploy --only firestore,storage --project test
+node scripts/align-test-schema.mjs           # verify no further migration writes
+```
+
+The migration preserves Auth UIDs, account history, original legacy
+community/event/coupon records, and actual consent. It converts legacy user
+roles/dates, creates canonical organizations with UID memberships and events
+with registrations/check-ins, and archives image-only advertisements in
+`legacyCampaigns` instead of treating them as V2 meal campaigns. Missing shared
+public campus content is seeded from production; private production data is
+never copied. Backups under ignored `output/firebase-test-schema/` contain
+private test data and must remain local. Concurrent changes abort the affected
+batch through Firestore update-time preconditions; rerun the preview before retrying.
+
+Firestore and Storage deployment must wait until the functions and data are
+ready so existing test clients are not left with V2 rules and legacy data.
+Extra legacy indexes can remain for historical queries; install all V2 indexes
+from `firebase/v2/firestore.indexes.json` and wait for them to become ready.
 
 ## Local Firebase configuration files
 
@@ -77,10 +129,47 @@ requirements; registering the SHA-1 alone does not verify App Check. Recheck
 fingerprints with `signingReport` if signing changes.
 
 Callable App Check enforcement is opt-in through `ENFORCE_APP_CHECK=true`.
-Android sends App Check tokens; the iOS callable client currently returns no
-token, and the web panel does not initialize App Check. Leave enforcement off
-until those clients also provide valid tokens, otherwise their callable requests
-will be rejected.
+Android, iOS, and the web panel initialize App Check and send tokens. Leave
+enforcement off until the updated clients are deployed and each client provides
+verified tokens, otherwise its callable requests will be rejected. Web setup
+and verification are documented in the [web panel guide](../README.md#web-panel).
+
+### iOS App Check setup and verification
+
+The native Firebase SDK installs its provider before `FirebaseApp.configure()`:
+real-device Release builds use App Attest; Debug builds and simulator builds
+use the debug provider. Token auto-refresh is enabled. The Kotlin callable
+client obtains the native SDK token through `NativeAppCheckBridge` and sends
+it as `X-Firebase-AppCheck`. Token acquisition has a 10-second timeout; failures
+are logged without token contents and requests proceed without the header,
+matching Android's optional-token behavior while enforcement is off.
+
+1. In `good4tr-v2`, register `com.good4.iosApp` under App Check with **App Attest**.
+   The Apple Team ID must match the signing team (`NM79R577GW` in this project).
+   Keep the default 1-hour token TTL.
+2. The Xcode target includes FirebaseAppCheck and the App Attest capability.
+   The entitlement `com.apple.developer.devicecheck.appattest-environment` is
+   `production`, as required by Firebase (even for locally signed device builds).
+   If device signing reports missing entitlements, enable App Attest for the
+   matching App ID in Apple Developer and refresh its provisioning profile.
+3. For `iosApp Test`, register `com.good4.iosApp.test` in `good4tr-test` separately.
+   Run it with `-FIRDebugEnabled` in the scheme's Run arguments, find the Firebase
+   App Check debug token in Xcode's console, and add it under **Manage debug
+   tokens** for that test application. A production-scheme simulator uses the
+   debug provider too; its token belongs in the production application's list.
+   Keep debug tokens private.
+4. After registering the debug token, restart and exercise Firestore reads and
+   callable actions. Check App Check metrics for Firestore/Storage and callable
+   verification logs for Functions; successful actions alone do not establish
+   that attestation succeeded while enforcement is off.
+5. Verify `iosApp Prod` on a real iPhone (or TestFlight) to exercise App Attest.
+   Check sign-in/profile initialization, community following, event registration,
+   and campaign code issuance. Look for verified requests and investigate any
+   `[App Check] Token request failed` entries before enabling enforcement.
+
+References: [App Attest setup](https://firebase.google.com/docs/app-check/ios/app-attest-provider),
+[iOS debug provider](https://firebase.google.com/docs/app-check/ios/debug-provider),
+[Functions verification metrics](https://firebase.google.com/docs/app-check/monitor-functions-metrics).
 
 The schedule audit uses `prodDebug`:
 

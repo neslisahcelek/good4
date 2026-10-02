@@ -1,3 +1,16 @@
+import { cleanupTechnicalRecords } from "./maintenance.js";
+import { setGlobalOptions } from "firebase-functions/v2";
+import { onMessagePublished } from "firebase-functions/v2/pubsub";
+import sharp from "sharp";
+import { recordBudgetNotification, optionalJobsAllowed, productionJobsEnabled, setCostControlService } from "./costControl.js";
+import { assertRateLimit } from "./rateLimit.js";
+import { getMessaging } from "firebase-admin/messaging";
+import { getFunctions } from "firebase-admin/functions";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onTaskDispatched } from "firebase-functions/v2/tasks";
+import { resumeNotificationJobService, registerPushDeviceService, unregisterPushDeviceService, updateNotificationPreferencesService,
+  markNotificationsReadService, previewAnnouncementService, sendAnnouncementService,
+  notificationHistoryService, processNotificationPage, prepareEventReminders } from "./notifications.js";
 import { getAuth } from "firebase-admin/auth";
 import { randomUUID } from "node:crypto";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
@@ -30,6 +43,7 @@ import { requireAuthenticatedUid, requireNonEmptyString } from "./shared.js";
 import {
   cancelCommunityPortalEntryService,
   getCommunityPortalDashboardService,
+  getCommunityEventParticipantsService,
   saveCommunityPortalEntryService,
 } from "./communityPortal.js";
 import { recordEventAttendanceService, setEventRegistrationService } from "./events.js";
@@ -49,21 +63,34 @@ import { importSksDiningMenuService } from "./diningMenuImport.js";
 import { confirmEduVerificationService, requestEduVerificationService } from "./eduVerification.js";
 import { recordLegalAcknowledgementsService } from "./legalAcknowledgements.js";
 
+setGlobalOptions({ minInstances: 0, maxInstances: 5 });
+
 const callableOptions = {
   region: "europe-west1",
   memory: "256MiB" as const,
   timeoutSeconds: 30,
-  maxInstances: 20,
+  maxInstances: 5,
+  minInstances: 0,
   enforceAppCheck: process.env.ENFORCE_APP_CHECK === "true",
 };
 
-export const getFollowingCommunityIds = onCall(callableOptions, async (request) => {
+const readOptions = { ...callableOptions, maxInstances: 3 };
+async function limitRequest(uid: string, group: string, limit: number) {
+  await db.runTransaction((transaction) => assertRateLimit(db, transaction, { key: `${group}:${uid}`, limit, windowSeconds: 60 }));
+}
+export const billingBudgetNotification = onMessagePublished({ topic: "good4-billing-budget", region: "europe-west1", maxInstances: 1, retry: true }, async (event) => {
+  await recordBudgetNotification(db, event.data.message.json as Record<string, unknown>);
+});
+export const setCostControl = onCall(callableOptions, async (request) => setCostControlService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+
+export const getFollowingCommunityIds = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return getFollowingCommunityIdsService(db, uid);
 });
 
 export const setCommunityFollowing = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "community", 30);
   return setCommunityFollowingService(db, uid, {
     communityId: request.data?.communityId, following: request.data?.following,
   });
@@ -157,19 +184,22 @@ export const redeemLegacyTestCoupon = onCall(callableOptions, async (request) =>
   return redeemLegacyCouponService(db, legacyTestDb, uid, request.data);
 });
 
-export const getBusinessContext = onCall(callableOptions, async (request) => {
+export const getBusinessContext = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "panel", 6);
   return getBusinessContextService(db, uid);
 });
 
-export const getPortalContext = onCall(callableOptions, async (request) => {
+export const getPortalContext = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "panel", 6);
   return getPortalContextService(db, uid);
 });
 
-export const getAdminDashboard = onCall(callableOptions, async (request) => {
+export const getAdminDashboard = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getAdminDashboardService(db, legacyTestDb, uid);
+  await limitRequest(uid, "panel", 6);
+  return getAdminDashboardService(db, legacyTestDb, uid, request.data ?? {});
 });
 
 export const reviewLegacyCoupon = onCall(callableOptions, async (request) => {
@@ -240,16 +270,21 @@ export const uploadHomeBannerImage = onCall({
     throw new HttpsError("invalid-argument", "BANNER_IMAGE_CONTENT_INVALID");
   }
 
-  const extension = extensions[contentType];
+  let normalized: Buffer;
+  try {
+    normalized = await sharp(bytes, { limitInputPixels: 40_000_000 }).rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+    if (normalized.length > 512 * 1024) normalized = await sharp(normalized).webp({ quality: 45 }).toBuffer();
+  } catch { throw new HttpsError("invalid-argument", "BANNER_IMAGE_CONTENT_INVALID"); }
+  if (normalized.length > 512 * 1024) throw new HttpsError("invalid-argument", "BANNER_IMAGE_SIZE_INVALID");
   // Slot 1 keeps the original object name; slots 2-4 feed the home slider.
   const slot = requireBannerSlot(request.data?.slot);
-  const objectName = slot === 1 ? `home-banners/current.${extension}` : `home-banners/slot-${slot}.${extension}`;
+  const objectName = `home-banners/slot-${slot}-${randomUUID()}.webp`;
   const downloadToken = randomUUID();
-  await storageBucket.file(objectName).save(bytes, {
+  await storageBucket.file(objectName).save(normalized, {
     resumable: false,
     metadata: {
-      contentType,
-      cacheControl: "public,max-age=3600",
+      contentType: "image/webp",
+      cacheControl: "public,max-age=31536000,immutable",
       metadata: { firebaseStorageDownloadTokens: downloadToken },
     },
   });
@@ -258,9 +293,10 @@ export const uploadHomeBannerImage = onCall({
   };
 });
 
-export const getCommunityPortalDashboard = onCall(callableOptions, async (request) => {
+export const getCommunityPortalDashboard = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getCommunityPortalDashboardService(db, legacyTestDb, uid);
+  await limitRequest(uid, "panel", 6);
+  return getCommunityPortalDashboardService(db, legacyTestDb, uid, request.data ?? {});
 });
 
 export const saveCommunityPortalEntry = onCall(callableOptions, async (request) => {
@@ -273,7 +309,7 @@ export const cancelCommunityPortalEntry = onCall(callableOptions, async (request
   return cancelCommunityPortalEntryService(db, legacyTestDb, uid, request.data);
 });
 
-export const getMyCommunityApplication = onCall(callableOptions, async (request) => {
+export const getMyCommunityApplication = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return getMyCommunityApplicationService(db, uid);
 });
@@ -290,8 +326,9 @@ export const submitCommunityApplication = onCall(callableOptions, async (request
   }, request.data ?? {});
 });
 
-export const listCommunityApplications = onCall(callableOptions, async (request) => {
+export const listCommunityApplications = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "panel", 6);
   return listCommunityApplicationsService(db, uid);
 });
 
@@ -302,11 +339,13 @@ export const reviewCommunityApplication = onCall(callableOptions, async (request
 
 export const setEventRegistration = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "community", 30);
   return setEventRegistrationService(db, uid, request.data);
 });
 
 export const recordEventAttendance = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "community", 30);
   return recordEventAttendanceService(db, uid, request.data);
 });
 
@@ -345,6 +384,7 @@ export const confirmEduVerification = onCall(callableOptions, async (request) =>
 export const deleteMyAccount = onCall({
   ...callableOptions,
   memory: "512MiB",
+  maxInstances: 1,
   timeoutSeconds: 540,
 }, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
@@ -369,12 +409,14 @@ export const deleteMyAccount = onCall({
 // fair-use terms and means user devices never contact the weather provider.
 export const refreshCampusWeather = onSchedule({
   schedule: "every 30 minutes",
+  maxInstances: 1,
   timeZone: "Europe/Istanbul",
   region: "europe-west1",
   memory: "256MiB",
   timeoutSeconds: 60,
   retryCount: 1,
 }, async () => {
+  if (!productionJobsEnabled()) return;
   await refreshCampusWeatherService(db);
 });
 
@@ -382,12 +424,15 @@ export const refreshCampusWeather = onSchedule({
 // so the page is checked twice each weekday; an unchanged image is skipped before any OCR runs.
 export const importSksDiningMenu = onSchedule({
   schedule: "30 7,19 * * 1-5",
+  maxInstances: 1,
   timeZone: "Europe/Istanbul",
   region: "europe-west1",
   memory: "1GiB",
   timeoutSeconds: 120,
   retryCount: 1,
 }, async () => {
+  if (!productionJobsEnabled()) return;
+  if (!(await optionalJobsAllowed(db))) return;
   const { recognizeMenuImage } = await import("./diningMenuOcr.js");
   await importSksDiningMenuService(db, legacyTestDb, {
     fetchText: async (url) => {
@@ -407,4 +452,61 @@ export const importSksDiningMenu = onSchedule({
     },
     recognize: recognizeMenuImage,
   });
+});
+
+// Push transport is intentionally disabled until NOTIFICATIONS_ENABLED=true is deployed.
+export const registerPushDevice = onCall(callableOptions, async (request) =>
+  registerPushDeviceService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const unregisterPushDevice = onCall(callableOptions, async (request) =>
+  unregisterPushDeviceService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const updateNotificationPreferences = onCall(callableOptions, async (request) =>
+  updateNotificationPreferencesService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const markNotificationsRead = onCall(callableOptions, async (request) =>
+  markNotificationsReadService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const previewAnnouncement = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 6);
+  return previewAnnouncementService(db, uid, request.data ?? {});
+});
+export const sendAnnouncement = onCall(callableOptions, async (request) =>
+  sendAnnouncementService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const getNotificationHistory = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 6);
+  return notificationHistoryService(db, uid);
+});
+
+export const resumeNotificationJob = onCall(callableOptions, async (request) => resumeNotificationJobService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const queueNotification = onDocumentCreated({
+  document: "notificationDispatches/{dispatchId}", region: "europe-west1", maxInstances: 1, retry: true,
+}, async (event) => {
+  if (!productionJobsEnabled() || !event.data) return;
+  const jobId = event.data.get("jobId");
+  if (typeof jobId !== "string") return;
+  await getFunctions().taskQueue("locations/europe-west1/functions/deliverNotification").enqueue({ jobId }, { dispatchDeadlineSeconds: 540 });
+});
+export const deliverNotification = onTaskDispatched({
+  region: "europe-west1", maxInstances: 1, timeoutSeconds: 540, memory: "256MiB",
+  retryConfig: { maxAttempts: 5, maxRetrySeconds: 86400, minBackoffSeconds: 60 },
+  rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1 },
+}, async (request) => {
+  if (!productionJobsEnabled()) return;
+  await processNotificationPage(db, request.data.jobId, async (token, payload) => {
+    await getMessaging().send({ token,
+      notification: { title: payload.title, body: payload.body }, data: payload.data,
+      android: { notification: { channelId: payload.kind === "announcement" ? "announcements" : "events", tag: payload.data.notificationId }, ttl: payload.kind === "eventReminder" ? 3600000 : 86400000 },
+      apns: { headers: { "apns-collapse-id": payload.data.notificationId!.slice(0, 64), "apns-expiration": String(Math.floor(Date.now() / 1000) + (payload.kind === "eventReminder" ? 3600 : 86400)) }, payload: { aps: { sound: "default" } } },
+    });
+  });
+});
+export const scheduleEventReminders = onSchedule({
+  schedule: "every 5 minutes", maxInstances: 1, region: "europe-west1", timeZone: "Europe/Istanbul", timeoutSeconds: 540,
+}, async () => { if (productionJobsEnabled() && await optionalJobsAllowed(db)) await prepareEventReminders(db); });
+
+export const getCommunityEventParticipants = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "panel", 6);
+  return getCommunityEventParticipantsService(db, uid, request.data ?? {});
+});
+
+export const cleanupCostArtifacts = onSchedule({ schedule: "0 4 * * *", region: "europe-west1", timeZone: "Europe/Istanbul", maxInstances: 1, timeoutSeconds: 300 }, async () => {
+  if (productionJobsEnabled()) await cleanupTechnicalRecords(db, storageBucket);
 });

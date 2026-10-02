@@ -55,6 +55,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
+            implementation(libs.firebase.messaging)
             implementation(libs.firebase.storage.ktx)
             implementation(libs.firebase.appcheck.playintegrity)
         }
@@ -122,12 +123,16 @@ android {
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".test"
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", providers.gradleProperty("good4.useFirebaseEmulators").orElse("true").get())
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"${providers.gradleProperty("good4.firebaseEmulatorHost").orElse("10.0.2.2").get()}\"")
             versionNameSuffix = "-test"
-            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "false")
+            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
             buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-test\"")
         }
         create("prod") {
             dimension = "env"
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", "false")
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"10.0.2.2\"")
             buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
             buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-v2\"")
         }

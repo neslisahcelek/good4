@@ -107,3 +107,14 @@ test("does not replace a newer menu with an older week's image", async () => {
   const menu = await db.doc("app_config/akdeniz_dining_menu").get();
   assert.equal(menu.get("weekStart"), "2026-10-05");
 });
+
+test("a failing image is OCRed once per day and a changed image can be retried immediately", async () => {
+  const fake = deps();
+  fake.recognize = async () => { fake.recognized++; throw new Error("OCR_UNAVAILABLE"); };
+  const now = new Date("2026-10-02T12:00:00Z");
+  await assert.rejects(importSksDiningMenuService(db, legacyTestDb, fake, now), /OCR_UNAVAILABLE/);
+  assert.equal(await importSksDiningMenuService(db, legacyTestDb, fake, now), "unchanged");
+  assert.equal(fake.recognized, 1);
+  await assert.rejects(importSksDiningMenuService(db, legacyTestDb, fake, new Date("2026-10-03T12:00:00Z")), /OCR_UNAVAILABLE/);
+  assert.equal(fake.recognized, 2);
+});

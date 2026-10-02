@@ -36,8 +36,13 @@ class FirebaseAuthRepository : AuthRepository {
     override val currentUser: AuthUser?
         get() = firebaseAuth.currentUser?.toAuthUser()
 
+    private var cacheUid: String? = firebaseAuth.currentUser?.uid
     override val authStateFlow: Flow<AuthUser?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { auth ->
+            if (cacheUid != auth.currentUser?.uid) {
+                cacheUid = auth.currentUser?.uid
+                com.good4.core.data.repository.ReadCache.invalidateSession()
+            }
             trySend(auth.currentUser?.toAuthUser())
         }
         firebaseAuth.addAuthStateListener(listener)
@@ -162,10 +167,15 @@ class FirebaseAuthRepository : AuthRepository {
     }
 
     override suspend fun signOut(): Result<Unit, AuthError> {
+        com.good4.core.data.repository.ReadCache.invalidateSession()
         return try {
+            com.good4.notification.PushSession.detach()
             firebaseAuth.signOut()
+            com.good4.notification.PushSession.detaching = false
             Result.Success(Unit)
         } catch (e: Exception) {
+            com.good4.notification.PushSession.detaching = false
+            com.good4.notification.PushSignals.refresh()
             Result.Error(AuthError.Unknown(e.message.orEmpty()))
         }
     }

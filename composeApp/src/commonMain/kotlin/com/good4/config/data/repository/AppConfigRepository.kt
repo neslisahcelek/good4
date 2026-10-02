@@ -94,7 +94,9 @@ class AppConfigRepository(
     }
 
     /** Active slider banners in slot order (home_banner, home_banner_2 … home_banner_4). */
-    suspend fun getActiveHomeBanners(today: String): List<HomeBanner> = coroutineScope {
+    private val bannerCache = com.good4.core.data.repository.ReadCache<List<HomeBanner>>(3600)
+    suspend fun getActiveHomeBanners(today: String): List<HomeBanner> = bannerCache.load(today) { loadHomeBanners(today) }
+    private suspend fun loadHomeBanners(today: String): List<HomeBanner> = coroutineScope {
         HOME_BANNER_DOCUMENTS.map { documentId -> async { getActiveHomeBanner(documentId, today) } }
             .awaitAll()
             .filterNotNull()

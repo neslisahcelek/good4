@@ -45,6 +45,8 @@ import org.koin.dsl.module
 expect val platformModule: org.koin.core.module.Module
 
 val commonModule = module {
+    single { com.good4.notification.NotificationRepository(get(), get()) }
+    viewModel { com.good4.notification.NotificationsViewModel(get()) }
     single { com.good4.review.StoreReviewCoordinator(com.good4.review.DeviceReviewStorage()) }
     viewModel { com.good4.review.StoreReviewViewModel(get()) }
     single { com.good4.student.home.HomeLayoutStore(com.good4.student.home.DeviceHomeLayoutStorage()) }

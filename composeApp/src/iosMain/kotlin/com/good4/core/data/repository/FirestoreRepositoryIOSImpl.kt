@@ -27,6 +27,21 @@ import kotlin.reflect.KClass
 class FirestoreRepositoryIOSImpl : FirestoreRepository {
     private val firestore = Firebase.firestore
 
+    override suspend fun <T : Any> queryPage(collectionPath: String, conditions: Map<String, Any>, clazz: KClass<T>,
+        pageSize: Long, cursor: String?, minimumTimestamp: Pair<String, Long>?): Result<DocumentPage<T>, Error> = try {
+        require(pageSize in 1..100)
+        var query: Query = firestore.collection(collectionPath)
+        conditions.forEach { (field, value) -> query = query.where { field equalTo value } }
+        minimumTimestamp?.let { (field, seconds) ->
+            query = query.where { field greaterThanOrEqualTo Timestamp(seconds, 0) }.orderBy(field)
+        }
+        query = query.orderBy(dev.gitlive.firebase.firestore.FieldPath.documentId)
+        cursor?.let { query = query.startAfter(firestore.collection(collectionPath).document(it).get()) }
+        val documents = query.limit(pageSize).get().documents
+        Result.Success(DocumentPage(documents.map { DocumentWithId(it.id, decodeDocumentSnapshot(it, clazz)) },
+            documents.lastOrNull()?.id.takeIf { documents.size.toLong() == pageSize }))
+    } catch (e: Exception) { Result.Error(NetworkError(e.message ?: "Page load failed")) }
+
     override suspend fun <T : Any> addDocument(
         collectionPath: String,
         data: T
@@ -510,6 +525,8 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
      * serializerFor ve serializerForData bu map'i kullanır.
      */
     private val dtoSerializers: Map<String, KSerializer<*>> = mapOf(
+        "NotificationDto" to com.good4.notification.NotificationDto.serializer(),
+        "NotificationPreferencesDto" to com.good4.notification.NotificationPreferencesDto.serializer(),
         "CommunityDto" to com.good4.community.CommunityDto.serializer(),
         "CommunityEntryDto" to com.good4.community.CommunityEntryDto.serializer(),
         "CommunityAccessDto" to com.good4.community.CommunityAccessDto.serializer(),

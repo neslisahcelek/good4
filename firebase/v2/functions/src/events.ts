@@ -8,6 +8,7 @@ import {
 } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
+import { enqueueNotification, notificationsEnabled } from "./notifications.js";
 import { EVENT_CATEGORIES, type EventCategoryId } from "./eventCategories.js";
 
 export const EVENT_STATUSES = ["draft", "published", "cancelled", "completed"] as const;
@@ -124,6 +125,20 @@ export async function saveEventService(
     const imageUrl = requestedImageUrl ?? String(current?.get("imageUrl") ?? "");
     const savedCategoryId = categoryId ?? current?.get("categoryId");
     const auditRef = database.collection("auditLogs").doc();
+    if (notificationsEnabled() && status === "published" && startsAt.toMillis() > Date.now()) {
+      const firstPublication = !current?.exists || current.get("status") === "draft";
+      const changed = current?.get("status") === "published" && (
+        (current.get("startsAt") as Timestamp | undefined)?.toMillis() !== startsAt.toMillis()
+        || current.get("location") !== location
+      );
+      if (firstPublication || changed) enqueueNotification(database, transaction, `event_${eventRef.id}_${randomUUID()}`, {
+        kind: firstPublication ? "eventPublished" : "eventChanged",
+        title: firstPublication ? "Takip ettiğin toplulukta yeni etkinlik" : "Etkinlik bilgileri güncellendi",
+        body: `${title} · ${String(input.date)} ${String(input.time)} · ${location}`,
+        organizationId, eventId: eventRef.id, startsAt: startsAt.seconds,
+        audience: firstPublication ? "followers" : "registrations", actorUid,
+      });
+    }
     transaction.set(eventRef, {
       organizationId,
       title,
@@ -141,6 +156,10 @@ export async function saveEventService(
       createdAt: current?.get("createdAt") ?? FieldValue.serverTimestamp(),
       createdBy: current?.get("createdBy") ?? actorUid,
       updatedAt: FieldValue.serverTimestamp(),
+      ...(notificationsEnabled() && status === "published" && startsAt.toMillis() > Date.now()
+        && (!current?.get("startsAt") || (current.get("startsAt") as Timestamp).toMillis() !== startsAt.toMillis() || !current.get("notificationReminderEnrolled"))
+        ? { notificationReminderAt: Timestamp.fromMillis(Math.max(Date.now(), startsAt.toMillis() - 3600000)), notificationReminderEnrolled: true }
+        : {}),
     });
     transaction.create(auditRef, {
       action: eventId ? "event.updated" : "event.created",
@@ -173,8 +192,13 @@ export async function cancelEventService(
       throw new HttpsError("not-found", "EVENT_NOT_FOUND");
     }
     if (event.get("status") !== "cancelled") {
+      if (notificationsEnabled() && event.get("status") === "published") enqueueNotification(database, transaction, `cancel_${eventId}_${randomUUID()}`, {
+        kind: "eventCancelled", title: "Etkinlik iptal edildi", body: String(event.get("title") ?? ""),
+        organizationId, eventId, startsAt: 0, audience: "registrations", actorUid,
+      });
       transaction.update(eventRef, {
         status: "cancelled",
+        notificationReminderAt: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       });
     }

@@ -9,6 +9,7 @@ import {
   type User,
 } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
+import { NotificationAdmin } from "./NotificationAdmin";
 import { auth, functions, getFirestoreDb } from "./firebase";
 import { EVENT_CATEGORIES } from "../../functions/src/eventCategories";
 import { parseKykMenuText, type KykMenuDay } from "../../functions/src/kykMenuParser";
@@ -74,6 +75,7 @@ type CommunityDashboardData = {
   followerCount: number;
   businesses: Array<{ id: string; name: string }>;
   entries: CommunityEntry[];
+  nextCursor: string | null;
 };
 type EventView = "list" | "form" | "detail";
 type EventDetailTab = "overview" | "participants";
@@ -151,6 +153,7 @@ type AcademicCalendarEvent = {
   updatedAt: string | null;
 };
 type AdminDashboardData = {
+  nextCursors: Record<string, string | null>;
   businesses: AdminBusiness[];
   communities: AdminCommunity[];
   legacyBusinesses: LegacyBusiness[];
@@ -196,7 +199,7 @@ type BusinessRedemption = {
 const getPortalContext = httpsCallable<void, PortalContext>(functions, "getPortalContext");
 const redeemCampaignCode = httpsCallable<{ code: string }, RedeemResult>(functions, "redeemCampaignCode");
 const redeemLegacyTestCoupon = httpsCallable<{ code: string }, RedeemResult>(functions, "redeemLegacyTestCoupon");
-const getAdminDashboard = httpsCallable<void, AdminDashboardData>(functions, "getAdminDashboard");
+const getAdminDashboard = httpsCallable<Record<string, unknown>, AdminDashboardData>(functions, "getAdminDashboard");
 const reviewLegacyCoupon = httpsCallable<
   { communityId: string; entryId: string; decision: "approve" | "reject" },
   { status: "published" | "cancelled" }
@@ -272,7 +275,8 @@ const reviewCommunityApplication = httpsCallable<
   { applicationId: string; decision: "approve" | "reject"; reason?: string },
   { status: "approved" | "rejected"; organizationId?: string }
 >(functions, "reviewCommunityApplication");
-const getCommunityPortalDashboard = httpsCallable<void, CommunityDashboardData>(functions, "getCommunityPortalDashboard");
+const getCommunityPortalDashboard = httpsCallable<Record<string, unknown>, CommunityDashboardData>(functions, "getCommunityPortalDashboard");
+const getCommunityEventParticipants = httpsCallable<{ eventId: string; cursor?: string }, { participants: CommunityEntry["participants"]; nextCursor: string | null }>(functions, "getCommunityEventParticipants");
 const saveCommunityPortalEntry = httpsCallable<{
   entryId?: string;
   kind: "event" | "coupon";
@@ -661,13 +665,13 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
   const refreshUsage = useCallback(async (showLoader = true) => {
     if (showLoader) setUsageLoading(true);
     try {
-      const [{ collection, getDocs, query, where }, database] = await Promise.all([
+      const [{ collection, getDocs, query, where, limit, orderBy }, database] = await Promise.all([
         import("firebase/firestore/lite"),
         getFirestoreDb(),
       ]);
       const [redemptionSnapshot, campaignSnapshot] = await Promise.all([
-        getDocs(query(collection(database, "redemptions"), where("organizationId", "==", context.organizationId))),
-        getDocs(query(collection(database, "campaigns"), where("organizationId", "==", context.organizationId))),
+        getDocs(query(collection(database, "redemptions"), where("organizationId", "==", context.organizationId), orderBy("redeemedAt", "desc"), limit(50))),
+        getDocs(query(collection(database, "campaigns"), where("organizationId", "==", context.organizationId), limit(100))),
       ]);
       const campaignTitles = new Map(campaignSnapshot.docs.map((document) => [
         document.id,
@@ -923,25 +927,55 @@ function CommunityPanel({ user, context }: {
   const [eventStatus, setEventStatus] = useState<EventStatusFilter>("all");
   const [pendingCancellation, setPendingCancellation] = useState<CommunityEntry | null>(null);
 
-  async function refresh(showLoader = true) {
-    if (showLoader) setLoading(true);
+  const dashboardRequest = useRef<{ key: string; promise: Promise<void> } | null>(null);
+  const [participants, setParticipants] = useState<CommunityEntry["participants"]>([]);
+  const [participantCursor, setParticipantCursor] = useState<string | null>(null);
+  const [participantsLoading, setParticipantsLoading] = useState(false);
+  const activeParticipantEvent = useRef("");
+  const participantGeneration = useRef(0);
+  const participantRequest = useRef<string | null>(null);
+  async function loadParticipants(cursor?: string) {
+    const eventId = selectedEventId;
+    const requestKey = `${participantGeneration.current}:${eventId}:${cursor ?? ""}`;
+    if (participantRequest.current === requestKey) return;
+    participantRequest.current = requestKey;
+    const generation = participantGeneration.current;
+    setParticipantsLoading(true);
     try {
-      const response = await getCommunityPortalDashboard();
-      setData(response.data);
-      setBusinessId((current) => current || response.data.businesses[0]?.id || "");
-      setError("");
-    } catch (requestError) {
-      setError(functionErrorMessage(requestError));
-    } finally {
-      if (showLoader) setLoading(false);
-    }
+      const response = await getCommunityEventParticipants({ eventId, ...(cursor ? { cursor } : {}) });
+      if (activeParticipantEvent.current !== eventId || participantGeneration.current !== generation) return;
+      setParticipants((current) => cursor ? [...current, ...response.data.participants] : response.data.participants);
+      setParticipantCursor(response.data.nextCursor);
+    } catch (requestError) { setError(functionErrorMessage(requestError)); }
+    finally { if (participantRequest.current === requestKey) { participantRequest.current = null; setParticipantsLoading(false); } }
   }
-
   useEffect(() => {
-    void refresh();
-    const timer = window.setInterval(() => void refresh(false), 15000);
-    return () => window.clearInterval(timer);
-  }, []);
+    participantGeneration.current++;
+    participantRequest.current = null;
+    activeParticipantEvent.current = selectedEventId;
+    setParticipants([]); setParticipantCursor(null); setParticipantsLoading(false);
+    if (eventDetailTab === "participants" && eventView === "detail" && selectedEventId) void loadParticipants();
+    return () => { activeParticipantEvent.current = ""; };
+  }, [selectedEventId, eventDetailTab, eventView]);
+  async function refresh(showLoader = true, cursor?: string) {
+    const section = tab === "coupons" ? "coupons" : "events";
+    const key = `${section}:${cursor ?? ""}`;
+    if (dashboardRequest.current?.key === key) return dashboardRequest.current.promise;
+    const promise = (async () => {
+      if (showLoader) setLoading(true);
+      try {
+        const response = await getCommunityPortalDashboard({ section, ...(cursor ? { cursor } : {}) });
+        if (dashboardRequest.current?.key !== key) return;
+        setData((current) => cursor && current ? { ...response.data, entries: [...current.entries, ...response.data.entries] } : response.data);
+        setBusinessId((current) => current || response.data.businesses[0]?.id || "");
+        setError("");
+      } catch (requestError) { setError(functionErrorMessage(requestError)); }
+      finally { if (showLoader) setLoading(false); }
+    })();
+    dashboardRequest.current = { key, promise };
+    try { await promise; } finally { if (dashboardRequest.current?.promise === promise) dashboardRequest.current = null; }
+  }
+  useEffect(() => { void refresh(); }, [tab === "coupons"]);
 
   function resetForm() {
     setEditingId("");
@@ -1106,6 +1140,7 @@ function CommunityPanel({ user, context }: {
           {error ? <div className="inline-message inline-message--error admin-message" role="alert">{error}</div> : null}
           {notice ? <div className="inline-message inline-message--success admin-message" role="status">{notice}</div> : null}
 
+          {data?.nextCursor && <Button disabled={loading} onClick={() => void refresh(true, data.nextCursor!)}>Daha fazla kayıt yükle</Button>}
           {data && tab === "overview" ? (
             <div className="community-overview">
               <section className="community-stat-grid" aria-label="Topluluk özeti">
@@ -1354,13 +1389,14 @@ function CommunityPanel({ user, context }: {
               ) : (
                 <Card className="participant-card">
                   <div className="participant-card__heading"><div><h2>Katılımcılar</h2><p>Kayıt ve check-in durumları güncel etkinlik verisinden gösterilir.</p></div></div>
-                  {selectedEvent.participants.length === 0 ? (
+                  {participantsLoading && <p role="status">Katılımcılar yükleniyor…</p>}
+                  {participants.length === 0 && !participantsLoading ? (
                     <EmptyState title="Henüz kayıt yok" description="Öğrenciler etkinliğe kayıt olduğunda burada görünecek." />
                   ) : (
                     <Table label={`${selectedEvent.title} katılımcıları`} className="participant-table">
                       <div className="participant-table__header" role="row"><span role="columnheader">Öğrenci</span><span role="columnheader">Kayıt durumu</span><span role="columnheader">Check-in durumu</span></div>
                       <div role="rowgroup">
-                        {selectedEvent.participants.map((participant) => (
+                        {participants.map((participant) => (
                           <div className="participant-table__row" role="row" key={participant.userId}>
                             <div role="cell" data-label="Öğrenci"><span className="participant-avatar">{participant.displayName.slice(0, 1).toLocaleUpperCase("tr-TR")}</span><div><strong>{participant.displayName}</strong><small>{formatCommunityParticipantDate(participant.registeredAt)}</small></div></div>
                             <div role="cell" data-label="Kayıt durumu"><span className="event-state-pill">Kayıtlı</span></div>
@@ -1370,6 +1406,7 @@ function CommunityPanel({ user, context }: {
                       </div>
                     </Table>
                   )}
+                  {participantCursor && <Button disabled={participantsLoading} onClick={() => void loadParticipants(participantCursor)}>Daha fazla katılımcı</Button>}
                 </Card>
               )}
             </div>
@@ -1433,7 +1470,7 @@ function CommunityEntryCard({ entry, onEdit, onCancel, busy }: {
   );
 }
 
-type AdminTab = "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "audit";
+type AdminTab = "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "audit";
 type DiningMenuDayForm = { date: string; dayName: string; meals: string; calories: string };
 
 const diningDayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"];
@@ -1607,11 +1644,32 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [calendarActive, setCalendarActive] = useState(true);
   const [savingCalendar, setSavingCalendar] = useState(false);
 
-  async function refresh(showLoader = true, clearExistingError = true) {
+  async function loadAdminPage(kind: string, cursor: string) {
+    setLoading(true);
+    try {
+      const response = await getAdminDashboard({ [`${kind}Cursor`]: cursor, includeLegacy: kind.startsWith("legacy") });
+      setData((current) => !current ? response.data : { ...current,
+        nextCursors: { ...current.nextCursors, [kind]: response.data.nextCursors[kind] },
+        ...(kind === "organizations" ? { businesses: [...current.businesses, ...response.data.businesses], communities: [...current.communities, ...response.data.communities] } : {}),
+        ...(kind === "calendar" ? { calendarEvents: [...current.calendarEvents, ...response.data.calendarEvents] } : {}),
+        ...(kind === "legacyBusinesses" ? { legacyBusinesses: [...current.legacyBusinesses, ...response.data.legacyBusinesses] } : {}),
+        ...(kind === "legacyCommunities" ? { pendingCoupons: [...current.pendingCoupons, ...response.data.pendingCoupons] } : {}),
+      });
+    } catch (requestError) { setError(functionErrorMessage(requestError)); }
+    finally { setLoading(false); }
+  }
+  const adminRequest = useRef<Promise<void> | null>(null);
+  async function refresh(showLoader = true, clearExistingError = true): Promise<void> {
+    if (adminRequest.current) return adminRequest.current;
+    const promise = refreshDashboard(showLoader, clearExistingError).finally(() => { if (adminRequest.current === promise) adminRequest.current = null; });
+    adminRequest.current = promise;
+    return promise;
+  }
+  async function refreshDashboard(showLoader = true, clearExistingError = true) {
     if (showLoader) setLoading(true);
     if (clearExistingError) setError("");
     try {
-      const response = await getAdminDashboard();
+      const response = await getAdminDashboard({ includeLegacy: tab === "coupons" || tab === "businesses" });
       setData(response.data);
       setMemberOrganizationId((current) => current || response.data.businesses[0]?.id || "");
       setCommunityOrganizationId((current) => current || response.data.communities[0]?.id || "");
@@ -1661,7 +1719,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
     }
   }
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); }, [tab === "coupons" || tab === "businesses"]);
   useEffect(() => {
     if (tab !== "suspended") return;
     setCampaignBusinessId((current) => current || data?.businesses[0]?.id || "");
@@ -2108,6 +2166,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       </header>
 
       <main className="admin-content">
+        {data && Object.entries(data.nextCursors ?? {}).filter(([, cursor]) => cursor).map(([kind, cursor]) => <button type="button" key={kind} disabled={loading} onClick={() => void loadAdminPage(kind, cursor!)}>{{ organizations: "Daha fazla kurum", calendar: "Daha fazla takvim kaydı", legacyBusinesses: "Daha fazla eski işletme", legacyCommunities: "Daha fazla eski topluluk kuponu" }[kind] ?? "Daha fazla kayıt"}</button>)}
         <section className="admin-heading">
           <div>
             <p className="section-label">Good4 yönetimi</p>
@@ -2140,6 +2199,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           <button className={tab === "communities" ? "active" : ""} onClick={() => setTab("communities")}>
             Topluluklar {communityApplications.length > 0 && <span>{communityApplications.length}</span>}
           </button>
+          <button className={tab === "notifications" ? "active" : ""} onClick={() => setTab("notifications")}>Bildirimler</button>
           <button className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>İşlem geçmişi</button>
         </nav>
 
@@ -2147,6 +2207,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
         {notice && <div className="inline-message inline-message--success admin-message" role="status">{notice}</div>}
 
         {loading && <section className="admin-card admin-loading"><span className="spinner spinner--green" /><p>Bilgiler yükleniyor…</p></section>}
+
+        {!loading && data && tab === "notifications" && <NotificationAdmin key={user.uid} uid={user.uid} communities={data.communities} />}
 
         {!loading && data && tab === "coupons" && (
           <section className="admin-section" aria-labelledby="pending-coupons-title">

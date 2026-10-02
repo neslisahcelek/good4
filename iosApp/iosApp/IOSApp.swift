@@ -14,13 +14,14 @@ import Security
 
 @main
 struct IOSApp: App {
+    @UIApplicationDelegateAdaptor(Good4PushAppDelegate.self) private var pushDelegate
     @State private var isComposeReady = false
 
     init() {
         #if DEBUG
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
-        FirebaseApp.configure()
+        Good4AppCheck.configureFirebaseIfNeeded()
         StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
         GoogleSignInBridge.shared.launcher = NativeGoogleSignInLauncher()
         let appleLauncher = NativeAppleSignInLauncher()

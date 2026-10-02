@@ -208,6 +208,14 @@ export async function eraseAccountData(
   if (user.exists) {
     await userRef.update({ status: "deleting", updatedAt: FieldValue.serverTimestamp() });
   }
+  await deleteMatchingDocuments(database, database.collection("pushDevices").where("uid", "==", uid));
+  // Delivery receipts include installation IDs; recursively remove both the account path and children.
+  while (true) {
+    const receipts = await database.collectionGroup("deliveries").where("uid", "==", uid).limit(100).get();
+    if (receipts.empty) break;
+    for (const receipt of receipts.docs) await database.recursiveDelete(receipt.ref);
+  }
+  await replaceMatchingField(database, database.collection("notificationJobs").where("actorUid", "==", uid), "actorUid");
   // Applicants may not have a users document yet. Remove the application early
   // so a pending request cannot provision a manager after account deletion.
   await database.doc(`communityApplications/${uid}`).delete();

@@ -16,7 +16,18 @@ class Good4Application : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        FirebaseApp.initializeApp(this)
+        if (BuildConfig.DEBUG && BuildConfig.USE_FIREBASE_EMULATORS) {
+            // Replace the SDK's auto-created default app before Auth/Firestore are initialized.
+            FirebaseApp.getApps(this).forEach { it.delete() }
+            val options = com.google.firebase.FirebaseOptions.Builder().setProjectId("demo-good4-v2")
+                .setApplicationId("1:123456789:android:demo").setApiKey("demo-api-key").setStorageBucket("demo-good4-v2.appspot.com").build()
+            FirebaseApp.initializeApp(this, options)
+            val host = BuildConfig.FIREBASE_EMULATOR_HOST
+            com.google.firebase.auth.FirebaseAuth.getInstance().useEmulator(host, 9199)
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().useEmulator(host, 8285)
+            com.google.firebase.storage.FirebaseStorage.getInstance().useEmulator(host, 9295)
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().isAutoInitEnabled = false
+        } else FirebaseApp.initializeApp(this)
         FirebaseAppCheck.getInstance().apply {
             if (BuildConfig.DEBUG) {
                 val debugFactory = runCatching {

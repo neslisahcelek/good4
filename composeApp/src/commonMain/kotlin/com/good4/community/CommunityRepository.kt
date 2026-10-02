@@ -150,10 +150,10 @@ class CommunityRepository(
         )
     }
 
-    suspend fun list(): List<Community> {
-        if (isV2) return when (val result = store.queryCollectionWithMultipleConditions(
-            "organizations", mapOf("type" to "community", "status" to "active"), V2OrganizationDto::class
-        )) {
+    private val communityCache = com.good4.core.data.repository.ReadCache<List<Community>>(900)
+    suspend fun list(): List<Community> = communityCache.load { loadCommunities() }
+    private suspend fun loadCommunities(): List<Community> {
+        if (isV2) return when (val result = allPages("organizations", mapOf("type" to "community", "status" to "active"), V2OrganizationDto::class)) {
             is Result.Success -> result.data.map {
                 Community(it.id, CommunityDto(it.data.name, it.data.university, it.data.description, it.data.logoUrl, it.data.coverUrl))
             }.sortedBy { it.data.name }
@@ -163,6 +163,18 @@ class CommunityRepository(
             is Result.Success -> result.data.map { Community(it.id, it.data) }.sortedBy { it.data.name }
             is Result.Error -> error("Topluluklar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.")
         }
+    }
+
+    private suspend fun <T : Any> allPages(path: String, conditions: Map<String, Any>, clazz: kotlin.reflect.KClass<T>): Result<List<com.good4.core.data.repository.DocumentWithId<T>>, com.good4.core.domain.Error> {
+        val items = mutableListOf<com.good4.core.data.repository.DocumentWithId<T>>()
+        var cursor: String? = null
+        do {
+            when (val page = store.queryPage(path, conditions, clazz, cursor = cursor)) {
+                is Result.Error -> return page
+                is Result.Success -> { items.addAll(page.data.items); cursor = page.data.nextCursor }
+            }
+        } while (cursor != null)
+        return Result.Success(items)
     }
 
     suspend fun access(): CommunityAccessDto {
@@ -193,9 +205,7 @@ class CommunityRepository(
     }
 
     suspend fun businesses(): List<CommunityBusiness> {
-        if (isV2) return when (val result = store.queryCollectionWithMultipleConditions(
-            "organizations", mapOf("type" to "business", "status" to "active"), V2OrganizationDto::class
-        )) {
+        if (isV2) return when (val result = allPages("organizations", mapOf("type" to "business", "status" to "active"), V2OrganizationDto::class)) {
             is Result.Success -> result.data.map { CommunityBusiness(it.id, it.data.name) }.sortedBy { it.name }
             is Result.Error -> emptyList()
         }
@@ -205,12 +215,19 @@ class CommunityRepository(
         }
     }
 
+    suspend fun entryPage(id: String, manager: Boolean, cursor: String? = null): Pair<List<CommunityEntry>, String?> {
+        if (!isV2) return entries(id, manager) to null
+        val conditions: Map<String, Any> = if (manager) mapOf("organizationId" to id) else mapOf("organizationId" to id, "status" to "published")
+        return when (val result = store.queryPage("events", conditions, V2EventDto::class, cursor = cursor)) {
+            is Result.Success -> result.data.items.map(::mapV2Event) to result.data.nextCursor
+            is Result.Error -> error("Etkinlikler yüklenemedi. Tekrar deneyin.")
+        }
+    }
+
     suspend fun entries(id: String, manager: Boolean): List<CommunityEntry> {
         if (isV2) {
-            val result = if (manager) store.queryCollectionWithIds("events", "organizationId", id, V2EventDto::class)
-            else store.queryCollectionWithMultipleConditions(
-                "events", mapOf("organizationId" to id, "status" to "published"), V2EventDto::class
-            )
+            val result = if (manager) allPages("events", mapOf("organizationId" to id), V2EventDto::class)
+            else allPages("events", mapOf("organizationId" to id, "status" to "published"), V2EventDto::class)
             return when (result) {
                 is Result.Success -> result.data.map(::mapV2Event).sortedBy { it.data.date + it.data.time }
                 is Result.Error -> error("Etkinlikler yüklenemedi. Tekrar deneyin.")
@@ -230,8 +247,8 @@ class CommunityRepository(
         val todayDate = runCatching { LocalDate.parse(today) }.getOrNull() ?: return emptyList()
         val communityById = communities.associateBy { it.id }
         val candidates = if (isV2) {
-            when (val result = store.queryCollectionWithIds("events", "status", "published", V2EventDto::class)) {
-                is Result.Success -> result.data.mapNotNull { document ->
+            when (val result = store.queryPage("events", mapOf("status" to "published"), V2EventDto::class, pageSize = 20, minimumTimestamp = "startsAt" to Clock.System.now().epochSeconds)) {
+                is Result.Success -> result.data.items.mapNotNull { document ->
                     val community = communityById[document.data.organizationId] ?: return@mapNotNull null
                     CommunityFeaturedEvent(community, mapV2Event(document))
                 }

@@ -27,6 +27,23 @@ class FirestoreRepositoryAndroidImpl(
     private val firestore: FirebaseFirestore
 ) : FirestoreRepository {
 
+    override suspend fun <T : Any> queryPage(collectionPath: String, conditions: Map<String, Any>, clazz: KClass<T>,
+        pageSize: Long, cursor: String?, minimumTimestamp: Pair<String, Long>?): Result<com.good4.core.data.repository.DocumentPage<T>, Error> = try {
+        require(pageSize in 1..100)
+        var query: Query = firestore.collection(collectionPath)
+        conditions.forEach { (field, value) -> query = query.whereEqualTo(field, value) }
+        minimumTimestamp?.let { (field, seconds) ->
+            query = query.whereGreaterThanOrEqualTo(field, com.google.firebase.Timestamp(seconds, 0)).orderBy(field)
+        }
+        query = query.orderBy(com.google.firebase.firestore.FieldPath.documentId())
+        cursor?.let { query = query.startAfter(firestore.collection(collectionPath).document(it).get().await()) }
+        val documents = query.limit(pageSize).get().await().documents
+        val items = documents.map { document ->
+            DocumentWithId(document.id, decodeFromJsonString(convertMapToJsonString(document.data ?: emptyMap()), clazz))
+        }
+        Result.Success(com.good4.core.data.repository.DocumentPage(items, documents.lastOrNull()?.id.takeIf { documents.size.toLong() == pageSize }))
+    } catch (e: Exception) { Result.Error(NetworkError(e.message ?: "Page load failed")) }
+
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true

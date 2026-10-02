@@ -13,9 +13,16 @@ class MainActivity : ComponentActivity() {
         private const val SPLASH_HARD_CAP_MS = 2_000L
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        com.good4.notification.handleNotificationIntent(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        com.good4.notification.handleNotificationIntent(intent)
 
         var isSplashReady = false
         val splashShownAt = SystemClock.elapsedRealtime()

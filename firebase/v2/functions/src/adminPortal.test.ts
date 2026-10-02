@@ -64,7 +64,7 @@ test("admin dashboard returns pending coupons, businesses and audit rows", async
     }),
   ]);
 
-  const dashboard = await getAdminDashboardService(db, legacyTestDb, "admin-1");
+  const dashboard = await getAdminDashboardService(db, legacyTestDb, "admin-1", { includeLegacy: true });
   assert.equal(dashboard.pendingCoupons.length, 1);
   assert.equal(dashboard.pendingCoupons[0]?.discountLabel, "%20");
   assert.equal(dashboard.businesses[0]?.id, "v2-business");
@@ -74,8 +74,7 @@ test("admin dashboard returns pending coupons, businesses and audit rows", async
   assert.equal(dashboard.legacyBusinesses.find((item) => item.id === "legacy-business")?.linked, true);
   assert.equal(dashboard.legacyBusinesses.find((item) => item.id === "unlinked-business")?.linked, false);
   assert.equal(dashboard.audits[0]?.action, "seed.action");
-  assert.equal(dashboard.feedback[0]?.subject, "Ana sayfa önerisi");
-  assert.equal(dashboard.feedback[0]?.environment, "legacyTest");
+  assert.deepEqual(dashboard.feedback, []);
 });
 
 test("admin approves a pending coupon and audit is written", async () => {

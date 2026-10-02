@@ -3,6 +3,7 @@ import { after, beforeEach, test } from "node:test";
 import {
   cancelCommunityPortalEntryService,
   getCommunityPortalDashboardService,
+  getCommunityEventParticipantsService,
   saveCommunityPortalEntryService,
 } from "./communityPortal.js";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
@@ -19,7 +20,7 @@ beforeEach(async () => {
     db.doc("users/manager-1").set({ role: "communityManager", status: "active" }),
     db.doc("organizations/community-org").set({
       name: "Kadın Girişimciler Topluluğu", university: "Akdeniz Üniversitesi",
-      type: "community", status: "active", legacyTestCommunityId: "demo-toplulugu",
+      type: "community", status: "active", followerCount: 1, legacyTestCommunityId: "demo-toplulugu",
     }),
     db.doc("organizations/community-org/members/manager-1").set({
       userId: "manager-1", role: "manager", status: "active",
@@ -52,7 +53,9 @@ test("community dashboard returns live registration and attendance totals", asyn
   assert.equal(dashboard.followerCount, 1);
   assert.equal(dashboard.entries[0]?.registrationCount, 1);
   assert.equal(dashboard.entries[0]?.attendanceCount, 1);
-  assert.equal(dashboard.entries[0]?.participants[0]?.displayName, "Öğrenci");
+  assert.deepEqual(dashboard.entries[0]?.participants, []);
+  const participants = await getCommunityEventParticipantsService(db, "manager-1", { eventId: "event-1" });
+  assert.equal(participants.participants[0]?.displayName, "Öğrenci");
 });
 
 test("community event writes only to the canonical V2 event collection", async () => {
@@ -92,4 +95,30 @@ test("community manager can create a coupon and cancel it", async () => {
   assert.equal(edited.get("code"), "GOOD4");
   await cancelCommunityPortalEntryService(db, legacyTestDb, "manager-1", { entryId: created.entryId });
   assert.equal((await entry.ref.get()).get("status"), "cancelled");
+});
+
+test("event summaries and participant pages are bounded and cursor traversal loses no records", async () => {
+  const batch = db.batch();
+  for (let i = 0; i < 105; i++) {
+    const id = String(i).padStart(3, "0");
+    batch.set(db.doc(`events/page-${id}`), { organizationId: "community-org", title: id, status: "published", startsAt: Timestamp.now() });
+    batch.set(db.doc(`events/page-000/registrations/reg-${id}`), { userId: id, displayName: id, status: "registered" });
+  }
+  await batch.commit();
+  const eventIds: string[] = [], participantIds: string[] = [];
+  let cursor: string | null = null;
+  do {
+    const result = await getCommunityPortalDashboardService(db, legacyTestDb, "manager-1", { ...(cursor ? { cursor } : {}) });
+    assert.ok(result.entries.length <= 50);
+    assert.ok(result.entries.every((entry) => entry.participants.length === 0));
+    eventIds.push(...result.entries.map((entry) => entry.id)); cursor = result.nextCursor;
+  } while (cursor);
+  do {
+    const result = await getCommunityEventParticipantsService(db, "manager-1", { eventId: "page-000", ...(cursor ? { cursor } : {}) });
+    assert.ok(result.participants.length <= 50);
+    participantIds.push(...result.participants.map((item) => item.userId)); cursor = result.nextCursor;
+  } while (cursor);
+  assert.equal(new Set(eventIds).size, 105);
+  assert.equal(new Set(participantIds).size, 105);
+  await assert.rejects(getCommunityPortalDashboardService(db, legacyTestDb, "manager-1", { pageSize: 101 }), /PAGE_SIZE_INVALID/);
 });

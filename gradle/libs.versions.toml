@@ -34,6 +34,7 @@ kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime",
 
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx" }
 firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }

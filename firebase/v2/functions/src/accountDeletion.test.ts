@@ -12,7 +12,7 @@ beforeEach(async () => {
       "users", "organizations", "events", "campaignClaims", "campaignCodes",
       "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
       "communities", "codes", "orders", "businesses", "community_access",
-      "eduEmailClaims", "eduVerifications", "mail", "communityApplications",
+      "eduEmailClaims", "eduVerifications", "mail", "communityApplications", "pushDevices", "notificationJobs",
     ].map((collection) => db.recursiveDelete(db.collection(collection))),
     ...["communities", "community_coupon_codes", "community_access", "users"].map((collection) =>
       legacyTestDb.recursiveDelete(legacyTestDb.collection(collection))),
@@ -146,4 +146,21 @@ test("deletes personal records and removes account identifiers from retained V2 
   assert.equal((await legacyTestDb.doc("community_coupon_codes/111111").get()).exists, false);
   assert.equal((await legacyTestDb.doc("community_coupon_codes/222222").get()).get("userId"), "deleted-account");
   assert.equal((await legacyTestDb.doc("community_access/delete@example.com").get()).exists, false);
+});
+
+
+test("account deletion removes push endpoints and private delivery receipts and anonymizes sender history", async () => {
+  await db.doc(`users/${uid}`).set({ status: "active", role: "student" });
+  await db.doc(`users/${uid}/notifications/n`).set({ title: "Notice" });
+  await db.doc(`users/${uid}/notificationPreferences/default`).set({ reminders: true });
+  await db.doc("pushDevices/phone").set({ uid, token: "private-token" });
+  await db.doc("notificationJobs/job").set({ actorUid: uid });
+  await db.doc(`notificationJobs/job/deliveries/${uid}`).set({ uid, done: true });
+  await db.doc(`notificationJobs/job/deliveries/${uid}/devices/phone`).set({ outcome: "accepted" });
+  await eraseAccountData(db, legacyTestDb, uid);
+  assert.equal((await db.doc("pushDevices/phone").get()).exists, false);
+  assert.equal((await db.doc(`notificationJobs/job/deliveries/${uid}/devices/phone`).get()).exists, false);
+  assert.equal((await db.doc(`users/${uid}/notifications/n`).get()).exists, false);
+  assert.equal((await db.doc(`users/${uid}/notificationPreferences/default`).get()).exists, false);
+  assert.equal((await db.doc("notificationJobs/job").get()).get("actorUid"), "deleted-account");
 });
