@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # MapLibre distributes device symbols separately from its prebuilt XCFramework.
-# Download matching symbols into the SPM cache, then copy them during Archive.
+# Match symbols to the embedded binary, then copy them during Archive.
 arm64_uuid() {
   /usr/bin/xcrun dwarfdump --uuid "$1" | /usr/bin/awk '$3 == "(arm64)" { print $2 }'
 }
@@ -23,14 +23,29 @@ version="${2:?Expected resolved MapLibre version}"
 if [[ "$mode" == "embed" && ( "${ACTION:-}" != "install" || "${PLATFORM_NAME:-}" != "iphoneos" ) ]]; then
   exit 0
 fi
-packages_root="${3:-${BUILD_DIR:?BUILD_DIR or an explicit SourcePackages path is required}/../../SourcePackages}"
-symbols_dir="$packages_root/good4-maplibre-dsyms/$version/MapLibre.framework.dSYM"
+case "$mode" in
+  prepare)
+    packages_root="${3:?Pass the resolved SourcePackages path to prepare symbols}"
+    binary="$packages_root/artifacts/maplibre-gl-native-distribution/MapLibre/MapLibre.xcframework/ios-arm64/MapLibre.framework/MapLibre"
+    cache_root="$packages_root"
+    ;;
+  embed)
+    binary="${TARGET_BUILD_DIR:?}/${FRAMEWORKS_FOLDER_PATH:?}/MapLibre.framework/MapLibre"
+    # Xcode supplies this directory for both local and Cloud archives, including
+    # builds that resolve Swift packages outside the default DerivedData path.
+    cache_root="${3:-${DERIVED_FILE_DIR:?DERIVED_FILE_DIR or an explicit cache path is required}}"
+    ;;
+  *)
+    echo "error: Unknown MapLibre dSYM command: $mode" >&2
+    exit 1
+    ;;
+esac
+symbols_dir="$cache_root/good4-maplibre-dsyms/$version/MapLibre.framework.dSYM"
 symbols_file="$symbols_dir/Contents/Resources/DWARF/MapLibre"
 
 prepare_symbols() {
-    binary="$packages_root/artifacts/maplibre-gl-native-distribution/MapLibre/MapLibre.xcframework/ios-arm64/MapLibre.framework/MapLibre"
     if [[ ! -f "$binary" ]]; then
-      echo "error: MapLibre SPM artifact is missing. Resolve Swift packages before archiving." >&2
+      echo "error: MapLibre framework is missing at $binary." >&2
       return 1
     fi
     if [[ -f "$symbols_file" ]] && verify_symbols "$binary" "$symbols_file"; then
@@ -55,20 +70,9 @@ prepare_symbols() {
     echo "MapLibre $version: device dSYM prepared."
 }
 
-case "$mode" in
-  prepare)
-    prepare_symbols
-    ;;
-  embed)
-    prepare_symbols
-    binary="${TARGET_BUILD_DIR:?}/${FRAMEWORKS_FOLDER_PATH:?}/MapLibre.framework/MapLibre"
-    verify_symbols "$binary" "$symbols_file"
-    destination="${DWARF_DSYM_FOLDER_PATH:?}/MapLibre.framework.dSYM"
-    /usr/bin/ditto "$symbols_dir" "$destination"
-    echo "MapLibre $version: copied matching dSYM to $destination"
-    ;;
-  *)
-    echo "error: Unknown MapLibre dSYM command: $mode" >&2
-    exit 1
-    ;;
-esac
+prepare_symbols
+if [[ "$mode" == "embed" ]]; then
+  destination="${DWARF_DSYM_FOLDER_PATH:?}/MapLibre.framework.dSYM"
+  /usr/bin/ditto "$symbols_dir" "$destination"
+  echo "MapLibre $version: copied matching dSYM to $destination"
+fi

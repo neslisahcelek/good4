@@ -8,10 +8,12 @@ the MapLibre.framework`. The app's Release configuration already uses
 
 The app's `[MapLibre] Copy Archive dSYM` build phase runs after Xcode embeds
 frameworks. During a device Archive, `iosApp/scripts/maplibre-dsym.sh` downloads
-the official device symbols, verifies their arm64 UUID against the resolved SPM
-artifact, and caches them under `SourcePackages/good4-maplibre-dsyms/6.17.1` in
-DerivedData. Existing matching symbols are reused. It then verifies the shipped
-framework and copies the symbols into `DWARF_DSYM_FOLDER_PATH`, which Xcode
+the official device symbols, verifies their arm64 UUID against the embedded
+framework, and caches them under `DERIVED_FILE_DIR/good4-maplibre-dsyms/6.17.1`.
+Existing matching symbols are reused. The archive step does not infer the SPM
+directory from `BUILD_DIR`, whose layout changes during Archive, and also works
+with a custom `-clonedSourcePackagesDirPath`. It copies the symbols into
+`DWARF_DSYM_FOLDER_PATH`, which Xcode
 collects into the archive's `dSYMs` folder. Regular and simulator builds skip
 this step. Missing or mismatched artifacts fail the archive with an error.
 The first archive needs access to GitHub to download the symbols.

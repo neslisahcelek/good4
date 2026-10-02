@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
+import { createAccountRequestScope } from "./accountRequestScope";
 import {
   BrandMark,
   authErrorMessage,
@@ -90,27 +91,42 @@ export default function CommunityApplicationPage() {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState("");
   const [signingIn, setSigningIn] = useState(false);
+  const [requestScope] = useState(createAccountRequestScope);
 
-  async function load() {
+  const load = useCallback(async (uid: string) => {
+    const requestIsCurrent = requestScope.start(uid);
+    if (!requestIsCurrent || auth.currentUser?.uid !== uid) return;
+    const isCurrent = () => requestIsCurrent() && auth.currentUser?.uid === uid;
     setLoading(true);
     setMessage("");
     try {
       const response = await getMyCommunityApplication();
+      if (!isCurrent()) return;
       setLoaded(response.data);
       setEditing(false);
     } catch (error) {
-      setMessage(functionErrorMessage(error));
+      if (isCurrent()) setMessage(functionErrorMessage(error));
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }
+  }, [requestScope]);
 
-  useEffect(() => onAuthStateChanged(auth, (nextUser) => {
-    setUser(nextUser);
-    setLoaded(null);
-    setAuthReady(true);
-    if (nextUser) void load();
-  }), []);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      requestScope.setAccount(nextUser?.uid ?? null);
+      setUser(nextUser);
+      setLoaded(null);
+      setEditing(false);
+      setMessage("");
+      setLoading(false);
+      setAuthReady(true);
+      if (nextUser) void load(nextUser.uid);
+    });
+    return () => {
+      unsubscribe();
+      requestScope.setAccount(null);
+    };
+  }, [load, requestScope]);
 
   async function handleGoogle() {
     setMessage("");
@@ -190,7 +206,7 @@ export default function CommunityApplicationPage() {
             güncelleyip yeniden gönderebilirsiniz.
           </div>
         )}
-        <ApplicationForm user={user} previous={application} onSubmitted={load} />
+        <ApplicationForm key={user.uid} user={user} previous={application} onSubmitted={() => load(user.uid)} />
       </>
     );
   }

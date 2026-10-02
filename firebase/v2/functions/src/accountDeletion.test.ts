@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 import { db, legacyTestDb } from "./firebase.js";
 import { eraseAccountData } from "./accountDeletion.js";
+import { reviewCommunityApplicationService } from "./communityApplications.js";
 
 const uid = "delete-me";
 
@@ -11,7 +12,7 @@ beforeEach(async () => {
       "users", "organizations", "events", "campaignClaims", "campaignCodes",
       "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
       "communities", "codes", "orders", "businesses", "community_access",
-      "eduEmailClaims", "eduVerifications", "mail",
+      "eduEmailClaims", "eduVerifications", "mail", "communityApplications",
     ].map((collection) => db.recursiveDelete(db.collection(collection))),
     ...["communities", "community_coupon_codes", "community_access", "users"].map((collection) =>
       legacyTestDb.recursiveDelete(legacyTestDb.collection(collection))),
@@ -22,9 +23,33 @@ after(async () => {
   await Promise.all([db.terminate(), legacyTestDb.terminate()]);
 });
 
+for (const status of ["pending", "rejected", "approved"]) {
+  test(`deletes ${status} community applications even without a user profile`, async () => {
+    await db.doc(`communityApplications/${uid}`).set({
+      applicantUid: uid,
+      applicantName: "Applicant",
+      applicantEmail: "delete@example.com",
+      communityName: "Deleted club",
+      university: "Akdeniz Üniversitesi",
+      status,
+    });
+
+    await eraseAccountData(db, legacyTestDb, uid, "delete@example.com");
+
+    assert.equal((await db.doc(`communityApplications/${uid}`).get()).exists, false);
+    await db.doc("users/admin-1").set({ role: "good4Admin", status: "active" });
+    await assert.rejects(reviewCommunityApplicationService(db, "admin-1", {
+      applicationId: uid, decision: "approve",
+    }), /APPLICATION_NOT_FOUND/);
+    assert.equal((await db.collection("organizations").get()).empty, true);
+    assert.equal((await db.doc(`users/${uid}`).get()).exists, false);
+  });
+}
+
 test("deletes personal records and removes account identifiers from retained V2 history", async () => {
   await Promise.all([
     db.doc(`users/${uid}`).set({ email: "delete@example.com", status: "active" }),
+    db.doc(`communityApplications/${uid}`).set({ applicantUid: uid, applicantEmail: "delete@example.com", status: "approved" }),
     db.doc("organizations/community-1").set({ followerCount: 1, createdBy: uid }),
     db.doc(`organizations/community-1/members/${uid}`).set({ userId: uid, role: "manager" }),
     db.doc(`organizations/community-1/followers/${uid}`).set({ userId: uid }),
@@ -82,6 +107,7 @@ test("deletes personal records and removes account identifiers from retained V2 
   await eraseAccountData(db, legacyTestDb, uid, "delete@example.com");
 
   assert.equal((await db.doc(`users/${uid}`).get()).exists, false);
+  assert.equal((await db.doc(`communityApplications/${uid}`).get()).exists, false);
   assert.equal((await db.doc(`organizations/community-1/members/${uid}`).get()).exists, false);
   assert.equal((await db.doc(`organizations/community-1/followers/${uid}`).get()).exists, false);
   assert.equal((await db.doc("organizations/community-1").get()).get("followerCount"), 0);
