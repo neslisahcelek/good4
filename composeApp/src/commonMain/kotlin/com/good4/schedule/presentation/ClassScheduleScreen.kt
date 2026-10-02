@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +63,12 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
+import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.back
+import good4.composeapp.generated.resources.schedule_select_profile
+import good4.composeapp.generated.resources.schedule_title
+import good4.composeapp.generated.resources.schedule_unavailable_fallback
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -79,11 +84,19 @@ fun ClassScheduleScreen(
     val selectedDate = LocalDate.parse(selectedDateValue)
     val selectedDay = selectedDate.toScheduleDay()
     val uriHandler = LocalUriHandler.current
+    val reviewListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val schedule = state.schedule
+    com.good4.review.ReviewFeaturePrompt(
+        feature = com.good4.review.ReviewFeature.CLASS_SCHEDULE,
+        contentReady = !state.isLoading && state.errorMessage == null && !schedule?.entries.isNullOrEmpty(),
+        isScrolling = reviewListState.isScrollInProgress,
+        canPrompt = !state.isAcademicSelectionSheetVisible
+    )
     val availableSections = schedule?.entries.orEmpty().mapNotNull { it.section }.distinct()
     var selectedSection by rememberSaveable { mutableStateOf("Tümü") }
     var awaitingProfileUpdate by rememberSaveable { mutableStateOf(false) }
     val openAcademicProfile = {
+        viewModel.dismissAcademicSelectionSheet()
         awaitingProfileUpdate = true
         onSelectAcademicProfile()
     }
@@ -98,27 +111,29 @@ fun ClassScheduleScreen(
         onPauseOrDispose { }
     }
 
-    LaunchedEffect(state.isLoading, state.isAcademicProfileMissing) {
-        if (!state.isLoading && state.isAcademicProfileMissing && !viewModel.hasPromptedAcademicSelection) {
-            viewModel.onAcademicSelectionPrompted()
-            openAcademicProfile()
-        }
+    if (state.isAcademicSelectionSheetVisible) {
+        AcademicSelectionBottomSheet(
+            missingFields = state.missingAcademicFields,
+            onOpenSettings = openAcademicProfile,
+            onDismiss = viewModel::dismissAcademicSelectionSheet
+        )
     }
 
     Good4NestedScaffold(
         modifier = modifier,
         topBar = {
             Good4TopBar(
-                title = "Ders Programı",
+                title = stringResource(Res.string.schedule_title),
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.back))
                     }
                 }
             )
         }
     ) { paddingValues ->
         LazyColumn(
+            state = reviewListState,
             modifier = Modifier
                 .fillMaxSize()
                 .background(SurfaceCanvasWarm)
@@ -150,7 +165,7 @@ fun ClassScheduleScreen(
                 }
             }
 
-            if (!state.isLoading && !state.isProfileSelectionComplete) {
+            if (!state.isLoading && !state.isProfileSelectionComplete && !state.isAcademicProfileMissing) {
                 item {
                     Surface(
                         modifier = Modifier
@@ -161,16 +176,12 @@ fun ClassScheduleScreen(
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = if (state.isAcademicProfileMissing) {
-                                    "Fakülte, bölüm ve sınıf seçimin tamamlanmadığı için İşletme 1. sınıf programı gösteriliyor."
-                                } else {
-                                    "Seçtiğin bölüm ve sınıf için henüz program eklenmedi; İşletme 1. sınıf programı gösteriliyor."
-                                },
+                                text = stringResource(Res.string.schedule_unavailable_fallback),
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 fontSize = 13.sp
                             )
                             Text(
-                                text = "Bölümünü ve sınıfını seç",
+                                text = stringResource(Res.string.schedule_select_profile),
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -252,6 +263,14 @@ fun ClassScheduleScreen(
                             Icon(Icons.Outlined.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         }
                     }
+                }
+            }
+            if (!state.isLoading && state.isAcademicProfileMissing) {
+                item(key = "academicSelectionButton") {
+                    AcademicProfileSelectionButton(
+                        onSelect = viewModel::showAcademicSelectionSheet,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }

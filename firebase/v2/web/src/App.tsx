@@ -1,8 +1,10 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
+  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type User,
 } from "firebase/auth";
@@ -253,6 +255,23 @@ const assignOrganizationMemberByEmail = httpsCallable<
   { organizationId: string; email: string; displayName: string; role: "owner" | "manager" | "staff"; temporaryPassword?: string },
   { organizationId: string; userId: string; created: boolean }
 >(functions, "assignOrganizationMemberByEmail");
+export type CommunityApplication = {
+  id: string;
+  communityName: string;
+  university: string;
+  applicantName: string;
+  applicantEmail: string;
+  description: string;
+  socialUrl: string;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason: string;
+  createdAt: string | null;
+};
+const listCommunityApplications = httpsCallable<void, { applications: CommunityApplication[] }>(functions, "listCommunityApplications");
+const reviewCommunityApplication = httpsCallable<
+  { applicationId: string; decision: "approve" | "reject"; reason?: string },
+  { status: "approved" | "rejected"; organizationId?: string }
+>(functions, "reviewCommunityApplication");
 const getCommunityPortalDashboard = httpsCallable<void, CommunityDashboardData>(functions, "getCommunityPortalDashboard");
 const saveCommunityPortalEntry = httpsCallable<{
   entryId?: string;
@@ -314,10 +333,25 @@ const feedbackByOutcome: Record<RedeemOutcome, Feedback> = {
   },
 };
 
-function authErrorMessage(error: unknown): string {
+/** Community managers who applied through /topluluk-basvuru sign in with their Google account. */
+export async function signInWithGoogle(): Promise<void> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  await signInWithPopup(auth, provider);
+}
+
+export function isPopupDismissed(error: unknown): boolean {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+  return code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request";
+}
+
+export function authErrorMessage(error: unknown): string {
   const code = typeof error === "object" && error && "code" in error
     ? String(error.code)
     : "";
+  if (code === "auth/popup-blocked") {
+    return "Tarayıcı Google penceresini engelledi. Açılır pencerelere izin verip tekrar deneyin.";
+  }
   if (["auth/invalid-credential", "auth/user-not-found", "auth/wrong-password"].includes(code)) {
     return "E-posta veya şifre hatalı.";
   }
@@ -330,7 +364,7 @@ function authErrorMessage(error: unknown): string {
   return "Giriş yapılamadı. Lütfen tekrar deneyin.";
 }
 
-function functionErrorMessage(error: unknown): string {
+export function functionErrorMessage(error: unknown): string {
   const code = typeof error === "object" && error && "code" in error
     ? String(error.code)
     : "";
@@ -380,6 +414,21 @@ function functionErrorMessage(error: unknown): string {
   if (message.includes("EMAIL_INVALID")) {
     return "Geçerli bir e-posta adresi girin.";
   }
+  if (message.includes("STUDENT_ACCOUNT_NOT_ALLOWED")) {
+    return "Bu Google hesabı Good4 uygulamasında öğrenci hesabı olarak kullanılıyor. Topluluğun kendi Google hesabıyla başvurun.";
+  }
+  if (message.includes("ACCOUNT_ALREADY_HAS_ROLE")) {
+    return "Bu hesap zaten bir işletme ya da topluluk paneline bağlı.";
+  }
+  if (message.includes("APPLICATION_ALREADY_REVIEWED")) {
+    return "Bu başvuru daha önce değerlendirilmiş. Liste yenileniyor.";
+  }
+  if (message.includes("SOCIAL_URL_INVALID")) {
+    return "Bağlantı https:// ile başlayan geçerli bir adres olmalı.";
+  }
+  if (message.includes("GOOGLE_SIGN_IN_REQUIRED") || message.includes("VERIFIED_EMAIL_REQUIRED")) {
+    return "Başvuru için Google hesabıyla giriş yapın.";
+  }
   if (code.includes("failed-precondition") || code.includes("internal")) {
     return "İşlem tamamlanamadı. Lütfen tekrar deneyin.";
   }
@@ -394,7 +443,7 @@ function formatCode(value: string): string {
   return value.length > 4 ? `${value.slice(0, 4)} ${value.slice(4)}` : value;
 }
 
-function BrandMark({ compact = false }: { compact?: boolean }) {
+export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`brand-mark ${compact ? "brand-mark--compact" : ""}`}>
       <img src="/good4-logo.png" alt="Good4" />
@@ -413,6 +462,20 @@ function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [resetSent, setResetSent] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+
+  async function handleGoogle() {
+    setMessage("");
+    setResetSent(false);
+    setGoogleSubmitting(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      if (!isPopupDismissed(error)) setMessage(authErrorMessage(error));
+    } finally {
+      setGoogleSubmitting(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -501,7 +564,14 @@ function LoginScreen() {
               {submitting ? <><span className="spinner" /> Giriş yapılıyor</> : "Giriş yap"}
             </button>
           </form>
-          <p className="support-copy">Hesap erişimi için Good4 yöneticinizle iletişime geçin.</p>
+          <div className="auth-divider"><span>veya</span></div>
+          <button className="secondary-button google-button" type="button" onClick={() => void handleGoogle()} disabled={googleSubmitting}>
+            {googleSubmitting ? "Google açılıyor…" : "Google ile giriş yap"}
+          </button>
+          <p className="support-copy">
+            Hesap erişimi için Good4 yöneticinizle iletişime geçin.<br />
+            Topluluğunuzu Good4'e eklemek için <a href="/topluluk-basvuru">başvuru yapın</a>.
+          </p>
         </div>
       </section>
     </main>
@@ -1431,6 +1501,8 @@ const auditLabels: Record<string, string> = {
   "homeBanner.unpublished": "Ana sayfa reklamı yayından kaldırıldı",
   "academicCalendar.created": "Takvim kaydı oluşturuldu",
   "academicCalendar.updated": "Takvim kaydı güncellendi",
+  "communityApplication.approved": "Topluluk başvurusu onaylandı",
+  "communityApplication.rejected": "Topluluk başvurusu reddedildi",
 };
 
 function readImageSize(file: File): Promise<{ width: number; height: number }> {
@@ -1498,6 +1570,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [communityManagerName, setCommunityManagerName] = useState("");
   const [communityTemporaryPassword, setCommunityTemporaryPassword] = useState("");
   const [assigningCommunityManager, setAssigningCommunityManager] = useState(false);
+  const [communityApplications, setCommunityApplications] = useState<CommunityApplication[]>([]);
   const [menuWeekStart, setMenuWeekStart] = useState("");
   const [menuWeekEnd, setMenuWeekEnd] = useState("");
   const [menuDays, setMenuDays] = useState<DiningMenuDayForm[]>(() => emptyDiningDays());
@@ -1534,9 +1607,9 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [calendarActive, setCalendarActive] = useState(true);
   const [savingCalendar, setSavingCalendar] = useState(false);
 
-  async function refresh(showLoader = true) {
+  async function refresh(showLoader = true, clearExistingError = true) {
     if (showLoader) setLoading(true);
-    setError("");
+    if (clearExistingError) setError("");
     try {
       const response = await getAdminDashboard();
       setData(response.data);
@@ -1546,10 +1619,45 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       setMenuWeekEnd(response.data.diningMenu?.weekEnd ?? "");
       setMenuDays(diningDaysForForm(response.data.diningMenu));
       fillBannerForm(bannerForSlot(response.data, bannerSlot));
+      await loadCommunityApplications(false);
     } catch (requestError) {
       setError(functionErrorMessage(requestError));
     } finally {
       if (showLoader) setLoading(false);
+    }
+  }
+
+  async function loadCommunityApplications(clearExistingError = true) {
+    if (clearExistingError) setError("");
+    try {
+      setCommunityApplications((await listCommunityApplications()).data.applications);
+    } catch (requestError) {
+      setError(`Topluluk başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
+    }
+  }
+
+  async function handleCommunityApplication(application: CommunityApplication, decision: "approve" | "reject") {
+    let reason = "";
+    if (decision === "reject") {
+      const answer = window.prompt(`“${application.communityName}” başvurusunu reddetme gerekçesi (başvurana gösterilir):`);
+      if (answer === null) return;
+      reason = answer.trim();
+    } else if (!window.confirm(`“${application.communityName}” topluluğu oluşturulsun ve ${application.applicantEmail} yönetici olsun mu?`)) {
+      return;
+    }
+    setReviewing(`application:${application.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await reviewCommunityApplication({ applicationId: application.id, decision, ...(reason ? { reason } : {}) });
+      setNotice(decision === "approve"
+        ? "Topluluk oluşturuldu. Başvuran kişi Google hesabıyla panele giriş yapabilir."
+        : "Başvuru reddedildi.");
+    } catch (requestError) {
+      setError(functionErrorMessage(requestError));
+    } finally {
+      setReviewing("");
+      await refresh(false, false);
     }
   }
 
@@ -2029,7 +2137,9 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
             Bildirimler ve geri bildirimler {data && <span>{data.feedback.filter((item) => item.report && item.status === "new").length}</span>}
           </button>
           <button className={tab === "businesses" ? "active" : ""} onClick={() => setTab("businesses")}>İşletmeler</button>
-          <button className={tab === "communities" ? "active" : ""} onClick={() => setTab("communities")}>Topluluklar</button>
+          <button className={tab === "communities" ? "active" : ""} onClick={() => setTab("communities")}>
+            Topluluklar {communityApplications.length > 0 && <span>{communityApplications.length}</span>}
+          </button>
           <button className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>İşlem geçmişi</button>
         </nav>
 
@@ -2429,6 +2539,49 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
                     )}
                   </article>
                 ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {!loading && data && tab === "communities" && (
+          <section className="admin-section" aria-labelledby="community-applications-title">
+            <div className="section-title-row">
+              <div>
+                <h2 id="community-applications-title">Topluluk başvuruları</h2>
+                <p>Topluluklar <a href="/topluluk-basvuru">good4tr.com/topluluk-basvuru</a> adresinden Google hesabıyla başvurur. Onay, topluluğu oluşturur ve başvuranı yönetici yapar.</p>
+              </div>
+              <button className="quiet-button" onClick={() => void loadCommunityApplications()}>Yenile</button>
+            </div>
+            {communityApplications.length === 0 ? (
+              <div className="admin-card empty-state"><h3>Bekleyen başvuru yok</h3><p>Yeni başvurular burada görünecek.</p></div>
+            ) : (
+              <div className="coupon-review-list">
+                {communityApplications.map((application) => {
+                  const busy = reviewing === `application:${application.id}`;
+                  return (
+                    <article className="admin-card coupon-review-card application-review-card" key={application.id}>
+                      <div className="coupon-review-main">
+                        <div className="coupon-review-title">
+                          <div><h3>{application.communityName}</h3><p>{application.university}</p></div>
+                        </div>
+                        <div className="coupon-tags">
+                          <span>{application.applicantName}</span>
+                          <span>{application.applicantEmail}</span>
+                          {application.createdAt && <span>{formatAdminDate(application.createdAt)}</span>}
+                          {application.socialUrl && <span><a href={application.socialUrl} target="_blank" rel="noopener noreferrer">Bağlantıyı aç</a></span>}
+                        </div>
+                        {application.description && <p className="coupon-description">{application.description}</p>}
+                      </div>
+                      <div className="review-actions">
+                        <button className="danger-button" disabled={busy} onClick={() => void handleCommunityApplication(application, "reject")}>Reddet</button>
+                        <button className="primary-button compact-button" disabled={busy} onClick={() => void handleCommunityApplication(application, "approve")}>
+                          {busy ? "İşleniyor…" : "Onayla"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>

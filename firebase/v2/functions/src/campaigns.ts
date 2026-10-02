@@ -67,12 +67,6 @@ export async function issueCampaignCodeService(
     try {
       return await database.runTransaction(async (transaction) => {
         await requireActiveActor(database, transaction, actorUid, ["student"]);
-        await assertRateLimit(database, transaction, {
-          key: `issue_code:${actorUid}`,
-          limit: 5,
-          windowSeconds: 60,
-          errorMessage: "RATE_LIMIT_EXCEEDED",
-        }, nowMillis);
         if (!hasVerifiedEduEmail(await transaction.get(database.doc(`users/${actorUid}`)))) {
           throw new HttpsError("permission-denied", "EDU_VERIFICATION_REQUIRED");
         }
@@ -137,6 +131,12 @@ export async function issueCampaignCodeService(
         const expiresAt = shortExpiry.toMillis() < endsAt.toMillis() ? shortExpiry : endsAt;
         const auditRef = database.collection("auditLogs").doc();
 
+        await assertRateLimit(database, transaction, {
+          key: `issue_code:${actorUid}`,
+          limit: 5,
+          windowSeconds: 60,
+          errorMessage: "RATE_LIMIT_EXCEEDED",
+        }, nowMillis);
         transaction.create(codeRef, {
           code,
           campaignId,
@@ -203,7 +203,7 @@ export async function redeemCampaignCodeService(
 ): Promise<RedeemCampaignCodeResult> {
   const code = normalizeCampaignCode(input.code);
 
-  return database.runTransaction(async (transaction) => {
+  const result = await database.runTransaction<RedeemCampaignCodeResult | { rateLimitError: HttpsError }>(async (transaction) => {
     await requireActiveActor(
       database,
       transaction,
@@ -215,13 +215,14 @@ export async function redeemCampaignCodeService(
     const codeRef = database.doc(`campaignCodes/${code}`);
     const codeSnapshot = await transaction.get(codeRef);
     if (!codeSnapshot.exists) {
-      await recordFailedAttempt(database, transaction, {
+      const failure = await recordFailedAttempt(database, transaction, {
         key: `redeem_fail:${actorUid}`,
         maxAttempts: 5,
         windowSeconds: 60,
         blockDurationSeconds: 300,
         errorMessage: "TOO_MANY_FAILED_ATTEMPTS",
       }, nowMillis);
+      if (failure.error) return { rateLimitError: failure.error };
       return { outcome: "not_found" };
     }
 
@@ -252,13 +253,14 @@ export async function redeemCampaignCodeService(
       || !memberSnapshot.exists
       || memberSnapshot.get("status") !== "active"
       || !["owner", "staff"].includes(memberSnapshot.get("role"))) {
-      await recordFailedAttempt(database, transaction, {
+      const failure = await recordFailedAttempt(database, transaction, {
         key: `redeem_fail:${actorUid}`,
         maxAttempts: 5,
         windowSeconds: 60,
         blockDurationSeconds: 300,
         errorMessage: "TOO_MANY_FAILED_ATTEMPTS",
       }, nowMillis);
+      if (failure.error) return { rateLimitError: failure.error };
       return { outcome: "wrong_business" };
     }
     if (codeSnapshot.get("status") === "redeemed") {
@@ -347,4 +349,6 @@ export async function redeemCampaignCodeService(
       campaignTitle: String(campaignSnapshot.get("title") ?? ""),
     };
   });
+  if ("rateLimitError" in result) throw result.rateLimitError;
+  return result;
 }

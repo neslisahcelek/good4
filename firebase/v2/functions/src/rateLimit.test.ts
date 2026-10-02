@@ -73,23 +73,17 @@ test("recordFailedAttempt blocks after threshold and assertNotBlocked enforces c
     await assertNotBlocked(db, transaction, key, now + 1000);
   });
 
-  // 2nd failed attempt -> triggers block
-  await assert.rejects(
-    async () => {
-      await db.runTransaction(async (transaction) => {
-        await recordFailedAttempt(db, transaction, {
-          key,
-          maxAttempts: 2,
-          windowSeconds: 60,
-          blockDurationSeconds: 300,
-        }, now + 2000);
-      });
-    },
-    (err: any) => {
-      assert.equal(err.code, "resource-exhausted");
-      return true;
-    }
-  );
+  // Commit the block before reporting the failed attempt to the caller.
+  const failure = await db.runTransaction((transaction) => (
+    recordFailedAttempt(db, transaction, {
+      key,
+      maxAttempts: 2,
+      windowSeconds: 60,
+      blockDurationSeconds: 300,
+    }, now + 2000)
+  ));
+  assert.equal(failure.blocked, true);
+  assert.equal(failure.error?.code, "resource-exhausted");
 
   // assertNotBlocked should now reject
   await assert.rejects(

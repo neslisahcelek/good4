@@ -25,7 +25,5 @@ fi
 
 echo "Xcode version: $(xcodebuild -version | head -1)"
 echo "macOS version: $(sw_vers -productVersion)"
-echo "Ruby version:  $(ruby -v)"
-echo "CocoaPods:     $(pod --version)"
 
 echo "--- ci_pre_xcodebuild: Done ---"

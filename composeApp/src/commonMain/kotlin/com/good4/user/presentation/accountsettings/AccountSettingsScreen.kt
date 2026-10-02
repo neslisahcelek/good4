@@ -92,6 +92,7 @@ import good4.composeapp.generated.resources.account_settings_security_section_ti
 import good4.composeapp.generated.resources.account_settings_title
 import good4.composeapp.generated.resources.profile_major_label
 import good4.composeapp.generated.resources.profile_university_label
+import good4.composeapp.generated.resources.schedule_settings_selection_hint
 import good4.composeapp.generated.resources.university_dropdown_empty
 import good4.composeapp.generated.resources.university_placeholder
 import org.jetbrains.compose.resources.stringResource
@@ -134,6 +135,7 @@ fun AccountSettingsScreen(
         "Spor Bilimleri Fakültesi",
         "Güzel Sanatlar Fakültesi",
         "Su Ürünleri Fakültesi",
+        "Kemer Denizcilik Fakültesi",
         "İlahiyat Fakültesi",
         "Diş Hekimliği Fakültesi"
     )
@@ -229,6 +231,7 @@ fun AccountSettingsScreen(
         )
         "Hukuk Fakültesi" -> listOf("Hukuk")
         "Su Ürünleri Fakültesi" -> listOf("Su Ürünleri Mühendisliği")
+        "Kemer Denizcilik Fakültesi" -> listOf("Denizcilik İşletmeleri Yönetimi")
         "İlahiyat Fakültesi" -> listOf("İlahiyat")
         "Diş Hekimliği Fakültesi" -> listOf("Diş Hekimliği")
         "Spor Bilimleri Fakültesi" -> listOf(
@@ -413,7 +416,7 @@ fun AccountSettingsScreen(
                                 shape = RoundedCornerShape(14.dp)
                             ) {
                                 Text(
-                                    text = "Ders programını görmek için fakülte, bölüm ve sınıfını seçip kaydet.",
+                                    text = stringResource(Res.string.schedule_settings_selection_hint),
                                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(12.dp)

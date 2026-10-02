@@ -191,6 +191,11 @@ fun DailyMenuScreen(
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = if (initialMeal == DailyMeal.KYK_BREAKFAST) 0 else initialMeal.ordinal + 1
     )
+    com.good4.review.ReviewFeaturePrompt(
+        feature = com.good4.review.ReviewFeature.DINING_MENU,
+        contentReady = !state.isLoading && (state.cafeteriaToday != null || state.kykDay != null),
+        isScrolling = listState.isScrollInProgress
+    )
     LifecycleResumeEffect(Unit) {
         onRefreshIfDayChanged()
         onPauseOrDispose { }

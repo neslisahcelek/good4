@@ -56,7 +56,6 @@ class FeedbackRepository(
 
         val environment = when (AppEnvironment.firebaseBackend) {
             FirebaseBackend.LEGACY_TEST -> "legacyTest"
-            FirebaseBackend.PRODUCTION -> "production"
             FirebaseBackend.V2 -> "v2"
         }
         val result = store.addDocument(

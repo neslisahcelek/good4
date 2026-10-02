@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   type Firestore,
+  type DocumentSnapshot,
   type Transaction,
   Timestamp,
 } from "firebase-admin/firestore";
@@ -36,9 +37,33 @@ export async function assertRateLimit(
   options: RateLimitOptions,
   nowMillis = Date.now(),
 ): Promise<{ remaining: number; resetAtMillis: number }> {
+  const [result] = await assertRateLimits(database, transaction, [options], nowMillis);
+  return result!;
+}
+
+// Read every window before queuing writes in the shared Firestore transaction.
+export async function assertRateLimits(
+  database: Firestore,
+  transaction: Transaction,
+  options: RateLimitOptions[],
+  nowMillis = Date.now(),
+): Promise<Array<{ remaining: number; resetAtMillis: number }>> {
+  const snapshots = await Promise.all(options.map((option) => (
+    transaction.get(database.doc(rateLimitDocPath(option.key)))
+  )));
+  return options.map((option, index) => (
+    updateRateLimit(transaction, snapshots[index]!, option, nowMillis)
+  ));
+}
+
+function updateRateLimit(
+  transaction: Transaction,
+  snapshot: DocumentSnapshot,
+  options: RateLimitOptions,
+  nowMillis: number,
+): { remaining: number; resetAtMillis: number } {
   const { key, limit, windowSeconds, errorMessage = "RATE_LIMIT_EXCEEDED" } = options;
-  const docRef = database.doc(rateLimitDocPath(key));
-  const snapshot = await transaction.get(docRef);
+  const docRef = snapshot.ref;
 
   const windowMillis = windowSeconds * 1000;
   const data = snapshot.data();
@@ -112,14 +137,15 @@ export async function assertNotBlocked(
 
 /**
  * Records a failed attempt (e.g. incorrect verification code) and blocks further attempts
- * if the failure threshold is exceeded.
+ * if the failure threshold is exceeded. The caller must throw the returned error
+ * AFTER the transaction commits, otherwise Firestore rolls back the block.
  */
 export async function recordFailedAttempt(
   database: Firestore,
   transaction: Transaction,
   options: FailedAttemptOptions,
   nowMillis = Date.now(),
-): Promise<{ attempts: number; blocked: boolean }> {
+): Promise<{ attempts: number; blocked: boolean; error?: HttpsError }> {
   const {
     key,
     maxAttempts,
@@ -163,9 +189,13 @@ export async function recordFailedAttempt(
   transaction.set(docRef, payload, { merge: true });
 
   if (shouldBlock) {
-    throw new HttpsError("resource-exhausted", errorMessage, {
-      retryAfterSeconds: blockDurationSeconds,
-    });
+    return {
+      attempts: nextAttempts,
+      blocked: true,
+      error: new HttpsError("resource-exhausted", errorMessage, {
+        retryAfterSeconds: blockDurationSeconds,
+      }),
+    };
   }
 
   return { attempts: nextAttempts, blocked: false };

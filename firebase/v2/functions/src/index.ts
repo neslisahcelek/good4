@@ -34,6 +34,12 @@ import {
 } from "./communityPortal.js";
 import { recordEventAttendanceService, setEventRegistrationService } from "./events.js";
 import { getFollowingCommunityIdsService, setCommunityFollowingService } from "./communityFollowing.js";
+import {
+  getMyCommunityApplicationService,
+  listCommunityApplicationsService,
+  reviewCommunityApplicationService,
+  submitCommunityApplicationService,
+} from "./communityApplications.js";
 import { submitFeedbackService } from "./feedback.js";
 import { saveKykMenuService } from "./kykMenu.js";
 import { ensureStudentProfileService } from "./studentAuth.js";
@@ -265,6 +271,33 @@ export const saveCommunityPortalEntry = onCall(callableOptions, async (request) 
 export const cancelCommunityPortalEntry = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return cancelCommunityPortalEntryService(db, legacyTestDb, uid, request.data);
+});
+
+export const getMyCommunityApplication = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getMyCommunityApplicationService(db, uid);
+});
+
+export const submitCommunityApplication = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  // Read the provider and verified e-mail from Firebase Auth, never from the request.
+  const authUser = await getAuth().getUser(uid);
+  return submitCommunityApplicationService(db, {
+    uid,
+    email: authUser.email,
+    emailVerified: authUser.emailVerified,
+    providers: authUser.providerData.map((provider) => provider.providerId),
+  }, request.data ?? {});
+});
+
+export const listCommunityApplications = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listCommunityApplicationsService(db, uid);
+});
+
+export const reviewCommunityApplication = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return reviewCommunityApplicationService(db, uid, request.data ?? {});
 });
 
 export const setEventRegistration = onCall(callableOptions, async (request) => {
