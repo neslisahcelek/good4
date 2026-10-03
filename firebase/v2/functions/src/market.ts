@@ -32,6 +32,35 @@ export const MARKET_LIMITS = {
   strikesBeforeSuspension: 3,
   suspensionMs: 24 * 60 * 60 * 1000,
   maxBlockedUsers: 200,
+  maxFavorites: 100,
+} as const;
+
+/** Published listings expire unless the seller renews them; renewals keep the feed position. */
+export const MARKET_LISTING_LIFETIME = {
+  days: 30,
+  reminderDaysBefore: 3,
+  maxRenewals: 3,
+} as const;
+
+/**
+ * How long Kampüs Dolabı keeps data (also stated in the KVKK notice). The
+ * daily cleanup job enforces these; account deletion removes everything at once.
+ */
+export const MARKET_RETENTION_DAYS = {
+  /** Removed, rejected or expired listings (removed/rejected photos are already gone). */
+  closedListing: 30,
+  /** Sold listings lose their photos after this many days … */
+  soldPhotos: 30,
+  /** … and the listing record itself after this many days. */
+  soldListing: 180,
+  /** Conversations and their messages, counted from the last message. */
+  conversation: 365,
+  /** Blocked-content attempts. */
+  violation: 365,
+  /** Reports, counted from the moment they were resolved. */
+  resolvedReport: 365,
+  /** Finished or expired school e-mail verification requests. */
+  emailVerification: 30,
 } as const;
 
 export const MARKET_TERMS_VERSION = 1;
@@ -43,7 +72,8 @@ export const MARKET_OFFER_PERCENTS = [10, 15, 20] as const;
 export const MARKET_REPORT_REASONS = ["prohibited", "scam", "harassment", "inappropriate", "other"] as const;
 
 const ACTIVE_LISTING_STATUSES = ["pending", "published", "reserved"];
-const MESSAGEABLE_LISTING_STATUSES = ["published", "reserved", "sold"];
+// Expired listings stay readable and messageable for existing conversations; new ones need "published".
+const MESSAGEABLE_LISTING_STATUSES = ["published", "reserved", "sold", "expired"];
 const MARKET_ROLES = ["student", "good4Admin"] as const;
 
 const UNIVERSITY_NAMES: Record<string, string> = {
@@ -89,6 +119,26 @@ export function publicName(displayName: unknown): string {
   if (parts.length === 0 || (parts.length === 1 && parts[0] === ANONYMOUS_NAME)) return ANONYMOUS_NAME;
   const initial = (word: string) => `${Array.from(word)[0]!.toLocaleUpperCase("tr-TR")}..`;
   return parts.length > 1 ? `${initial(parts[0]!)} ${initial(parts.at(-1)!)}` : initial(parts[0]!);
+}
+
+const SEARCH_FOLD: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", â: "a", î: "i", û: "u" };
+const MAX_SEARCH_PREFIX = 15;
+
+/** Lower-case, Turkish letters folded to ASCII, split into words: "Kulaklık" and "kulaklik" match. */
+export function searchWords(text: string): string[] {
+  return text.toLocaleLowerCase("tr-TR")
+    .replace(/[çğıöşüâîû]/g, (letter) => SEARCH_FOLD[letter] ?? letter)
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/).filter((word) => word.length >= 2);
+}
+
+/** Every 2–15 letter prefix of every title word, so a partial word finds the listing. */
+export function searchTokensFor(title: string): string[] {
+  const tokens = new Set<string>();
+  for (const word of searchWords(title)) {
+    for (let length = 2; length <= Math.min(word.length, MAX_SEARCH_PREFIX); length += 1) tokens.add(word.slice(0, length));
+  }
+  return [...tokens].slice(0, 200);
 }
 
 function iso(value: unknown): string | null {
@@ -395,6 +445,7 @@ export async function createMarketListingService(
         eduDomain: member.eduDomain,
         universityName: UNIVERSITY_NAMES[member.eduDomain] ?? member.eduDomain,
         ...listing,
+        searchTokens: searchTokensFor(listing.title),
         photos,
         status: "pending",
         moderationFlags: check.flaggedTerms,
@@ -421,7 +472,7 @@ const SELLER_TRANSITIONS: Record<string, { from: string[]; to: string }> = {
   markReserved: { from: ["published"], to: "reserved" },
   markSold: { from: ["published", "reserved"], to: "sold" },
   markAvailable: { from: ["reserved", "sold"], to: "published" },
-  remove: { from: ["pending", "published", "reserved", "sold", "rejected"], to: "removed" },
+  remove: { from: ["pending", "published", "reserved", "sold", "rejected", "expired"], to: "removed" },
 };
 
 export async function updateMarketListingStatusService(
@@ -458,6 +509,91 @@ export async function updateMarketListingStatusService(
     });
   }
   return { status: transition.to };
+}
+
+const PRICE_EDITABLE_STATUSES = ["pending", "published", "reserved"];
+
+/**
+ * Sellers may change only the price after posting. It needs no new review:
+ * the text and photos an admin approved stay the same.
+ */
+export async function updateMarketListingPriceService(
+  database: Firestore,
+  uid: string,
+  input: { listingId?: unknown; price?: unknown },
+  deps: Pick<MarketDeps, "now"> = {},
+): Promise<{ price: number }> {
+  const now = nowOf(deps);
+  const listingId = requireId(input.listingId, "LISTING_ID");
+  const price = input.price;
+  if (typeof price !== "number" || !Number.isInteger(price) || price < 0 || price > MARKET_LIMITS.maxPrice) {
+    throw new HttpsError("invalid-argument", "MARKET_PRICE_INVALID");
+  }
+  const listingRef = database.doc(`marketListings/${listingId}`);
+  await database.runTransaction(async (transaction) => {
+    await requireMarketMember(database, transaction, uid, now);
+    const listing = await transaction.get(listingRef);
+    if (!listing.exists || listing.get("sellerUid") !== uid) {
+      throw new HttpsError("not-found", "MARKET_LISTING_NOT_FOUND");
+    }
+    if (!PRICE_EDITABLE_STATUSES.includes(String(listing.get("status")))) {
+      throw new HttpsError("failed-precondition", "MARKET_LISTING_STATUS_INVALID");
+    }
+    transaction.update(listingRef, {
+      price, updatedAt: Timestamp.fromMillis(now), priceUpdatedAt: Timestamp.fromMillis(now),
+    });
+  });
+  // Conversations show the listing price; refresh their copies. Pending offers keep their own price.
+  const conversations = await database.collection("marketConversations").where("listingId", "==", listingId).get();
+  for (let offset = 0; offset < conversations.size; offset += 400) {
+    const batch = database.batch();
+    conversations.docs.slice(offset, offset + 400).forEach((conversation) => batch.update(conversation.ref, { listingPrice: price }));
+    await batch.commit();
+  }
+  return { price };
+}
+
+const RENEWABLE_STATUSES = ["published", "reserved", "expired"];
+
+/**
+ * "30 gün daha yayında tut": extends the listing for another lifetime without
+ * a new review (nothing in it changed) and without moving it up the feed.
+ */
+export async function renewMarketListingService(
+  database: Firestore,
+  uid: string,
+  input: { listingId?: unknown },
+  deps: Pick<MarketDeps, "now"> = {},
+): Promise<{ status: string; expiresAt: string; renewsLeft: number }> {
+  const now = nowOf(deps);
+  const listingId = requireId(input.listingId, "LISTING_ID");
+  const listingRef = database.doc(`marketListings/${listingId}`);
+  return database.runTransaction(async (transaction) => {
+    await requireMarketMember(database, transaction, uid, now);
+    const listing = await transaction.get(listingRef);
+    if (!listing.exists || listing.get("sellerUid") !== uid) {
+      throw new HttpsError("not-found", "MARKET_LISTING_NOT_FOUND");
+    }
+    const currentStatus = String(listing.get("status"));
+    if (!RENEWABLE_STATUSES.includes(currentStatus)) {
+      throw new HttpsError("failed-precondition", "MARKET_LISTING_STATUS_INVALID");
+    }
+    const renewCount = Number(listing.get("renewCount") ?? 0);
+    if (renewCount >= MARKET_LISTING_LIFETIME.maxRenewals) {
+      throw new HttpsError("resource-exhausted", "MARKET_RENEW_LIMIT");
+    }
+    const expiresAt = Timestamp.fromMillis(now + MARKET_LISTING_LIFETIME.days * 24 * 60 * 60 * 1000);
+    const status = currentStatus === "expired" ? "published" : currentStatus;
+    transaction.update(listingRef, {
+      status, expiresAt, renewCount: renewCount + 1,
+      expiryReminderSentAt: FieldValue.delete(), updatedAt: Timestamp.fromMillis(now),
+    });
+    return {
+      status,
+      expiresAt: expiresAt.toDate().toISOString(),
+      renewsLeft: MARKET_LISTING_LIFETIME.maxRenewals - renewCount - 1,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -739,6 +875,60 @@ export async function blockMarketUserService(
   return { blocked: true };
 }
 
+/**
+ * Lifts the caller's own block. A block placed by the other participant stays
+ * in force, so unblocking never reopens a conversation the other side closed.
+ */
+export async function unblockMarketUserService(
+  database: Firestore,
+  uid: string,
+  input: { conversationId?: unknown },
+  deps: Pick<MarketDeps, "now"> = {},
+): Promise<{ unblocked: true; status: string }> {
+  const { conversationId } = parseConversationId(input.conversationId);
+  const conversationRef = database.doc(`marketConversations/${conversationId}`);
+  const stateRef = database.doc(`marketUserState/${uid}`);
+  const status = await database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, uid, MARKET_ROLES);
+    const conversation = await transaction.get(conversationRef);
+    const participants = conversation.get("participants");
+    if (!conversation.exists || !Array.isArray(participants) || !participants.includes(uid)) {
+      throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
+    }
+    const otherUid = String(participants.find((participant) => participant !== uid));
+    const otherState = await transaction.get(database.doc(`marketUserState/${otherUid}`));
+    const otherBlocksMe = Array.isArray(otherState.get("blockedUids"))
+      && (otherState.get("blockedUids") as unknown[]).includes(uid);
+    transaction.set(stateRef, { blockedUids: FieldValue.arrayRemove(otherUid) }, { merge: true });
+    const next = otherBlocksMe ? "blocked" : "open";
+    transaction.update(conversationRef, {
+      status: next,
+      blockedBy: otherBlocksMe ? otherUid : FieldValue.delete(),
+      updatedAt: Timestamp.fromMillis(nowOf(deps)),
+    });
+    return next;
+  });
+  return { unblocked: true, status };
+}
+
+/** Conversations the caller blocked, for the "Engellediklerin" list. */
+export async function listMarketBlockedService(database: Firestore, uid: string) {
+  const page = await database.collection("marketConversations").where("blockedBy", "==", uid).limit(100).get();
+  return {
+    blocked: page.docs
+      .filter((conversation) => (conversation.get("participants") as string[] | undefined)?.includes(uid))
+      .map((conversation) => {
+        const isSeller = conversation.get("sellerUid") === uid;
+        return {
+          conversationId: conversation.id,
+          otherName: publicName(conversation.get(isSeller ? "buyerName" : "sellerName")),
+          listingTitle: String(conversation.get("listingTitle") ?? ""),
+          listingThumbUrl: String(conversation.get("listingThumbUrl") ?? ""),
+        };
+      }),
+  };
+}
+
 export async function reportMarketContentService(
   database: Firestore,
   uid: string,
@@ -806,7 +996,7 @@ export async function reportMarketContentService(
 const FEED_PAGE_SIZE = 20;
 const POLL_PAGE_SIZE = 50;
 
-function listingForStudent(listing: DocumentSnapshot, viewerUid: string, withDetail = false) {
+function listingForStudent(listing: DocumentSnapshot, viewerUid: string, withDetail = false, favorites?: Set<string>) {
   const isMine = listing.get("sellerUid") === viewerUid;
   return {
     id: listing.id,
@@ -821,8 +1011,13 @@ function listingForStudent(listing: DocumentSnapshot, viewerUid: string, withDet
     publishedAt: iso(listing.get("publishedAt")),
     createdAt: iso(listing.get("createdAt")),
     isMine,
+    isFavorite: favorites?.has(listing.id) ?? false,
     ...(withDetail ? { description: String(listing.get("description") ?? "") } : {}),
-    ...(isMine ? { rejectReason: listing.get("rejectReason") ?? null } : {}),
+    ...(isMine ? {
+      rejectReason: listing.get("rejectReason") ?? null,
+      expiresAt: iso(listing.get("expiresAt")),
+      renewsLeft: Math.max(0, MARKET_LISTING_LIFETIME.maxRenewals - Number(listing.get("renewCount") ?? 0)),
+    } : {}),
   };
 }
 
@@ -840,6 +1035,7 @@ async function viewerContext(database: Firestore, uid: string, now: number) {
     state,
     eduDomain,
     blocked: new Set((state.get("blockedUids") ?? []) as string[]),
+    favorites: new Set((state.get("favoriteIds") ?? []) as string[]),
     me: {
       enabled: config.get("enabled") !== false,
       eduVerified: verified,
@@ -869,16 +1065,23 @@ export async function getMarketSummaryService(
 export async function getMarketFeedService(
   database: Firestore,
   uid: string,
-  input: { category?: unknown; before?: unknown },
+  input: { category?: unknown; before?: unknown; query?: unknown },
   deps: Pick<MarketDeps, "now"> = {},
 ) {
   const viewer = await viewerContext(database, uid, nowOf(deps));
   const category = input.category === undefined || input.category === null || input.category === ""
     ? null
     : requireOneOf(input.category, MARKET_CATEGORIES, "MARKET_CATEGORY_INVALID");
+  if (input.query !== undefined && input.query !== null && (typeof input.query !== "string" || input.query.length > 60)) {
+    throw new HttpsError("invalid-argument", "MARKET_QUERY_INVALID");
+  }
+  // The longest word narrows the query in Firestore; any other words filter that page.
+  const words = typeof input.query === "string" ? searchWords(input.query) : [];
+  const searchWord = [...words].sort((a, b) => b.length - a.length)[0];
   let query = database.collection("marketListings").where("status", "==", "published");
   if (viewer.eduDomain) query = query.where("eduDomain", "==", viewer.eduDomain);
   if (category) query = query.where("category", "==", category);
+  if (searchWord) query = query.where("searchTokens", "array-contains", searchWord.slice(0, MAX_SEARCH_PREFIX));
   query = query.orderBy("publishedAt", "desc");
   if (input.before !== undefined && input.before !== null) {
     const before = Date.parse(String(input.before));
@@ -888,7 +1091,12 @@ export async function getMarketFeedService(
   const page = await query.limit(FEED_PAGE_SIZE).get();
   const listings = page.docs
     .filter((listing) => !viewer.blocked.has(String(listing.get("sellerUid"))))
-    .map((listing) => listingForStudent(listing, uid));
+    .filter((listing) => {
+      if (words.length < 2) return true;
+      const tokens = new Set((listing.get("searchTokens") ?? []) as string[]);
+      return words.every((word) => tokens.has(word.slice(0, MAX_SEARCH_PREFIX)));
+    })
+    .map((listing) => listingForStudent(listing, uid, false, viewer.favorites));
   return {
     me: viewer.me,
     listings,
@@ -913,7 +1121,7 @@ export async function getMarketListingService(
   if (!visible) throw new HttpsError("not-found", "MARKET_LISTING_NOT_FOUND");
   return {
     me: viewer.me,
-    listing: listingForStudent(listing, uid, true),
+    listing: listingForStudent(listing, uid, true, viewer.favorites),
     conversationId: conversation.exists ? conversation.id : null,
     sameCampus: viewer.eduDomain === listing.get("eduDomain"),
   };
@@ -1009,6 +1217,171 @@ export async function getMarketMessagesService(
   };
 }
 
+/** Saves or unsaves a listing for the caller ("Kaydedilenler"). */
+export async function setMarketFavoriteService(
+  database: Firestore,
+  uid: string,
+  input: { listingId?: unknown; saved?: unknown },
+): Promise<{ saved: boolean }> {
+  const listingId = requireId(input.listingId, "LISTING_ID");
+  if (typeof input.saved !== "boolean") throw new HttpsError("invalid-argument", "MARKET_FAVORITE_INVALID");
+  const saved = input.saved;
+  const stateRef = database.doc(`marketUserState/${uid}`);
+  await database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, uid, MARKET_ROLES);
+    const state = await transaction.get(stateRef);
+    const favorites = (state.get("favoriteIds") ?? []) as string[];
+    if (saved) {
+      const listing = await transaction.get(database.doc(`marketListings/${listingId}`));
+      if (!listing.exists || !MESSAGEABLE_LISTING_STATUSES.includes(String(listing.get("status")))) {
+        throw new HttpsError("not-found", "MARKET_LISTING_NOT_FOUND");
+      }
+      if (!favorites.includes(listingId) && favorites.length >= MARKET_LIMITS.maxFavorites) {
+        throw new HttpsError("resource-exhausted", "MARKET_FAVORITE_LIMIT");
+      }
+      transaction.set(stateRef, { favoriteIds: FieldValue.arrayUnion(listingId) }, { merge: true });
+    } else {
+      transaction.set(stateRef, { favoriteIds: FieldValue.arrayRemove(listingId) }, { merge: true });
+    }
+  });
+  return { saved };
+}
+
+/** Saved listings that are still visible, newest saved first; vanished ones are dropped from the list. */
+export async function listMarketFavoritesService(database: Firestore, uid: string) {
+  const state = await database.doc(`marketUserState/${uid}`).get();
+  const ids = ((state.get("favoriteIds") ?? []) as string[]).slice().reverse();
+  if (ids.length === 0) return { listings: [] };
+  const blocked = new Set((state.get("blockedUids") ?? []) as string[]);
+  const favorites = new Set(ids);
+  const snapshots = await database.getAll(...ids.map((id) => database.doc(`marketListings/${id}`)));
+  const visible = snapshots.filter((listing) => listing.exists
+    && MESSAGEABLE_LISTING_STATUSES.includes(String(listing.get("status")))
+    && !blocked.has(String(listing.get("sellerUid"))));
+  const gone = ids.filter((id) => !visible.some((listing) => listing.id === id));
+  if (gone.length > 0) {
+    await database.doc(`marketUserState/${uid}`).set({ favoriteIds: FieldValue.arrayRemove(...gone) }, { merge: true });
+  }
+  return { listings: visible.map((listing) => listingForStudent(listing, uid, false, favorites)) };
+}
+
+// ---------------------------------------------------------------------------
+// Retention
+// ---------------------------------------------------------------------------
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const CLEANUP_BATCH = 200;
+
+async function dropConversation(database: Firestore, conversation: DocumentSnapshot): Promise<void> {
+  // Keep the participants' unread badges in step with the conversations that remain.
+  for (const participant of (conversation.get("participants") ?? []) as string[]) {
+    const unread = Number(conversation.get(`unread.${participant}`) ?? 0);
+    if (unread <= 0) continue;
+    const stateRef = database.doc(`marketUserState/${participant}`);
+    await database.runTransaction(async (transaction) => {
+      const state = await transaction.get(stateRef);
+      if (!state.exists) return;
+      transaction.update(stateRef, { unreadCount: Math.max(0, Number(state.get("unreadCount") ?? 0) - unread) });
+    });
+  }
+  await database.recursiveDelete(conversation.ref);
+}
+
+/**
+ * Daily KVKK cleanup for Kampüs Dolabı (see MARKET_RETENTION_DAYS). Each step
+ * handles a bounded batch; anything left over is picked up the next day.
+ */
+export async function cleanupMarketDataService(
+  database: Firestore,
+  deletePhotos: (prefix: string) => Promise<void>,
+  now = Date.now(),
+  notify: MarketDeps["notify"] = async () => undefined,
+) {
+  const before = (days: number) => Timestamp.fromMillis(now - days * DAY_MS);
+  const counts = {
+    expired: 0, reminders: 0,
+    closedListings: 0, soldPhotos: 0, soldListings: 0, conversations: 0, violations: 0, reports: 0, verifications: 0,
+  };
+
+  // Listing lifetime: expire what ran out, and remind sellers a few days before.
+  const live = ["published", "reserved"];
+  const ranOut = await database.collection("marketListings").where("status", "in", live)
+    .where("expiresAt", "<=", Timestamp.fromMillis(now)).limit(CLEANUP_BATCH).get();
+  for (const listing of ranOut.docs) {
+    await listing.ref.update({ status: "expired", updatedAt: Timestamp.fromMillis(now) });
+    counts.expired += 1;
+    const renewsLeft = MARKET_LISTING_LIFETIME.maxRenewals - Number(listing.get("renewCount") ?? 0);
+    await notify(String(listing.get("sellerUid")), {
+      title: "İlanının süresi doldu",
+      body: renewsLeft > 0 ? `"${listing.get("title")}" yayından kalktı. İlanlarım'dan 30 gün daha yayında tutabilirsin.`
+        : `"${listing.get("title")}" yayından kalktı.`,
+      data: { type: "market_listing", listingId: listing.id },
+    });
+  }
+  const soon = await database.collection("marketListings").where("status", "in", live)
+    .where("expiresAt", "<=", Timestamp.fromMillis(now + MARKET_LISTING_LIFETIME.reminderDaysBefore * DAY_MS))
+    .limit(CLEANUP_BATCH).get();
+  for (const listing of soon.docs) {
+    const expiresAt = listing.get("expiresAt");
+    if (listing.get("expiryReminderSentAt") || !(expiresAt instanceof Timestamp) || expiresAt.toMillis() <= now) continue;
+    await listing.ref.update({ expiryReminderSentAt: Timestamp.fromMillis(now) });
+    counts.reminders += 1;
+    await notify(String(listing.get("sellerUid")), {
+      title: "İlanın yakında yayından kalkacak",
+      body: `"${listing.get("title")}" ${MARKET_LISTING_LIFETIME.reminderDaysBefore} gün içinde kalkacak. Hâlâ satılıksa İlanlarım'dan süresini uzat.`,
+      data: { type: "market_listing", listingId: listing.id },
+    });
+  }
+
+  const closed = await database.collection("marketListings")
+    .where("status", "in", ["removed", "removedByAdmin", "rejected", "expired"])
+    .where("updatedAt", "<", before(MARKET_RETENTION_DAYS.closedListing)).limit(CLEANUP_BATCH).get();
+  for (const listing of closed.docs) {
+    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
+    await listing.ref.delete();
+    counts.closedListings += 1;
+  }
+
+  const soldOld = await database.collection("marketListings").where("status", "==", "sold")
+    .where("soldAt", "<", before(MARKET_RETENTION_DAYS.soldListing)).limit(CLEANUP_BATCH).get();
+  for (const listing of soldOld.docs) {
+    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
+    await listing.ref.delete();
+    counts.soldListings += 1;
+  }
+  const soldPhotos = await database.collection("marketListings").where("status", "==", "sold")
+    .where("soldAt", "<", before(MARKET_RETENTION_DAYS.soldPhotos)).limit(CLEANUP_BATCH).get();
+  for (const listing of soldPhotos.docs) {
+    if (((listing.get("photos") ?? []) as unknown[]).length === 0) continue;
+    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
+    await listing.ref.update({ photos: [], photosDeletedAt: Timestamp.fromMillis(now) });
+    counts.soldPhotos += 1;
+  }
+
+  const conversations = await database.collection("marketConversations")
+    .where("lastMessageAt", "<", before(MARKET_RETENTION_DAYS.conversation)).limit(CLEANUP_BATCH).get();
+  for (const conversation of conversations.docs) {
+    await dropConversation(database, conversation);
+    counts.conversations += 1;
+  }
+
+  const deleteAll = async (docs: DocumentSnapshot[]) => {
+    for (let offset = 0; offset < docs.length; offset += 400) {
+      const batch = database.batch();
+      docs.slice(offset, offset + 400).forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    return docs.length;
+  };
+  counts.violations = await deleteAll((await database.collection("marketViolations")
+    .where("createdAt", "<", before(MARKET_RETENTION_DAYS.violation)).limit(CLEANUP_BATCH).get()).docs);
+  counts.reports = await deleteAll((await database.collection("marketReports").where("status", "==", "resolved")
+    .where("resolvedAt", "<", before(MARKET_RETENTION_DAYS.resolvedReport)).limit(CLEANUP_BATCH).get()).docs);
+  counts.verifications = await deleteAll((await database.collection("campusEmailVerifications")
+    .where("expiresAt", "<", before(MARKET_RETENTION_DAYS.emailVerification)).limit(CLEANUP_BATCH).get()).docs);
+  return counts;
+}
+
 // ---------------------------------------------------------------------------
 // Admin moderation
 // ---------------------------------------------------------------------------
@@ -1102,7 +1475,11 @@ export async function reviewMarketListingService(
       rejectReason: reason,
       reviewedBy: uid,
       updatedAt: Timestamp.fromMillis(now),
-      ...(status === "published" ? { publishedAt: Timestamp.fromMillis(now) } : { photos: [] }),
+      ...(status === "published" ? {
+        publishedAt: Timestamp.fromMillis(now),
+        expiresAt: Timestamp.fromMillis(now + MARKET_LISTING_LIFETIME.days * 24 * 60 * 60 * 1000),
+        renewCount: 0,
+      } : { photos: [] }),
     });
     audit(transaction, database, uid, `market.listing.${decision}`, "marketListing", listingId,
       reason ? { reason } : {});

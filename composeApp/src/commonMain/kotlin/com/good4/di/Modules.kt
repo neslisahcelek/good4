@@ -168,6 +168,8 @@ val commonModule = module {
     viewModel { com.good4.campuscloset.CampusClosetMyListingsViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetInboxViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetChatViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetFavoritesViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetBlockedViewModel(get()) }
     viewModel {
         AccountSettingsViewModel(
             get<AuthRepository>(),

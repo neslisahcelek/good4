@@ -40,6 +40,8 @@ import com.good4.student.presentation.home.EditHomeScreen
 import com.good4.notification.NotificationsScreen
 import com.good4.campuscloset.CampusClosetChatScreen
 import com.good4.campuscloset.CampusClosetInboxScreen
+import com.good4.campuscloset.CampusClosetBlockedScreen
+import com.good4.campuscloset.CampusClosetFavoritesScreen
 import com.good4.campuscloset.CampusClosetListingScreen
 import com.good4.campuscloset.CampusClosetMyListingsScreen
 import com.good4.campuscloset.CampusClosetNewListingScreen
@@ -269,7 +271,8 @@ fun Good4NavGraph(
                 onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) },
                 onNewListing = { navController.navigate(Route.CampusClosetNewListing) },
                 onOpenInbox = { navController.navigate(Route.CampusClosetInbox) },
-                onOpenMyListings = { navController.navigate(Route.CampusClosetMyListings) }
+                onOpenMyListings = { navController.navigate(Route.CampusClosetMyListings) },
+                onOpenFavorites = { navController.navigate(Route.CampusClosetFavorites) }
             )
         }
 
@@ -303,8 +306,20 @@ fun Good4NavGraph(
         composable<Route.CampusClosetInbox> {
             CampusClosetInboxScreen(
                 onBack = { navController.popBackStack() },
-                onOpenChat = { navController.navigate(Route.CampusClosetChat(it)) }
+                onOpenChat = { navController.navigate(Route.CampusClosetChat(it)) },
+                onOpenBlocked = { navController.navigate(Route.CampusClosetBlocked) }
             )
+        }
+
+        composable<Route.CampusClosetFavorites> {
+            CampusClosetFavoritesScreen(
+                onBack = { navController.popBackStack() },
+                onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) }
+            )
+        }
+
+        composable<Route.CampusClosetBlocked> {
+            CampusClosetBlockedScreen(onBack = { navController.popBackStack() })
         }
 
         composable<Route.CampusClosetChat> { backStackEntry ->

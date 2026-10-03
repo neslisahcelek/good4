@@ -65,6 +65,12 @@ sealed class Route {
     data object CampusClosetInbox : Route()
 
     @Serializable
+    data object CampusClosetFavorites : Route()
+
+    @Serializable
+    data object CampusClosetBlocked : Route()
+
+    @Serializable
     data class CampusClosetChat(val conversationId: String) : Route()
     
     @Serializable

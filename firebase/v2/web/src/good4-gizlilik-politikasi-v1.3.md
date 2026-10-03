@@ -1,7 +1,7 @@
 # GOOD4 GİZLİLİK POLİTİKASI
 
-**Sürüm:** 1.3
-**Son Güncelleme:** 25 Eylül 2026
+**Sürüm:** 1.4
+**Son Güncelleme:** 4 Ekim 2026
 
 Good4, kullanıcıların gizliliğine ve kişisel verilerinin korunmasına önem verir.
 
@@ -82,6 +82,8 @@ işlenebilir.
 
 Doğrulama amacıyla kullanıcıya süreli bir doğrulama kodu gönderilebilir. Kullanılan doğrulama kodları belirli bir süre sonunda geçerliliğini kaybeder.
 
+Kampüs Dolabı'nda yalnızca **@ogr.akdeniz.edu.tr** uzantılı öğrenci adresleri kabul edilir. Doğrulama bağlantısı Firebase Authentication tarafından e-posta adresinize gönderilir; bağlantı süreli ve tek kullanımlıktır ve ancak açılan sayfadaki **Onayla** düğmesine basıldığında doğrulama tamamlanır. Doğrulama sırasında oluşan geçici kimlik doğrulama kaydı doğrulamadan sonra silinir; Google veya Apple ile giriş yaptığınız ana hesabınız değişmez.
+
 Doğrulama e-postasının iletilebilmesi amacıyla e-posta adresi ve gönderim için gerekli mesaj bilgileri kullanılan e-posta hizmeti altyapısı tarafından işlenebilir.
 
 ## 4. Topluluklar ve Etkinlikler
@@ -113,7 +115,27 @@ Good4 kapsamında kampanya kodu, kullanım durumu, kullanım zamanı, ilgili kam
 
 Kupon veya kampanyanın uygulanması için gerekli olmayan kullanıcı bilgileri işletmeye sunulmaz.
 
-## 6. Teknik Hizmetler ve Üçüncü Taraf Sağlayıcılar
+## 6. Kampüs Dolabı
+
+Kampüs Dolabı, Akdeniz Üniversitesi öğrencileri arasında elden teslim ikinci el alışveriş içindir. Good4 satışın tarafı değildir ve ödemeye aracılık etmez.
+
+Bu özellik kapsamında;
+
+* ilan başlığı, açıklaması, fiyatı, kategorisi, ürün durumu ve en fazla 3 ürün fotoğrafı,
+* alıcı ile satıcı arasındaki mesajlar ve teklifler (mesajda kendi isteğinizle paylaştığınız telefon numarası gibi bilgiler dahil),
+* kaydettiğiniz ilanlar ve engellediğiniz kullanıcılar,
+* yasaklı ürün filtresine takılan denemeler, şikayetler ve erişim kısıtlamaları,
+* bildirim izni verdiyseniz cihazınızın bildirim adresi
+
+işlenir.
+
+Fotoğraflar sunucuda yeniden kodlanır ve konum (GPS) dahil EXIF bilgileri silinir. İlanlarda ve mesajlarda öğrenciler birbirini yalnızca ad ve soyadının baş harfleriyle (örneğin "A.. Y..") görür. Yayındaki ilanlar Kampüs Dolabı'nı kullanan diğer öğrencilere görünür; mesajları yalnızca konuşmanın tarafları görür.
+
+İlanlar yayına alınmadan önce Good4 ekibi tarafından incelenir. Bir ilan veya konuşma şikayet edilirse Good4 ekibi şikayeti değerlendirmek için ilgili içeriği inceleyebilir; konuşma incelemeleri kayıt altına alınır.
+
+Bildirimlerde kilit ekranına mesaj içeriği gönderilmez; yalnızca genel bir bildirim metni gösterilir.
+
+## 7. Teknik Hizmetler ve Üçüncü Taraf Sağlayıcılar
 
 Good4'ün çalıştırılması amacıyla üçüncü taraf teknik hizmetlerden yararlanılır.
 
@@ -137,7 +159,7 @@ Good4 ayrıca özelliklerin çalıştırılması amacıyla harita, hava durumu v
 
 Good4 bu hizmetlerin kullanımı kapsamında gerekli olmayan kullanıcı kimlik veya profil bilgilerini söz konusu sağlayıcılara göndermemeyi esas alır.
 
-## 7. Kişisel Verilerin Yurt Dışında İşlenmesi ve Aktarılması
+## 8. Kişisel Verilerin Yurt Dışında İşlenmesi ve Aktarılması
 
 Good4'ün kullandığı bazı teknik hizmet sağlayıcıların altyapıları Türkiye dışında bulunmaktadır.
 
@@ -151,7 +173,7 @@ Yurt dışına yalnızca ilgili hizmetin sunulması için gerekli verilerin akta
 
 Good4 tarafından kullanılan hizmet sağlayıcılar, veri konumları veya aktarım yapısı değiştiğinde yurt dışı aktarım süreçleri ve ilgili hukuki metinler yeniden değerlendirilir.
 
-## 8. Harita, Hava Durumu ve Dış Bağlantılar
+## 9. Harita, Hava Durumu ve Dış Bağlantılar
 
 Good4'ün kampüs haritası özelliğinde kullanıcının GPS konumu yerine sabit kampüs veya hedef koordinatları kullanılabilir.
 
@@ -159,7 +181,7 @@ Hava durumu özelliğinde de kullanıcının cihaz konumu yerine önceden belirl
 
 Kullanıcı Good4 üzerinden Apple Maps, Google Maps, üniversite web siteleri veya başka bir üçüncü taraf hizmeti açmayı seçerse, ilgili hizmetin kendi gizlilik politikaları ve veri işleme uygulamaları geçerli olabilir.
 
-## 9. Veri Güvenliği
+## 10. Veri Güvenliği
 
 Good4;
 
@@ -173,7 +195,7 @@ Kullanıcı, topluluk, işletme ve yönetim verilerine erişim ilgili kişinin g
 
 Hesap ve uygulama işlemlerine ilişkin belirli güvenlik ve denetim kayıtları, yetkisiz kullanımın tespit edilmesi ve sistem güvenliğinin sağlanması amacıyla tutulabilir.
 
-## 10. Verilerin Saklanması
+## 11. Verilerin Saklanması
 
 Kişisel veriler süresiz olarak saklanmaz.
 
@@ -183,9 +205,22 @@ Etkinlik, QR/check-in, kampanya, kupon ve benzeri işlem kayıtları; hizmetin y
 
 Destek, güvenlik ve denetim kayıtları ilgili işlemin yürütülmesi ve gerekli hukuki süreçler için ihtiyaç duyulan süreyle sınırlı tutulur.
 
+Kampüs Dolabı verileri için aşağıdaki süreler uygulanır ve günlük otomatik bir temizlik işlemiyle silinir:
+
+* yayındaki ilanlar: 30 gün sonra yayından kalkar; satıcı en fazla 3 kez 30 gün uzatabilir,
+* kaldırılan, yayınlanmayan veya süresi dolan ilanlar: 30 gün (kaldırılan ilanların fotoğrafları hemen silinir),
+* satılan ilanlar: fotoğraflar satıştan 30 gün sonra, ilan kaydı 180 gün sonra,
+* konuşmalar ve mesajlar: son mesajdan 12 ay sonra,
+* yasaklı ürün denemesi kayıtları: 1 yıl,
+* sonuçlanan şikayetler: sonuçlandıktan 1 yıl sonra,
+* okul e-postası doğrulama istekleri: 30 gün,
+* bildirim cihaz kaydı: çıkış yapıldığında veya 30 gün kullanılmadığında.
+
+Hesap silindiğinde Kampüs Dolabı verilerinin tamamı bu sürelerin dolması beklenmeden silinir.
+
 Kişisel verilerin işlenmesini gerektiren sebepler ortadan kalktığında ve verilerin saklanmasını gerektiren başka bir hukuki sebep bulunmadığında ilgili veriler KVKK ve ilgili mevzuata uygun şekilde silinir, yok edilir veya anonim hale getirilir.
 
-## 11. Hesabın ve Verilerin Silinmesi
+## 12. Hesabın ve Verilerin Silinmesi
 
 Good4 hesabı bulunan kullanıcılar uygulama içerisindeki **Hesabımı Sil** özelliğini kullanarak hesaplarının silinmesini başlatabilir.
 
@@ -209,7 +244,7 @@ Hukuki yükümlülüklerin yerine getirilmesi, güvenlik olaylarının araştır
 
 Hesabın yalnızca devre dışı bırakılması veya dondurulması, Good4 bakımından hesap silme işlemi olarak kabul edilmez.
 
-## 12. 18 Yaşından Küçük Kullanıcılar
+## 13. 18 Yaşından Küçük Kullanıcılar
 
 Good4 hizmetleri **18 yaş ve üzerindeki kullanıcılar** için tasarlanmıştır.
 
@@ -217,7 +252,7 @@ Good4 hizmetleri **18 yaş ve üzerindeki kullanıcılar** için tasarlanmışt�
 
 Good4, kullanım koşullarına aykırı olarak 18 yaşından küçük bir kişiye ait hesap veya kişisel veri işlendiğini tespit ederse, saklanmasını gerektiren başka bir hukuki sebep bulunmadığı ölçüde hesabın kapatılması ve ilişkili kişisel verilerin silinmesi için gerekli işlemleri gerçekleştirir.
 
-## 13. Pazarlama ve Ticari İletişim
+## 14. Pazarlama ve Ticari İletişim
 
 Good4 Kullanıcı Sözleşmesinin kabul edilmesi veya KVKK Aydınlatma Metninin kullanıcıya sunulması, reklam veya pazarlama amacıyla ileti gönderilmesine izin verildiği anlamına gelmez.
 
@@ -225,7 +260,7 @@ Ayrı izin gerektiren pazarlama veya ticari elektronik ileti faaliyetlerinin ger
 
 Aydınlatma Metninin okunması veya bilgi edinildiğinin kaydedilmesi açık rıza veya ticari ileti izni olarak değerlendirilmez.
 
-## 14. KVKK Kapsamındaki Haklar
+## 15. KVKK Kapsamındaki Haklar
 
 Kullanıcılar KVKK'nın 11 inci maddesi kapsamında;
 
@@ -241,7 +276,7 @@ hakkına sahiptir.
 
 KVKK kapsamındaki hakların tamamı, veri işleme faaliyetlerinin hukuki sebepleri ve başvuru yöntemleri **Good4 Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metninde** ayrıntılı olarak açıklanmaktadır.
 
-## 15. Politikanın Güncellenmesi
+## 16. Politikanın Güncellenmesi
 
 Good4'ün sunduğu özellikler, kullandığı teknik hizmetler veya kişisel veri işleme faaliyetleri değişirse bu Gizlilik Politikası güncellenebilir.
 
@@ -249,7 +284,7 @@ Kullanıcıların gizlilik haklarını önemli ölçüde etkileyen değişiklikl
 
 Politikanın güncel sürümü Good4 uygulaması veya Good4 tarafından sunulan ilgili dijital kanallar üzerinden erişilebilir halde tutulur.
 
-## 16. İletişim
+## 17. İletişim
 
 Gizlilik ve kişisel verilerle ilgili sorular Good4 tarafından uygulama içerisinde sunulan destek kanalları üzerinden iletilebilir.
 
@@ -262,4 +297,4 @@ Kepez / Antalya
 
 KVKK kapsamındaki resmî başvurular için **Good4 Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metninde** belirtilen başvuru usulleri uygulanır.
 
-**Gizlilik Politikası Sürümü: 1.3**
+**Gizlilik Politikası Sürümü: 1.4**

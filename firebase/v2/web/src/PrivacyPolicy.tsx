@@ -39,6 +39,36 @@ const processingGroups: PrivacyDataGroup[] = [
     basis: "Talebinizi karşılamak ve hizmeti yürütmek için gerekli olması (KVKK m. 5/2-c) veya temel hak ve özgürlüklerinize zarar vermemek kaydıyla hizmet güvenliği ve kalitesine ilişkin meşru menfaat (m. 5/2-f). Bir uyuşmazlıkta gerekli olursa m. 5/2-e.",
   },
   {
+    title: "Kampüs Dolabı ilanları",
+    data: "İlan başlığı, açıklaması, fiyatı, kategorisi, ürün durumu ve yayın durumu; en fazla 3 ürün fotoğrafı; satıcının yalnızca ad ve soyadının baş harfleri (örneğin \"A.. Y..\") ve üniversitesi. Fotoğraflar sunucuda yeniden kodlanır; konum (GPS) dahil EXIF bilgileri silinir.",
+    purpose: "İlanı diğer öğrencilere göstermek, ilanı yayından önce Good4 ekibinin incelemesine sunmak, yasaklı ürün satışını ve kötüye kullanımı önlemek.",
+    basis: "İlan hizmetinin sunulması için sözleşmenin kurulması veya ifası (KVKK m. 5/2-c); inceleme ve kötüye kullanımın önlenmesi bakımından meşru menfaat (m. 5/2-f).",
+  },
+  {
+    title: "Kampüs Dolabı mesajları, teklifler ve tercihler",
+    data: "Alıcı ile satıcı arasındaki mesajlar ve teklifler (mesajda kendi isteğinizle paylaştığınız telefon numarası gibi bilgiler dahil), okunma durumu, engellediğiniz kullanıcılar ve kaydettiğiniz ilanlar.",
+    purpose: "Mesajlaşma ve teklif özelliğini sunmak, günlük mesaj sınırını uygulamak, engelleme ve kaydetme tercihlerinizi uygulamak. Bir konuşma şikayet edilirse Good4 ekibi şikayeti değerlendirmek için o konuşmayı inceleyebilir; her inceleme kayıt altına alınır.",
+    basis: "Hizmetin sunulması için sözleşmenin kurulması veya ifası (KVKK m. 5/2-c); şikayetlerin incelenmesi ve güvenlik bakımından meşru menfaat (m. 5/2-f) ve gerektiğinde bir hakkın korunması (m. 5/2-e).",
+  },
+  {
+    title: "Okul e-postası doğrulaması",
+    data: "Kampüs Dolabı için doğruladığınız @ogr.akdeniz.edu.tr adresi, doğrulama durumu ve zamanı ile doğrulama isteğine ait süreli ve tek kullanımlık teknik kayıtlar. Doğrulama bağlantısı Firebase Authentication tarafından e-posta adresinize gönderilir; doğrulama sırasında oluşan geçici kimlik doğrulama kaydı doğrulamadan sonra silinir. Google veya Apple ile giriş yaptığınız ana hesabınız değişmez.",
+    purpose: "Kampüs Dolabı'nda ilan, mesaj ve teklif özelliklerini yalnızca Akdeniz Üniversitesi öğrencilerine açmak ve aynı okul adresinin birden fazla hesapta kullanılmasını önlemek.",
+    basis: "İlgili hizmetin sunulması için sözleşmenin kurulması veya ifası (KVKK m. 5/2-c).",
+  },
+  {
+    title: "Kampüs Dolabı güvenlik kayıtları",
+    data: "Yasaklı ürün filtresine takılan denemeler (eşleşen kelime ve en fazla 200 karakterlik alıntı), şikayetler ve sonuçları, erişimin geçici olarak askıya alınmasına ilişkin kayıtlar.",
+    purpose: "Yasaklı ürün satışını önlemek, tekrarlayan ihlallerde erişimi sınırlamak ve şikayetleri sonuçlandırmak.",
+    basis: "Hizmet güvenliği ve kötüye kullanımın önlenmesine yönelik meşru menfaat (KVKK m. 5/2-f); gerektiğinde kanuni yükümlülük (m. 5/2-ç) veya bir hakkın korunması (m. 5/2-e).",
+  },
+  {
+    title: "Bildirim cihaz kaydı",
+    data: "Bildirim izni verdiğinizde cihazınıza ait bildirim adresi (Firebase Cloud Messaging belirteci), platform bilgisi ve kaydın güncellenme zamanı.",
+    purpose: "Yeni mesaj, teklif ve ilan durumu bildirimlerini cihazınıza iletmek. Kilit ekranında mesaj içeriği gösterilmez; yalnızca \"Yeni bir mesajın veya teklifin var\" gibi genel bir metin görünür.",
+    basis: "Talep ettiğiniz bildirim hizmetinin sunulması (KVKK m. 5/2-c). Bildirim iznini cihaz ayarlarından istediğiniz zaman kapatabilirsiniz.",
+  },
+  {
     title: "Cihaz ve güvenlik kayıtları",
     data: "Uygulama/web sürümü, işletim sistemi ve cihaz/tarayıcı bilgileri; bağlantı, oturum, hata ve güvenlik kayıtları. IP adresi gibi bazı teknik kayıtlar hizmet sağlayıcılar tarafından bağlantı sırasında üretilebilir.",
     purpose: "Hizmeti çalıştırmak, oturum güvenliğini sağlamak, kötüye kullanımı önlemek ve teknik hataları araştırmak.",
@@ -71,6 +101,7 @@ const sections: PrivacySection[] = [
     title: "3. Verileri nasıl elde ediyoruz?",
     paragraphs: [
       "Veriler; kayıt ve profil alanlarına sizin tarafınızdan girilmesi, uygulama/web hizmetini kullanmanız, destek veya geri bildirim göndermeniz ve Google ile giriş seçeneğini kullanmanız yoluyla doğrudan elde edilir. Google ile girişte kimlik doğrulaması için gerekli hesap tanımlayıcıları ve Google tarafından sağlanan temel hesap bilgileri kullanılır; Good4, Gmail, Drive, takvim veya kişiler içeriğine erişim istemez.",
+      "Kampüs Dolabı'nda okul e-posta adresinizi doğrulama sırasında siz girersiniz; ilan bilgileri, fotoğraflar ve mesajlar sizin tarafınızdan oluşturulur.",
       "Uygulama ve altyapı sağlayıcıları hizmetin çalışması sırasında oturum, bağlantı, cihaz ve güvenlik kayıtları oluşturabilir. Hedeflenen Good4 V2 mobil paketlerinde uygulama analitiği ve çökme tanılama SDK'ları bulunmaz. İsteğe bağlı profil alanlarını doldurmamanız, ilgili alanı kullanan bazı özelliklere erişiminizi etkileyebilir.",
     ],
   },
@@ -79,6 +110,8 @@ const sections: PrivacySection[] = [
     paragraphs: [
       "Altyapı, kimlik doğrulama, veri saklama ve sunucu işlevleri için veriler hizmet sağlayıcısı sıfatıyla Google Firebase/Google Cloud hizmetlerine (Firebase Authentication, Firestore, Storage ve Cloud Functions gibi) iletilebilir. Hedeflenen Good4 V2 mobil paketlerinde Firebase Analytics ve Crashlytics SDK'ları bulunmaz. Google bu verileri Good4 adına hizmeti işletmek, saklamak ve güvenliğini sağlamak için işler.",
       "Bir etkinliğe kaydolduğunuzda, katıldığınız topluluk veya etkinlik düzenleyicisi katılımı yönetmek için gerekli sınırlı bilgilere (örneğin görünen ad, kayıt ve check-in durumu) erişebilir. Bir teklif ya da kupon kullandığınızda, ilgili topluluk veya işletme işlemi doğrulamak için gerekli işlem bilgilerini görebilir. Bu gruplar sizin kullanmadığınız özelliklere ilişkin verileri bu kapsamda almaz.",
+      "Kampüs Dolabı'nda yayındaki ilanlarınız (fotoğraflar, açıklama, fiyat ve ad-soyadınızın yalnızca baş harfleri) Kampüs Dolabı'nı kullanan diğer öğrencilere görünür. Mesajlarınızı ve tekliflerinizi yalnızca konuştuğunuz kişi görür. Good4 ekibi ilanları yayından önce inceler ve şikayet edilen ilan ile konuşmaları değerlendirir. Good4, alıcı ile satıcı arasındaki satışın tarafı değildir ve ödemeye aracılık etmez.",
+      "Bildirimlerin cihazınıza ulaştırılması için bildirim adresi Firebase Cloud Messaging'e, iOS cihazlarda ayrıca Apple Push Notification hizmetine iletilir.",
       "Kişisel veriler, hukuki yükümlülük veya usulüne uygun bir talep bulunması hâlinde yetkili kamu kurumları ve yargı mercileriyle paylaşılabilir. Veriler satılmaz ve reklam amacıyla üçüncü kişilere kiralanmaz.",
     ],
   },
@@ -94,7 +127,9 @@ const sections: PrivacySection[] = [
     paragraphs: [
       "Kişisel veriler, ilgili hesabı ve seçtiğiniz hizmetleri sunmak için gerekli olduğu süre boyunca saklanır. Hesap kapandıktan sonra, başka bir işleme sebebi kalmayan veriler silinir, yok edilir veya anonim hâle getirilir. Kanuni saklama yükümlülüğü veya bir hakkın korunması için gerekli işlem kayıtları yalnızca ilgili süre ve amaçla sınırlı tutulabilir.",
       "Good4; yetkisiz erişim, kayıp, değişiklik ve kötüye kullanım risklerini azaltmak için erişim yetkileri, kimlik doğrulama ve altyapı güvenlik kontrolleri gibi uygun teknik ve idari tedbirler uygular. Kişisel veri ihlali şüphesi fark ederseniz bize e-posta yoluyla bildirebilirsiniz.",
-      "Uygulanan kesin saklama süreleri ve hesap kapatma sonrasında ilişkili işlem kayıtlarının silinme veya anonimleştirilme takvimi, hizmetin kayıt ve imha planıyla birlikte ayrıca belirlenip işletilmelidir.",
+      "Kampüs Dolabı verileri için aşağıdaki süreler uygulanır ve günlük otomatik bir temizlik işlemiyle silinir: yayındaki ilanlar 30 gün sonra yayından kalkar (satıcı en fazla 3 kez 30 gün uzatabilir); kaldırılan, yayınlanmayan veya süresi dolan ilanlar 30 gün sonra; satılan ilanların fotoğrafları satıştan 30 gün sonra, ilan kaydı 180 gün sonra; konuşmalar ve mesajlar son mesajdan 12 ay sonra; yasaklı ürün denemesi kayıtları 1 yıl sonra; sonuçlanan şikayetler sonuçlandıktan 1 yıl sonra; okul e-postası doğrulama istekleri 30 gün sonra. Bildirim cihaz kaydı çıkış yaptığınızda ya da 30 gün kullanılmadığında silinir. Kaldırdığınız veya yayınlanmayan ilanların fotoğrafları hemen silinir.",
+      "Hesabınızı sildiğinizde ilanlarınız, fotoğraflarınız, konuşmalarınız, kaydettiğiniz ilanlar, engelleme tercihleriniz, okul e-postası doğrulama kaydınız ve bildirim cihaz kayıtlarınız bu sürelerin dolması beklenmeden silinir.",
+      "Kampüs Dolabı dışındaki hizmetlere ait işlem kayıtlarının kesin saklama süreleri, hizmetin kayıt ve imha planıyla birlikte ayrıca belirlenip işletilmelidir.",
     ],
   },
   {
@@ -149,7 +184,7 @@ export default function PrivacyPolicy() {
             Good4'un hangi kişisel verileri hangi amaçlarla kullandığını, kimlerle
             paylaşabildiğini ve KVKK kapsamındaki haklarınızı burada bulabilirsiniz.
           </p>
-          <time dateTime="2026-09-24">Son güncelleme: 24 Eylül 2026</time>
+          <time dateTime="2026-10-04">Son güncelleme: 4 Ekim 2026</time>
           <p className="privacy-review-note">
             Bu çalışma sürümüdür. Google ile aktarım mekanizması ve dağıtılmış
             hesap silme ve saklama akışı doğrulanmadan kamuya açık nihai metin olarak yayımlanmamalıdır.

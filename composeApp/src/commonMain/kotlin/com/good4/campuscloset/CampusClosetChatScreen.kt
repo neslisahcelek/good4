@@ -32,7 +32,7 @@ import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import org.koin.compose.viewmodel.koinViewModel
 
-private val MEETING_POINTS = listOf("Kütüphane önü", "Yemekhane girişi", "Fakülte girişi", "Kampüs ana kapısı")
+private val MEETING_POINTS = listOf("Merkez Kütüphane", "Olbia Çarşısı", "Merkezi Yemekhane")
 
 @Composable
 fun CampusClosetChatScreen(
@@ -55,7 +55,8 @@ fun CampusClosetChatScreen(
         onOffer = viewModel::sendOffer,
         onRespondOffer = viewModel::respondOffer,
         onReport = viewModel::report,
-        onBlock = viewModel::block
+        onBlock = viewModel::block,
+        onUnblock = viewModel::unblock
     )
 }
 
@@ -72,7 +73,8 @@ internal fun CampusClosetChatContent(
     onOffer: (Int) -> Unit,
     onRespondOffer: (Boolean) -> Unit,
     onReport: (String, String) -> Unit,
-    onBlock: () -> Unit
+    onBlock: () -> Unit,
+    onUnblock: () -> Unit = {}
 ) {
     val conversation = state.conversation
     var menuOpen by remember { mutableStateOf(false) }
@@ -108,7 +110,9 @@ internal fun CampusClosetChatContent(
                             DropdownMenuItem(text = { Text("İlanı görüntüle") }, onClick = { menuOpen = false; onOpenListing(listingId) })
                             if (conversation != null) {
                                 DropdownMenuItem(text = { Text("Şikayet et") }, onClick = { menuOpen = false; reporting = true })
-                                if (conversation.status != "blocked") {
+                                if (conversation.blockedByMe) {
+                                    DropdownMenuItem(text = { Text("Engeli kaldır") }, onClick = { menuOpen = false; onUnblock() })
+                                } else if (conversation.status != "blocked") {
                                     DropdownMenuItem(text = { Text("Kullanıcıyı engelle", color = ErrorRed) }, onClick = { menuOpen = false; confirmBlock = true })
                                 }
                             }
@@ -125,7 +129,8 @@ internal fun CampusClosetChatContent(
                     Composer(
                         state,
                         canOffer = conversation?.isSeller != true && conversation?.offer?.status != "pending" && (conversation?.listingPrice ?: 1) > 0,
-                        onDraftChange, onMeetingPoint, onSend, onOffer = { offering = true }
+                        onDraftChange, onMeetingPoint, onSend, onOffer = { offering = true },
+                        onUnblock = onUnblock
                     )
                 }
             }
@@ -246,13 +251,25 @@ private fun MessageBubble(message: MarketMessage, canRespond: Boolean, busy: Boo
 }
 
 @Composable
-private fun Composer(state: CampusClosetChatState, canOffer: Boolean, onDraftChange: (String) -> Unit, onMeetingPoint: (String) -> Unit, onSend: () -> Unit, onOffer: () -> Unit) {
+private fun Composer(
+    state: CampusClosetChatState,
+    canOffer: Boolean,
+    onDraftChange: (String) -> Unit,
+    onMeetingPoint: (String) -> Unit,
+    onSend: () -> Unit,
+    onOffer: () -> Unit,
+    onUnblock: () -> Unit = {}
+) {
     val conversation = state.conversation
     val blocked = conversation?.status == "blocked"
     Surface(color = SurfaceDefault, shadowElevation = 4.dp) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
             when {
-                blocked -> Text(if (conversation?.blockedByMe == true) "Bu kullanıcıyı engelledin." else "Bu konuşmaya mesaj gönderilemiyor.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(8.dp))
+                blocked && conversation?.blockedByMe == true -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Bu kullanıcıyı engelledin.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(8.dp))
+                    TextButton(onClick = onUnblock, enabled = !state.sending) { Text("Engeli kaldır") }
+                }
+                blocked -> Text("Bu konuşmaya mesaj gönderilemiyor.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(8.dp))
                 else -> {
                     if (state.draft.isBlank()) {
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

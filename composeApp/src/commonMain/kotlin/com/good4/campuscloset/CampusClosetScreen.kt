@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.MenuBook
@@ -115,6 +116,7 @@ fun CampusClosetScreen(
     onNewListing: () -> Unit,
     onOpenInbox: () -> Unit,
     onOpenMyListings: () -> Unit,
+    onOpenFavorites: () -> Unit = {},
     viewModel: CampusClosetFeedViewModel = koinViewModel(),
     eduViewModel: CampusEmailVerificationViewModel = koinViewModel()
 ) {
@@ -149,9 +151,11 @@ fun CampusClosetScreen(
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
                 },
                 actions = {
-                    if (canUse) {
+                    if (me != null) {
                         HeaderActions(
-                            unreadCount = me?.unreadCount ?: 0,
+                            sellerActions = canUse,
+                            unreadCount = me.unreadCount,
+                            onOpenFavorites = onOpenFavorites,
                             onOpenMyListings = onOpenMyListings,
                             onOpenInbox = onOpenInbox
                         )
@@ -194,7 +198,9 @@ fun CampusClosetScreen(
                     onRetry = viewModel::load,
                     onOpenListing = onOpenListing,
                     onNewListing = onNewListing,
-                    onVerify = { showVerification = true }
+                    onVerify = { showVerification = true },
+                    onQueryChange = viewModel::setQuery,
+                    onToggleFavorite = viewModel::toggleFavorite
                 )
             }
         }
@@ -224,7 +230,13 @@ fun CampusClosetScreen(
 
 /** Same white pill as the bell and profile buttons on the home header. */
 @Composable
-private fun HeaderActions(unreadCount: Int, onOpenMyListings: () -> Unit, onOpenInbox: () -> Unit) {
+private fun HeaderActions(
+    sellerActions: Boolean,
+    unreadCount: Int,
+    onOpenFavorites: () -> Unit,
+    onOpenMyListings: () -> Unit,
+    onOpenInbox: () -> Unit
+) {
     Surface(
         modifier = Modifier.padding(end = 8.dp),
         shape = RoundedCornerShape(50),
@@ -233,6 +245,10 @@ private fun HeaderActions(unreadCount: Int, onOpenMyListings: () -> Unit, onOpen
         shadowElevation = 1.dp
     ) {
         Row {
+            IconButton(onClick = onOpenFavorites) {
+                Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Kaydedilenler", tint = TextPrimary)
+            }
+            if (!sellerActions) return@Row
             IconButton(onClick = onOpenMyListings) {
                 Icon(Icons.Outlined.Inventory2, contentDescription = "İlanlarım", tint = TextPrimary)
             }
@@ -262,12 +278,13 @@ private fun FeedGrid(
     onRetry: () -> Unit,
     onOpenListing: (String) -> Unit,
     onNewListing: () -> Unit,
-    onVerify: () -> Unit
+    onVerify: () -> Unit,
+    onQueryChange: (String) -> Unit,
+    onToggleFavorite: (MarketListing) -> Unit
 ) {
-    var query by rememberSaveable { mutableStateOf("") }
-    val normalizedQuery = query.trim().lowercase()
-    val visibleListings = if (normalizedQuery.isEmpty()) state.listings
-    else state.listings.filter { it.title.lowercase().contains(normalizedQuery) }
+    // Search runs on the server across every listing; the grid shows what it returns.
+    val normalizedQuery = state.query.trim()
+    val visibleListings = state.listings
 
     val gridState = rememberLazyGridState()
     val nearEnd by remember {
@@ -306,7 +323,7 @@ private fun FeedGrid(
             }
         }
         item(span = { full }) {
-            SearchField(query = query, onQueryChange = { query = it.take(60) })
+            SearchField(query = state.query, onQueryChange = onQueryChange)
         }
         item(span = { full }) {
             CategoryRow(selected = state.category, onSelect = onSelectCategory)
@@ -341,7 +358,11 @@ private fun FeedGrid(
             }
             else -> {
                 items(visibleListings, key = { it.id }) { listing ->
-                    ListingGridCard(listing, showUniversity = !me.eduVerified) { onOpenListing(listing.id) }
+                    ListingGridCard(
+                        listing,
+                        showUniversity = !me.eduVerified,
+                        onToggleFavorite = if (listing.isMine) null else ({ onToggleFavorite(listing) })
+                    ) { onOpenListing(listing.id) }
                 }
                 if (state.isLoadingMore) {
                     item(span = { full }) {

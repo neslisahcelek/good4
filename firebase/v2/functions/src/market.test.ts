@@ -27,7 +27,10 @@ import {
   updateMarketListingStatusService,
 } from "./market.js";
 import { checkMarketText, containsPhoneNumber } from "./marketModeration.js";
-import { publicName } from "./market.js";
+import {
+  cleanupMarketDataService, MARKET_LISTING_LIFETIME, renewMarketListingService, listMarketBlockedService, listMarketFavoritesService, publicName, searchTokensFor,
+  setMarketFavoriteService, unblockMarketUserService, updateMarketListingPriceService,
+} from "./market.js";
 
 const seller = "seller1";
 const buyer = "buyer1";
@@ -42,7 +45,7 @@ let deps: MarketDeps;
 beforeEach(async () => {
   await Promise.all([
     "users", "marketListings", "marketConversations", "marketUserState", "marketReports",
-    "marketViolations", "mail", "auditLogs", "app_config",
+    "marketViolations", "mail", "auditLogs", "app_config", "campusEmailVerifications",
   ].map((collection) => db.recursiveDelete(db.collection(collection))));
   saved = [];
   deleted = [];
@@ -481,4 +484,196 @@ test("students see each other only as initials, including names stored in the ol
   await db.doc(`marketConversations/${conversationId}`).update({ buyerName: "Mehmet Kaya" });
   assert.equal((await listMarketConversationsService(db, seller)).conversations[0]?.otherName, "M.. K..");
   assert.ok(!JSON.stringify(await getMarketFeedService(db, buyer, {}, deps)).includes("Ayşe"));
+});
+
+test("sellers can change only the price, without a new review, and conversations follow", async () => {
+  const listingId = await publishedListing();
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Merhaba" }, deps);
+  await rejectsWith(updateMarketListingPriceService(db, buyer, { listingId, price: 1 }, deps), "MARKET_LISTING_NOT_FOUND");
+  await rejectsWith(updateMarketListingPriceService(db, seller, { listingId, price: -5 }, deps), "MARKET_PRICE_INVALID");
+  await rejectsWith(updateMarketListingPriceService(db, seller, { listingId, price: 12.5 }, deps), "MARKET_PRICE_INVALID");
+  assert.deepEqual(await updateMarketListingPriceService(db, seller, { listingId, price: 700 }, deps), { price: 700 });
+  const listing = await db.doc(`marketListings/${listingId}`).get();
+  assert.equal(listing.get("price"), 700);
+  assert.equal(listing.get("status"), "published", "no new review");
+  assert.equal(listing.get("title"), "Kışlık mont");
+  assert.equal((await db.doc(`marketConversations/${conversationId}`).get()).get("listingPrice"), 700);
+  await updateMarketListingStatusService(db, seller, { listingId, action: "markSold" }, deps);
+  await rejectsWith(updateMarketListingPriceService(db, seller, { listingId, price: 600 }, deps), "MARKET_LISTING_STATUS_INVALID");
+});
+
+test("search finds listings by any word or word start across all pages, ignoring Turkish letters", async () => {
+  assert.deepEqual(searchTokensFor("Kulaklık"), ["ku", "kul", "kula", "kulak", "kulakl", "kulakli", "kulaklik"]);
+  const titles = ["Bluetooth kulaklık", "Kışlık mont", "Calculus kitabı", "Kulaklık standı"];
+  const ids: string[] = [];
+  for (const [index, title] of titles.entries()) {
+    const id = `search${index}`;
+    ids.push(id);
+    await db.doc(`marketListings/${id}`).set({
+      sellerUid: "searchSeller", status: "published", eduDomain: "akdeniz.edu.tr", category: "electronics", title,
+      price: 100, photos: [], searchTokens: searchTokensFor(title), publishedAt: Timestamp.fromMillis(NOW - index * 1000),
+    });
+  }
+  // 25 newer listings push the matches past the first page of an unfiltered feed.
+  for (let index = 0; index < 25; index += 1) {
+    await db.doc(`marketListings/filler${index}`).set({
+      sellerUid: "searchSeller", status: "published", eduDomain: "akdeniz.edu.tr", category: "other", title: `Eşya ${index}`,
+      price: 1, photos: [], searchTokens: searchTokensFor(`Eşya ${index}`), publishedAt: Timestamp.fromMillis(NOW + 10_000 + index),
+    });
+  }
+  const ids1 = (await getMarketFeedService(db, buyer, { query: "kulaklik" }, deps)).listings.map((l) => l.id);
+  assert.deepEqual(ids1, ["search0", "search3"]);
+  assert.deepEqual((await getMarketFeedService(db, buyer, { query: "KULAK" }, deps)).listings.map((l) => l.id), ["search0", "search3"]);
+  assert.deepEqual((await getMarketFeedService(db, buyer, { query: "kulaklık stand" }, deps)).listings.map((l) => l.id), ["search3"]);
+  assert.deepEqual((await getMarketFeedService(db, buyer, { query: "kışlık" }, deps)).listings.map((l) => l.id), ["search1"]);
+  assert.deepEqual((await getMarketFeedService(db, buyer, { query: "kulak", category: "other" }, deps)).listings, []);
+  assert.deepEqual((await getMarketFeedService(db, buyer, { query: "masa" }, deps)).listings, []);
+  await rejectsWith(getMarketFeedService(db, buyer, { query: "x".repeat(61) }, deps), "MARKET_QUERY_INVALID");
+  const created = await createMarketListingService(db, seller, await listingInput({ title: "Kırmızı şemsiye" }), deps);
+  assert.ok(((await db.doc(`marketListings/${created.listingId}`).get()).get("searchTokens") as string[]).includes("kirmizi"));
+});
+
+test("a student can lift their own block, but not the other side's", async () => {
+  const listingId = await publishedListing();
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Merhaba" }, deps);
+  await blockMarketUserService(db, seller, { conversationId });
+  assert.deepEqual((await listMarketBlockedService(db, seller)).blocked.map((entry) => [entry.conversationId, entry.otherName]),
+    [[conversationId, "M.. K.."]]);
+  assert.deepEqual((await listMarketBlockedService(db, buyer)).blocked, []);
+  await rejectsWith(unblockMarketUserService(db, "stranger", { conversationId }), "ACCOUNT_NOT_ACTIVE");
+
+  // The buyer has no block of their own to lift; the seller's block stays.
+  assert.equal((await unblockMarketUserService(db, buyer, { conversationId })).status, "blocked");
+  await rejectsWith(sendMarketMessageService(db, buyer, { conversationId, text: "Hâlâ engelli" }, deps), "MARKET_BLOCKED");
+
+  assert.equal((await unblockMarketUserService(db, seller, { conversationId })).status, "open");
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Tekrar merhaba" }, deps);
+  assert.deepEqual((await db.doc(`marketUserState/${seller}`).get()).get("blockedUids"), []);
+  assert.deepEqual((await listMarketBlockedService(db, seller)).blocked, []);
+  assert.equal((await getMarketFeedService(db, seller, {}, deps)).listings.length >= 0, true);
+});
+
+test("students save listings to favourites; hidden or removed ones drop out", async () => {
+  const listingId = await publishedListing();
+  const { listingId: pendingId } = await createMarketListingService(db, seller, await listingInput(), deps);
+  await rejectsWith(setMarketFavoriteService(db, buyer, { listingId: pendingId, saved: true }), "MARKET_LISTING_NOT_FOUND");
+  await rejectsWith(setMarketFavoriteService(db, buyer, { listingId, saved: "yes" }), "MARKET_FAVORITE_INVALID");
+  assert.deepEqual(await setMarketFavoriteService(db, buyer, { listingId, saved: true }), { saved: true });
+  assert.equal((await getMarketFeedService(db, buyer, {}, deps)).listings.find((l) => l.id === listingId)?.isFavorite, true);
+  assert.equal((await getMarketListingService(db, buyer, { listingId }, deps)).listing.isFavorite, true);
+  assert.equal((await getMarketFeedService(db, seller, {}, deps)).listings.find((l) => l.id === listingId)?.isFavorite, false);
+  assert.deepEqual((await listMarketFavoritesService(db, buyer)).listings.map((l) => l.id), [listingId]);
+
+  await updateMarketListingStatusService(db, seller, { listingId, action: "remove" }, deps);
+  assert.deepEqual((await listMarketFavoritesService(db, buyer)).listings, []);
+  assert.deepEqual((await db.doc(`marketUserState/${buyer}`).get()).get("favoriteIds"), [], "vanished listings are pruned");
+
+  const other = await publishedListing();
+  await setMarketFavoriteService(db, buyer, { listingId: other, saved: true });
+  await setMarketFavoriteService(db, buyer, { listingId: other, saved: false });
+  assert.deepEqual((await listMarketFavoritesService(db, buyer)).listings, []);
+});
+
+test("the daily cleanup enforces the KVKK retention periods and leaves recent data", async () => {
+  const day = 24 * 60 * 60 * 1000;
+  const at = (days: number) => Timestamp.fromMillis(NOW - days * day);
+  await Promise.all([
+    db.doc("marketListings/oldRemoved").set({ status: "removed", updatedAt: at(31), photos: [] }),
+    db.doc("marketListings/newRemoved").set({ status: "rejected", updatedAt: at(5), photos: [] }),
+    db.doc("marketListings/soldMonth").set({ status: "sold", soldAt: at(40), photos: [{ url: "u", thumbUrl: "t" }] }),
+    db.doc("marketListings/soldHalfYear").set({ status: "sold", soldAt: at(181), photos: [] }),
+    db.doc("marketListings/soldRecent").set({ status: "sold", soldAt: at(3), photos: [{ url: "u", thumbUrl: "t" }] }),
+    db.doc("marketListings/live").set({ status: "published", updatedAt: at(400), photos: [] }),
+    db.doc("marketConversations/oldChat").set({ participants: [seller, buyer], lastMessageAt: at(366), unread: { [buyer]: 2 } }),
+    db.doc("marketConversations/oldChat/messages/m1").set({ text: "eski" }),
+    db.doc("marketConversations/newChat").set({ participants: [seller, buyer], lastMessageAt: at(10), unread: {} }),
+    db.doc(`marketUserState/${buyer}`).set({ termsVersion: MARKET_TERMS_VERSION, unreadCount: 3 }),
+    db.doc("marketViolations/old").set({ createdAt: at(366) }),
+    db.doc("marketViolations/new").set({ createdAt: at(1) }),
+    db.doc("marketReports/oldResolved").set({ status: "resolved", resolvedAt: at(366) }),
+    db.doc("marketReports/oldOpen").set({ status: "open", createdAt: at(400) }),
+    db.doc("campusEmailVerifications/oldRequest").set({ expiresAt: at(31) }),
+    db.doc("campusEmailVerifications/newRequest").set({ expiresAt: at(1) }),
+  ]);
+  const removedPhotos: string[] = [];
+  const counts = await cleanupMarketDataService(db, async (prefix) => { removedPhotos.push(prefix); }, NOW);
+  assert.deepEqual(counts, {
+    expired: 0, reminders: 0,
+    closedListings: 1, soldPhotos: 1, soldListings: 1, conversations: 1, violations: 1, reports: 1, verifications: 1,
+  });
+  const exists = async (path: string) => (await db.doc(path).get()).exists;
+  assert.equal(await exists("marketListings/oldRemoved"), false);
+  assert.equal(await exists("marketListings/newRemoved"), true);
+  assert.equal(await exists("marketListings/soldHalfYear"), false);
+  assert.deepEqual((await db.doc("marketListings/soldMonth").get()).get("photos"), []);
+  assert.equal((await db.doc("marketListings/soldRecent").get()).get("photos").length, 1);
+  assert.equal(await exists("marketListings/live"), true);
+  assert.equal(await exists("marketConversations/oldChat"), false);
+  assert.equal(await exists("marketConversations/oldChat/messages/m1"), false);
+  assert.equal(await exists("marketConversations/newChat"), true);
+  assert.equal((await db.doc(`marketUserState/${buyer}`).get()).get("unreadCount"), 1);
+  assert.equal(await exists("marketViolations/new"), true);
+  assert.equal(await exists("marketReports/oldOpen"), true, "open reports wait for a decision");
+  assert.equal(await exists("campusEmailVerifications/newRequest"), true);
+  assert.ok(removedPhotos.includes("market-listings/soldMonth/"));
+});
+
+test("approved listings live 30 days; sellers get a reminder, can renew three times, and expired ones are cleaned up", async () => {
+  const day = 24 * 60 * 60 * 1000;
+  assert.equal(MARKET_LISTING_LIFETIME.days, 30);
+  const listingId = await publishedListing();
+  let listing = await db.doc(`marketListings/${listingId}`).get();
+  assert.equal((listing.get("expiresAt") as Timestamp).toMillis(), NOW + 30 * day);
+  const mine = await getMarketListingService(db, seller, { listingId }, deps);
+  assert.equal((mine.listing as { renewsLeft?: number }).renewsLeft, 3);
+  assert.equal((await getMarketListingService(db, buyer, { listingId }, deps)).listing.hasOwnProperty("renewsLeft"), false);
+
+  // Day 28: a single reminder, nothing expires yet.
+  notified = [];
+  let counts = await cleanupMarketDataService(db, async () => undefined, NOW + 28 * day, deps.notify);
+  assert.equal(counts.reminders, 1);
+  assert.equal(counts.expired, 0);
+  assert.equal(notified.filter((entry) => entry.uid === seller).length, 1);
+  counts = await cleanupMarketDataService(db, async () => undefined, NOW + 29 * day, deps.notify);
+  assert.equal(counts.reminders, 0, "reminded once per lifetime");
+
+  // Day 31: expired and hidden from the feed, but an existing chat still works.
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Merhaba" }, deps);
+  counts = await cleanupMarketDataService(db, async () => undefined, NOW + 31 * day, deps.notify);
+  assert.equal(counts.expired, 1);
+  assert.equal((await db.doc(`marketListings/${listingId}`).get()).get("status"), "expired");
+  assert.ok(!(await getMarketFeedService(db, buyer, {}, deps)).listings.some((l) => l.id === listingId));
+  deps.now = () => NOW + 31 * day;
+  await sendMarketMessageService(db, seller, { conversationId, text: "Hâlâ duruyor" }, deps);
+  await student("lateBuyer", "Geç Kalan", "gec@ogr.akdeniz.edu.tr");
+  await rejectsWith(sendMarketMessageService(db, "lateBuyer", { conversationId: `${listingId}_lateBuyer`, text: "Satılık mı?" }, deps),
+    "MARKET_LISTING_UNAVAILABLE");
+
+  // Renew: back in the feed without moving up, three renewals at most.
+  await rejectsWith(renewMarketListingService(db, buyer, { listingId }, deps), "MARKET_LISTING_NOT_FOUND");
+  const renewed = await renewMarketListingService(db, seller, { listingId }, deps);
+  assert.equal(renewed.status, "published");
+  assert.equal(renewed.renewsLeft, 2);
+  listing = await db.doc(`marketListings/${listingId}`).get();
+  assert.equal((listing.get("expiresAt") as Timestamp).toMillis(), NOW + 61 * day);
+  assert.equal((listing.get("publishedAt") as Timestamp).toMillis(), NOW, "feed position is unchanged");
+  assert.equal(listing.get("expiryReminderSentAt"), undefined);
+  await renewMarketListingService(db, seller, { listingId }, deps);
+  await renewMarketListingService(db, seller, { listingId }, deps);
+  await rejectsWith(renewMarketListingService(db, seller, { listingId }, deps), "MARKET_RENEW_LIMIT");
+
+  // Sellers can still take down an expired listing themselves.
+  const other = await publishedListing();
+  await db.doc(`marketListings/${other}`).update({ status: "expired" });
+  await updateMarketListingStatusService(db, seller, { listingId: other, action: "remove" }, deps);
+  assert.equal((await db.doc(`marketListings/${other}`).get()).get("status"), "removed");
+
+  // An expired listing nobody renews is deleted 30 days later.
+  await db.doc(`marketListings/${listingId}`).update({ status: "expired", updatedAt: Timestamp.fromMillis(NOW + 31 * day) });
+  counts = await cleanupMarketDataService(db, async () => undefined, NOW + 62 * day, deps.notify);
+  assert.equal(counts.closedListings, 2, "the expired listing and the one removed on day 31");
+  assert.equal((await db.doc(`marketListings/${listingId}`).get()).exists, false);
 });

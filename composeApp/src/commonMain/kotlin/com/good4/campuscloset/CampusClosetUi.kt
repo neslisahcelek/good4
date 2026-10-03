@@ -5,7 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -81,6 +87,39 @@ internal fun RemoveListingDialog(listingTitle: String, onDismiss: () -> Unit, on
         confirmButton = {
             TextButton(onClick = onConfirm) { Text("Yayından kaldır", color = ErrorRed) }
         },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } }
+    )
+}
+
+/** Only the price of a posted listing can change; 0 means free. */
+@Composable
+internal fun PriceEditDialog(currentPrice: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
+    var free by remember { mutableStateOf(currentPrice == 0) }
+    var text by remember { mutableStateOf(if (currentPrice > 0) currentPrice.toString() else "") }
+    val price = if (free) 0 else text.toIntOrNull()
+    val valid = price != null && price in 0..CampusClosetLimits.MAX_PRICE && (free || price > 0) && price != currentPrice
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Fiyatı düzenle") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Yalnızca fiyat değişir; ilan yeniden incelemeye gitmez.", fontSize = 13.sp, color = TextSecondary)
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { value -> text = value.filter(Char::isDigit).take(6) },
+                    enabled = !free,
+                    label = { Text("Yeni fiyat (₺)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Ücretsiz / bağış", modifier = Modifier.weight(1f))
+                    Switch(checked = free, onCheckedChange = { free = it })
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { price?.let(onSave) }, enabled = valid) { Text("Kaydet") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } }
     )
 }

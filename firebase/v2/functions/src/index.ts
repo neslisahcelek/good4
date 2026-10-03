@@ -53,8 +53,15 @@ import { recordLegalAcknowledgementsService } from "./legalAcknowledgements.js";
 import {
   acceptMarketTermsService,
   blockMarketUserService,
+  cleanupMarketDataService,
   createMarketListingService,
   eraseMarketData,
+  listMarketBlockedService,
+  listMarketFavoritesService,
+  renewMarketListingService,
+  setMarketFavoriteService,
+  unblockMarketUserService,
+  updateMarketListingPriceService,
   getMarketFeedService,
   getMarketSummaryService,
   getMarketListingService,
@@ -477,6 +484,51 @@ export const markMarketConversationRead = onCall(callableOptions, async (request
 export const blockMarketUser = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return blockMarketUserService(db, uid, request.data ?? {});
+});
+
+export const unblockMarketUser = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return unblockMarketUserService(db, uid, request.data ?? {});
+});
+
+export const listMarketBlocked = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listMarketBlockedService(db, uid);
+});
+
+export const updateMarketListingPrice = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return updateMarketListingPriceService(db, uid, request.data ?? {});
+});
+
+export const renewMarketListing = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return renewMarketListingService(db, uid, request.data ?? {});
+});
+
+export const setMarketFavorite = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return setMarketFavoriteService(db, uid, request.data ?? {});
+});
+
+export const listMarketFavorites = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listMarketFavoritesService(db, uid);
+});
+
+// Kampüs Dolabı lifetime and retention (KVKK): expires listings after 30 days (with a
+// reminder 3 days before), then removes old closed listings, sold-listing photos,
+// inactive conversations, old reports/violations and finished verification requests.
+export const cleanupCampusCloset = onSchedule({
+  schedule: "every day 04:30",
+  timeZone: "Europe/Istanbul",
+  region: "europe-west1",
+  memory: "512MiB",
+  timeoutSeconds: 540,
+  retryCount: 1,
+}, async () => {
+  const counts = await cleanupMarketDataService(db, deleteStoragePrefix, Date.now(), marketDeps.notify);
+  console.log("campusCloset cleanup", counts);
 });
 
 export const reportMarketContent = onCall(callableOptions, async (request) => {

@@ -52,7 +52,7 @@ function renderMarkdown(markdown: string): ReactNode[] {
 export default function Good4PrivacyPolicy() {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = "Good4 Gizlilik Politikası · Sürüm 1.3";
+    document.title = "Good4 Gizlilik Politikası · Sürüm 1.4";
     return () => { document.title = previousTitle; };
   }, []);
 
@@ -74,7 +74,7 @@ export default function Good4PrivacyPolicy() {
           <p className="privacy-eyebrow">Good4 · Gizlilik</p>
           <h1>Gizlilik Politikası</h1>
           <p>Good4 mobil uygulaması ve bağlantılı hizmetlerdeki bilgi işleme uygulamaları.</p>
-          <time dateTime="2026-09-25">Sürüm 1.3 · Son güncelleme: 25 Eylül 2026</time>
+          <time dateTime="2026-10-04">Sürüm 1.4 · Son güncelleme: 4 Ekim 2026</time>
         </div>
         <article className="privacy-document">{renderMarkdown(policyMarkdown)}</article>
       </main>

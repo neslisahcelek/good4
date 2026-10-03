@@ -1,5 +1,9 @@
 package com.good4.campuscloset
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,7 +79,7 @@ internal fun ListingStatusChip(status: String, modifier: Modifier = Modifier) {
     val color = when (status) {
         "published" -> MaterialTheme.colorScheme.primary
         "pending", "reserved" -> Color(0xFFE08A1E)
-        "rejected" -> ErrorRed
+        "rejected", "expired" -> ErrorRed
         else -> TextSecondary
     }
     Surface(
@@ -125,8 +129,34 @@ internal fun formatRelativeTime(iso: String?): String {
     }
 }
 
+/** Round heart used on cards and the listing detail to save a listing. */
 @Composable
-internal fun ListingGridCard(listing: MarketListing, showUniversity: Boolean, onClick: () -> Unit) {
+internal fun FavoriteButton(saved: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onToggle,
+        modifier = modifier.size(34.dp),
+        shape = CircleShape,
+        color = SurfaceDefault.copy(alpha = 0.92f),
+        shadowElevation = 1.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                if (saved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = if (saved) "Kaydedilenlerden çıkar" else "Kaydet",
+                tint = if (saved) ErrorRed else TextSecondary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ListingGridCard(
+    listing: MarketListing,
+    showUniversity: Boolean,
+    onToggleFavorite: (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
@@ -158,6 +188,9 @@ internal fun ListingGridCard(listing: MarketListing, showUniversity: Boolean, on
                 }
                 if (listing.status != "published") {
                     ListingStatusChip(listing.status, Modifier.align(Alignment.TopStart).padding(8.dp))
+                }
+                if (onToggleFavorite != null) {
+                    FavoriteButton(listing.isFavorite, onToggleFavorite, Modifier.align(Alignment.TopEnd).padding(6.dp))
                 }
             }
             Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {

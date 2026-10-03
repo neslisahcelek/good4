@@ -29,24 +29,28 @@ data class CampusClosetFeedState(
     val loadError: String? = null,
     val me: MarketMe? = null,
     val category: String? = null,
+    val query: String = "",
     val listings: List<MarketListing> = emptyList(),
     val nextBefore: String? = null,
     val isLoadingMore: Boolean = false,
     val acceptingTerms: Boolean = false,
-    val termsError: String? = null
+    val termsError: String? = null,
+    val message: String? = null
 )
 
 class CampusClosetFeedViewModel(private val repository: CampusClosetRepository) : ViewModel() {
     private val _state = MutableStateFlow(CampusClosetFeedState())
     val state = _state.asStateFlow()
     private var loadJob: Job? = null
+    private var searchJob: Job? = null
 
     fun load() {
         val category = _state.value.category
+        val query = _state.value.query
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = it.listings.isEmpty(), loadError = null) }
-            attempt { repository.feed(category, null) }
+            attempt { repository.feed(category, null, query) }
                 .onSuccess { feed ->
                     _state.update {
                         it.copy(isLoading = false, me = feed.me, listings = feed.listings, nextBefore = feed.nextBefore)
@@ -62,13 +66,41 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetRepository) 
         load()
     }
 
+    /** Searches every listing on the server, waiting for a short typing pause. */
+    fun setQuery(value: String) {
+        val query = value.take(60)
+        if (query == _state.value.query) return
+        _state.update { it.copy(query = query) }
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(350)
+            _state.update { it.copy(listings = emptyList(), nextBefore = null) }
+            load()
+        }
+    }
+
+    /** Optimistic: the heart turns at once and reverts if the server refuses. */
+    fun toggleFavorite(listing: MarketListing) {
+        val saved = !listing.isFavorite
+        fun mark(value: Boolean) = _state.update { state ->
+            state.copy(listings = state.listings.map { if (it.id == listing.id) it.copy(isFavorite = value) else it })
+        }
+        mark(saved)
+        viewModelScope.launch {
+            attempt { repository.setFavorite(listing.id, saved) }
+                .onFailure { error -> mark(!saved); _state.update { it.copy(message = campusClosetErrorMessage(error)) } }
+        }
+    }
+
+    fun clearMessage() = _state.update { it.copy(message = null) }
+
     fun loadMore() {
         val snapshot = _state.value
         val before = snapshot.nextBefore ?: return
         if (snapshot.isLoadingMore) return
         viewModelScope.launch {
             _state.update { it.copy(isLoadingMore = true) }
-            attempt { repository.feed(snapshot.category, before) }
+            attempt { repository.feed(snapshot.category, before, snapshot.query) }
                 .onSuccess { feed ->
                     _state.update {
                         it.copy(
@@ -153,6 +185,41 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
         runAction {
             repository.report("listing", listingId, reason, note)
             _state.update { it.copy(message = "Şikayetin alındı. Good4 ekibi inceleyecek.") }
+        }
+    }
+
+    fun updatePrice(price: Int) {
+        val listingId = _state.value.detail?.listing?.id ?: return
+        runAction {
+            repository.updatePrice(listingId, price)
+            _state.update { state ->
+                state.copy(
+                    detail = state.detail?.let { it.copy(listing = it.listing.copy(price = price)) },
+                    message = "Fiyat güncellendi."
+                )
+            }
+        }
+    }
+
+    fun renew() {
+        val listingId = _state.value.detail?.listing?.id ?: return
+        runAction {
+            repository.renew(listingId)
+            load(listingId)
+            _state.update { it.copy(message = "İlan 30 gün daha yayında.") }
+        }
+    }
+
+    fun toggleFavorite() {
+        val listing = _state.value.detail?.listing ?: return
+        val saved = !listing.isFavorite
+        fun mark(value: Boolean) = _state.update { state ->
+            state.copy(detail = state.detail?.let { it.copy(listing = it.listing.copy(isFavorite = value)) })
+        }
+        mark(saved)
+        viewModelScope.launch {
+            attempt { repository.setFavorite(listing.id, saved) }
+                .onFailure { error -> mark(!saved); _state.update { it.copy(message = campusClosetErrorMessage(error)) } }
         }
     }
 
@@ -264,6 +331,30 @@ class CampusClosetMyListingsViewModel(private val repository: CampusClosetReposi
             _state.update { it.copy(busyId = listingId, message = null) }
             attempt { repository.updateListingStatus(listingId, action) }
                 .onSuccess { _state.update { it.copy(busyId = null) }; load() }
+                .onFailure { error -> _state.update { it.copy(busyId = null, message = campusClosetErrorMessage(error)) } }
+        }
+    }
+
+    fun renew(listingId: String) {
+        if (_state.value.busyId != null) return
+        viewModelScope.launch {
+            _state.update { it.copy(busyId = listingId, message = null) }
+            attempt { repository.renew(listingId) }
+                .onSuccess { _state.update { it.copy(busyId = null) }; load() }
+                .onFailure { error -> _state.update { it.copy(busyId = null, message = campusClosetErrorMessage(error)) } }
+        }
+    }
+
+    fun updatePrice(listingId: String, price: Int) {
+        if (_state.value.busyId != null) return
+        viewModelScope.launch {
+            _state.update { it.copy(busyId = listingId, message = null) }
+            attempt { repository.updatePrice(listingId, price) }
+                .onSuccess {
+                    _state.update { state ->
+                        state.copy(busyId = null, listings = state.listings.map { if (it.id == listingId) it.copy(price = price) else it })
+                    }
+                }
                 .onFailure { error -> _state.update { it.copy(busyId = null, message = campusClosetErrorMessage(error)) } }
         }
     }
@@ -392,6 +483,11 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
         _state.update { it.copy(info = "Kullanıcı engellendi. Bu konuşmaya artık mesaj gönderilemez.") }
     }
 
+    fun unblock() = runSend(clearDraft = false) {
+        repository.unblock(conversationId)
+        _state.update { it.copy(info = "Engel kaldırıldı.") }
+    }
+
     fun report(reason: String, note: String) = runSend(clearDraft = false) {
         repository.report("conversation", conversationId, reason, note)
         _state.update { it.copy(info = "Şikayetin alındı. Good4 ekibi konuşmayı inceleyecek.") }
@@ -410,6 +506,76 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
                     refresh(full = _state.value.messages.isEmpty())
                 }
                 .onFailure { error -> _state.update { it.copy(sending = false, error = campusClosetErrorMessage(error)) } }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Saved listings and blocked users
+// ---------------------------------------------------------------------------
+
+data class CampusClosetFavoritesState(
+    val isLoading: Boolean = true,
+    val loadError: String? = null,
+    val listings: List<MarketListing> = emptyList(),
+    val message: String? = null
+)
+
+class CampusClosetFavoritesViewModel(private val repository: CampusClosetRepository) : ViewModel() {
+    private val _state = MutableStateFlow(CampusClosetFavoritesState())
+    val state = _state.asStateFlow()
+
+    fun load() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = it.listings.isEmpty(), loadError = null) }
+            attempt { repository.favorites() }
+                .onSuccess { listings -> _state.update { it.copy(isLoading = false, listings = listings) } }
+                .onFailure { error -> _state.update { it.copy(isLoading = false, loadError = campusClosetErrorMessage(error)) } }
+        }
+    }
+
+    fun remove(listing: MarketListing) {
+        val before = _state.value.listings
+        _state.update { state -> state.copy(listings = state.listings.filterNot { it.id == listing.id }) }
+        viewModelScope.launch {
+            attempt { repository.setFavorite(listing.id, false) }
+                .onFailure { error -> _state.update { it.copy(listings = before, message = campusClosetErrorMessage(error)) } }
+        }
+    }
+}
+
+data class CampusClosetBlockedState(
+    val isLoading: Boolean = true,
+    val loadError: String? = null,
+    val blocked: List<MarketBlockedUser> = emptyList(),
+    val busyId: String? = null,
+    val message: String? = null
+)
+
+class CampusClosetBlockedViewModel(private val repository: CampusClosetRepository) : ViewModel() {
+    private val _state = MutableStateFlow(CampusClosetBlockedState())
+    val state = _state.asStateFlow()
+
+    fun load() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = it.blocked.isEmpty(), loadError = null) }
+            attempt { repository.blocked() }
+                .onSuccess { blocked -> _state.update { it.copy(isLoading = false, blocked = blocked) } }
+                .onFailure { error -> _state.update { it.copy(isLoading = false, loadError = campusClosetErrorMessage(error)) } }
+        }
+    }
+
+    fun unblock(conversationId: String) {
+        if (_state.value.busyId != null) return
+        viewModelScope.launch {
+            _state.update { it.copy(busyId = conversationId, message = null) }
+            attempt { repository.unblock(conversationId) }
+                .onSuccess {
+                    _state.update { state ->
+                        state.copy(busyId = null, blocked = state.blocked.filterNot { it.conversationId == conversationId })
+                    }
+                }
+                .onFailure { error -> _state.update { it.copy(busyId = null, message = campusClosetErrorMessage(error)) } }
         }
     }
 }

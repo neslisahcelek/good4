@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Flag
@@ -82,6 +85,7 @@ fun CampusClosetListingScreen(
     var reporting by remember { mutableStateOf(false) }
     var offering by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf(false) }
+    var editingPrice by remember { mutableStateOf(false) }
 
     LaunchedEffect(listingId) { viewModel.load(listingId) }
     LaunchedEffect(state.removed) { if (state.removed) onBack() }
@@ -103,6 +107,13 @@ fun CampusClosetListingScreen(
                 },
                 actions = {
                     if (listing != null && !listing.isMine) {
+                        IconButton(onClick = viewModel::toggleFavorite) {
+                            Icon(
+                                if (listing.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = if (listing.isFavorite) "Kaydedilenlerden çıkar" else "Kaydet",
+                                tint = if (listing.isFavorite) ErrorRed else TextSecondary
+                            )
+                        }
                         IconButton(onClick = { reporting = true }) {
                             Icon(Icons.Outlined.Flag, contentDescription = "Şikayet et", tint = TextSecondary)
                         }
@@ -156,6 +167,27 @@ fun CampusClosetListingScreen(
                         InfoRow(listing)
                         state.message?.let { MarketNotice(it) }
                         if (listing.isMine) SellerNotice(listing)
+                        if (listing.canRenew(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())) {
+                            Button(
+                                onClick = viewModel::renew,
+                                enabled = !state.busy,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("30 gün daha yayında tut (${listing.renewsLeft} hak)") }
+                        }
+                        if (listing.isMine && listing.status in listOf("pending", "published", "reserved")) {
+                            OutlinedButton(
+                                onClick = { editingPrice = true },
+                                enabled = !state.busy,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Fiyatı düzenle")
+                            }
+                        }
                         SellerCard(listing)
                         listing.description?.takeIf { it.isNotBlank() }?.let { DescriptionCard(it) }
                         SafetyCard()
@@ -191,6 +223,16 @@ fun CampusClosetListingScreen(
                 viewModel.sendOffer(percent)
             }
         }
+    }
+    if (editingPrice && listing != null) {
+        PriceEditDialog(
+            currentPrice = listing.price,
+            onDismiss = { editingPrice = false },
+            onSave = { price ->
+                editingPrice = false
+                viewModel.updatePrice(price)
+            }
+        )
     }
     if (confirmRemove && listing != null) {
         RemoveListingDialog(
@@ -340,6 +382,17 @@ private fun SellerNotice(listing: MarketListing) {
         )
         "reserved" -> MarketNotice("İlan rezerve olarak görünüyor; yeni teklif alınmıyor.", color = PendingAmber)
         "sold" -> MarketNotice("İlan satıldı olarak işaretlendi.", color = TextSecondary)
+        "expired" -> MarketNotice(
+            if (listing.renewsLeft > 0) "İlanın süresi doldu ve yayından kalktı. 30 gün daha yayında tutabilirsin."
+            else "İlanın süresi doldu ve yayından kalktı. Hâlâ satılıksa yeni ilan verebilirsin.",
+            color = ErrorRed
+        )
+        "published", "reserved" -> listing.daysLeft(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())?.let { days ->
+            MarketNotice(
+                if (days == 0) "İlanın bugün yayından kalkacak." else "İlanın $days gün sonra yayından kalkacak.",
+                color = if (days <= 3) PendingAmber else TextSecondary
+            )
+        }
     }
 }
 

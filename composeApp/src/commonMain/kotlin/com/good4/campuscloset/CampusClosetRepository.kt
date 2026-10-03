@@ -32,9 +32,22 @@ data class MarketListing(
     val publishedAt: String? = null,
     val createdAt: String? = null,
     val isMine: Boolean = false,
+    val isFavorite: Boolean = false,
     val description: String? = null,
-    val rejectReason: String? = null
-)
+    val rejectReason: String? = null,
+    /** Seller only: when the listing leaves the feed unless renewed, and renewals left. */
+    val expiresAt: String? = null,
+    val renewsLeft: Int = 0
+) {
+    /** Whole days until expiry (0 on the last day), or null when it does not apply. */
+    fun daysLeft(nowMillis: Long): Int? = expiresAt
+        ?.let { runCatching { kotlinx.datetime.Instant.parse(it).toEpochMilliseconds() }.getOrNull() }
+        ?.let { ((it - nowMillis) / 86_400_000L).toInt().coerceAtLeast(0) }
+
+    /** Offer "30 gün daha yayında tut" in the last week and after expiry. */
+    fun canRenew(nowMillis: Long): Boolean = isMine && renewsLeft > 0 &&
+        (status == "expired" || (status in listOf("published", "reserved") && (daysLeft(nowMillis) ?: Int.MAX_VALUE) <= 7))
+}
 
 @Serializable
 data class MarketMe(
@@ -160,10 +173,12 @@ class CampusClosetRepository(
 
     suspend fun summary(): MarketMe = call<MarketSummary>("getMarketSummary").me.also { badge.update(it.unreadCount) }
 
-    suspend fun feed(category: String?, before: String?): MarketFeed =
+    /** [query] is searched on the server across every listing, not just the loaded page. */
+    suspend fun feed(category: String?, before: String?, query: String? = null): MarketFeed =
         call<MarketFeed>("getMarketFeed", buildJsonObject {
             category?.let { put("category", it) }
             before?.let { put("before", it) }
+            query?.trim()?.takeIf { it.isNotEmpty() }?.let { put("query", it.take(60)) }
         }).also { badge.update(it.me.unreadCount) }
 
     suspend fun listing(listingId: String): MarketListingDetail =
@@ -229,6 +244,32 @@ class CampusClosetRepository(
         callV2Function("blockMarketUser", buildJsonObject { put("conversationId", conversationId) })
     }
 
+    suspend fun unblock(conversationId: String) {
+        callV2Function("unblockMarketUser", buildJsonObject { put("conversationId", conversationId) })
+    }
+
+    suspend fun blocked(): List<MarketBlockedUser> = call<MarketBlockedList>("listMarketBlocked").blocked
+
+    suspend fun updatePrice(listingId: String, price: Int) {
+        callV2Function("updateMarketListingPrice", buildJsonObject {
+            put("listingId", listingId)
+            put("price", price)
+        })
+    }
+
+    suspend fun setFavorite(listingId: String, saved: Boolean) {
+        callV2Function("setMarketFavorite", buildJsonObject {
+            put("listingId", listingId)
+            put("saved", saved)
+        })
+    }
+
+    suspend fun favorites(): List<MarketListing> = call<MarketMyListings>("listMarketFavorites").listings
+
+    suspend fun renew(listingId: String) {
+        callV2Function("renewMarketListing", buildJsonObject { put("listingId", listingId) })
+    }
+
     suspend fun report(targetType: String, targetId: String, reason: String, note: String) {
         callV2Function("reportMarketContent", buildJsonObject {
             put("targetType", targetType)
@@ -247,6 +288,17 @@ private data class MarketMyListings(val listings: List<MarketListing> = emptyLis
 
 @Serializable
 private data class CreatedListing(val listingId: String)
+
+@Serializable
+data class MarketBlockedUser(
+    val conversationId: String,
+    val otherName: String = "",
+    val listingTitle: String = "",
+    val listingThumbUrl: String = ""
+)
+
+@Serializable
+private data class MarketBlockedList(val blocked: List<MarketBlockedUser> = emptyList())
 
 internal val MARKET_CATEGORIES = listOf(
     "clothing" to "Kıyafet & Ayakkabı",
@@ -283,6 +335,7 @@ internal fun statusLabel(status: String) = when (status) {
     "reserved" -> "Rezerve"
     "sold" -> "Satıldı"
     "rejected" -> "Yayınlanmadı"
+    "expired" -> "Süresi doldu"
     else -> "Kaldırıldı"
 }
 
@@ -323,6 +376,10 @@ internal fun campusClosetErrorMessage(error: Throwable): String = when (error.me
     "MARKET_TITLE_INVALID", "MARKET_TITLE_REQUIRED" -> "Başlık 3-60 karakter olmalı."
     "MARKET_DESCRIPTION_INVALID", "MARKET_DESCRIPTION_REQUIRED" -> "Açıklama 10-600 karakter olmalı."
     "MARKET_PRICE_INVALID" -> "Fiyat 0 ile 100.000 ₺ arasında tam sayı olmalı."
+    "MARKET_LISTING_STATUS_INVALID" -> "Bu ilanın durumu bu işleme izin vermiyor."
+    "MARKET_RENEW_LIMIT" -> "Bu ilan en fazla 3 kez uzatılabilir. Hâlâ satılıksa yeni ilan verebilirsin."
+    "MARKET_FAVORITE_LIMIT" -> "En fazla 100 ilan kaydedebilirsin. Eskilerden bazılarını kaldır."
+    "MARKET_QUERY_INVALID" -> "Arama en fazla 60 karakter olabilir."
     "MARKET_MESSAGE_INVALID" -> "Mesaj en fazla 500 karakter olabilir."
     "ACCOUNT_NOT_ACTIVE" -> "Hesabın henüz aktif değil."
     "ROLE_NOT_ALLOWED" -> "Kampüs Dolabı yalnızca öğrenci hesapları için."
