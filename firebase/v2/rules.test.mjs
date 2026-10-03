@@ -353,6 +353,7 @@ test('students cannot mark their own .edu.tr address as verified or read verific
     updatedAt: 1,
   });
   await seed('eduVerifications/student-edu', { email: 'student@akdeniz.edu.tr', codeHash: 'x' });
+  await seed('campusEmailVerifications/student-edu', { email: 'student@ogr.akdeniz.edu.tr', requestHash: 'x' });
   await seed('eduEmailClaims/claim-1', { uid: 'student-edu' });
   await seed('mail/mail-1', { to: ['student@akdeniz.edu.tr'], uid: 'student-edu' });
 
@@ -365,6 +366,8 @@ test('students cannot mark their own .edu.tr address as verified or read verific
   await assertFails(getDoc(doc(db, 'eduVerifications/student-edu')));
   await assertFails(getDoc(doc(db, 'eduEmailClaims/claim-1')));
   await assertFails(getDoc(doc(db, 'mail/mail-1')));
+  await assertFails(getDoc(doc(db, 'campusEmailVerifications/student-edu')));
+  await assertFails(setDoc(doc(db, 'campusEmailVerifications/student-edu'), { email: 'student@ogr.akdeniz.edu.tr' }));
 });
 
 test('signed-in users can read campus weather but clients cannot write it', async () => {
@@ -375,4 +378,30 @@ test('signed-in users can read campus weather but clients cannot write it', asyn
   await assertSucceeds(getDoc(doc(studentDb, 'app_config/campus_weather')));
   await assertFails(getDoc(doc(anonymousDb, 'app_config/campus_weather')));
   await assertFails(setDoc(doc(studentDb, 'app_config/campus_weather'), { temperature: 99 }));
+});
+
+test('Kampüs Dolabı collections are closed to clients; the callables own every read and write', async () => {
+  await seed('marketListings/published-1', { sellerUid: 'seller-1', status: 'published', publishedAt: 1 });
+  await seed('marketConversations/listing-1_buyer-1', {
+    participants: ['seller-1', 'buyer-1'], sellerUid: 'seller-1', buyerUid: 'buyer-1', lastMessageAt: 1,
+  });
+  await seed('marketConversations/listing-1_buyer-1/messages/m1', { senderUid: 'buyer-1', text: 'Merhaba', createdAt: 1 });
+  await seed('marketUserState/buyer-1', { termsVersion: 1, unreadCount: 2 });
+  await seed('marketReports/listing_l1_buyer-1', { reporterUid: 'buyer-1', status: 'open' });
+  await seed('marketViolations/v1', { uid: 'buyer-1', term: 'sigara' });
+  const buyerDb = testEnv.authenticatedContext('buyer-1').firestore();
+  const sellerDb = testEnv.authenticatedContext('seller-1').firestore();
+
+  await assertFails(getDoc(doc(buyerDb, 'marketListings/published-1')));
+  await assertFails(getDocs(query(collection(buyerDb, 'marketListings'), where('status', '==', 'published'))));
+  await assertFails(updateDoc(doc(sellerDb, 'marketListings/published-1'), { price: 1 }));
+  await assertFails(setDoc(doc(sellerDb, 'marketListings/new-1'), { sellerUid: 'seller-1', status: 'published' }));
+  await assertFails(getDoc(doc(buyerDb, 'marketConversations/listing-1_buyer-1')));
+  await assertFails(getDocs(collection(buyerDb, 'marketConversations/listing-1_buyer-1/messages')));
+  await assertFails(setDoc(doc(buyerDb, 'marketConversations/listing-1_buyer-1/messages/m2'),
+    { senderUid: 'buyer-1', text: 'Selam', createdAt: 2 }));
+  await assertFails(getDoc(doc(buyerDb, 'marketUserState/buyer-1')));
+  await assertFails(updateDoc(doc(buyerDb, 'marketUserState/buyer-1'), { termsVersion: 2 }));
+  await assertFails(getDoc(doc(buyerDb, 'marketReports/listing_l1_buyer-1')));
+  await assertFails(getDoc(doc(buyerDb, 'marketViolations/v1')));
 });

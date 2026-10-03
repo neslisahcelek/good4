@@ -65,6 +65,9 @@ val commonModule = module {
     single { AcademicCalendarRepository(get<FirestoreRepository>()) }
     single { FeedbackRepository(get<FirestoreRepository>(), get<AuthRepository>()) }
     single { com.good4.eduverification.EduVerificationRepository(get<FirestoreRepository>(), get<AuthRepository>()) }
+    single { com.good4.campuscloset.CampusClosetBadge() }
+    single { com.good4.campuscloset.CampusEmailVerificationRepository(get<AuthRepository>()) }
+    single { com.good4.campuscloset.CampusClosetRepository(get<AuthRepository>(), get()) }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel {
@@ -158,6 +161,13 @@ val commonModule = module {
     viewModel { FeedbackViewModel(get<FeedbackRepository>()) }
     viewModel { com.good4.eduverification.EduVerificationViewModel(get()) }
     viewModel { com.good4.suspendedmeal.SuspendedMealsViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetFeedViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusEmailVerificationViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetListingViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetNewListingViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetMyListingsViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetInboxViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetChatViewModel(get()) }
     viewModel {
         AccountSettingsViewModel(
             get<AuthRepository>(),

@@ -118,8 +118,20 @@ import kotlinx.datetime.Instant
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.good4.campuscloset.CampusClosetBadge
+import com.good4.campuscloset.CampusClosetRepository
+import kotlinx.coroutines.CancellationException
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.Badge
 import kotlin.time.Duration.Companion.seconds
+
+private fun defaultHomeShortcuts(): List<HomeShortcut> = HomeShortcut.entries.filter {
+    it.defaultVisible
+        && (it != HomeShortcut.SUSPENDED_MEALS || config.ReleaseFeatures.suspendedMeals)
+        && (it != HomeShortcut.CAMPUS_CLOSET || config.ReleaseFeatures.campusCloset)
+}
 
 @Composable
 fun ProductListScreenRoot(
@@ -133,12 +145,32 @@ fun ProductListScreenRoot(
     onCalendarClick: () -> Unit = {},
     onCampusMapClick: () -> Unit = {},
     onClassScheduleClick: () -> Unit = {},
+    onCampusClosetClick: () -> Unit = {},
     onDailyMenuClick: (DailyMeal) -> Unit = {},
-    homeShortcuts: List<HomeShortcut> = HomeShortcut.entries.filter { it.defaultVisible && (it != HomeShortcut.SUSPENDED_MEALS || config.ReleaseFeatures.suspendedMeals) },
+    homeShortcuts: List<HomeShortcut> = defaultHomeShortcuts(),
     onMenuShortcutClick: (HomeShortcut) -> Unit = {},
     onEditHomeClick: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val closetBadge: CampusClosetBadge = koinInject()
+    val closetRepository: CampusClosetRepository = koinInject()
+    val closetUnread by closetBadge.unread.collectAsStateWithLifecycle()
+    val showsCloset = HomeShortcut.CAMPUS_CLOSET in homeShortcuts
+    LifecycleResumeEffect(showsCloset) {
+        if (showsCloset && closetBadge.shouldRefresh()) {
+            scope.launch {
+                try {
+                    closetRepository.summary()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // The badge is a hint; Kampüs Dolabı itself shows load errors.
+                }
+            }
+        }
+        onPauseOrDispose { }
+    }
     val diningMenuViewModel: AkdenizDiningMenuViewModel = koinViewModel()
     val diningMenuState by diningMenuViewModel.state.collectAsStateWithLifecycle()
 
@@ -166,6 +198,8 @@ fun ProductListScreenRoot(
         onCalendarClick = onCalendarClick,
         onCampusMapClick = onCampusMapClick,
         onClassScheduleClick = onClassScheduleClick,
+        onCampusClosetClick = onCampusClosetClick,
+        campusClosetUnread = closetUnread,
         onDailyMenuClick = onDailyMenuClick,
         homeShortcuts = homeShortcuts,
         onMenuShortcutClick = onMenuShortcutClick,
@@ -190,8 +224,10 @@ fun ProductListScreen(
     onCalendarClick: () -> Unit = {},
     onCampusMapClick: () -> Unit = {},
     onClassScheduleClick: () -> Unit = {},
+    onCampusClosetClick: () -> Unit = {},
+    campusClosetUnread: Int = 0,
     onDailyMenuClick: (DailyMeal) -> Unit = {},
-    homeShortcuts: List<HomeShortcut> = HomeShortcut.entries.filter { it.defaultVisible && (it != HomeShortcut.SUSPENDED_MEALS || config.ReleaseFeatures.suspendedMeals) },
+    homeShortcuts: List<HomeShortcut> = defaultHomeShortcuts(),
     onMenuShortcutClick: (HomeShortcut) -> Unit = {},
     onEditHomeClick: () -> Unit = {},
     onAction: (ProductListAction) -> Unit
@@ -258,6 +294,8 @@ fun ProductListScreen(
                                 onCalendarClick = onCalendarClick,
                                 onCampusMapClick = onCampusMapClick,
                                 onClassScheduleClick = onClassScheduleClick,
+                                onCampusClosetClick = onCampusClosetClick,
+                                campusClosetUnread = campusClosetUnread,
                                 shortcuts = homeShortcuts,
                                 onMenuShortcutClick = onMenuShortcutClick,
                                 onEditHomeClick = onEditHomeClick
@@ -686,6 +724,8 @@ private fun HomeQuickActions(
     onCalendarClick: () -> Unit,
     onCampusMapClick: () -> Unit,
     onClassScheduleClick: () -> Unit,
+    onCampusClosetClick: () -> Unit,
+    campusClosetUnread: Int,
     shortcuts: List<HomeShortcut>,
     onMenuShortcutClick: (HomeShortcut) -> Unit,
     onEditHomeClick: () -> Unit
@@ -704,6 +744,7 @@ private fun HomeQuickActions(
                 HomeShortcut.CAMPUS_MAP -> onCampusMapClick
                 HomeShortcut.ACADEMIC_CALENDAR -> onCalendarClick
                 HomeShortcut.SUSPENDED_MEALS -> onReservationsClick
+                HomeShortcut.CAMPUS_CLOSET -> onCampusClosetClick
                 else -> ({ onMenuShortcutClick(shortcut) })
             }
             HomeQuickActionCard(
@@ -711,6 +752,8 @@ private fun HomeQuickActions(
                 title = appearance.title,
                 icon = appearance.icon,
                 accent = appearance.accent,
+                tag = appearance.tag,
+                badgeCount = if (shortcut == HomeShortcut.CAMPUS_CLOSET) campusClosetUnread else 0,
                 onClick = onClick
             )
         }
@@ -728,6 +771,8 @@ private fun HomeQuickActionCard(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     accent: Color,
+    tag: String? = null,
+    badgeCount: Int = 0,
     onClick: (() -> Unit)?
 ) {
     val iconAccent = if (accent == PrimaryGreen) MaterialTheme.colorScheme.primary else accent
@@ -741,18 +786,40 @@ private fun HomeQuickActionCard(
         shadowElevation = 1.dp
     ) {
         Box(modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(RoundedCornerShape(18.dp))) {
-            Text(
-                text = title,
+            Row(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(start = 16.dp, end = 58.dp, top = 12.dp, bottom = 12.dp),
-                fontSize = 15.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    modifier = Modifier.weight(1f, fill = false),
+                    fontSize = 15.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (badgeCount > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(badgeCount.coerceAtMost(99).toString()) }
+                }
+            }
+            if (tag != null) {
+                Text(
+                    text = tag,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 4.dp, end = 54.dp)
+                        .background(accent.copy(alpha = 0.18f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextSecondary
+                )
+            }
 
             Box(
                 modifier = Modifier

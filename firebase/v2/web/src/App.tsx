@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions, getFirestoreDb } from "./firebase";
+import { CampusClosetAdmin } from "./components/CampusClosetAdmin";
 import { EVENT_CATEGORIES } from "../../functions/src/eventCategories";
 import { parseKykMenuText, type KykMenuDay } from "../../functions/src/kykMenuParser";
 
@@ -1433,7 +1434,7 @@ function CommunityEntryCard({ entry, onEdit, onCancel, busy }: {
   );
 }
 
-type AdminTab = "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "audit";
+type AdminTab = "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "audit";
 type DiningMenuDayForm = { date: string; dayName: string; meals: string; calories: string };
 
 const diningDayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"];
@@ -1548,6 +1549,7 @@ function formatAdminDate(value: string | null): string {
 
 function AdminPanel({ user, context }: { user: User; context: Extract<PortalContext, { portalRole: "admin" }> }) {
   const [tab, setTab] = useState<AdminTab>("coupons");
+  const [marketPendingCount, setMarketPendingCount] = useState(0);
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -2124,24 +2126,30 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           )}
         </section>
 
-        <nav className="admin-tabs" aria-label="Yönetim bölümleri">
-          <button className={tab === "coupons" ? "active" : ""} onClick={() => setTab("coupons")}>
+        <div className="admin-workspace">
+        <nav className="admin-tabs admin-sidebar" aria-label="Yönetim bölümleri">
+          <button className={tab === "coupons" ? "active" : ""} aria-current={tab === "coupons" ? "page" : undefined} onClick={() => setTab("coupons")}>
             Bekleyen kuponlar {data && <span>{data.pendingCoupons.length}</span>}
           </button>
-          <button className={tab === "menu" ? "active" : ""} onClick={() => setTab("menu")}>Yemek Menüsü</button>
-          <button className={tab === "kyk" ? "active" : ""} onClick={() => setTab("kyk")}>KYK Menüsü</button>
-          <button className={tab === "suspended" ? "active" : ""} onClick={() => setTab("suspended")}>Askıda Yemek</button>
-          <button className={tab === "ads" ? "active" : ""} onClick={() => setTab("ads")}>Ana Sayfa Reklamı</button>
-          <button className={tab === "calendar" ? "active" : ""} onClick={() => setTab("calendar")}>Akademik Takvim</button>
-          <button className={tab === "feedback" ? "active" : ""} onClick={() => setTab("feedback")}>
+          <button className={tab === "menu" ? "active" : ""} aria-current={tab === "menu" ? "page" : undefined} onClick={() => setTab("menu")}>Yemek Menüsü</button>
+          <button className={tab === "kyk" ? "active" : ""} aria-current={tab === "kyk" ? "page" : undefined} onClick={() => setTab("kyk")}>KYK Menüsü</button>
+          <button className={tab === "suspended" ? "active" : ""} aria-current={tab === "suspended" ? "page" : undefined} onClick={() => setTab("suspended")}>Askıda Yemek</button>
+          <button className={tab === "ads" ? "active" : ""} aria-current={tab === "ads" ? "page" : undefined} onClick={() => setTab("ads")}>Ana Sayfa Reklamı</button>
+          <button className={tab === "calendar" ? "active" : ""} aria-current={tab === "calendar" ? "page" : undefined} onClick={() => setTab("calendar")}>Akademik Takvim</button>
+          <button className={tab === "feedback" ? "active" : ""} aria-current={tab === "feedback" ? "page" : undefined} onClick={() => setTab("feedback")}>
             Bildirimler ve geri bildirimler {data && <span>{data.feedback.filter((item) => item.report && item.status === "new").length}</span>}
           </button>
-          <button className={tab === "businesses" ? "active" : ""} onClick={() => setTab("businesses")}>İşletmeler</button>
-          <button className={tab === "communities" ? "active" : ""} onClick={() => setTab("communities")}>
+          <button className={tab === "businesses" ? "active" : ""} aria-current={tab === "businesses" ? "page" : undefined} onClick={() => setTab("businesses")}>İşletmeler</button>
+          <button className={tab === "communities" ? "active" : ""} aria-current={tab === "communities" ? "page" : undefined} onClick={() => setTab("communities")}>
             Topluluklar {communityApplications.length > 0 && <span>{communityApplications.length}</span>}
           </button>
-          <button className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>İşlem geçmişi</button>
+          <button className={tab === "market" ? "active" : ""} aria-current={tab === "market" ? "page" : undefined} onClick={() => setTab("market")}>
+            Kampüs Dolabı {marketPendingCount > 0 && <span>{marketPendingCount}</span>}
+          </button>
+          <button className={tab === "audit" ? "active" : ""} aria-current={tab === "audit" ? "page" : undefined} onClick={() => setTab("audit")}>İşlem geçmişi</button>
         </nav>
+
+        <div className="admin-tab-content">
 
         {error && <div className="inline-message inline-message--error admin-message" role="alert">{error}</div>}
         {notice && <div className="inline-message inline-message--success admin-message" role="status">{notice}</div>}
@@ -2630,6 +2638,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           </section>
         )}
 
+        {!loading && data && tab === "market" && <CampusClosetAdmin onPendingCountChange={setMarketPendingCount} />}
+
         {!loading && data && tab === "audit" && (
           <section className="admin-section" aria-labelledby="audit-title">
             <div className="section-title-row"><div><h2 id="audit-title">İşlem geçmişi</h2><p>Son 50 kritik yönetim işlemi.</p></div><button className="quiet-button" onClick={() => void refresh(false)}>Yenile</button></div>
@@ -2648,6 +2658,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
             </div>
           </section>
         )}
+        </div>
+        </div>
       </main>
     </div>
   );

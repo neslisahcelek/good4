@@ -31,6 +31,10 @@
     ],
     "rewrites": [
       {
+        "source": "/campus-email-verification",
+        "destination": "/campus-email-verification.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -51,6 +55,24 @@
           {
             "key": "Cache-Control",
             "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/@(gizlilik|privacy|uyelik-sozlesmesi|terms|hesabimi-sil|gizlilik-politikasi|topluluk-basvuru|indir|campus-email-verification|admin|admin/**)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/assets/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       },
@@ -77,6 +99,15 @@
           {
             "key": "X-Frame-Options",
             "value": "DENY"
+          }
+        ]
+      },
+      {
+        "source": "/campus-email-verification",
+        "headers": [
+          {
+            "key": "Referrer-Policy",
+            "value": "no-referrer"
           }
         ]
       }

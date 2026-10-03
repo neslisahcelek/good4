@@ -163,6 +163,9 @@ class FirebaseAuthRepository : AuthRepository {
 
     override suspend fun signOut(): Result<Unit, AuthError> {
         return try {
+            if (com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2) {
+                com.good4.notification.CampusPushNotifications.beforeSignOut(currentUser?.uid)
+            }
             firebaseAuth.signOut()
             Result.Success(Unit)
         } catch (e: Exception) {

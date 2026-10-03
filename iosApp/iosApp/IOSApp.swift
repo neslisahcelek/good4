@@ -13,6 +13,7 @@ import Security
 
 @main
 struct IOSApp: App {
+    @UIApplicationDelegateAdaptor(CampusPushAppDelegate.self) private var pushDelegate
     @State private var isComposeReady = false
 
     init() {
@@ -20,6 +21,8 @@ struct IOSApp: App {
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
         FirebaseApp.configure()
+        NativePushBridge.shared.launcher = NativeCampusPush.shared
+        CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
         GoogleSignInBridge.shared.launcher = NativeGoogleSignInLauncher()
         let appleLauncher = NativeAppleSignInLauncher()
         AppleSignInBridge.shared.launcher = appleLauncher
@@ -47,9 +50,70 @@ struct IOSApp: App {
                         .transition(.opacity)
                 }
             }
-            .onOpenURL { url in GIDSignIn.sharedInstance.handle(url) }
+            .onOpenURL { url in
+                if !CampusEmailVerificationLinks.shared.receive(url: url.absoluteString) {
+                    GIDSignIn.sharedInstance.handle(url)
+                }
+            }
+            .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                if let url = activity.webpageURL {
+                    _ = CampusEmailVerificationLinks.shared.receive(url: url.absoluteString)
+                }
+            }
         }
     }
+}
+
+private final class NativeCampusEmailAuthLauncher: NSObject, CampusEmailAuthLauncher {
+    private let appName = "good4-campus-email-verification"
+
+    private var auth: Auth {
+        if FirebaseApp.app(name: appName) == nil, let options = FirebaseApp.app()?.options {
+            FirebaseApp.configure(name: appName, options: options)
+        }
+        return Auth.auth(app: FirebaseApp.app(name: appName)!)
+    }
+
+    func send(email: String, continueUrl: String, completion: CampusEmailAuthCallback) {
+        let settings = ActionCodeSettings()
+        settings.url = URL(string: continueUrl)
+        settings.handleCodeInApp = true
+        // Explicitly clear the SDK's default bundle ID: show the short web
+        // confirmation first, then let Good4 read the result on resume.
+        settings.iOSBundleID = nil
+        // Omit linkDomain so Firebase selects its default Hosting domain.
+        auth.languageCode = "tr"
+        auth.sendSignInLink(toEmail: email, actionCodeSettings: settings) { error in
+            DispatchQueue.main.async {
+                completion.complete(token: nil, error: error == nil ? nil : "CAMPUS_EMAIL_SEND_FAILED")
+            }
+        }
+    }
+
+    func verify(email: String, link: String, completion: CampusEmailAuthCallback) {
+        guard auth.isSignIn(withEmailLink: link) else {
+            completion.complete(token: nil, error: "CAMPUS_EMAIL_SIGN_IN_FAILED")
+            return
+        }
+        auth.signIn(withEmail: email, link: link) { result, error in
+            // A network failure after successful sign-in must not force a second e-mail.
+            let retained = self.auth.currentUser
+            let user = result?.user ?? (retained?.email?.lowercased() == email.lowercased()
+                && retained?.isEmailVerified == true ? retained : nil)
+            guard let user else {
+                DispatchQueue.main.async { completion.complete(token: nil, error: "CAMPUS_EMAIL_SIGN_IN_FAILED") }
+                return
+            }
+            user.getIDTokenResult(forcingRefresh: true) { token, tokenError in
+                DispatchQueue.main.async {
+                    completion.complete(token: token?.token,
+                        error: tokenError == nil && token != nil ? nil : "CAMPUS_EMAIL_SIGN_IN_FAILED")
+                }
+            }
+        }
+    }
+
+    func signOut() { try? auth.signOut() }
 }
 
 private final class NativeGoogleSignInLauncher: NSObject, GoogleSignInLauncher {

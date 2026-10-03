@@ -18,7 +18,7 @@ class HomeLayoutTest {
     }
 
     @Test fun defaultOrderPreservesCurrentHomeAndHidesMenuItems() {
-        assertEquals(listOf("communities", "classSchedule", "campusMap", "academicCalendar", "suspendedMeals"), defaults.visible)
+        assertEquals(listOf("communities", "classSchedule", "campusMap", "academicCalendar", "suspendedMeals", "campusCloset"), defaults.visible)
         assertEquals(listOf("topUp", "tennis", "phoneNumbers", "feedback"), defaults.hidden)
     }
 
@@ -62,6 +62,11 @@ class HomeLayoutTest {
         assertFalse("suspendedMeals" in loaded.visible + loaded.hidden)
     }
 
+    @Test fun campusClosetIsOfferedOnlyWhenEnabled() {
+        assertFalse(HomeShortcut.CAMPUS_CLOSET in availableHomeShortcuts(UserRole.STUDENT, suspendedMealsEnabled = false))
+        assertTrue(HomeShortcut.CAMPUS_CLOSET in availableHomeShortcuts(UserRole.STUDENT, false, campusClosetEnabled = true))
+    }
+
     @Test fun studentShortcutsAreNotAvailableForStaffOrLegacySupporterRoles() {
         listOf(UserRole.ADMIN, UserRole.BUSINESS, UserRole.SUPPORTER).forEach {
             assertTrue(availableHomeShortcuts(it, true).isEmpty())
@@ -91,7 +96,7 @@ class HomeLayoutTest {
 
     @Test fun movesWithinAndAcrossSectionsUseDestinationIndices() {
         val moved = defaults.move("communities", true, 3)!!
-        assertEquals(listOf("classSchedule", "campusMap", "academicCalendar", "communities", "suspendedMeals"), moved.visible)
+        assertEquals(listOf("classSchedule", "campusMap", "academicCalendar", "communities", "suspendedMeals", "campusCloset"), moved.visible)
         val hidden = moved.move("communities", false, 2)!!
         assertEquals(listOf("topUp", "tennis", "communities", "phoneNumbers", "feedback"), hidden.hidden)
         assertEquals("communities", hidden.move("communities", true, 0)!!.visible.first())

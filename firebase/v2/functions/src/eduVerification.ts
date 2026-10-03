@@ -20,7 +20,7 @@ export function isEduEmail(email: string): boolean {
   return EDU_EMAIL_PATTERN.test(email.trim().toLowerCase());
 }
 
-/** Suspended-meal benefits are limited to accounts with a verified university address. */
+/** Suspended meals and Kampüs Dolabı are limited to accounts with a verified university address. */
 export function hasVerifiedEduEmail(user: DocumentSnapshot): boolean {
   const eduEmail = user.get("eduEmail");
   return user.get("eduVerified") === true && typeof eduEmail === "string" && isEduEmail(eduEmail);
@@ -53,11 +53,11 @@ function verificationMail(email: string, code: string) {
       text: [
         "Merhaba,",
         "",
-        `Good4 Askıda Yemek için .edu.tr adresini doğrulama kodun: ${code}`,
+        `Good4 hesabındaki .edu.tr adresini doğrulama kodun: ${code}`,
         "",
         "Kod 10 dakika geçerlidir. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.",
       ].join("\n"),
-      html: `<p>Merhaba,</p><p>Good4 Askıda Yemek için .edu.tr adresini doğrulama kodun:</p>`
+      html: `<p>Merhaba,</p><p>Good4 hesabındaki .edu.tr adresini doğrulama kodun:</p>`
         + `<p style="font-size:28px;font-weight:600;letter-spacing:6px">${code}</p>`
         + "<p>Kod 10 dakika geçerlidir. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.</p>",
     },

@@ -47,13 +47,67 @@ import { eraseAccountData } from "./accountDeletion.js";
 import { refreshCampusWeatherService } from "./weather.js";
 import { importSksDiningMenuService } from "./diningMenuImport.js";
 import { confirmEduVerificationService, requestEduVerificationService } from "./eduVerification.js";
+import { beginCampusEmailVerificationService, completeCampusEmailVerificationService,
+  completeCampusEmailVerificationFromBrowserService, getCampusEmailVerificationStatusService } from "./campusEmailVerification.js";
 import { recordLegalAcknowledgementsService } from "./legalAcknowledgements.js";
+import {
+  acceptMarketTermsService,
+  blockMarketUserService,
+  createMarketListingService,
+  eraseMarketData,
+  getMarketFeedService,
+  getMarketSummaryService,
+  getMarketListingService,
+  getMarketMessagesService,
+  getMarketReportConversationService,
+  listMarketConversationsService,
+  listMyMarketListingsService,
+  listMarketModerationQueueService,
+  type MarketDeps,
+  markMarketConversationReadService,
+  reportMarketContentService,
+  resolveMarketReportService,
+  respondMarketOfferService,
+  reviewMarketListingService,
+  sendMarketMessageService,
+  updateMarketListingStatusService,
+} from "./market.js";
+import { registerPushDeviceService, unregisterPushDeviceService, sendPushToUser } from "./push.js";
 
 const callableOptions = {
   region: "europe-west1",
   memory: "256MiB" as const,
   timeoutSeconds: 30,
   maxInstances: 20,
+};
+
+export const registerPushDevice = onCall(callableOptions, async (request) =>
+  registerPushDeviceService(db, request.auth?.uid, request.data ?? {}));
+
+export const unregisterPushDevice = onCall(callableOptions, async (request) =>
+  unregisterPushDeviceService(db, request.auth?.uid, request.data ?? {}));
+
+async function deleteStoragePrefix(prefix: string): Promise<void> {
+  await storageBucket.deleteFiles({ prefix, force: true });
+}
+
+const marketDeps: MarketDeps = {
+  photos: {
+    async save(objectName, bytes) {
+      const downloadToken = randomUUID();
+      await storageBucket.file(objectName).save(bytes, {
+        resumable: false,
+        metadata: {
+          contentType: "image/jpeg",
+          cacheControl: "public,max-age=86400",
+          metadata: { firebaseStorageDownloadTokens: downloadToken },
+        },
+      });
+      return `https://firebasestorage.googleapis.com/v0/b/${storageBucket.name}/o/${encodeURIComponent(objectName)}?alt=media&token=${downloadToken}`;
+    },
+    deletePrefix: deleteStoragePrefix,
+  },
+  notify: (uid, payload) => sendPushToUser(db, uid, payload),
 };
 
 export const getFollowingCommunityIds = onCall(callableOptions, async (request) => {
@@ -341,6 +395,26 @@ export const confirmEduVerification = onCall(callableOptions, async (request) =>
   return confirmEduVerificationService(db, uid, request.data ?? {});
 });
 
+export const beginCampusEmailVerification = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return beginCampusEmailVerificationService(db, uid, request.data ?? {});
+});
+
+export const completeCampusEmailVerification = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return completeCampusEmailVerificationService(db, uid, request.data ?? {});
+});
+
+// No browser Good4 login is needed; the service validates the one-time Auth
+// proof and resolves the original account from its bound verification request.
+export const completeCampusEmailVerificationFromBrowser = onCall(callableOptions, async (request) => {
+  return completeCampusEmailVerificationFromBrowserService(db, request.data ?? {});
+});
+
+export const getCampusEmailVerificationStatus = onCall(callableOptions, async (request) => {
+  return getCampusEmailVerificationStatusService(db, requireAuthenticatedUid(request.auth?.uid));
+});
+
 export const deleteMyAccount = onCall({
   ...callableOptions,
   memory: "512MiB",
@@ -353,6 +427,7 @@ export const deleteMyAccount = onCall({
   } catch (error) {
     if ((error as { code?: string }).code !== "auth/user-not-found") throw error;
   }
+  await eraseMarketData(db, uid, deleteStoragePrefix);
   await eraseAccountData(db, legacyTestDb, uid, email);
 
   try {
@@ -362,6 +437,101 @@ export const deleteMyAccount = onCall({
   }
 
   return { deleted: true };
+});
+
+// Kampüs Dolabı: student second-hand market. Every write goes through these callables.
+export const acceptMarketTerms = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return acceptMarketTermsService(db, uid, request.data ?? {});
+});
+
+export const createMarketListing = onCall({
+  ...callableOptions,
+  memory: "1GiB",
+  timeoutSeconds: 60,
+}, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return createMarketListingService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const updateMarketListingStatus = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return updateMarketListingStatusService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const sendMarketMessage = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return sendMarketMessageService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const respondMarketOffer = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return respondMarketOfferService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const markMarketConversationRead = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return markMarketConversationReadService(db, uid, request.data ?? {});
+});
+
+export const blockMarketUser = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return blockMarketUserService(db, uid, request.data ?? {});
+});
+
+export const reportMarketContent = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return reportMarketContentService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const getMarketSummary = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getMarketSummaryService(db, uid);
+});
+
+export const getMarketFeed = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getMarketFeedService(db, uid, request.data ?? {});
+});
+
+export const getMarketListing = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getMarketListingService(db, uid, request.data ?? {});
+});
+
+export const listMyMarketListings = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listMyMarketListingsService(db, uid);
+});
+
+export const listMarketConversations = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listMarketConversationsService(db, uid);
+});
+
+export const getMarketMessages = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getMarketMessagesService(db, uid, request.data ?? {});
+});
+
+export const listMarketModerationQueue = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listMarketModerationQueueService(db, uid);
+});
+
+export const reviewMarketListing = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return reviewMarketListingService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const resolveMarketReport = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return resolveMarketReportService(db, uid, request.data ?? {}, marketDeps);
+});
+
+export const getMarketReportConversation = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getMarketReportConversationService(db, uid, request.data ?? {});
 });
 
 // One request per half hour for the whole app keeps us well inside MET Norway's

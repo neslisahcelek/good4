@@ -194,6 +194,10 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Kampüs Dolabı (marketListings, marketConversations, marketUserState,
+    // marketReports, marketViolations) is read and written only through the
+    // market callables, so the default rule below keeps it closed to clients.
+
     match /auditLogs/{logId} {
       allow read: if isGood4Admin();
       allow write: if false;

@@ -1,12 +1,20 @@
 package com.good4.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.good4.auth.data.repository.AuthRepository
+import com.good4.campuscloset.CampusEmailVerificationLinks
+import org.koin.compose.koinInject
 import com.good4.admin.presentation.home.AdminHomeScreenRoot
 import com.good4.admin.presentation.profile.AdminProfileScreen
 import com.good4.auth.presentation.login.LoginScreenRoot
@@ -30,6 +38,12 @@ import com.good4.core.util.FirebaseBackend
 import com.good4.student.presentation.home.StudentHomeScreenRoot
 import com.good4.student.presentation.home.EditHomeScreen
 import com.good4.notification.NotificationsScreen
+import com.good4.campuscloset.CampusClosetChatScreen
+import com.good4.campuscloset.CampusClosetInboxScreen
+import com.good4.campuscloset.CampusClosetListingScreen
+import com.good4.campuscloset.CampusClosetMyListingsScreen
+import com.good4.campuscloset.CampusClosetNewListingScreen
+import com.good4.campuscloset.CampusClosetScreen
 import com.good4.student.presentation.profile.StudentProfileScreen
 import com.good4.schedule.presentation.ClassScheduleScreen
 import com.good4.user.domain.UserRole
@@ -44,6 +58,41 @@ fun Good4NavGraph(
     startDestination: Route = Route.Login,
     onSplashReady: (() -> Unit)? = null
 ) {
+    val primaryAuth: AuthRepository = koinInject()
+    val primaryUser by primaryAuth.authStateFlow.collectAsState(primaryAuth.currentUser)
+    val campusLink by CampusEmailVerificationLinks.pending.collectAsState()
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val pushManager = androidx.compose.runtime.remember(primaryAuth) { com.good4.notification.PushRegistrationManager(primaryAuth) }
+    val pushDestination by com.good4.notification.CampusPushNotifications.pending.collectAsState()
+    if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+        LaunchedEffect(pushManager) { pushManager.observe() }
+        androidx.lifecycle.compose.LifecycleResumeEffect(primaryUser?.uid) {
+            com.good4.notification.CampusPushNotifications.refresh()
+            onPauseOrDispose { }
+        }
+        LaunchedEffect(pushDestination, primaryUser?.uid, currentEntry?.destination) {
+            val notification = pushDestination ?: return@LaunchedEffect
+            val uid = primaryUser?.uid ?: return@LaunchedEffect
+            val destination = currentEntry?.destination ?: return@LaunchedEffect
+            if (destination.hasRoute<Route.Splash>() || destination.hasRoute<Route.SessionRestore>()
+                || destination.hasRoute<Route.Login>() || destination.hasRoute<Route.EmailVerification>()) return@LaunchedEffect
+            com.good4.notification.CampusPushNotifications.consume(notification)
+            if (notification.recipientUid != uid) return@LaunchedEffect
+            when (notification.type) {
+                "market_message" -> navController.navigate(Route.CampusClosetChat(notification.targetId)) { launchSingleTop = true }
+                "market_listing" -> navController.navigate(Route.CampusClosetMyListings) { launchSingleTop = true }
+            }
+        }
+    }
+    LaunchedEffect(campusLink, primaryUser?.uid, currentEntry?.destination) {
+        val destination = currentEntry?.destination
+        if (campusLink != null && primaryUser != null && destination != null
+            && !destination.hasRoute<Route.Splash>() && !destination.hasRoute<Route.SessionRestore>()
+            && !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.EmailVerification>()
+            && !destination.hasRoute<Route.CampusCloset>()) {
+            navController.navigate(Route.CampusCloset) { launchSingleTop = true }
+        }
+    }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -181,6 +230,9 @@ fun Good4NavGraph(
                 onNavigateToCalendar = {
                     navController.navigate(Route.AcademicCalendar)
                 },
+                onNavigateToCampusCloset = {
+                    navController.navigate(Route.CampusCloset)
+                },
                 onNavigateToClassSchedule = {
                     navController.navigate(Route.ClassSchedule)
                 },
@@ -208,6 +260,59 @@ fun Good4NavGraph(
                 onSelectAcademicProfile = {
                     navController.navigate(Route.StudentAccountSettings(academicSelectionPrompt = true))
                 }
+            )
+        }
+
+        composable<Route.CampusCloset> {
+            CampusClosetScreen(
+                onBack = { navController.popBackStack() },
+                onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) },
+                onNewListing = { navController.navigate(Route.CampusClosetNewListing) },
+                onOpenInbox = { navController.navigate(Route.CampusClosetInbox) },
+                onOpenMyListings = { navController.navigate(Route.CampusClosetMyListings) }
+            )
+        }
+
+        composable<Route.CampusClosetListing> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.CampusClosetListing>()
+            CampusClosetListingScreen(
+                listingId = route.listingId,
+                onBack = { navController.popBackStack() },
+                onOpenChat = { navController.navigate(Route.CampusClosetChat(it)) }
+            )
+        }
+
+        composable<Route.CampusClosetNewListing> {
+            CampusClosetNewListingScreen(
+                onBack = { navController.popBackStack() },
+                onOpenMyListings = {
+                    navController.navigate(Route.CampusClosetMyListings) {
+                        popUpTo<Route.CampusClosetNewListing> { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable<Route.CampusClosetMyListings> {
+            CampusClosetMyListingsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) }
+            )
+        }
+
+        composable<Route.CampusClosetInbox> {
+            CampusClosetInboxScreen(
+                onBack = { navController.popBackStack() },
+                onOpenChat = { navController.navigate(Route.CampusClosetChat(it)) }
+            )
+        }
+
+        composable<Route.CampusClosetChat> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.CampusClosetChat>()
+            CampusClosetChatScreen(
+                conversationId = route.conversationId,
+                onBack = { navController.popBackStack() },
+                onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) }
             )
         }
 

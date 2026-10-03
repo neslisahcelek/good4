@@ -3,6 +3,7 @@ package com.good4.student.presentation.home
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Map
@@ -17,7 +18,7 @@ import com.good4.core.presentation.PrimaryGreen
 import com.good4.dining.presentation.AKDENIZ_BALANCE_URL
 import com.good4.student.home.HomeShortcut
 
-data class HomeShortcutAppearance(val title: String, val icon: ImageVector, val accent: Color)
+data class HomeShortcutAppearance(val title: String, val icon: ImageVector, val accent: Color, val tag: String? = null)
 
 @Composable
 fun HomeShortcut.appearance(communityManager: Boolean = false): HomeShortcutAppearance = when (this) {
@@ -26,6 +27,7 @@ fun HomeShortcut.appearance(communityManager: Boolean = false): HomeShortcutAppe
     HomeShortcut.CAMPUS_MAP -> HomeShortcutAppearance("Kampüs Haritası", Icons.Outlined.Map, PrimaryGreen)
     HomeShortcut.ACADEMIC_CALENDAR -> HomeShortcutAppearance("Akademik Takvim", Icons.Outlined.CalendarMonth, Color(0xFFA58DEB))
     HomeShortcut.SUSPENDED_MEALS -> HomeShortcutAppearance("Askıda Yemek", Icons.Outlined.ShoppingCart, Color(0xFF8CB7ED))
+    HomeShortcut.CAMPUS_CLOSET -> HomeShortcutAppearance("Kampüs Dolabı", Icons.Outlined.Checkroom, Color(0xFFE59AC0), tag = "2. el alışveriş")
     HomeShortcut.TOP_UP -> HomeShortcutAppearance("TL Yükle", Icons.Outlined.AccountBalanceWallet, Color(0xFFF2A66F))
     HomeShortcut.TENNIS -> HomeShortcutAppearance("Tenis Kortu Rezervasyonu", Icons.Outlined.SportsTennis, Color(0xFFF2A66F))
     HomeShortcut.PHONE_NUMBERS -> HomeShortcutAppearance("Numaralar", Icons.Outlined.Phone, Color(0xFF68CCDC))

@@ -13,6 +13,7 @@ enum class HomeShortcut(val id: String, val defaultVisible: Boolean) {
     CAMPUS_MAP("campusMap", true),
     ACADEMIC_CALENDAR("academicCalendar", true),
     SUSPENDED_MEALS("suspendedMeals", true),
+    CAMPUS_CLOSET("campusCloset", true),
     TOP_UP("topUp", false),
     TENNIS("tennis", false),
     PHONE_NUMBERS("phoneNumbers", false),
@@ -23,9 +24,16 @@ enum class HomeShortcut(val id: String, val defaultVisible: Boolean) {
 
 data class HomeShortcutDefinition(val id: String, val defaultVisible: Boolean)
 
-fun availableHomeShortcuts(role: UserRole, suspendedMealsEnabled: Boolean): List<HomeShortcut> =
+fun availableHomeShortcuts(
+    role: UserRole,
+    suspendedMealsEnabled: Boolean,
+    campusClosetEnabled: Boolean = false
+): List<HomeShortcut> =
     if (role != UserRole.STUDENT) emptyList()
-    else HomeShortcut.entries.filter { it != HomeShortcut.SUSPENDED_MEALS || suspendedMealsEnabled }
+    else HomeShortcut.entries.filter {
+        (it != HomeShortcut.SUSPENDED_MEALS || suspendedMealsEnabled)
+            && (it != HomeShortcut.CAMPUS_CLOSET || campusClosetEnabled)
+    }
 
 @Serializable
 data class HomeLayout(val visible: List<String> = emptyList(), val hidden: List<String> = emptyList()) {

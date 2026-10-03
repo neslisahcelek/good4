@@ -68,6 +68,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
+            implementation(libs.firebase.messaging)
             implementation(libs.firebase.storage.ktx)
             implementation(libs.firebase.appcheck.playintegrity)
         }

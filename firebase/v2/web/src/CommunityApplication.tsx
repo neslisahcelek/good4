@@ -167,7 +167,7 @@ export default function CommunityApplicationPage() {
       <div className="application-status">
         <h2>{application?.status === "approved" ? "Başvurunuz onaylandı" : "Bu hesap zaten panele bağlı"}</h2>
         <p>Yönetim paneline bu Google hesabıyla giriş yapabilirsiniz.</p>
-        <a className="primary-button" href="/">Panele git</a>
+        <a className="primary-button" href="/admin">Panele git</a>
       </div>
     );
   } else if (application?.status === "pending" && !editing) {
@@ -213,7 +213,7 @@ export default function CommunityApplicationPage() {
           )}
           {body}
           {message && <div className="inline-message inline-message--error" role="alert">{message}</div>}
-          <p className="support-copy">Zaten onaylı bir hesabınız var mı? <a href="/">Panele giriş yapın</a>.</p>
+          <p className="support-copy">Zaten onaylı bir hesabınız var mı? <a href="/admin">Panele giriş yapın</a>.</p>
         </div>
       </section>
     </main>

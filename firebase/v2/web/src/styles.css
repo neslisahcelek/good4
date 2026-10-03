@@ -168,6 +168,21 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); box-shad
 .admin-tabs button { min-height: 43px; padding: 0 15px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; color: #5e5d59; background: transparent; border: 0; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; }
 .admin-tabs button.active { color: var(--green-dark); background: #f5f8f4; border-bottom-color: var(--green); }
 .admin-tabs button span { min-width: 20px; padding: 2px 6px; color: #4f4e4b; background: #e7e6e1; border-radius: 10px; font-size: 10px; text-align: center; }
+.admin-workspace, .admin-tab-content { min-width: 0; }
+.admin-workspace > .admin-sidebar { min-width: 0; max-width: 100%; margin-right: 0; }
+.admin-sidebar button { flex-shrink: 0; }
+.admin-sidebar button span { flex-shrink: 0; }
+
+@media (min-width: 960px) {
+  .admin-workspace { display: grid; grid-template-columns: 236px minmax(0, 1fr); align-items: start; gap: 24px; }
+  .admin-workspace > .admin-sidebar { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 3px; max-height: calc(100dvh - 40px); padding: 8px; overflow-x: hidden; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .admin-sidebar button { width: 100%; min-height: 44px; padding: 10px 12px; justify-content: space-between; white-space: normal; text-align: left; line-height: 1.4; border-left: 3px solid transparent; border-bottom: 0; border-radius: 6px; }
+  .admin-sidebar button.active { color: var(--green-dark); background: #edf7f2; border-left-color: var(--green); }
+  .admin-sidebar button span { margin-left: auto; }
+  .admin-sidebar button.active span { color: var(--green-dark); background: #d9eee2; }
+  .admin-tab-content > .admin-section:first-child, .admin-tab-content > .admin-loading:first-child { margin-top: 0; }
+}
+
 .admin-message { margin-top: 14px; }
 .admin-section { margin-top: 24px; }
 .section-title-row { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
@@ -824,3 +839,25 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); box-shad
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
+
+/* Kampüs Dolabı moderation */
+.market-photo-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.market-photo-row img { width: 112px; height: 112px; object-fit: cover; border-radius: 10px; border: 1px solid #ecebe7; display: block; }
+.market-flags { margin: 8px 0 0; color: #b4580a; font-size: 13px; font-weight: 600; }
+.market-reject-box { margin-top: 10px; display: grid; gap: 8px; }
+.market-reject-box .coupon-tags button { font-size: 12px; padding: 4px 10px; }
+.market-conversation { margin-top: 10px; max-height: 320px; overflow-y: auto; border: 1px solid #ecebe7; border-radius: 10px; padding: 10px 12px; background: #fafaf8; }
+.market-conversation p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.market-violation-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ecebe7; font-size: 13px; }
+.market-violation-row:last-child { border-bottom: 0; }
+.market-violation-row small { color: #6b6b66; overflow-wrap: anywhere; }
+
+/* Kampüs Dolabı e-mail link opened in a browser */
+.campus-link-page { min-height: 100svh; display: grid; place-items: center; padding: 32px 16px; background: #f3f8e5; color: #113b2c; }
+.campus-link-card { width: min(100%, 420px); background: #fff; border: 1px solid #e3ead2; border-radius: 20px; padding: 32px 24px; text-align: center; box-shadow: 0 10px 30px rgba(17, 59, 44, 0.08); }
+.campus-link-logo { width: 56px; height: 56px; border-radius: 14px; display: block; margin: 0 auto 20px; }
+.campus-link-check { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%; background: #e5f5ec; color: #008b58; font-size: 36px; font-weight: 700; }
+.campus-link-card h1 { margin: 0 0 12px; font-size: 22px; line-height: 1.3; }
+.campus-link-card p, .campus-link-card li { font-size: 15px; line-height: 1.55; color: #33503f; }
+.campus-link-card ol { padding-left: 20px; margin: 12px 0; display: grid; gap: 10px; }
+.campus-link-note { font-size: 13px !important; color: #5f7466 !important; margin-bottom: 0; }

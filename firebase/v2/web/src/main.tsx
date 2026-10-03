@@ -6,6 +6,8 @@ import PrivacyPolicy from "./PrivacyPolicy";
 import AccountDeletion from "./AccountDeletion";
 import Good4PrivacyPolicy from "./Good4PrivacyPolicy";
 import CommunityApplicationPage from "./CommunityApplication";
+import DownloadPage from "./DownloadPage";
+import CampusEmailLinkPage from "./CampusEmailLinkPage";
 import "./styles.css";
 
 const normalizedPath = window.location.pathname.replace(/\/$/, "") || "/";
@@ -14,9 +16,16 @@ const isAgreementPage = normalizedPath === "/uyelik-sozlesmesi" || normalizedPat
 const isAccountDeletionPage = normalizedPath === "/hesabimi-sil";
 const isStandalonePrivacyPolicy = normalizedPath === "/gizlilik-politikasi";
 const isCommunityApplicationPage = normalizedPath === "/topluluk-basvuru";
+const isDownloadPage = normalizedPath === "/indir";
+const isCampusEmailLinkPage = normalizedPath === "/campus-email-verification";
+// The staff panel lives under /admin (and on an admin.* host if one is pointed here);
+// every other unknown address, including the bare domain, shows the app download page.
+const isAdminPage = normalizedPath === "/admin" || normalizedPath.startsWith("/admin/")
+  || window.location.hostname.startsWith("admin.");
+if (isAdminPage) document.title = "Good4 Yönetim Paneli";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {isCommunityApplicationPage ? <CommunityApplicationPage /> : isStandalonePrivacyPolicy ?<Good4PrivacyPolicy /> : isAccountDeletionPage ? <AccountDeletion /> : isAgreementPage ? <MembershipAgreement /> : isPrivacyPage ? <PrivacyPolicy /> : <App />}
+    {isCampusEmailLinkPage ? <CampusEmailLinkPage /> : isDownloadPage ? <DownloadPage /> : isCommunityApplicationPage ? <CommunityApplicationPage /> : isStandalonePrivacyPolicy ?<Good4PrivacyPolicy /> : isAccountDeletionPage ? <AccountDeletion /> : isAgreementPage ? <MembershipAgreement /> : isPrivacyPage ? <PrivacyPolicy /> : isAdminPage ? <App /> : <DownloadPage />}
   </StrictMode>,
 );

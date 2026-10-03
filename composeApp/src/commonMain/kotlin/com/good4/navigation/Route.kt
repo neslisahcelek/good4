@@ -48,6 +48,24 @@ sealed class Route {
 
     @Serializable
     data object Notifications : Route()
+
+    @Serializable
+    data object CampusCloset : Route()
+
+    @Serializable
+    data class CampusClosetListing(val listingId: String) : Route()
+
+    @Serializable
+    data object CampusClosetNewListing : Route()
+
+    @Serializable
+    data object CampusClosetMyListings : Route()
+
+    @Serializable
+    data object CampusClosetInbox : Route()
+
+    @Serializable
+    data class CampusClosetChat(val conversationId: String) : Route()
     
     @Serializable
     data class ProductDetail(val productId: String) : Route()

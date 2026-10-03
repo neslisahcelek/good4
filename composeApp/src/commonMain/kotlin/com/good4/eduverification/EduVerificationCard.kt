@@ -42,10 +42,13 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 
-/** Shown on Askıda Yemek until the student proves a .edu.tr address. */
+/** Shown on Askıda Yemek and Kampüs Dolabı until the student proves a .edu.tr address. */
 @Composable
 fun EduVerificationCard(
     state: EduVerificationState,
+    title: String = "Askıda Yemek üniversite öğrencilerine özel",
+    description: String = "Rezervasyon yapıp kod alabilmek için üniversite (.edu.tr) e-posta adresinizi doğrulamanız gerekiyor.",
+    optInLabel: String = "Edu mailimi aktif ederek Askıda Yemek'ten faydalanmak istiyorum",
     onOptInChange: (Boolean) -> Unit,
     onEmailChange: (String) -> Unit,
     onSendCode: () -> Unit,
@@ -72,14 +75,14 @@ fun EduVerificationCard(
                 Icon(Icons.Outlined.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Askıda Yemek üniversite öğrencilerine özel",
+                    title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
             }
             Text(
-                "Rezervasyon yapıp kod alabilmek için üniversite (.edu.tr) e-posta adresinizi doğrulamanız gerekiyor.",
+                description,
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 color = TextSecondary
@@ -99,7 +102,7 @@ fun EduVerificationCard(
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    "Edu mailimi aktif ederek Askıda Yemek'ten faydalanmak istiyorum",
+                    optInLabel,
                     fontSize = 14.sp,
                     lineHeight = 18.sp,
                     color = TextPrimary

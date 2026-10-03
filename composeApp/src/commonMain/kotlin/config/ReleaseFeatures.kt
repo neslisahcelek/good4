@@ -19,8 +19,11 @@ object ReleaseFeatures {
     /** Edu mail + password sign-in and sign-up on the V2 login screen; hidden, Google/Apple only. */
     val eduEmailAuth: Boolean get() = false
 
+    /** Kampüs Dolabı runs only on the V2 backend (market callables in good4tr-v2). */
+    val campusCloset: Boolean get() = isV2
+
     /** The in-app business and admin panels use V1 collections; V2 staff use the web panel. */
     val inAppStaffPanels: Boolean get() = !isV2
 
-    const val WEB_PANEL_URL = "https://good4tr-v2.web.app"
+    const val WEB_PANEL_URL = "https://good4tr-v2.web.app/admin"
 }

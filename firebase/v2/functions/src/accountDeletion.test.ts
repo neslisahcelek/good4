@@ -11,7 +11,7 @@ beforeEach(async () => {
       "users", "organizations", "events", "campaignClaims", "campaignCodes",
       "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
       "communities", "codes", "orders", "businesses", "community_access",
-      "eduEmailClaims", "eduVerifications", "mail",
+      "eduEmailClaims", "eduVerifications", "campusEmailVerifications", "mail",
     ].map((collection) => db.recursiveDelete(db.collection(collection))),
     ...["communities", "community_coupon_codes", "community_access", "users"].map((collection) =>
       legacyTestDb.recursiveDelete(legacyTestDb.collection(collection))),
@@ -56,6 +56,7 @@ test("deletes personal records and removes account identifiers from retained V2 
     db.doc("redemptions/ABC12345").set({ studentId: uid, redeemedBy: uid }),
     db.doc("feedbackSubmissions/feedback-1").set({ userId: uid, userEmail: "delete@example.com" }),
     db.doc(`eduVerifications/${uid}`).set({ email: "delete@example.edu.tr", codeHash: "hashed" }),
+    db.doc(`campusEmailVerifications/${uid}`).set({ email: "delete@ogr.akdeniz.edu.tr", requestHash: "hashed" }),
     db.doc("eduEmailClaims/claim-1").set({ uid }),
     db.doc("mail/verification-1").set({ uid, to: ["delete@example.edu.tr"] }),
     db.doc("legacyTestRedemptions/123456").set({ legacyStudentId: uid, redeemedBy: uid }),
@@ -108,6 +109,7 @@ test("deletes personal records and removes account identifiers from retained V2 
   assert.equal((await db.doc("redemptions/ABC12345").get()).get("redeemedBy"), "deleted-account");
   assert.equal((await db.doc("feedbackSubmissions/feedback-1").get()).exists, false);
   assert.equal((await db.doc(`eduVerifications/${uid}`).get()).exists, false);
+  assert.equal((await db.doc(`campusEmailVerifications/${uid}`).get()).exists, false);
   assert.equal((await db.doc("eduEmailClaims/claim-1").get()).exists, false);
   assert.equal((await db.doc("mail/verification-1").get()).exists, false);
   assert.equal((await db.doc("legacyTestRedemptions/123456").get()).get("legacyStudentId"), "deleted-account");

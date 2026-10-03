@@ -17,6 +17,7 @@ class Good4Application : Application() {
         super.onCreate()
         
         FirebaseApp.initializeApp(this)
+        com.good4.notification.AndroidCampusPush.initialize(this)
         FirebaseAppCheck.getInstance().apply {
             if (BuildConfig.DEBUG) {
                 val debugFactory = runCatching {

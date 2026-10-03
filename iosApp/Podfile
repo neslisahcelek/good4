@@ -16,6 +16,7 @@ target 'iosApp' do
   pod 'GoogleSignIn', '~> 10.0'
   pod 'Firebase/Firestore', '= 12.9.0'
   pod 'Firebase/Storage', '= 12.9.0'
+  pod 'Firebase/Messaging', '= 12.9.0'
   pod 'MapLibre', '6.17.1'
 end
 

@@ -4,6 +4,7 @@ import {
   type Firestore,
   type Query,
 } from "firebase-admin/firestore";
+import { erasePushDevices } from "./push.js";
 
 const DELETED_ACCOUNT_MARKER = "deleted-account";
 const DELETE_PAGE_SIZE = 400;
@@ -208,6 +209,7 @@ export async function eraseAccountData(
   if (user.exists) {
     await userRef.update({ status: "deleting", updatedAt: FieldValue.serverTimestamp() });
   }
+  await erasePushDevices(database, uid);
 
   const registrations = database.collectionGroup("registrations").where("userId", "==", uid);
   while (true) {
@@ -245,6 +247,7 @@ export async function eraseAccountData(
   await deleteMatchingDocuments(database, database.collection("eduEmailClaims").where("uid", "==", uid));
   await deleteMatchingDocuments(database, database.collection("mail").where("uid", "==", uid));
   await database.doc(`eduVerifications/${uid}`).delete();
+  await database.doc(`campusEmailVerifications/${uid}`).delete();
 
   await replaceMatchingField(database, database.collection("events").where("createdBy", "==", uid), "createdBy");
   await replaceMatchingField(database, database.collection("campaigns").where("createdBy", "==", uid), "createdBy");
