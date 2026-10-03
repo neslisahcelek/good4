@@ -27,6 +27,7 @@ import {
   updateMarketListingStatusService,
 } from "./market.js";
 import { checkMarketText, containsPhoneNumber } from "./marketModeration.js";
+import { publicName } from "./market.js";
 
 const seller = "seller1";
 const buyer = "buyer1";
@@ -158,7 +159,7 @@ test("a new listing is stored as pending with re-encoded photos and the admins a
     await listingInput({ photos: [await photo(), await photo()] }), deps);
   const listing = await db.doc(`marketListings/${listingId}`).get();
   assert.equal(listing.get("status"), "pending");
-  assert.equal(listing.get("sellerName"), "Ayşe Y.");
+  assert.equal(listing.get("sellerName"), "A.. Y..");
   assert.equal(listing.get("eduDomain"), "akdeniz.edu.tr");
   assert.equal(listing.get("universityName"), "Akdeniz Üniversitesi");
   assert.equal(listing.get("photos").length, 2);
@@ -435,7 +436,7 @@ test("listing details, my listings and the inbox show only what the caller may s
   const inbox = await listMarketConversationsService(db, seller);
   assert.equal(inbox.unreadCount, 1);
   assert.equal(inbox.conversations[0]?.role, "seller");
-  assert.equal(inbox.conversations[0]?.otherName, "Mehmet K.");
+  assert.equal(inbox.conversations[0]?.otherName, "M.. K..");
   assert.equal(inbox.conversations[0]?.unread, 1);
   assert.deepEqual((await listMarketConversationsService(db, "stranger")).conversations, []);
 });
@@ -456,4 +457,28 @@ test("polling messages returns only newer ones and clears the reader's unread co
   const newer = await getMarketMessagesService(db, buyer, { conversationId, after: first.messages.at(-1)?.createdAt });
   assert.deepEqual(newer.messages.map((message) => [message.text, message.mine]), [["Üç", false]]);
   await rejectsWith(getMarketMessagesService(db, "stranger", { conversationId }), "MARKET_NOT_PARTICIPANT");
+});
+
+test("students see each other only as initials, including names stored in the old format", async () => {
+  assert.equal(publicName("Ayşe Yılmaz"), "A.. Y..");
+  assert.equal(publicName("  ışıl  nur   öztürk "), "I.. Ö..", "first and last name, Turkish upper case");
+  assert.equal(publicName("Can"), "C..");
+  assert.equal(publicName(""), "Öğrenci");
+  assert.equal(publicName(undefined), "Öğrenci");
+  assert.equal(publicName("Öğrenci"), "Öğrenci");
+  assert.equal(publicName("Ayşe Y."), "A.. Y..", "legacy stored names are masked on read");
+  assert.equal(publicName("A.. Y.."), "A.. Y..", "idempotent");
+
+  const listingId = await publishedListing();
+  await db.doc(`marketListings/${listingId}`).update({ sellerName: "Ayşe Y." });
+  const detail = await getMarketListingService(db, buyer, { listingId }, deps);
+  assert.equal(detail.listing.sellerName, "A.. Y..");
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Merhaba" }, deps);
+  const stored = await db.doc(`marketConversations/${conversationId}`).get();
+  assert.equal(stored.get("buyerName"), "M.. K..");
+  assert.equal(stored.get("sellerName"), "A.. Y..");
+  await db.doc(`marketConversations/${conversationId}`).update({ buyerName: "Mehmet Kaya" });
+  assert.equal((await listMarketConversationsService(db, seller)).conversations[0]?.otherName, "M.. K..");
+  assert.ok(!JSON.stringify(await getMarketFeedService(db, buyer, {}, deps)).includes("Ayşe"));
 });

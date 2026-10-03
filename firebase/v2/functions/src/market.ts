@@ -77,12 +77,18 @@ export function eduDomainOf(eduEmail: string): string {
   return domain.split(".").slice(-3).join(".");
 }
 
-function publicName(displayName: unknown): string {
+const ANONYMOUS_NAME = "Öğrenci";
+
+/**
+ * Students see each other only as initials ("Ayşe Yılmaz" → "A.. Y.."): first
+ * and last name, never the full name. Idempotent, so it can also mask names
+ * stored before this format ("Ayşe Y." → "A.. Y..").
+ */
+export function publicName(displayName: unknown): string {
   const parts = String(displayName ?? "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "Öğrenci";
-  const first = parts[0]!.slice(0, 30);
-  const lastInitial = parts.length > 1 ? ` ${parts.at(-1)!.charAt(0).toLocaleUpperCase("tr-TR")}.` : "";
-  return first + lastInitial;
+  if (parts.length === 0 || (parts.length === 1 && parts[0] === ANONYMOUS_NAME)) return ANONYMOUS_NAME;
+  const initial = (word: string) => `${Array.from(word)[0]!.toLocaleUpperCase("tr-TR")}..`;
+  return parts.length > 1 ? `${initial(parts[0]!)} ${initial(parts.at(-1)!)}` : initial(parts[0]!);
 }
 
 function iso(value: unknown): string | null {
@@ -809,7 +815,7 @@ function listingForStudent(listing: DocumentSnapshot, viewerUid: string, withDet
     category: String(listing.get("category") ?? ""),
     condition: String(listing.get("condition") ?? ""),
     photos: (listing.get("photos") ?? []) as { url: string; thumbUrl: string }[],
-    sellerName: String(listing.get("sellerName") ?? ""),
+    sellerName: publicName(listing.get("sellerName")),
     universityName: String(listing.get("universityName") ?? ""),
     status: String(listing.get("status") ?? ""),
     publishedAt: iso(listing.get("publishedAt")),
@@ -936,7 +942,7 @@ function conversationForStudent(conversation: DocumentSnapshot, uid: string) {
     listingThumbUrl: String(conversation.get("listingThumbUrl") ?? ""),
     listingPrice: Number(conversation.get("listingPrice") ?? 0),
     role: isSeller ? "seller" : "buyer",
-    otherName: String(conversation.get(isSeller ? "buyerName" : "sellerName") ?? ""),
+    otherName: publicName(conversation.get(isSeller ? "buyerName" : "sellerName")),
     lastMessageText: String(conversation.get("lastMessageText") ?? ""),
     lastMessageAt: iso(conversation.get("lastMessageAt")),
     lastMessageMine: conversation.get("lastSenderUid") === uid,
@@ -1015,7 +1021,7 @@ function listingForAdmin(listing: DocumentSnapshot) {
   return {
     id: listing.id,
     sellerUid: listing.get("sellerUid"),
-    sellerName: listing.get("sellerName"),
+    sellerName: publicName(listing.get("sellerName")),
     universityName: listing.get("universityName"),
     category: listing.get("category"),
     condition: listing.get("condition"),
@@ -1192,8 +1198,8 @@ export async function getMarketReportConversationService(
   return {
     sellerUid: conversation.get("sellerUid") ?? null,
     buyerUid: conversation.get("buyerUid") ?? null,
-    sellerName: conversation.get("sellerName") ?? "",
-    buyerName: conversation.get("buyerName") ?? "",
+    sellerName: publicName(conversation.get("sellerName")),
+    buyerName: publicName(conversation.get("buyerName")),
     listingTitle: conversation.get("listingTitle") ?? "",
     messages: messages.docs.reverse().map((message) => ({
       senderUid: message.get("senderUid"),
