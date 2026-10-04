@@ -96,8 +96,7 @@ class AkdenizDiningMenuViewModel(
     private fun ratingErrorMessage(code: String?): String = when {
         code == null -> "Oyun kaydedilemedi. Tekrar dene."
         "MEAL_NOT_STARTED" in code -> "Bu öğün henüz başlamadı."
-        "EDU_VERIFICATION_REQUIRED" in code -> "Puan vermek için üniversite e-postanı doğrulamalısın."
-        "STUDENT_REQUIRED" in code -> "Yalnızca öğrenciler puan verebilir."
+        "ACCOUNT_NOT_ACTIVE" in code -> "Hesabın etkin olmadığı için puan veremezsin."
         "RATE_LIMIT" in code || "resource-exhausted" in code -> "Çok hızlı denedin, biraz sonra tekrar dene."
         else -> "Oyun kaydedilemedi. Tekrar dene."
     }

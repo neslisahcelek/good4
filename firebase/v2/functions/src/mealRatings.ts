@@ -1,6 +1,5 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { hasVerifiedEduEmail } from "./eduVerification.js";
 
 export const MEALS = ["kyk_breakfast", "cafeteria", "kyk_dinner"] as const;
 export const RATINGS = ["good", "okay", "bad"] as const;
@@ -30,7 +29,7 @@ async function mealIsPublished(database: Firestore, date: string, meal: Meal): P
 }
 
 /**
- * One anonymous 😋/😐/😕 vote per student, meal and day; voting again replaces the earlier vote.
+ * One anonymous 😋/😐/😕 vote per signed-in account, meal and day; voting again replaces the earlier vote.
  * Only the counters on meal_ratings/{date}_{meal} are readable by others.
  */
 export async function rateMealService(
@@ -56,10 +55,8 @@ export async function rateMealService(
       transaction.get(voteRef),
       transaction.get(summaryRef),
     ]);
-    if (!user.exists || user.get("status") !== "active" || user.get("role") !== "student") {
-      throw new HttpsError("permission-denied", "STUDENT_REQUIRED");
-    }
-    if (!hasVerifiedEduEmail(user)) throw new HttpsError("permission-denied", "EDU_VERIFICATION_REQUIRED");
+    // For now any active account may vote; no student role or edu verification is required.
+    if (!user.exists || user.get("status") !== "active") throw new HttpsError("permission-denied", "ACCOUNT_NOT_ACTIVE");
 
     const counts = { good: 0, okay: 0, bad: 0 };
     for (const key of RATINGS) counts[key] = Math.max(0, Number(summary.get(key) ?? 0));

@@ -47,18 +47,18 @@ test("meals cannot be rated before they start or when nothing was published", as
   );
 });
 
-test("only active, edu-verified students can vote with a known meal and rating", async () => {
+test("any active account can vote, inactive accounts and unknown values cannot", async () => {
   await assert.rejects(rateMealService(db, "student-1", { meal: "lunch", rating: "good" }, EVENING), /MEAL_INVALID/);
   await assert.rejects(rateMealService(db, "student-1", { meal: "kyk_dinner", rating: "5" }, EVENING), /RATING_INVALID/);
-  await db.doc("users/student-2").set({ role: "student", status: "active" });
+  await db.doc("users/unverified-1").set({ role: "student", status: "active" });
+  await db.doc("users/manager-1").set({ role: "communityManager", status: "active" });
+  await rateMealService(db, "unverified-1", { meal: "kyk_dinner", rating: "good" }, EVENING);
+  await rateMealService(db, "manager-1", { meal: "kyk_dinner", rating: "okay" }, EVENING);
+  await db.doc("users/suspended-1").set({ role: "student", status: "suspended" });
   await assert.rejects(
-    rateMealService(db, "student-2", { meal: "kyk_dinner", rating: "good" }, EVENING),
-    /EDU_VERIFICATION_REQUIRED/,
+    rateMealService(db, "suspended-1", { meal: "kyk_dinner", rating: "good" }, EVENING),
+    /ACCOUNT_NOT_ACTIVE/,
   );
-  await db.doc("users/manager-1").set({ role: "communityManager", status: "active", eduVerified: true, eduEmail: "a@akdeniz.edu.tr" });
-  await assert.rejects(
-    rateMealService(db, "manager-1", { meal: "kyk_dinner", rating: "good" }, EVENING),
-    /STUDENT_REQUIRED/,
-  );
-  assert.equal((await db.doc("meal_ratings/2026-10-04_kyk_dinner").get()).exists, false);
+  const summary = await db.doc("meal_ratings/2026-10-04_kyk_dinner").get();
+  assert.deepEqual([summary.get("good"), summary.get("okay"), summary.get("bad")], [1, 1, 0]);
 });
