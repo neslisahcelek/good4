@@ -1,6 +1,6 @@
 # Good4 V2 canonical data model
 
-This document is the Phase 1 contract for `good4tr-v2`. Persisted date/time fields are Firestore `Timestamp` values. IDs that relate records are stored explicitly; display names are snapshots, never authorization inputs.
+This document is the shared V2 contract for production (`good4tr-v2`) and test (`good4tr-test`). Persisted date/time fields are Firestore `Timestamp` values. IDs that relate records are stored explicitly; display names are snapshots, never authorization inputs.
 
 ## Identity and organizations
 
@@ -67,8 +67,8 @@ Before enabling uploads, a trusted service must create immutable metadata contai
 
 ## Backward compatibility
 
-- The staging and production legacy flavors keep their current repositories and v1 QR format.
-- The V2 flavor reads canonical organizations/events and uses callable transactions for registration/check-in.
-- Existing legacy records remain untouched; there is no bulk rewrite or dual-write.
+- The supported staging and production flavors both read canonical organizations/events and use V2 callable transactions for registration/check-in.
+- `scripts/align-test-schema.mjs` previews the test-only transition by default. Applying it requires active test callables, backs up existing test records, normalizes user roles/dates, and adds canonical organizations/events. Legacy event, coupon and attendance history remains in place; incompatible image-only campaign documents are archived to `legacyCampaigns`.
+- The legacy production project `good4tr` is outside this transition. No private production data or Auth accounts are copied into test.
 - Legacy numeric/string dates may still be decoded by compatibility adapters, but every new V2 server write uses Firestore `Timestamp`.
 - Temporary legacy links support only functionality not migrated in this phase (notably coupons). They are not a new canonical model.

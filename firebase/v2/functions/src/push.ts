@@ -116,11 +116,12 @@ export async function sendPushToUser(
     const user = await database.doc(`users/${uid}`).get();
     if (user.get("status") !== "active") return { sent: 0, failed: 0 };
     const devices = await database.collection(DEVICES).where("uid", "==", uid).get();
-    const fresh = devices.docs.filter((device) =>
+    const freshCandidates = devices.docs.filter((device) =>
       typeof device.get("token") === "string"
       && device.get("updatedAt") instanceof Timestamp
       && device.get("updatedAt").toMillis() > now - PUSH_DEVICE_MAX_AGE_MS);
-    const stale = devices.docs.filter((device) => !fresh.includes(device));
+    const fresh = [...new Map(freshCandidates.map((device) => [String(device.get("token")), device])).values()];
+    const stale = devices.docs.filter((device) => !freshCandidates.includes(device));
     await Promise.all(stale.map((device) => removeUnchangedDevice(database, device)));
     if (!fresh.length) return { sent: 0, failed: 0 };
 

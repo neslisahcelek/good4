@@ -15,13 +15,15 @@ import Security
 
 @main
 struct IOSApp: App {
-    @UIApplicationDelegateAdaptor(CampusPushAppDelegate.self) private var pushDelegate
+    @UIApplicationDelegateAdaptor(Good4PushAppDelegate.self) private var pushDelegate
     @State private var isComposeReady = false
 
     init() {
-        FirebaseConfiguration.shared.setLoggerLevel(.warning)
-        FirebaseApp.configure()
-        NativePushBridge.shared.launcher = NativeCampusPush.shared
+        #if DEBUG
+        FirebaseConfiguration.shared.setLoggerLevel(.debug)
+        #endif
+        Good4AppCheck.configureFirebaseIfNeeded()
+        CampusNativePushBridge.shared.launcher = NativeCampusPush.shared
         CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
         StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
         GoogleSignInBridge.shared.launcher = NativeGoogleSignInLauncher()

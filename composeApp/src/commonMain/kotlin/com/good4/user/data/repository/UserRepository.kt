@@ -206,9 +206,12 @@ class UserRepository(
         if (AppEnvironment.firebaseBackend != FirebaseBackend.V2) return deleteUser(userId)
         return try {
             revokeAppleTokenIfNeeded()
+            com.good4.notification.PushSession.detach()
             callV2Function("deleteMyAccount", buildJsonObject {})
             Result.Success(Unit)
         } catch (e: Exception) {
+            com.good4.notification.PushSession.detaching = false
+            com.good4.notification.PushSignals.refresh()
             Result.Error(NetworkError(e.message ?: "Hesap ve ilişkili veriler silinemedi"))
         }
     }

@@ -19,7 +19,13 @@ data class DocumentWithId<T>(
  * - **codes** `userId` + `status` — [com.good4.code.data.repository.CodeRepository.getPendingCodeByUserId],
  *   [com.good4.code.data.repository.CodeRepository.getCodesByUserIdAndStatus] (limit + null olmayan orderBy eklenirse ek indeks gerekir)
  */
+data class DocumentPage<T>(val items: List<DocumentWithId<T>>, val nextCursor: String?)
+
 interface FirestoreRepository {
+    suspend fun <T : Any> queryPage(collectionPath: String, conditions: Map<String, Any>, clazz: KClass<T>,
+        pageSize: Long = 50, cursor: String? = null, minimumTimestamp: Pair<String, Long>? = null): Result<DocumentPage<T>, Error> =
+        Result.Error(com.good4.core.domain.NetworkError("Paged queries are unavailable"))
+
     suspend fun <T : Any> addDocument(collectionPath: String, data: T): Result<String, Error>
     suspend fun reserveProductAndCreateCode(productId: String, code: CodeDto): Result<String, Error>
     suspend fun <T : Any> getDocument(collectionPath: String, documentId: String, clazz: KClass<T>): Result<T, Error>

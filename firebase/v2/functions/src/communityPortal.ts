@@ -1,4 +1,4 @@
-import { FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { cancelEventService, saveEventService } from "./events.js";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
@@ -37,6 +37,7 @@ export interface CommunityPortalDashboard {
   followerCount: number;
   businesses: Array<{ id: string; name: string }>;
   entries: CommunityPortalEntry[];
+  nextCursor: string | null;
 }
 
 function safeId(value: unknown, fieldName: string): string {
@@ -98,30 +99,29 @@ export async function getCommunityContextService(database: Firestore, actorUid: 
 }
 
 export async function getCommunityPortalDashboardService(
-  database: Firestore, legacyDatabase: Firestore, actorUid: string,
+  database: Firestore, legacyDatabase: Firestore, actorUid: string, input: Record<string, unknown> = {},
 ): Promise<CommunityPortalDashboard> {
   const context = await getCommunityContextService(database, actorUid);
   const organizationRef = database.doc(`organizations/${context.organizationId}`);
-  const legacyCommunityRef = context.legacyTestCommunityId
+  const includeLegacy = input.section === "coupons";
+  const pageSize = input.pageSize === undefined ? 50 : Number(input.pageSize);
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) throw new HttpsError("invalid-argument", "PAGE_SIZE_INVALID");
+  const cursor = input.cursor ? safeId(input.cursor, "cursor") : "";
+  const legacyCommunityRef = includeLegacy && context.legacyTestCommunityId
     ? legacyDatabase.doc(`communities/${context.legacyTestCommunityId}`) : null;
-  const [organization, followers, eventsSnapshot, legacyCommunity, legacyEntriesSnapshot, businessesSnapshot] = await Promise.all([
-    organizationRef.get(), organizationRef.collection("followers").get(),
-    database.collection("events").where("organizationId", "==", context.organizationId).get(),
+  let eventsQuery = database.collection("events").where("organizationId", "==", context.organizationId).orderBy(FieldPath.documentId()).limit(pageSize);
+  if (cursor) eventsQuery = eventsQuery.startAfter(cursor);
+  let couponsQuery = legacyCommunityRef?.collection("entries").where("kind", "==", "coupon").orderBy(FieldPath.documentId()).limit(pageSize);
+  if (cursor && couponsQuery) couponsQuery = couponsQuery.startAfter(cursor);
+  const [organization, eventsSnapshot, legacyCommunity, legacyEntriesSnapshot, businessesSnapshot] = await Promise.all([
+    organizationRef.get(), includeLegacy ? Promise.resolve(null) : eventsQuery.get(),
     legacyCommunityRef?.get() ?? Promise.resolve(null),
-    legacyCommunityRef?.collection("entries").where("kind", "==", "coupon").get() ?? Promise.resolve(null),
-    legacyDatabase.collection("businesses").get(),
+    couponsQuery?.get() ?? Promise.resolve(null),
+    includeLegacy ? legacyDatabase.collection("businesses").limit(100).get() : Promise.resolve(null),
   ]);
   if (!organization.exists) throw new HttpsError("not-found", "COMMUNITY_NOT_FOUND");
-  const businessNames = new Map(businessesSnapshot.docs.map((item) => [item.id, String(item.get("name") ?? "İşletme")]));
-  const eventEntries = await Promise.all(eventsSnapshot.docs.map(async (entry): Promise<CommunityPortalEntry> => {
-    const [registrations, checkins] = await Promise.all([
-      entry.ref.collection("registrations").get(), entry.ref.collection("checkins").get(),
-    ]);
-    const arrived = new Set(checkins.docs.map((item) => item.id));
-    const participants = registrations.docs.map((item) => ({
-      userId: String(item.get("userId") ?? ""), displayName: String(item.get("displayName") ?? "Good4 öğrencisi"),
-      registeredAt: instant(item.get("registeredAt")), checkedIn: arrived.has(item.id),
-    })).sort((a, b) => (b.registeredAt ?? "").localeCompare(a.registeredAt ?? ""));
+  const businessNames = new Map((businessesSnapshot?.docs ?? []).map((item) => [item.id, String(item.get("name") ?? "İşletme")]));
+  const eventEntries = (eventsSnapshot?.docs ?? []).map((entry): CommunityPortalEntry => {
     const dateTime = eventDateTime(entry.get("startsAt"));
     return {
       id: entry.id, kind: "event", title: String(entry.get("title") ?? ""),
@@ -130,10 +130,10 @@ export async function getCommunityPortalDashboardService(
       categoryId: String(entry.get("categoryId") ?? ""),
       discountType: "percentage", discountValue: 0, capacity: integer(entry.get("capacity")), totalLimit: 0,
       status: entry.get("status") === "cancelled" ? "cancelled" : "published",
-      registrationCount: integer(entry.get("registrationCount"), participants.length),
-      attendanceCount: integer(entry.get("attendanceCount"), arrived.size), participants,
+      registrationCount: integer(entry.get("registrationCount")),
+      attendanceCount: integer(entry.get("attendanceCount")), participants: [],
     };
-  }));
+  });
   const couponEntries: CommunityPortalEntry[] = (legacyEntriesSnapshot?.docs ?? []).map((entry) => {
     const statusValue = entry.get("status");
     const status = statusValue === "cancelled" || statusValue === "pending" ? statusValue : "published";
@@ -158,8 +158,10 @@ export async function getCommunityPortalDashboardService(
       logoUrl: String(organization.get("logoUrl") ?? legacyCommunity?.get("logoUrl") ?? ""),
       coverUrl: String(organization.get("coverUrl") ?? legacyCommunity?.get("coverUrl") ?? ""),
     },
-    followerCount: followers.size,
-    businesses: businessesSnapshot.docs.map((item) => ({ id: item.id, name: businessNames.get(item.id) ?? "İşletme" }))
+    followerCount: integer(organization.get("followerCount")),
+    nextCursor: (includeLegacy ? legacyEntriesSnapshot : eventsSnapshot)?.size === pageSize
+      ? (includeLegacy ? legacyEntriesSnapshot : eventsSnapshot)!.docs.at(-1)!.id : null,
+    businesses: (businessesSnapshot?.docs ?? []).map((item) => ({ id: item.id, name: businessNames.get(item.id) ?? "İşletme" }))
       .sort((a, b) => a.name.localeCompare(b.name, "tr")),
     entries: entries.sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`)),
   };
@@ -236,4 +238,19 @@ export async function cancelCommunityPortalEntryService(
     metadata: { organizationId: context.organizationId }, createdAt: FieldValue.serverTimestamp(),
   });
   return { status: "cancelled" };
+}
+
+export async function getCommunityEventParticipantsService(database: Firestore, actorUid: string, input: Record<string, unknown>) {
+  const context = await getCommunityContextService(database, actorUid);
+  const eventId = safeId(input.eventId, "eventId");
+  const event = await database.doc(`events/${eventId}`).get();
+  if (event.get("organizationId") !== context.organizationId) throw new HttpsError("permission-denied", "EVENT_ACCESS_DENIED");
+  let query = event.ref.collection("registrations").orderBy(FieldPath.documentId()).limit(50);
+  if (input.cursor) query = query.startAfter(safeId(input.cursor, "cursor"));
+  const registrations = await query.get();
+  const checkins = registrations.empty ? [] : await database.getAll(...registrations.docs.map((item) => event.ref.collection("checkins").doc(item.id)));
+  const arrived = new Set(checkins.filter((item) => item.exists).map((item) => item.id));
+  return { participants: registrations.docs.map((item) => ({ id: item.id, userId: String(item.get("userId") ?? ""),
+    displayName: String(item.get("displayName") ?? "Good4 öğrencisi"), registeredAt: instant(item.get("registeredAt")), checkedIn: arrived.has(item.id) })),
+    nextCursor: registrations.size === 50 ? registrations.docs.at(-1)!.id : null };
 }

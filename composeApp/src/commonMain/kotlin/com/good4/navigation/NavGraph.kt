@@ -4,14 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.good4.notification.NotificationsViewModel
+import com.good4.notification.PushSignals
+import com.good4.notification.NotificationPermissionEducation
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.campuscloset.CampusEmailVerificationLinks
 import org.koin.compose.koinInject
@@ -93,6 +96,29 @@ fun Good4NavGraph(
             && !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.EmailVerification>()
             && !destination.hasRoute<Route.CampusCloset>()) {
             navController.navigate(Route.CampusCloset) { launchSingleTop = true }
+        }
+    }
+    val notificationsViewModel: NotificationsViewModel = koinViewModel()
+    LifecycleResumeEffect(notificationsViewModel) {
+        notificationsViewModel.setForeground(true)
+        onPauseOrDispose { notificationsViewModel.setForeground(false) }
+    }
+    NotificationPermissionEducation()
+    val entry by navController.currentBackStackEntryAsState()
+    val pendingOpen by PushSignals.pendingOpen.collectAsStateWithLifecycle()
+    val destination = entry?.destination
+    val ready = destination != null && !destination.hasRoute<Route.Splash>() &&
+        !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.SessionRestore>() &&
+        !destination.hasRoute<Route.EmailVerification>() && !destination.hasRoute<Route.RegisterOptions>() &&
+        !destination.hasRoute<Route.StudentRegister>() && !destination.hasRoute<Route.BusinessRegister>()
+    LaunchedEffect(pendingOpen, ready) {
+        val intent = pendingOpen
+        if (ready && intent != null) notificationsViewModel.openPending(intent) { notification ->
+            navController.navigate(Route.Notifications) { launchSingleTop = true }
+            if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
+                navController.navigate(Route.NotificationEvent(notification.data.organizationId, notification.data.eventId,
+                    notification.data.kind == "eventReminder")) { launchSingleTop = true }
+            }
         }
     }
     NavHost(
@@ -331,8 +357,18 @@ fun Good4NavGraph(
             )
         }
 
+        composable<Route.NotificationEvent> { backStackEntry ->
+            val target = backStackEntry.toRoute<Route.NotificationEvent>()
+            com.good4.community.CommunitiesScreen(onBack = { navController.popBackStack() },
+                 initialOrganizationId = target.organizationId, initialEventId = target.eventId, initialShowTicket = target.showTicket)
+        }
+
         composable<Route.Notifications> {
-            NotificationsScreen(onBack = { navController.popBackStack() })
+            NotificationsScreen(onBack = { navController.popBackStack() }, viewModel = notificationsViewModel,
+                onOpenEvent = { notification ->
+                    navController.navigate(Route.NotificationEvent(notification.data.organizationId, notification.data.eventId,
+                        notification.data.kind == "eventReminder"))
+                })
         }
 
         // Business Routes

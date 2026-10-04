@@ -339,7 +339,7 @@ private fun ProductListGreetingHeader(
     onNotificationsClick: () -> Unit = {}
 ) {
     val topInset = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
-    val hasUnseenNotifications by NotificationInbox.hasUnseen.collectAsState()
+    val hasUnseenNotifications by NotificationInbox.hasUnseen.collectAsStateWithLifecycle()
 
     Row(
         modifier = modifier

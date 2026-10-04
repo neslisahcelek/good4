@@ -124,9 +124,9 @@ expect fun requestNativePushPermission()
 expect suspend fun deleteNativePushToken()
 
 interface PushTokenDeletedCallback { fun complete() }
-interface NativePushLauncher {
+interface CampusNativePushLauncher {
     fun refresh()
     fun requestPermission()
     fun deleteToken(completion: PushTokenDeletedCallback)
 }
-object NativePushBridge { var launcher: NativePushLauncher? = null }
+object CampusNativePushBridge { var launcher: CampusNativePushLauncher? = null }

@@ -10,7 +10,9 @@ import com.good4.dining.domain.AkdenizDiningMenuDay
 class AkdenizDiningMenuRepository(
     private val firestoreRepository: FirestoreRepository
 ) {
-    suspend fun getCurrentMenu(): Result<AkdenizDiningMenu, Error> {
+    private val cache = com.good4.core.data.repository.ReadCache<Result<AkdenizDiningMenu, Error>>(3600)
+    suspend fun getCurrentMenu(): Result<AkdenizDiningMenu, Error> = cache.load(cacheable = { it is Result.Success }) { loadMenu() }
+    private suspend fun loadMenu(): Result<AkdenizDiningMenu, Error> {
         return when (
             val result = firestoreRepository.getDocument(
                 collectionPath = COLLECTION_PATH,

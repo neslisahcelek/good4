@@ -99,7 +99,7 @@ fun StudentHomeScreenRoot(
     var pendingReservationFromHome by remember { mutableStateOf<ReservationUiModel?>(null) }
     var managerEntryHandled by rememberSaveable { mutableStateOf(false) }
     val productListViewModel: ProductListViewModel = koinViewModel()
-    val reservationsViewModel: StudentReservationsViewModel = koinViewModel()
+    val reservationsViewModel: StudentReservationsViewModel? = if (AppEnvironment.firebaseBackend != FirebaseBackend.V2) koinViewModel() else null
     val communityViewModel: CommunityViewModel = koinViewModel()
     val reviewViewModel: StoreReviewViewModel = koinViewModel()
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
@@ -108,7 +108,9 @@ fun StudentHomeScreenRoot(
         onDispose { reviewViewModel.leaveScreen() }
     }
     com.good4.review.ReviewModalBlocker(menuOpen)
-    val reservationsState by reservationsViewModel.state.collectAsStateWithLifecycle()
+    val reservationsState by (reservationsViewModel?.state ?: remember {
+        kotlinx.coroutines.flow.MutableStateFlow(com.good4.student.presentation.reservations.StudentReservationsState())
+    }).collectAsStateWithLifecycle()
     val communityState by communityViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(editHomeRequested) {
@@ -159,7 +161,7 @@ fun StudentHomeScreenRoot(
     LaunchedEffect(selectedItemIndex) {
         when (selectedItemIndex) {
             0 -> productListViewModel.refresh()
-            1 -> reservationsViewModel.refresh()
+            1 -> reservationsViewModel?.refresh()
         }
     }
 
@@ -253,7 +255,7 @@ fun StudentHomeScreenRoot(
                     )
                 }
 
-                1 -> {
+                1 -> if (reservationsViewModel != null) {
                     StudentReservationsScreen(
                         viewModel = reservationsViewModel,
                         scrollToTopRequestKey = reservationsScrollRequestKey,

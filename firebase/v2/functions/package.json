@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test --test-concurrency=1 lib/rateLimit.test.js lib/campaigns.test.js lib/business.test.js lib/legacyCoupons.test.js lib/adminPortal.test.js lib/communityPortal.test.js lib/events.test.js lib/communityFollowing.test.js lib/communityApplications.test.js lib/kykMenu.test.js lib/feedback.test.js lib/studentAuth.test.js lib/legalAcknowledgements.test.js lib/accountDeletion.test.js lib/push.test.js lib/eduVerification.test.js lib/campusEmailVerification.test.js lib/weather.test.js lib/diningMenuImport.test.js lib/market.test.js"
+    "test": "npm run build && node --test --test-concurrency=1 lib/costControl.test.js lib/rateLimit.test.js lib/campaigns.test.js lib/business.test.js lib/legacyCoupons.test.js lib/adminPortal.test.js lib/communityPortal.test.js lib/events.test.js lib/communityFollowing.test.js lib/communityApplications.test.js lib/kykMenu.test.js lib/feedback.test.js lib/studentAuth.test.js lib/legalAcknowledgements.test.js lib/accountDeletion.test.js lib/push.test.js lib/eduVerification.test.js lib/campusEmailVerification.test.js lib/weather.test.js lib/diningMenuImport.test.js lib/market.test.js lib/notifications.test.js"
   },
   "dependencies": {
     "@tesseract.js-data/tur": "1.0.0",
