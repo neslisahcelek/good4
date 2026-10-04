@@ -402,7 +402,7 @@ Başvuru ayrıca mevzuatın izin verdiği ölçüde;
 * kayıtlı elektronik posta (KEP),
 * güvenli elektronik imza,
 * mobil imza,
-* ilgili kişinin Good4'e daha önce bildirmiş ve Good4 sistemlerinde kayıtlı bulunan e-posta adresi,
+* ilgili kişinin Good4'a daha önce bildirmiş ve Good4 sistemlerinde kayıtlı bulunan e-posta adresi,
 * başvuru amacıyla oluşturulmuş elektronik başvuru sistemi
 
 üzerinden gerçekleştirilebilir.

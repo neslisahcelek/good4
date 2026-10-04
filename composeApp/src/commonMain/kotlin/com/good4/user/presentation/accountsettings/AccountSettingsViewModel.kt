@@ -15,6 +15,7 @@ import com.good4.core.util.AppEnvironment
 import com.good4.core.util.FirebaseBackend
 import com.good4.core.util.normalizePhoneNumberInput
 import com.good4.user.data.repository.UserRepository
+import good4.composeapp.generated.resources.account_delete_photo_cleanup_pending
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.account_settings_business_name_required
 import good4.composeapp.generated.resources.account_settings_name_required
@@ -524,6 +525,9 @@ class AccountSettingsViewModel(
     }
 
     private fun com.good4.core.domain.Error.toDeleteErrorUiText(): UiText {
+        if (message == "MARKET_PHOTO_CLEANUP_PENDING") {
+            return UiText.StringResourceId(Res.string.account_delete_photo_cleanup_pending)
+        }
         return if (message.isBlank()) {
             UiText.StringResourceId(Res.string.error_delete_account_failed)
         } else {

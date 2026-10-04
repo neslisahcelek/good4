@@ -12,7 +12,12 @@ class KykMenuRepository(
     private val firestoreRepository: FirestoreRepository
 ) {
     /** The menu for [date] (yyyy-MM-dd), or null when that day was not published. */
+    private val caches = mutableMapOf<String, com.good4.core.data.repository.ReadCache<KykMenuDay?>>()
     suspend fun getDay(date: String): KykMenuDay? {
+        if (caches.size > 32) caches.clear()
+        return caches.getOrPut(date) { com.good4.core.data.repository.ReadCache(3600) }.load { loadDay(date) }
+    }
+    private suspend fun loadDay(date: String): KykMenuDay? {
         val result = firestoreRepository.getDocument(
             collectionPath = "kyk_menu_days",
             documentId = date,

@@ -66,6 +66,7 @@ fun AdminDashboardScreen(
     onMenuClick: (() -> Unit)? = null,
     onProfileClick: (() -> Unit)? = null
 ) {
+    val updateBanner = com.good4.update.LocalAppUpdateBanner.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         viewModel.refreshDashboard()
@@ -105,6 +106,10 @@ fun AdminDashboardScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (updateBanner != null) {
+                    item(key = "app_update") { updateBanner() }
+                }
+
                 item {
                     state.errorMessage?.let { error ->
                         Text(

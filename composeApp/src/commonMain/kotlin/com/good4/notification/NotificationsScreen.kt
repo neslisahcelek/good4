@@ -1,184 +1,140 @@
 package com.good4.notification
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.outlined.Campaign
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.AppBackground
-import com.good4.core.presentation.BorderMuted
-import com.good4.core.presentation.LocalThemeController
-import com.good4.core.presentation.PrimaryGreen
-import com.good4.core.presentation.SurfaceDefault
-import com.good4.core.presentation.TextPrimary
-import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.StandardButtonHeight
+import good4.composeapp.generated.resources.*
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun NotificationsScreen(onBack: () -> Unit) {
-    // Highlight what was new when the screen opened; opening it counts as seeing everything,
-    // which clears the dot on the home bell.
-    var unreadIds by remember { mutableStateOf(NotificationInbox.unseenIds()) }
-    LaunchedEffect(Unit) { NotificationInbox.markAllSeen() }
-    val theme = LocalThemeController.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppBackground)
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = PrimaryGreen,
-            shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
-                    .height(86.dp)
-                    .padding(horizontal = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri", tint = Color.White)
-                }
-                Text(
-                    text = "Bildirimler",
-                    modifier = Modifier.weight(1f),
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                IconButton(onClick = { theme.setDark(!theme.isDark) }) {
-                    Icon(Icons.Outlined.DarkMode, "Gece modunu değiştir", tint = Color.White)
-                }
-                IconButton(onClick = { unreadIds = emptySet() }) {
-                    Icon(Icons.Filled.DoneAll, "Tümünü okundu işaretle", tint = Color.White)
+fun NotificationsScreen(onBack: () -> Unit, viewModel: NotificationsViewModel, onOpenEvent: (StudentNotification) -> Unit) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val launcher = rememberNotificationPermissionLauncher()
+    LaunchedEffect(Unit) { viewModel.refresh() }
+    NotificationsContent(state, onBack, viewModel::select, { viewModel.read() }, viewModel::savePreferences,
+        { launcher.openSettings() }, viewModel::refresh, viewModel::loadMore)
+    state.selected?.let { notification ->
+        AlertDialog(
+            onDismissRequest = viewModel::closeDetail,
+            title = { Text(notification.data.title) },
+            text = { Text(notification.data.body) },
+            confirmButton = {
+                if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
+                    TextButton(onClick = { onOpenEvent(notification) }) {
+                        Text(stringResource(if (notification.data.kind == "eventReminder") Res.string.notification_open_ticket else Res.string.notification_open_event))
+                    }
+                } else TextButton(onClick = viewModel::closeDetail) { Text(stringResource(Res.string.notification_close)) }
+            },
+            dismissButton = {
+                if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
+                    TextButton(onClick = viewModel::closeDetail) { Text(stringResource(Res.string.notification_close)) }
                 }
             }
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            items(studentNotifications, key = { it.id }) { notification ->
-                NotificationCard(
-                    title = notification.title,
-                    source = notification.source,
-                    date = notification.date,
-                    body = notification.body,
-                    unread = notification.id in unreadIds,
-                    onClick = { unreadIds = unreadIds - notification.id }
-                )
-            }
-        }
+        )
     }
 }
 
 @Composable
-private fun NotificationCard(
-    title: String,
-    source: String,
-    date: String,
-    body: String,
-    unread: Boolean,
-    onClick: () -> Unit
+private fun NotificationsContent(
+    state: NotificationsState, onBack: () -> Unit, onSelect: (StudentNotification) -> Unit,
+    onReadAll: () -> Unit, onPreferences: (NotificationPreferencesDto) -> Unit,
+    onSettings: () -> Unit, onRetry: () -> Unit, onLoadMore: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        color = SurfaceDefault,
-        shape = RoundedCornerShape(22.dp),
-        border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.25f)),
-        shadowElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Surface(
-                    modifier = Modifier.size(46.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Outlined.Campaign,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(25.dp)
-                        )
+    Column(Modifier.fillMaxSize().background(AppBackground).windowInsetsPadding(WindowInsets.safeDrawing)) {
+        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.notification_back)) }
+            Text(stringResource(Res.string.notification_title), Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall)
+            IconButton(onClick = onReadAll, enabled = state.supported && state.notifications.any { it.data.readAt == 0L }) {
+                Icon(Icons.Filled.DoneAll, stringResource(Res.string.notification_read_all))
+            }
+        }
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (state.supported) item(key = "preferences") {
+                ElevatedCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(stringResource(Res.string.notification_preferences), style = MaterialTheme.typography.titleMedium)
+                        PreferenceRow(stringResource(Res.string.notification_event_updates), state.preferences.eventUpdates, !state.saving) { onPreferences(state.preferences.copy(eventUpdates = it)) }
+                        PreferenceRow(stringResource(Res.string.notification_reminders), state.preferences.reminders, !state.saving) { onPreferences(state.preferences.copy(reminders = it)) }
+                        PreferenceRow(stringResource(Res.string.notification_announcements), state.preferences.announcements, !state.saving) { onPreferences(state.preferences.copy(announcements = it)) }
+                        if (!state.permission) Text(stringResource(Res.string.notification_permission_off), style = MaterialTheme.typography.bodySmall)
+                        OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth().height(StandardButtonHeight)) {
+                            Text(stringResource(Res.string.notification_system_settings))
+                        }
                     }
                 }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        title,
-                        color = TextPrimary,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text("$source · $date", color = TextSecondary, fontSize = 12.sp)
-                }
-                if (unread) {
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 5.dp)
-                            .size(9.dp)
-                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
-                    )
+            }
+            state.error?.let { error -> item(key = "error") {
+                Text(error.asString(), color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = onRetry) { Text(stringResource(Res.string.notification_retry)) }
+            } }
+            if (state.loading) item(key = "loading") { CircularProgressIndicator() }
+            if (!state.loading && state.notifications.isEmpty()) item(key = "empty") {
+                Text(stringResource(if (state.supported) Res.string.notification_empty else Res.string.notification_staging_unavailable))
+            }
+            items(state.notifications, key = { it.id }) { notification ->
+                ElevatedCard(onClick = { onSelect(notification) }, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row {
+                            Text(notification.data.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                            if (notification.data.readAt == 0L) Text(stringResource(Res.string.notification_unread), color = MaterialTheme.colorScheme.primary)
+                        }
+                        Text(notification.data.body, style = MaterialTheme.typography.bodyMedium)
+                        val local = Instant.fromEpochSeconds(notification.data.createdAt).toLocalDateTime(TimeZone.of("Europe/Istanbul"))
+                        Text("${local.date} ${local.time.toString().take(5)}", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
-            Text(
-                body,
-                color = TextSecondary,
-                lineHeight = 21.sp,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (state.nextCursor != null || state.loadingMore || state.pageError != null) item(key = "next-page") {
+                if (!state.loading && state.pageError == null) {
+                    LaunchedEffect(state.nextCursor) { onLoadMore() }
+                }
+                if (state.loadingMore) CircularProgressIndicator()
+                state.pageError?.let {
+                    Text(it.asString(), color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = onLoadMore) { Text(stringResource(Res.string.notification_retry)) }
+                }
+            }
         }
+    }
+}
+@Composable
+private fun PreferenceRow(title: String, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Text(title, Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
+    }
+}
+@Composable
+fun NotificationPermissionEducation() {
+    val requested by PushSignals.education.collectAsStateWithLifecycle()
+    val launcher = rememberNotificationPermissionLauncher()
+    if (requested) AlertDialog(
+        onDismissRequest = PushSignals::dismissEducation,
+        title = { Text(stringResource(Res.string.notification_permission_title)) },
+        text = { Text(stringResource(Res.string.notification_permission_body)) },
+        confirmButton = { TextButton(onClick = { PushSignals.dismissEducation(); launcher.request { PushSignals.refresh() } }) { Text(stringResource(Res.string.notification_enable)) } },
+        dismissButton = { TextButton(onClick = PushSignals::dismissEducation) { Text(stringResource(Res.string.notification_later)) } }
+    )
+}
+@Preview
+@Composable
+private fun NotificationsPreview() {
+    com.good4.core.presentation.Good4Theme {
+        NotificationsContent(NotificationsState(notifications = listOf(StudentNotification("preview", NotificationDto(title = "Etkinlik", body = "Kampüs etkinliği", createdAt = 1790000000)))), {}, {}, {}, {}, {}, {}, {})
     }
 }

@@ -3,10 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:schema": "node --test scripts/test-schema-model.test.mjs",
     "test:rules": "firebase emulators:exec --project demo-good4-v2 --only firestore 'node --test --test-concurrency=1 rules.test.mjs'",
     "test:functions": "firebase emulators:exec --project demo-good4-v2 --only firestore 'npm --prefix functions test'",
     "test:web": "npm --prefix web run build",
-    "test": "npm run test:rules && npm run test:functions && npm run test:web"
+    "test": "npm run test:schema && npm run test:rules && npm run test:functions && npm run test:web",
+    "emulators:local": "npm --prefix functions run build && VITE_USE_FIREBASE_EMULATORS=true npm --prefix web run build && firebase emulators:start --project demo-good4-v2 --only auth,firestore,functions,storage,hosting",
+    "seed:local": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8285 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9199 node scripts/seed-local.mjs",
+    "audit:costs": "node scripts/cost-controls.mjs",
+    "test:cost-rules": "firebase emulators:exec --project demo-good4-v2 --only firestore \"node --test cost-rules.test.mjs\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.0",

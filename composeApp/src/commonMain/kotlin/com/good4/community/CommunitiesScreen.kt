@@ -56,6 +56,8 @@ import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProductImagePicker
 import com.good4.core.util.AppEnvironment
 import com.good4.core.util.FirebaseBackend
+import good4.composeapp.generated.resources.notification_unavailable
+import good4.composeapp.generated.resources.community_load_more
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Instant
 import kotlinx.datetime.Clock
@@ -70,7 +72,10 @@ fun CommunitiesScreen(
     onBack: () -> Unit,
     managerEntryMode: Boolean = false,
     onSwitchToStudent: () -> Unit = onBack,
-    viewModel: CommunityViewModel = koinViewModel()
+    viewModel: CommunityViewModel = koinViewModel(),
+    initialOrganizationId: String = "",
+    initialEventId: String = "",
+    initialShowTicket: Boolean = false
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
@@ -97,6 +102,23 @@ fun CommunitiesScreen(
             editor == null && !profileEditor && detail == null && pendingRemoval == null &&
             admissionEntry == null && pendingFeaturedEvent == null && reportTarget == null && pendingBlock == null
     )
+    var targetHandled by rememberSaveable(initialEventId) { mutableStateOf(false) }
+    val unavailable = org.jetbrains.compose.resources.stringResource(good4.composeapp.generated.resources.Res.string.notification_unavailable)
+    LaunchedEffect(initialEventId, state.loading, state.selected?.id) {
+        if (initialEventId.isNotBlank() && !targetHandled && !state.loading) {
+            previewAsStudent = true
+            if (state.selected == null || (initialOrganizationId.isNotBlank() && state.selected?.id != initialOrganizationId)) {
+                val target = state.communities.firstOrNull { it.id == initialOrganizationId }
+                if (target != null) viewModel.select(target, initialEventId)
+                else { targetHandled = true; viewModel.reportError(unavailable) }
+            } else {
+                targetHandled = true
+                val event = state.entries.firstOrNull { it.id == initialEventId && it.data.status == "published" }
+                if (event == null) viewModel.reportError(unavailable)
+                else { detail = event; if (initialShowTicket && event.id in state.registeredEventIds) viewModel.showTicket(event) }
+            }
+        }
+    }
     val community = state.selected
     val managerView = state.canManage && !previewAsStudent
     val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2

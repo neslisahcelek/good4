@@ -14,6 +14,7 @@
 		BLD000052F30FC02007C3994 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000052F30FC02007C3994 /* GoogleSignIn */; };
 		BLD000062F30FC02007C3994 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000062F30FC02007C3994 /* MapLibre */; };
 		BLD000072F30FC02007C3994 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000072F30FC02007C3994 /* FirebaseMessaging */; };
+		BLD000082F30FC02007C3994 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = SPM000082F30FC02007C3994 /* FirebaseAppCheck */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,9 +53,10 @@
 				BLD000022F30FC02007C3994 /* FirebaseAuth in Frameworks */,
 				BLD000032F30FC02007C3994 /* FirebaseFirestore in Frameworks */,
 				BLD000042F30FC02007C3994 /* FirebaseStorage in Frameworks */,
+				BLD000072F30FC02007C3994 /* FirebaseMessaging in Frameworks */,
+				BLD000082F30FC02007C3994 /* FirebaseAppCheck in Frameworks */,
 				BLD000052F30FC02007C3994 /* GoogleSignIn in Frameworks */,
 				BLD000062F30FC02007C3994 /* MapLibre in Frameworks */,
-				BLD000072F30FC02007C3994 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,9 +108,10 @@
 				SPM000022F30FC02007C3994 /* FirebaseAuth */,
 				SPM000032F30FC02007C3994 /* FirebaseFirestore */,
 				SPM000042F30FC02007C3994 /* FirebaseStorage */,
+				SPM000072F30FC02007C3994 /* FirebaseMessaging */,
+				SPM000082F30FC02007C3994 /* FirebaseAppCheck */,
 				SPM000052F30FC02007C3994 /* GoogleSignIn */,
 				SPM000062F30FC02007C3994 /* MapLibre */,
-				SPM000072F30FC02007C3994 /* FirebaseMessaging */,
 			);
 			productName = iosApp;
 			productReference = D09141472F30FC02007C3994 /* iosApp.app */;
@@ -130,6 +133,7 @@
 							com.apple.Push = {
 								enabled = 1;
 							};
+							com.apple.AppAttest = { enabled = 1; };
 							com.apple.SignInWithApple = {
 								enabled = 1;
 							};
@@ -374,6 +378,7 @@
 				ENABLE_PREVIEWS = YES;
 				OTHER_LDFLAGS = ("$(inherited)", "-framework", ComposeApp,);
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Test.plist";
+                APS_ENVIRONMENT = development;
 				GENERATE_INFOPLIST_FILE = YES;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.449563145023-ir6daksk0m7idh0tk83bfgf4m4hmde20";
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -430,6 +435,7 @@
 				ENABLE_PREVIEWS = YES;
 				OTHER_LDFLAGS = ("$(inherited)", "-framework", ComposeApp,);
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Prod.plist";
+                APS_ENVIRONMENT = production;
 				GENERATE_INFOPLIST_FILE = YES;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-11unm894ckuk8nl23vmrtb9d0iq5t7bs";
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -557,6 +563,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseMessaging;
+		};
+		SPM000082F30FC02007C3994 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

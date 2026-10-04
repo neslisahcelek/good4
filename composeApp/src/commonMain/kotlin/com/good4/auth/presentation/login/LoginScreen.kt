@@ -272,9 +272,8 @@ fun LoginScreen(
                         )
 
                         // V2 signs in with Google/Apple only; community managers use Google too and
-                        // are assigned from the web panel. The edu e-mail form stays behind the flag,
-                        // except against the local emulators where demo accounts use a password.
-                        if (config.ReleaseFeatures.eduEmailAuth || com.good4.core.network.FirebaseEmulator.host != null) {
+                        // are assigned from the web panel. The edu e-mail form stays behind the flag.
+                        if (config.ReleaseFeatures.eduEmailAuth) {
                             Spacer(modifier = Modifier.height(12.dp))
 
                             AnimatedVisibility(visible = !showEduLogin) {

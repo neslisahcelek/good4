@@ -42,7 +42,7 @@ final class CampusPushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
     }
 }
 
-final class NativeCampusPush: NSObject, NativePushLauncher {
+final class NativeCampusPush: NSObject, CampusNativePushLauncher {
     static let shared = NativeCampusPush()
     private var generation = 0
 

@@ -9,6 +9,8 @@ import com.good4.code.domain.CodeStatus
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.config.domain.AppDefaults
 import com.good4.core.domain.Result
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.core.util.ReservationTimeCalculator
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.user.data.repository.UserRepository
@@ -47,26 +49,28 @@ class StudentReservationsViewModel(
     private val optimisticCancelledReservationIds = mutableSetOf<String>()
 
     init {
-        loadReservations()
-        viewModelScope.launch {
-            expiredLabel = getString(Res.string.reservation_expired_short)
-            minuteSuffix = getString(Res.string.time_minute_suffix)
-            secondSuffix = getString(Res.string.time_second_suffix)
-        }
-        viewModelScope.launch {
-            expirationDuration = configRepository.getExpirationDuration()
-        }
-        startTimer()
-        viewModelScope.launch {
-            while (true) {
-                delay(30.seconds)
-                loadReservations(showLoading = false)
+        if (AppEnvironment.firebaseBackend != FirebaseBackend.V2) {
+            loadReservations()
+            viewModelScope.launch {
+                expiredLabel = getString(Res.string.reservation_expired_short)
+                minuteSuffix = getString(Res.string.time_minute_suffix)
+                secondSuffix = getString(Res.string.time_second_suffix)
             }
-        }
-        viewModelScope.launch {
-            while (true) {
-                delay(5.minutes)
-                checkAndExpireCodes()
+            viewModelScope.launch {
+                expirationDuration = configRepository.getExpirationDuration()
+            }
+            startTimer()
+            viewModelScope.launch {
+                while (true) {
+                    delay(30.seconds)
+                    loadReservations(showLoading = false)
+                }
+            }
+            viewModelScope.launch {
+                while (true) {
+                    delay(5.minutes)
+                    checkAndExpireCodes()
+                }
             }
         }
     }
@@ -125,6 +129,7 @@ class StudentReservationsViewModel(
     }
 
     private fun loadReservations(showLoading: Boolean = true) {
+        if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) return
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {

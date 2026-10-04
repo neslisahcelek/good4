@@ -4,26 +4,26 @@ import com.good4.core.util.AppEnvironment
 import com.good4.core.util.FirebaseBackend
 
 /**
- * Features that are not wired to the V2 backend yet and therefore stay hidden
- * in builds that talk to good4tr-v2 (the store builds). Flip once ready.
+ * Central release switches for flows whose availability is not determined by
+ * backend compatibility alone. Production and test apps currently both use V2.
  */
 object ReleaseFeatures {
     private val isV2 get() = AppEnvironment.firebaseBackend == FirebaseBackend.V2
 
     /**
-     * Askıda Yemek: V1 builds use products/codes, V2 builds the campaign screen (SuspendedMealsScreen).
-     * Hidden for this release: edu verification codes need the mail extension, which is not set up yet.
+     * The V2 campaign screen exists, but the entry point remains hidden until
+     * edu verification mail delivery is available. This is disabled on every backend.
      */
     val suspendedMeals: Boolean get() = false
 
-    /** Edu mail + password sign-in and sign-up on the V2 login screen; hidden, Google/Apple only. */
-    val eduEmailAuth: Boolean get() = false
+    /** Local email/password login and registration UI; this does not control edu verification mail delivery. */
+    val eduEmailAuth: Boolean get() = AppEnvironment.useFirebaseEmulators
 
-    /** Kampüs Dolabı runs only on the V2 backend (market callables in good4tr-v2). */
+    /** Kampüs Dolabı uses V2 market callables and is available on V2 projects. */
     val campusCloset: Boolean get() = isV2
 
-    /** The in-app business and admin panels use V1 collections; V2 staff use the web panel. */
+    /** In-app staff panels still use legacy collections; V2 staff are sent to the web panel. */
     val inAppStaffPanels: Boolean get() = !isV2
 
-    const val WEB_PANEL_URL = "https://good4tr-v2.web.app/admin"
+    val WEB_PANEL_URL: String get() = if (AppEnvironment.useFirebaseEmulators) "http://${AppEnvironment.firebaseEmulatorHost}:5005/admin" else "https://${AppEnvironment.firebaseProjectId}.web.app/admin"
 }

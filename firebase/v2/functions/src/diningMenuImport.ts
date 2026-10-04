@@ -167,10 +167,13 @@ export async function importSksDiningMenuService(
 ): Promise<"imported" | "unchanged" | "stale"> {
   const statusRef = database.doc(DINING_MENU_IMPORT_DOC);
   const status = await statusRef.get();
+  let attemptedImageUrl = "";
   try {
     const page = await deps.fetchText(SKS_MENU_PAGE_URL);
     const imageUrl = MENU_IMAGE_PATTERN.exec(page)?.[1];
     if (!imageUrl) throw new Error("MENU_IMAGE_NOT_FOUND");
+    attemptedImageUrl = imageUrl;
+    if (status.get("lastFailedImageUrl") === imageUrl && status.get("lastFailedDate") === now.toISOString().slice(0, 10)) return "unchanged";
     if (status.get("lastImportedImageUrl") === imageUrl) {
       await statusRef.set({ lastCheckedAt: FieldValue.serverTimestamp(), lastResult: "unchanged" }, { merge: true });
       return "unchanged";
@@ -202,7 +205,7 @@ export async function importSksDiningMenuService(
     return "imported";
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await statusRef.set({ lastCheckedAt: FieldValue.serverTimestamp(), lastResult: "failed", lastError: message }, { merge: true });
+    await statusRef.set({ lastCheckedAt: FieldValue.serverTimestamp(), lastResult: "failed", lastError: message, lastFailedImageUrl: attemptedImageUrl, lastFailedDate: now.toISOString().slice(0, 10) }, { merge: true });
     throw error;
   }
 }

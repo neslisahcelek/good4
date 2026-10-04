@@ -8,6 +8,8 @@ import com.good4.code.data.repository.CodeRepository
 import com.good4.code.domain.CodeStatus
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.domain.Result
+import com.good4.core.util.AppEnvironment
+import com.good4.core.util.FirebaseBackend
 import com.good4.core.presentation.UiText
 import com.good4.product.data.repository.FirestoreProductRepository
 import com.good4.product.isVisibleToPublicUsers
@@ -80,6 +82,7 @@ class ProductListViewModel(
     }
 
     fun loadActiveReservation() {
+        if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) return
         val userId = authRepository.currentUser?.uid ?: return
 
         viewModelScope.launch {

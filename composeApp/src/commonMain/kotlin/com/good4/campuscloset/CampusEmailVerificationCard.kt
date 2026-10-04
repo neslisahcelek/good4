@@ -1,5 +1,8 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.StandardButtonHeight
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,14 +44,13 @@ fun CampusEmailVerificationCard(
     Card(modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceDefault)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(if (state.verifiedEmail != null) "E-postan onaylandı" else "İlan vermek için okul e-postanı doğrula",
+            Text(if (state.verifiedEmail != null) stringResource(Res.string.campus_closet_e_postan_onaylandi) else stringResource(Res.string.campus_closet_ilan_vermek_icin_okul_e_postani_dogrula),
                 fontWeight = FontWeight.SemiBold)
             if (state.verifiedEmail == null) {
-                Text("Doğrulama e-postana Outlook üzerinden ulaşabilirsin. " +
-                    "Gereksiz E-posta/Spam klasörünü kontrol etmeyi unutma.")
+                Text(stringResource(Res.string.campus_closet_dogrulama_e_postana_outlook_uzerinden_ulasabilirsin_gereksiz_e_posta))
             }
             if (state.verifiedEmail != null) {
-                Text("İlan verebilirsin.", color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(Res.string.campus_closet_ilan_verebilirsin), color = MaterialTheme.colorScheme.primary)
             } else if (state.sentTo == null) {
                 OutlinedTextField(
                     value = state.email.substringBefore('@').filter { it in '0'..'9' },
@@ -64,7 +66,7 @@ fun CampusEmailVerificationCard(
                         }
                     },
                     modifier = Modifier.fillMaxWidth().focusRequester(numberFocus),
-                    label = { Text("Öğrenci numaran") }, placeholder = { Text("Numaran") },
+                    label = { Text(stringResource(Res.string.campus_closet_ogrenci_numaran)) }, placeholder = { Text(stringResource(Res.string.campus_closet_numaran)) },
                     trailingIcon = {
                         Text("@$CAMPUS_EMAIL_DOMAIN",
                             modifier = Modifier.padding(end = 12.dp).clickable(enabled = !busy) { numberFocus.requestFocus() },
@@ -75,27 +77,27 @@ fun CampusEmailVerificationCard(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Button(onClick = onSendLink, enabled = !busy && state.resendSeconds == 0 && state.email.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(if (state.isSending) "Gönderiliyor…" else if (state.resendSeconds > 0)
-                        "Tekrar dene (${state.resendSeconds} sn)" else "Doğrulama e-postası gönder")
+                    modifier = Modifier.fillMaxWidth().height(StandardButtonHeight)) {
+                    Text(if (state.isSending) stringResource(Res.string.campus_closet_gonderiliyor) else if (state.resendSeconds > 0)
+                        stringResource(Res.string.campus_closet_tekrar_dene_sn, state.resendSeconds) else stringResource(Res.string.campus_closet_dogrulama_e_postasi_gonder))
                 }
             } else {
-                Text("Doğrulamadan sonra ilan verebilirsin.")
+                Text(stringResource(Res.string.campus_closet_dogrulamadan_sonra_ilan_verebilirsin))
                 if (state.isConfirming) {
                     CircularProgressIndicator()
-                    Text("E-postan doğrulanıyor…")
+                    Text(stringResource(Res.string.campus_closet_e_postan_dogrulaniyor))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = onChangeEmail, enabled = !busy) { Text("E-postayı değiştir") }
+                    TextButton(onClick = onChangeEmail, enabled = !busy) { Text(stringResource(Res.string.campus_closet_e_postayi_degistir)) }
                     TextButton(onClick = onSendLink, enabled = !busy && state.resendSeconds == 0) {
-                        Text(if (state.resendSeconds > 0) "Tekrar gönder (${state.resendSeconds} sn)" else "Tekrar gönder")
+                        Text(if (state.resendSeconds > 0) stringResource(Res.string.campus_closet_tekrar_gonder_sn, state.resendSeconds) else stringResource(Res.string.campus_closet_tekrar_gonder))
                     }
                 }
             }
             state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(it.asString(), color = MaterialTheme.colorScheme.error)
                 if (state.hasReceivedLink && !busy) {
-                    TextButton(onClick = onRetryLink) { Text("Tekrar dene") }
+                    TextButton(onClick = onRetryLink) { Text(stringResource(Res.string.campus_closet_retry)) }
                 }
             }
         }

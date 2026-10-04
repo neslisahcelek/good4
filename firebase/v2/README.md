@@ -1,7 +1,14 @@
 # Good4 V2 Firebase
 
-This directory is isolated from the legacy `firebase/community` setup and is
-bound only to the new Firebase project `good4tr-v2`.
+Local testing and the pending cost-control rollout are documented in
+[COST_TESTING.md](COST_TESTING.md). Debug test apps use `demo-good4-v2`
+emulators by default. No production deployment or live budget setup is
+included in the current handoff.
+
+This directory is isolated from the legacy `firebase/community` setup and
+contains the shared V2 backend for production (`good4tr-v2`) and test
+(`good4tr-test`). Use the explicit `--project production` or `--project test`
+alias when deploying. See `mobile/README.md` for the test schema transition.
 
 ## Roles
 
@@ -84,6 +91,33 @@ npm install --prefix web
 npm run test:web
 npx firebase deploy --only hosting --project good4tr-v2
 ```
+
+The web panel initializes Firebase App Check with reCAPTCHA Enterprise (shown
+as Fraud Defense in the console) before Auth, Functions, or Firestore. Its
+public site key is defined once in `web/src/firebase.ts`, and token auto-refresh
+is enabled. The Firebase SDK attaches tokens to callable and Firestore requests.
+
+- In production, use the same score-based reCAPTCHA Enterprise key registered
+  for the business Web app in `good4tr-v2`. Confirm that the key's allowed
+  domains include every domain serving the panel (including Hosting domains
+  when used). Do not add localhost to the production key.
+- `npm --prefix web run dev` uses the App Check debug provider. Add the debug
+  token printed in the browser console under the Web app's **Manage debug
+  tokens** in Firebase, then reload. Debug tokens are private and must not be
+  committed. Production builds do not enable the debug provider.
+- `VITE_USE_FIREBASE_EMULATORS=true` skips App Check initialization for local
+  emulator testing.
+- After building and deploying Hosting, verify sign-in and a read-only panel
+  operation. Check the callable request's `X-Firebase-AppCheck` header and
+  Functions verification logs, and look for verified Firestore requests in
+  App Check metrics. A header alone does not establish that its token is valid.
+- Enable enforcement only after Android, iOS, and web verification succeeds
+  and supported client versions have been distributed. Callable enforcement
+  uses `ENFORCE_APP_CHECK=true` and a Functions redeploy; Firestore/Storage
+  enforcement is configured separately in Firebase Console.
+
+References: [Web App Check setup](https://firebase.google.com/docs/app-check/web/recaptcha-enterprise-provider),
+[Web debug provider](https://firebase.google.com/docs/app-check/web/debug-provider).
 
 ## Local rules tests
 

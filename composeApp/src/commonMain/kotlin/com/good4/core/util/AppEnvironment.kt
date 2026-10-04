@@ -1,14 +1,17 @@
 package com.good4.core.util
 
 enum class FirebaseBackend {
-    /** The separate good4tr-test project, which still uses the legacy data model. */
+    /** Kept for legacy adapters; supported production and test apps both use V2. */
     LEGACY_TEST,
-    /** The current production project good4tr-v2 and its data model, not a build flavor. */
+    /** Shared data model and callable contract for production and test. */
     V2
 }
 
 expect object AppEnvironment {
     val isEmailVerificationRequired: Boolean
     val isDebug: Boolean
+    val useFirebaseEmulators: Boolean
+    val firebaseEmulatorHost: String
+    val firebaseProjectId: String
     val firebaseBackend: FirebaseBackend
 }

@@ -1,5 +1,6 @@
 package com.good4.core.network
 
+import com.good4.core.util.AppEnvironment
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
@@ -29,19 +30,13 @@ private val callableClient = HttpClient {
     }
 }
 
-/** Set by the debug iOS host when it points Firebase at the local emulators. */
-object FirebaseEmulator {
-    var host: String? = null
-}
-
 expect suspend fun currentFirebaseIdToken(): String
 expect suspend fun currentAppCheckToken(): String?
 
 suspend fun callV2Function(name: String, data: JsonObject): JsonObject {
-    val appCheckToken = runCatching { currentAppCheckToken() }.getOrNull()
-    val url = FirebaseEmulator.host?.let { "http://$it:5105/good4tr-v2/europe-west1/$name" }
-        ?: "https://europe-west1-good4tr-v2.cloudfunctions.net/$name"
-    val response = callableClient.post(url) {
+    require(name.matches(Regex("[A-Za-z][A-Za-z0-9_]*"))) { "Invalid callable name" }
+    val appCheckToken = if (AppEnvironment.useFirebaseEmulators) null else runCatching { currentAppCheckToken() }.getOrNull()
+    val response = callableClient.post(if (AppEnvironment.useFirebaseEmulators) "http://${AppEnvironment.firebaseEmulatorHost}:5105/demo-good4-v2/europe-west1/$name" else v2CallableUrl(AppEnvironment.firebaseProjectId, name)) {
         contentType(ContentType.Application.Json)
         bearerAuth(currentFirebaseIdToken())
         if (!appCheckToken.isNullOrBlank()) {
@@ -53,4 +48,12 @@ suspend fun callV2Function(name: String, data: JsonObject): JsonObject {
         error(error["message"]?.jsonPrimitive?.content ?: "İşlem tamamlanamadı.")
     }
     return (response["data"] ?: response["result"])?.jsonObject ?: JsonObject(emptyMap())
+}
+
+internal fun v2CallableUrl(projectId: String, name: String): String {
+    require(projectId == "good4tr-v2" || projectId == "good4tr-test") {
+        "Unsupported Firebase project: $projectId"
+    }
+    require(name.matches(Regex("[A-Za-z][A-Za-z0-9_]*"))) { "Invalid callable name" }
+    return "https://europe-west1-$projectId.cloudfunctions.net/$name"
 }

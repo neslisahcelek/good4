@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
         AndroidCampusPush.requestPermission = requestPushPermission
         receivePush(intent)
         intent?.dataString?.let(com.good4.campuscloset.CampusEmailVerificationLinks::receive)
+        com.good4.notification.handleNotificationIntent(intent)
 
         var isSplashReady = false
         val splashShownAt = SystemClock.elapsedRealtime()
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        com.good4.notification.handleNotificationIntent(intent)
         intent.dataString?.let(com.good4.campuscloset.CampusEmailVerificationLinks::receive)
         receivePush(intent)
     }

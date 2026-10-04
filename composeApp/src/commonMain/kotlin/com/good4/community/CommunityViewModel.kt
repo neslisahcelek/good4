@@ -25,6 +25,7 @@ data class CommunityState(
     val followingError: String? = null,
     val selected: Community? = null,
     val entries: List<CommunityEntry> = emptyList(),
+    val entriesCursor: String? = null,
     val access: CommunityAccessDto = CommunityAccessDto(),
     val businesses: List<CommunityBusiness> = emptyList(),
     val isFollowing: Boolean = false,
@@ -212,13 +213,14 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         }
     }
 
-    fun select(community: Community) {
+    fun select(community: Community, targetEventId: String? = null) {
         loadingJob?.cancel()
         registrationJob?.cancel()
         mutable.update {
             it.copy(
                 selected = community,
                 entries = emptyList(),
+                entriesCursor = null,
                 loading = true,
                 error = null,
                 generatedCouponCode = null,
@@ -237,7 +239,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
             try {
                 val access = repository.access()
                 val manager = access.active && community.id in access.communityIds
-                val entries = repository.entries(community.id, manager)
+                val page = repository.entryPage(community.id, manager)
+                val target = targetEventId?.takeIf { id -> page.first.none { it.id == id } }
+                    ?.let { repository.publishedEntry(community.id, it) }
+                val entries = if (target == null) page.first else page.first + target
                 val following = repository.isFollowing(community.id)
                 val events = entries.filter { it.data.kind == "event" && it.data.status == "published" }
                 val registrations = if (manager) {
@@ -250,6 +255,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                     it.copy(
                         access = access,
                         entries = entries,
+                        entriesCursor = page.second,
                         isFollowing = following,
                         registrationsByEntry = registrations,
                         registeredEventIds = registered,
@@ -257,6 +263,22 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                     )
                 }
                 if (manager && updatesVisible) startRegistrationUpdates(community.id)
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { mutable.update { it.copy(loading = false, error = e.message) } }
+        }
+    }
+
+    fun loadMoreEntries() {
+        val snapshot = mutable.value
+        val community = snapshot.selected ?: return
+        val cursor = snapshot.entriesCursor ?: return
+        if (snapshot.loading) return
+        mutable.update { it.copy(loading = true) }
+        loadingJob = viewModelScope.launch {
+            try {
+                val page = repository.entryPage(community.id, snapshot.canManage, cursor)
+                val registered = if (snapshot.canManage) emptySet() else page.first.filter { repository.isRegistered(community.id, it.id) }.mapTo(mutableSetOf()) { it.id }
+                mutable.update { it.copy(entries = (it.entries + page.first).distinctBy { entry -> entry.id }, entriesCursor = page.second, registeredEventIds = it.registeredEventIds + registered, loading = false) }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { mutable.update { it.copy(loading = false, error = e.message) } }
         }
@@ -289,6 +311,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     fun blockCommunity(community: Community) {
         val blocked = mutable.value.blockedCommunityIds + community.id
         saveBlockedCommunityIds(blocked)
+        com.good4.notification.PushSignals.refresh()
         back()
         mutable.update { state ->
             state.copy(
@@ -301,6 +324,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
 
     fun unblockAllCommunities() {
         saveBlockedCommunityIds(emptySet())
+        com.good4.notification.PushSignals.refresh()
         featuredEventsKey = null
         load()
     }
@@ -403,6 +427,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                         followLoading = false,
                         followedCommunityIds = if (next) state.followedCommunityIds + community.id else state.followedCommunityIds - community.id,
                     ) }
+                    if (next) com.good4.notification.PushSignals.suggestPermission()
                     refreshFollowing(force = true)
                 }
             } catch (e: CancellationException) { throw e }
@@ -440,7 +465,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                         cancellingRegistrationIds = it.cancellingRegistrationIds - entry.id
                     )
                 }
-                if (next && !studentV2) showTicket(entry) else if (!next) closeTicket()
+                if (next) {
+                    com.good4.notification.PushSignals.suggestPermission()
+                    if (!studentV2) showTicket(entry)
+                } else closeTicket()
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 mutable.update { it.copy(registrationLoadingIds = it.registrationLoadingIds - entry.id, cancellingRegistrationIds = it.cancellingRegistrationIds - entry.id, error = e.message) }

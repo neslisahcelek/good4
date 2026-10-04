@@ -1,5 +1,8 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -32,7 +35,7 @@ import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import org.koin.compose.viewmodel.koinViewModel
 
-private val MEETING_POINTS = listOf("Merkez Kütüphane", "Olbia Çarşısı", "Merkezi Yemekhane")
+private val MEETING_POINTS = listOf(Res.string.campus_closet_merkez_kutuphane, Res.string.campus_closet_olbia_carsisi, Res.string.campus_closet_merkezi_yemekhane)
 
 @Composable
 fun CampusClosetChatScreen(
@@ -50,7 +53,7 @@ fun CampusClosetChatScreen(
     CampusClosetChatContent(
         conversationId, state, onBack, onOpenListing,
         onDraftChange = viewModel::setDraft,
-        onMeetingPoint = { viewModel.appendToDraft("Buluşma için $it uygun mu? Hangi saat olur?") },
+        onMeetingPoint = viewModel::appendMeetingPoint,
         onSend = viewModel::send,
         onOffer = viewModel::sendOffer,
         onRespondOffer = viewModel::respondOffer,
@@ -97,23 +100,23 @@ internal fun CampusClosetChatContent(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         conversation?.let { ClosetAvatar(it.otherName, Modifier.size(38.dp)) }
                         Column {
-                            Text(conversation?.otherName ?: "Sohbet", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            conversation?.let { Text(if (it.isSeller) "Alıcı" else "Satıcı", fontSize = 12.sp, color = TextSecondary) }
+                            Text(conversation?.otherName ?: stringResource(Res.string.campus_closet_sohbet), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            conversation?.let { Text(if (it.isSeller) stringResource(Res.string.campus_closet_alici) else stringResource(Res.string.campus_closet_satici), fontSize = 12.sp, color = TextSecondary) }
                         }
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) } },
                 actions = {
                     Box {
-                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.MoreVert, "Diğer") }
+                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.MoreVert, stringResource(Res.string.campus_closet_other)) }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(text = { Text("İlanı görüntüle") }, onClick = { menuOpen = false; onOpenListing(listingId) })
+                            DropdownMenuItem(text = { Text(stringResource(Res.string.campus_closet_ilani_goruntule)) }, onClick = { menuOpen = false; onOpenListing(listingId) })
                             if (conversation != null) {
-                                DropdownMenuItem(text = { Text("Şikayet et") }, onClick = { menuOpen = false; reporting = true })
+                                DropdownMenuItem(text = { Text(stringResource(Res.string.campus_closet_report)) }, onClick = { menuOpen = false; reporting = true })
                                 if (conversation.blockedByMe) {
-                                    DropdownMenuItem(text = { Text("Engeli kaldır") }, onClick = { menuOpen = false; onUnblock() })
+                                    DropdownMenuItem(text = { Text(stringResource(Res.string.campus_closet_engeli_kaldir)) }, onClick = { menuOpen = false; onUnblock() })
                                 } else if (conversation.status != "blocked") {
-                                    DropdownMenuItem(text = { Text("Kullanıcıyı engelle", color = ErrorRed) }, onClick = { menuOpen = false; confirmBlock = true })
+                                    DropdownMenuItem(text = { Text(stringResource(Res.string.campus_closet_kullaniciyi_engelle), color = ErrorRed) }, onClick = { menuOpen = false; confirmBlock = true })
                                 }
                             }
                         }
@@ -124,7 +127,7 @@ internal fun CampusClosetChatContent(
         bottomBar = {
             Column {
                 state.info?.let { MarketNotice(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
-                state.error?.let { Text(it, color = ErrorRed, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) }
+                state.error?.let { Text(it.asString(), color = ErrorRed, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) }
                 if (!state.isLoading && state.loadError == null) {
                     Composer(
                         state,
@@ -143,21 +146,21 @@ internal fun CampusClosetChatContent(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when {
                     state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
-                    state.loadError != null -> CenteredState(state.loadError, "Geri dön", onBack)
+                    state.loadError != null -> CenteredState(state.loadError, stringResource(Res.string.campus_closet_geri_don), onBack)
                     else -> LazyColumn(
                         state = listState, contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()
                     ) {
                         item {
-                            MarketNotice("Kampüste kalabalık bir yerde buluşun. Ürünü görmeden ödeme yapmayın. Telefon numaranızı yalnızca anlaştığınız kişiyle paylaşın.", color = TextSecondary)
+                            MarketNotice(stringResource(Res.string.campus_closet_kampuste_kalabalik_bir_yerde_bulusun_urunu_gormeden_odeme_yapmayin), color = TextSecondary)
                         }
                         if (state.isNew) {
-                            item { Text("Satıcıya ilk mesajını yaz. Ürünün durumu, buluşma yeri ve saati hakkında konuşabilirsiniz.", color = TextSecondary, fontSize = 13.sp, lineHeight = 19.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp)) }
+                            item { Text(stringResource(Res.string.campus_closet_saticiya_ilk_mesajini_yaz_urunun_durumu_bulusma_yeri_ve), color = TextSecondary, fontSize = 13.sp, lineHeight = 19.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp)) }
                         }
                         items(state.messages, key = { it.id }) { message ->
                             MessageBubble(
                                 message,
-                                canRespond = conversation?.isSeller == true && message.type == "offer" && conversation.offer?.status == "pending" && message.id == state.messages.lastOrNull { it.type == "offer" }?.id,
+                                canRespond = conversation?.isSeller == true && conversation.status == "open" && message.type == "offer" && conversation.offer?.status == "pending" && message.id == state.messages.lastOrNull { it.type == "offer" }?.id,
                                 busy = state.sending, onRespond = onRespondOffer
                             )
                         }
@@ -167,27 +170,27 @@ internal fun CampusClosetChatContent(
         }
     }
     if (reporting) {
-        ReportDialog("Konuşmayı şikayet et", onDismiss = { reporting = false }, onSubmit = { reason, note -> reporting = false; onReport(reason, note) })
+        ReportDialog(stringResource(Res.string.campus_closet_konusmayi_sikayet_et), onDismiss = { reporting = false }, onSubmit = { reason, note -> reporting = false; onReport(reason, note) })
     }
     if (confirmBlock) {
         AlertDialog(
-            onDismissRequest = { confirmBlock = false }, title = { Text("Kullanıcı engellensin mi?") },
-            text = { Text("Bu kişi sana artık mesaj gönderemez ve ilanları sana gösterilmez.") },
-            confirmButton = { TextButton(onClick = { confirmBlock = false; onBlock() }) { Text("Engelle", color = ErrorRed) } },
-            dismissButton = { TextButton(onClick = { confirmBlock = false }) { Text("Vazgeç") } }
+            onDismissRequest = { confirmBlock = false }, title = { Text(stringResource(Res.string.campus_closet_kullanici_engellensin_mi)) },
+            text = { Text(stringResource(Res.string.campus_closet_bu_kisi_sana_artik_mesaj_gonderemez_ve_ilanlari_sana)) },
+            confirmButton = { TextButton(onClick = { confirmBlock = false; onBlock() }) { Text(stringResource(Res.string.campus_closet_engelle), color = ErrorRed) } },
+            dismissButton = { TextButton(onClick = { confirmBlock = false }) { Text(stringResource(Res.string.campus_closet_cancel)) } }
         )
     }
     if (offering) {
         ModalBottomSheet(onDismissRequest = { offering = false }, containerColor = SurfaceDefault) {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ClosetSectionHeading("Teklif ver", Icons.Outlined.LocalOffer, "İlan fiyatı üzerinden indirim seç.")
+                ClosetSectionHeading(stringResource(Res.string.campus_closet_teklif_ver), Icons.Outlined.LocalOffer, stringResource(Res.string.campus_closet_ilan_fiyati_uzerinden_indirim_sec))
                 CampusClosetLimits.OFFER_PERCENTS.forEach { percent ->
                     Surface(
                         onClick = { offering = false; onOffer(percent) }, shape = RoundedCornerShape(16.dp), color = SurfaceDefault,
                         border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.55f)), modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("%$percent indirim", color = TextPrimary, modifier = Modifier.weight(1f))
+                            Text(stringResource(Res.string.campus_closet_indirim, percent), color = TextPrimary, modifier = Modifier.weight(1f))
                             conversation?.let { Text(formatPrice(offerPrice(it.listingPrice, percent)), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
                         }
                     }
@@ -203,10 +206,10 @@ private fun ChatListingSummary(conversation: MarketConversation?, onOpen: () -> 
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Surface(shape = RoundedCornerShape(12.dp)) { ListingPhoto(conversation?.listingThumbUrl, Modifier.size(52.dp), iconSize = 24) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(conversation?.listingTitle?.ifBlank { "Kampüs ilanı" } ?: "Kampüs ilanı", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(conversation?.let { formatPrice(it.listingPrice) } ?: "Fiyatı ilanda gör", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(conversation?.listingTitle?.ifBlank { stringResource(Res.string.campus_closet_kampus_ilani) } ?: stringResource(Res.string.campus_closet_kampus_ilani), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(conversation?.let { formatPrice(it.listingPrice) } ?: stringResource(Res.string.campus_closet_fiyati_ilanda_gor), color = MaterialTheme.colorScheme.primary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
-            TextButton(onClick = onOpen, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("İlana git", fontSize = 12.sp) }
+            TextButton(onClick = onOpen, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(stringResource(Res.string.campus_closet_ilana_git), fontSize = 12.sp) }
         }
     }
 }
@@ -233,7 +236,7 @@ private fun MessageBubble(message: MarketMessage, canRespond: Boolean, busy: Boo
                 if (isOffer) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Outlined.LocalOffer, null, tint = ClosetOfferAccent, modifier = Modifier.size(18.dp))
-                        Text("Teklif${message.offerPercent?.let { " · %$it indirim" } ?: ""}", fontWeight = FontWeight.SemiBold, color = ClosetOfferAccent, fontSize = 13.sp)
+                        Text(stringResource(Res.string.campus_closet_teklif, message.offerPercent?.let { stringResource(Res.string.campus_closet_offer_discount_detail, it) } ?: ""), fontWeight = FontWeight.SemiBold, color = ClosetOfferAccent, fontSize = 13.sp)
                     }
                     message.offerPrice?.let { Text(formatPrice(it), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp) }
                 }
@@ -241,8 +244,8 @@ private fun MessageBubble(message: MarketMessage, canRespond: Boolean, busy: Boo
                 Text(formatMarketTime(message.createdAt), color = TextSecondary, fontSize = 10.sp, modifier = Modifier.align(Alignment.End))
                 if (canRespond) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                        OutlinedButton(onClick = { onRespond(false) }, enabled = !busy, shape = RoundedCornerShape(12.dp)) { Text("Reddet") }
-                        Button(onClick = { onRespond(true) }, enabled = !busy, shape = RoundedCornerShape(12.dp)) { Text("Kabul et") }
+                        OutlinedButton(onClick = { onRespond(false) }, enabled = !busy, shape = RoundedCornerShape(12.dp)) { Text(stringResource(Res.string.campus_closet_reddet)) }
+                        Button(onClick = { onRespond(true) }, enabled = !busy, shape = RoundedCornerShape(12.dp)) { Text(stringResource(Res.string.campus_closet_kabul_et)) }
                     }
                 }
             }
@@ -266,14 +269,15 @@ private fun Composer(
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
             when {
                 blocked && conversation?.blockedByMe == true -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Bu kullanıcıyı engelledin.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(8.dp))
-                    TextButton(onClick = onUnblock, enabled = !state.sending) { Text("Engeli kaldır") }
+                    Text(stringResource(Res.string.campus_closet_bu_kullaniciyi_engelledin), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(8.dp))
+                    TextButton(onClick = onUnblock, enabled = !state.sending) { Text(stringResource(Res.string.campus_closet_engeli_kaldir)) }
                 }
-                blocked -> Text("Bu konuşmaya mesaj gönderilemiyor.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(8.dp))
+                blocked -> Text(stringResource(Res.string.campus_closet_bu_konusmaya_mesaj_gonderilemiyor), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(8.dp))
                 else -> {
                     if (state.draft.isBlank()) {
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MEETING_POINTS.forEach { point ->
+                            MEETING_POINTS.forEach { pointResource ->
+                                val point = stringResource(pointResource)
                                 AssistChip(onClick = { onMeetingPoint(point) }, label = { Text(point, fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Outlined.LocationOn, null, Modifier.size(15.dp)) }, shape = RoundedCornerShape(12.dp))
                             }
                         }
@@ -281,17 +285,17 @@ private fun Composer(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (canOffer) {
                             Surface(onClick = onOffer, enabled = !state.sending, shape = RoundedCornerShape(14.dp), color = ClosetOfferAccent.copy(alpha = 0.12f), modifier = Modifier.size(42.dp)) {
-                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.LocalOffer, "Teklif ver", tint = ClosetOfferAccent, modifier = Modifier.size(21.dp)) }
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.LocalOffer, stringResource(Res.string.campus_closet_teklif_ver), tint = ClosetOfferAccent, modifier = Modifier.size(21.dp)) }
                             }
                         }
                         OutlinedTextField(
-                            value = state.draft, onValueChange = onDraftChange, placeholder = { Text("Mesaj yaz", fontSize = 14.sp) },
+                            value = state.draft, onValueChange = onDraftChange, placeholder = { Text(stringResource(Res.string.campus_closet_mesaj_yaz), fontSize = 14.sp) },
                             modifier = Modifier.weight(1f), maxLines = 4, shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = BorderMuted.copy(alpha = 0.55f))
                         )
                         FilledIconButton(onClick = onSend, enabled = state.draft.isNotBlank() && !state.sending, shape = RoundedCornerShape(14.dp), modifier = Modifier.size(42.dp)) {
-                            if (state.sending) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.AutoMirrored.Filled.Send, "Gönder", modifier = Modifier.size(20.dp))
+                            if (state.sending) CircularProgressIndicator(Modifier.size(StandardButtonLoadingIndicatorSize), strokeWidth = 2.dp)
+                            else Icon(Icons.AutoMirrored.Filled.Send, stringResource(Res.string.campus_closet_gonder), modifier = Modifier.size(20.dp))
                         }
                     }
                 }

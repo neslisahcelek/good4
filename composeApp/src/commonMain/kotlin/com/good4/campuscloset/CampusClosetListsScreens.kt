@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,7 +49,7 @@ private fun ListScaffold(
 ) {
     Good4Scaffold(topBar = {
         Good4TopBar(title = title, navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) }
         }, actions = actions)
     }) { padding ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(padding)) { content() }
@@ -62,7 +64,9 @@ fun CampusClosetMyListingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleResumeEffect(Unit) { viewModel.load(); onPauseOrDispose { } }
-    CampusClosetMyListingsContent(state, onBack, onOpenListing, viewModel::load, viewModel::updateStatus, viewModel::updatePrice, viewModel::renew)
+    CampusClosetMyListingsContent(state, onBack, onOpenListing, viewModel::load, viewModel::updateStatus,
+        onRenew = viewModel::renew, onEditPrice = viewModel::beginPriceEdit, onPriceChange = viewModel::setEditPrice,
+        onFreeChange = viewModel::setEditFree, onDismissPrice = viewModel::dismissPriceEdit, onSavePrice = viewModel::savePriceEdit)
 }
 
 @Composable
@@ -72,27 +76,30 @@ internal fun CampusClosetMyListingsContent(
     onOpenListing: (String) -> Unit,
     onRetry: () -> Unit,
     onUpdateStatus: (String, String) -> Unit,
-    onUpdatePrice: (String, Int) -> Unit = { _, _ -> },
-    onRenew: (String) -> Unit = {}
+    onRenew: (String) -> Unit = {},
+    onEditPrice: (MarketListing) -> Unit = {},
+    onPriceChange: (String) -> Unit = {},
+    onFreeChange: (Boolean) -> Unit = {},
+    onDismissPrice: () -> Unit = {},
+    onSavePrice: () -> Unit = {}
 ) {
     var listingToRemove by remember { mutableStateOf<MarketListing?>(null) }
-    var listingToReprice by remember { mutableStateOf<MarketListing?>(null) }
-    ListScaffold("İlanlarım", onBack) {
+    ListScaffold(stringResource(Res.string.campus_closet_ilanlarim), onBack) {
         when {
             state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
-            state.loadError != null -> CenteredState(state.loadError, "Tekrar dene", onRetry)
-            state.listings.isEmpty() -> ClosetEmptyState(Icons.Outlined.Inventory2, "Dolabın henüz boş", "İlk ilanını paylaş; artık kullanmadığın ürünler kampüste yeni birine ulaşsın.")
+            state.loadError != null -> CenteredState(state.loadError, stringResource(Res.string.campus_closet_retry), onRetry)
+            state.listings.isEmpty() -> ClosetEmptyState(Icons.Outlined.Inventory2, stringResource(Res.string.campus_closet_dolabin_henuz_bos), stringResource(Res.string.campus_closet_ilk_ilanini_paylas_artik_kullanmadigin_urunler_kampuste_yeni_birine))
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item {
-                    Text("${state.listings.size} ilanın var", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Text("İlanlarının durumunu buradan takip et.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+                    Text(stringResource(Res.string.campus_closet_ilanin_var, state.listings.size), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(Res.string.campus_closet_ilanlarinin_durumunu_buradan_takip_et), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
                 }
                 state.message?.let { message -> item { MarketNotice(message, color = ErrorRed) } }
                 items(state.listings, key = { it.id }) { listing ->
                     MyListingCard(listing, state.busyId == listing.id, { onOpenListing(listing.id) }) { action ->
                         when (action) {
                             "remove" -> listingToRemove = listing
-                            "editPrice" -> listingToReprice = listing
+                            "editPrice" -> onEditPrice(listing)
                             "renew" -> onRenew(listing.id)
                             else -> onUpdateStatus(listing.id, action)
                         }
@@ -101,15 +108,8 @@ internal fun CampusClosetMyListingsContent(
             }
         }
     }
-    listingToReprice?.let { listing ->
-        PriceEditDialog(
-            currentPrice = listing.price,
-            onDismiss = { listingToReprice = null },
-            onSave = { price ->
-                listingToReprice = null
-                onUpdatePrice(listing.id, price)
-            }
-        )
+    state.priceEdit?.let { draft ->
+        PriceEditDialog(draft, onPriceChange, onFreeChange, onDismissPrice, onSavePrice)
     }
     listingToRemove?.let { listing ->
         RemoveListingDialog(
@@ -139,32 +139,32 @@ private fun MyListingCard(listing: MarketListing, busy: Boolean, onOpen: () -> U
         when (listing.status) {
             "published", "reserved" -> listing.daysLeft(now)?.let { days ->
                 Text(
-                    if (days == 0) "Bugün yayından kalkacak" else "$days gün sonra yayından kalkacak",
+                    if (days == 0) stringResource(Res.string.campus_closet_bugun_yayindan_kalkacak) else stringResource(Res.string.campus_closet_gun_sonra_yayindan_kalkacak, days),
                     fontSize = 12.sp, color = if (days <= 3) ErrorRed else TextSecondary
                 )
             }
             "expired" -> Text(
-                if (listing.renewsLeft > 0) "Süresi doldu · 30 gün daha yayında tutabilirsin." else "Süresi doldu · yeni ilan verebilirsin.",
+                if (listing.renewsLeft > 0) stringResource(Res.string.campus_closet_suresi_doldu_30_gun_daha_yayinda_tutabilirsin) else stringResource(Res.string.campus_closet_suresi_doldu_yeni_ilan_verebilirsin),
                 fontSize = 12.sp, color = ErrorRed
             )
-            "pending" -> Text("İnceleniyor · yaklaşık 30 dakika içinde yayına alınır.", fontSize = 12.sp, lineHeight = 17.sp, color = TextSecondary)
-            "rejected" -> MarketNotice(listing.rejectReason ?: "İlanın yayınlanmadı. Ayrıntılar için ilanını açabilirsin.", color = ErrorRed)
+            "pending" -> Text(stringResource(Res.string.campus_closet_inceleniyor_yaklasik_30_dakika_icinde_yayina_alinir), fontSize = 12.sp, lineHeight = 17.sp, color = TextSecondary)
+            "rejected" -> MarketNotice(listing.rejectReason ?: stringResource(Res.string.campus_closet_ilanin_yayinlanmadi_ayrintilar_icin_ilanini_acabilirsin), color = ErrorRed)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            ListingAction("İlanı aç", enabled = !busy, onClick = onOpen)
+            ListingAction(stringResource(Res.string.campus_closet_ilani_ac), enabled = !busy, onClick = onOpen)
             if (listing.canRenew(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())) {
-                ListingAction("30 gün uzat", !busy) { onAction("renew") }
+                ListingAction(stringResource(Res.string.campus_closet_30_gun_uzat), !busy) { onAction("renew") }
             }
             if (listing.status in listOf("pending", "published", "reserved")) {
-                ListingAction("Fiyatı düzenle", !busy) { onAction("editPrice") }
+                ListingAction(stringResource(Res.string.campus_closet_edit_price), !busy) { onAction("editPrice") }
             }
             when (listing.status) {
                 "published", "reserved" -> {
-                    ListingAction("Yayından kaldır", !busy, destructive = true) { onAction("remove") }
-                    ListingAction("Satıldı", !busy) { onAction("markSold") }
+                    ListingAction(stringResource(Res.string.campus_closet_yayindan_kaldir), !busy, destructive = true) { onAction("remove") }
+                    ListingAction(stringResource(Res.string.campus_closet_satildi), !busy) { onAction("markSold") }
                 }
-                "sold", "expired" -> ListingAction("Yayından kaldır", !busy, destructive = true) { onAction("remove") }
-                "pending", "rejected" -> ListingAction("İlanı kaldır", !busy, destructive = true) { onAction("remove") }
+                "sold", "expired" -> ListingAction(stringResource(Res.string.campus_closet_yayindan_kaldir), !busy, destructive = true) { onAction("remove") }
+                "pending", "rejected" -> ListingAction(stringResource(Res.string.campus_closet_ilani_kaldir), !busy, destructive = true) { onAction("remove") }
             }
             if (busy) CircularProgressIndicator(Modifier.padding(10.dp).size(18.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
         }
@@ -201,15 +201,15 @@ internal fun CampusClosetInboxContent(
     onRetry: () -> Unit,
     onOpenBlocked: () -> Unit = {}
 ) {
-    ListScaffold("Mesajlar", onBack, actions = {
-        IconButton(onClick = onOpenBlocked) { Icon(Icons.Outlined.Block, "Engellediklerin", tint = TextSecondary) }
+    ListScaffold(stringResource(Res.string.campus_closet_mesajlar), onBack, actions = {
+        IconButton(onClick = onOpenBlocked) { Icon(Icons.Outlined.Block, stringResource(Res.string.campus_closet_engellediklerin), tint = TextSecondary) }
     }) {
         when {
             state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
-            state.loadError != null -> CenteredState(state.loadError, "Tekrar dene", onRetry)
-            state.conversations.isEmpty() -> ClosetEmptyState(Icons.AutoMirrored.Outlined.Chat, "Konuşma burada başlar", "Beğendiğin bir ilanın satıcısına yaz; ürün ve buluşma ayrıntılarını birlikte konuşun.")
+            state.loadError != null -> CenteredState(state.loadError, stringResource(Res.string.campus_closet_retry), onRetry)
+            state.conversations.isEmpty() -> ClosetEmptyState(Icons.AutoMirrored.Outlined.Chat, stringResource(Res.string.campus_closet_konusma_burada_baslar), stringResource(Res.string.campus_closet_begendigin_bir_ilanin_saticisina_yaz_urun_ve_bulusma_ayrintilarini))
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                item { Text("Kampüsteki konuşmaların", color = TextSecondary, fontSize = 13.sp) }
+                item { Text(stringResource(Res.string.campus_closet_kampusteki_konusmalarin), color = TextSecondary, fontSize = 13.sp) }
                 items(state.conversations, key = { it.id }) { conversation ->
                     ConversationCard(conversation) { onOpenChat(conversation.id) }
                 }
@@ -224,20 +224,20 @@ private fun ConversationCard(conversation: MarketConversation, onClick: () -> Un
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             ClosetAvatar(conversation.otherName)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(conversation.otherName.ifBlank { "Öğrenci" }, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(if (conversation.isSeller) "Alıcı" else "Satıcı", color = TextSecondary, fontSize = 12.sp)
+                Text(conversation.otherName.ifBlank { stringResource(Res.string.campus_closet_student) }, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(if (conversation.isSeller) stringResource(Res.string.campus_closet_alici) else stringResource(Res.string.campus_closet_satici), color = TextSecondary, fontSize = 12.sp)
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(formatMarketTime(conversation.lastMessageAt), fontSize = 11.sp, color = TextSecondary)
                 if (conversation.unread > 0) {
                     Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                        Text(if (conversation.unread > 99) "99+" else conversation.unread.toString(), modifier = Modifier.padding(horizontal = 3.dp))
+                        Text(if (conversation.unread > 99) stringResource(Res.string.campus_closet_99) else conversation.unread.toString(), modifier = Modifier.padding(horizontal = 3.dp))
                     }
                 }
             }
         }
         Text(
-            (if (conversation.lastMessageMine) "Sen: " else "") + conversation.lastMessageText,
+            (if (conversation.lastMessageMine) stringResource(Res.string.campus_closet_sen) else "") + conversation.lastMessageText,
             color = if (conversation.unread > 0) TextPrimary else TextSecondary, fontSize = 14.sp, lineHeight = 19.sp,
             fontWeight = if (conversation.unread > 0) FontWeight.Medium else FontWeight.Normal,
             maxLines = 2, overflow = TextOverflow.Ellipsis
@@ -250,7 +250,7 @@ private fun ConversationCard(conversation: MarketConversation, onClick: () -> Un
             Surface(shape = RoundedCornerShape(8.dp), color = ClosetOfferAccent.copy(alpha = 0.12f)) {
                 Row(Modifier.padding(horizontal = 9.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.LocalOffer, null, tint = ClosetOfferAccent, modifier = Modifier.size(14.dp))
-                    Text("Teklif bekliyor", color = ClosetOfferAccent, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(Res.string.campus_closet_teklif_bekliyor), color = ClosetOfferAccent, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -265,13 +265,13 @@ fun CampusClosetFavoritesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleResumeEffect(Unit) { viewModel.load(); onPauseOrDispose { } }
-    ListScaffold("Kaydedilenler", onBack) {
+    ListScaffold(stringResource(Res.string.campus_closet_kaydedilenler), onBack) {
         when {
             state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
-            state.loadError != null -> CenteredState(state.loadError!!, "Tekrar dene", viewModel::load)
+            state.loadError != null -> CenteredState(state.loadError!!, stringResource(Res.string.campus_closet_retry), viewModel::load)
             state.listings.isEmpty() -> ClosetEmptyState(
-                Icons.Outlined.FavoriteBorder, "Kaydettiğin ilan yok",
-                "Beğendiğin ilanlardaki kalbe dokun; burada toplanırlar. Satılan ya da kaldırılan ilanlar listeden düşer."
+                Icons.Outlined.FavoriteBorder, stringResource(Res.string.campus_closet_kaydettigin_ilan_yok),
+                stringResource(Res.string.campus_closet_begendigin_ilanlardaki_kalbe_dokun_burada_toplanirlar_satilan_ya_da)
             )
             else -> LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -298,11 +298,11 @@ fun CampusClosetBlockedScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleResumeEffect(Unit) { viewModel.load(); onPauseOrDispose { } }
-    ListScaffold("Engellediklerin", onBack) {
+    ListScaffold(stringResource(Res.string.campus_closet_engellediklerin), onBack) {
         when {
             state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
-            state.loadError != null -> CenteredState(state.loadError!!, "Tekrar dene", viewModel::load)
-            state.blocked.isEmpty() -> ClosetEmptyState(Icons.Outlined.Block, "Engellediğin kimse yok", "Bir konuşmada kullanıcıyı engellersen burada görünür ve engeli buradan kaldırabilirsin.")
+            state.loadError != null -> CenteredState(state.loadError!!, stringResource(Res.string.campus_closet_retry), viewModel::load)
+            state.blocked.isEmpty() -> ClosetEmptyState(Icons.Outlined.Block, stringResource(Res.string.campus_closet_engelledigin_kimse_yok), stringResource(Res.string.campus_closet_bir_konusmada_kullaniciyi_engellersen_burada_gorunur_ve_engeli_buradan))
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.message?.let { message -> item { MarketNotice(message, color = ErrorRed) } }
                 items(state.blocked, key = { it.conversationId }) { entry ->
@@ -310,11 +310,11 @@ fun CampusClosetBlockedScreen(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ClosetAvatar(entry.otherName)
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text(entry.otherName.ifBlank { "Öğrenci" }, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                                Text(entry.otherName.ifBlank { stringResource(Res.string.campus_closet_student) }, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                                 Text(entry.listingTitle, color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             val busy = state.busyId == entry.conversationId
-                            ListingAction(if (busy) "Kaldırılıyor…" else "Engeli kaldır", enabled = state.busyId == null) {
+                            ListingAction(if (busy) stringResource(Res.string.campus_closet_kaldiriliyor) else stringResource(Res.string.campus_closet_engeli_kaldir), enabled = state.busyId == null) {
                                 viewModel.unblock(entry.conversationId)
                             }
                         }

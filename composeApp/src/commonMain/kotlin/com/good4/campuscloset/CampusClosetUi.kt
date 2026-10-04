@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -22,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.*
 
-internal val ClosetOfferAccent = Color(0xFFE08A1E)
 
 @Composable
 internal fun ClosetCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -54,7 +55,7 @@ internal fun ClosetAvatar(name: String, modifier: Modifier = Modifier) {
         Box(contentAlignment = Alignment.Center) {
             Text(
                 name.trim().split(Regex("\\s+")).filter { it.isNotBlank() }.take(2)
-                    .joinToString("") { it.take(1).uppercase() }.ifBlank { "Ö" },
+                    .joinToString("") { it.take(1).uppercase() }.ifBlank { stringResource(Res.string.campus_closet_o) },
                 color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, fontSize = 16.sp
             )
         }
@@ -80,46 +81,48 @@ internal fun ClosetEmptyState(icon: ImageVector, title: String, description: Str
 internal fun RemoveListingDialog(listingTitle: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("İlan yayından kaldırılsın mı?") },
+        title = { Text(stringResource(Res.string.campus_closet_ilan_yayindan_kaldirilsin_mi)) },
         text = {
-            Text("\"$listingTitle\" Kampüs Dolabı’ndan kaldırılır ve fotoğrafları silinir. Bu işlem geri alınamaz. Yeniden paylaşmak için yeni ilan oluşturman gerekir.")
+            Text(stringResource(Res.string.campus_closet_kampus_dolabindan_kaldirilir_ve_fotograflari_silinir_bu_islem_geri, listingTitle))
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Yayından kaldır", color = ErrorRed) }
+            TextButton(onClick = onConfirm) { Text(stringResource(Res.string.campus_closet_yayindan_kaldir), color = ErrorRed) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.campus_closet_cancel)) } }
     )
 }
 
 /** Only the price of a posted listing can change; 0 means free. */
 @Composable
-internal fun PriceEditDialog(currentPrice: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
-    var free by remember { mutableStateOf(currentPrice == 0) }
-    var text by remember { mutableStateOf(if (currentPrice > 0) currentPrice.toString() else "") }
-    val price = if (free) 0 else text.toIntOrNull()
-    val valid = price != null && price in 0..CampusClosetLimits.MAX_PRICE && (free || price > 0) && price != currentPrice
+internal fun PriceEditDialog(
+    state: CampusClosetPriceEditState,
+    onPriceChange: (String) -> Unit,
+    onFreeChange: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Fiyatı düzenle") },
+        title = { Text(stringResource(Res.string.campus_closet_edit_price)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Yalnızca fiyat değişir; ilan yeniden incelemeye gitmez.", fontSize = 13.sp, color = TextSecondary)
+                Text(stringResource(Res.string.campus_closet_yalnizca_fiyat_degisir_ilan_yeniden_incelemeye_gitmez), fontSize = 13.sp, color = TextSecondary)
                 OutlinedTextField(
-                    value = text,
-                    onValueChange = { value -> text = value.filter(Char::isDigit).take(6) },
-                    enabled = !free,
-                    label = { Text("Yeni fiyat (₺)") },
+                    value = state.priceText,
+                    onValueChange = onPriceChange,
+                    enabled = !state.isFree,
+                    label = { Text(stringResource(Res.string.campus_closet_yeni_fiyat)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ücretsiz / bağış", modifier = Modifier.weight(1f))
-                    Switch(checked = free, onCheckedChange = { free = it })
+                    Text(stringResource(Res.string.campus_closet_ucretsiz_bagis), modifier = Modifier.weight(1f))
+                    Switch(checked = state.isFree, onCheckedChange = onFreeChange)
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { price?.let(onSave) }, enabled = valid) { Text("Kaydet") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } }
+        confirmButton = { TextButton(onClick = onSave, enabled = state.canSave) { Text(stringResource(Res.string.campus_closet_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.campus_closet_cancel)) } }
     )
 }

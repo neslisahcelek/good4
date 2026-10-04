@@ -4,6 +4,7 @@ import {
   type DocumentSnapshot,
   FieldValue,
   type Firestore,
+  type Query,
   Timestamp,
   type Transaction,
 } from "firebase-admin/firestore";
@@ -12,12 +13,14 @@ import { hasVerifiedCampusEmail } from "./campusEmailVerification.js";
 import { checkMarketText, containsPhoneNumber } from "./marketModeration.js";
 import type { PushPayload } from "./push.js";
 import { requireActiveActor } from "./shared.js";
+import { beginAccountDeletion } from "./accountDeletion.js";
+import { queueMarketPhotoDeletion, retryMarketPhotoDeletions, tryMarketPhotoDeletion } from "./marketPhotoCleanup.js";
 
 /** All Kampüs Dolabı limits live here so they can be tuned in one place. */
 export const MARKET_LIMITS = {
   maxPhotos: 3,
   maxPhotoBytes: 4 * 1024 * 1024,
-  maxActiveListings: 10,
+  maxActiveListings: 15,
   maxListingsPerDay: 5,
   /**
    * Messages one sender may send about one listing per Istanbul day, across
@@ -231,6 +234,7 @@ async function rejectBlockedContent(
   now: number,
 ): Promise<never> {
   const suspended = await database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, uid, MARKET_ROLES);
     const stateRef = database.doc(`marketUserState/${uid}`);
     const state = await transaction.get(stateRef);
     const windowStartedAt = state.get("strikeWindowStartedAt");
@@ -356,14 +360,21 @@ async function assertCanCreateListing(
   if (dailyCount(member.state, "listingsToday", now) >= MARKET_LIMITS.maxListingsPerDay) {
     throw new HttpsError("resource-exhausted", "MARKET_DAILY_LISTING_LIMIT");
   }
+  await assertActiveListingCapacity(database, transaction, uid);
+  return member;
+}
+
+async function assertActiveListingCapacity(database: Firestore, transaction: Transaction, uid: string): Promise<void> {
   const active = await transaction.get(database.collection("marketListings")
-    .where("sellerUid", "==", uid)
-    .where("status", "in", ACTIVE_LISTING_STATUSES)
+    .where("sellerUid", "==", uid).where("status", "in", ACTIVE_LISTING_STATUSES)
     .limit(MARKET_LIMITS.maxActiveListings));
   if (active.size >= MARKET_LIMITS.maxActiveListings) {
     throw new HttpsError("resource-exhausted", "MARKET_ACTIVE_LISTING_LIMIT");
   }
-  return member;
+}
+
+async function requireMarketReader(database: Firestore, uid: string): Promise<void> {
+  await database.runTransaction((transaction) => requireActiveActor(database, transaction, uid, MARKET_ROLES));
 }
 
 async function notifyAdminsOfListing(
@@ -428,14 +439,20 @@ export async function createMarketListingService(
   const folder = `market-listings/${listingRef.id}/`;
   let photos: { url: string; thumbUrl: string }[];
   try {
-    photos = await Promise.all(processed.map(async (photo, index) => {
+    const uploads = await Promise.allSettled(processed.map(async (photo, index) => {
       const name = `${index}-${randomUUID().slice(0, 8)}`;
-      const [url, thumbUrl] = await Promise.all([
+      const files = await Promise.allSettled([
         deps.photos.save(`${folder}${name}.jpg`, photo.full),
         deps.photos.save(`${folder}${name}_thumb.jpg`, photo.thumb),
       ]);
-      return { url, thumbUrl };
+      const failed = files.find((file) => file.status === "rejected");
+      if (failed?.status === "rejected") throw failed.reason;
+      return { url: (files[0] as PromiseFulfilledResult<string>).value,
+        thumbUrl: (files[1] as PromiseFulfilledResult<string>).value };
     }));
+    const failed = uploads.find((upload) => upload.status === "rejected");
+    if (failed?.status === "rejected") throw failed.reason;
+    photos = uploads.map((upload) => (upload as PromiseFulfilledResult<{ url: string; thumbUrl: string }>).value);
 
     await database.runTransaction(async (transaction) => {
       const member = await assertCanCreateListing(database, transaction, uid, now);
@@ -458,7 +475,10 @@ export async function createMarketListingService(
         dailyIncrement(member.state, "listingsToday", now), { merge: true });
     });
   } catch (error) {
-    await deps.photos.deletePrefix(folder).catch(() => undefined);
+    await database.runTransaction(async (transaction) => {
+      queueMarketPhotoDeletion(database, transaction, listingRef.id, uid);
+    });
+    await tryMarketPhotoDeletion(database, listingRef.id, deps.photos.deletePrefix, now);
     throw error;
   }
 
@@ -496,6 +516,15 @@ export async function updateMarketListingStatusService(
     if (!transition.from.includes(String(listing.get("status")))) {
       throw new HttpsError("failed-precondition", "MARKET_LISTING_STATUS_INVALID");
     }
+    if (transition.to === "published" && !ACTIVE_LISTING_STATUSES.includes(String(listing.get("status")))) {
+      await transaction.get(database.doc(`marketUserState/${uid}`));
+      await assertActiveListingCapacity(database, transaction, uid);
+      if (((listing.get("photos") ?? []) as unknown[]).length === 0) {
+        throw new HttpsError("failed-precondition", "MARKET_LISTING_UNAVAILABLE");
+      }
+      transaction.set(database.doc(`marketUserState/${uid}`), { listingQuotaRevision: FieldValue.increment(1) }, { merge: true });
+    }
+    if (transition.to === "removed") queueMarketPhotoDeletion(database, transaction, listingId, uid);
     transaction.update(listingRef, {
       status: transition.to,
       updatedAt: Timestamp.fromMillis(now),
@@ -504,9 +533,7 @@ export async function updateMarketListingStatusService(
     });
   });
   if (transition.to === "removed") {
-    await deps.photos.deletePrefix(`market-listings/${listingId}/`).catch((error) => {
-      console.error("market: photo cleanup failed", error);
-    });
+    await tryMarketPhotoDeletion(database, listingId, deps.photos.deletePrefix, now);
   }
   return { status: transition.to };
 }
@@ -584,6 +611,10 @@ export async function renewMarketListingService(
     }
     const expiresAt = Timestamp.fromMillis(now + MARKET_LISTING_LIFETIME.days * 24 * 60 * 60 * 1000);
     const status = currentStatus === "expired" ? "published" : currentStatus;
+    if (currentStatus === "expired") {
+      await assertActiveListingCapacity(database, transaction, uid);
+      transaction.set(database.doc(`marketUserState/${uid}`), { listingQuotaRevision: FieldValue.increment(1) }, { merge: true });
+    }
     transaction.update(listingRef, {
       status, expiresAt, renewCount: renewCount + 1,
       expiryReminderSentAt: FieldValue.delete(), updatedAt: Timestamp.fromMillis(now),
@@ -663,7 +694,7 @@ export async function sendMarketMessageService(
       if (uid !== conversation.get("sellerUid") && uid !== conversation.get("buyerUid")) {
         throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
       }
-      if (conversation.get("status") === "blocked") throw new HttpsError("permission-denied", "MARKET_BLOCKED");
+      if (conversation.get("status") !== "open") throw new HttpsError("permission-denied", "MARKET_BLOCKED");
       if (!MESSAGEABLE_LISTING_STATUSES.includes(String(listing.get("status")))) {
         throw new HttpsError("failed-precondition", "MARKET_LISTING_UNAVAILABLE");
       }
@@ -677,6 +708,7 @@ export async function sendMarketMessageService(
 
     const otherUid = uid === sellerUid ? buyerUid : sellerUid;
     const otherStateRef = database.doc(`marketUserState/${otherUid}`);
+    await requireActiveActor(database, transaction, otherUid, MARKET_ROLES);
     const [otherState, sellerUser] = await Promise.all([
       transaction.get(otherStateRef),
       isNew ? transaction.get(database.doc(`users/${sellerUid}`)) : Promise.resolve(null),
@@ -781,7 +813,7 @@ export async function respondMarketOfferService(
   const conversationRef = database.doc(`marketConversations/${conversationId}`);
 
   const result = await database.runTransaction(async (transaction) => {
-    await requireMarketMember(database, transaction, uid, now);
+    const member = await requireMarketMember(database, transaction, uid, now);
     const conversation = await transaction.get(conversationRef);
     if (!conversation.exists || conversation.get("sellerUid") !== uid) {
       throw new HttpsError("permission-denied", "MARKET_OFFER_SELLER_ONLY");
@@ -790,6 +822,17 @@ export async function respondMarketOfferService(
       throw new HttpsError("failed-precondition", "MARKET_OFFER_NOT_PENDING");
     }
     const buyerUid = String(conversation.get("buyerUid"));
+    await requireActiveActor(database, transaction, buyerUid, MARKET_ROLES);
+    const [buyerState, listing] = await Promise.all([
+      transaction.get(database.doc(`marketUserState/${buyerUid}`)),
+      transaction.get(database.doc(`marketListings/${conversation.get("listingId")}`)),
+    ]);
+    if (conversation.get("status") !== "open" || isBlockedBetween(member.state, uid, buyerState, buyerUid)) {
+      throw new HttpsError("permission-denied", "MARKET_BLOCKED");
+    }
+    if (!listing.exists || listing.get("status") !== "published") {
+      throw new HttpsError("failed-precondition", "MARKET_OFFER_UNAVAILABLE");
+    }
     const offerPrice = Number(conversation.get("offer.price") ?? 0);
     const text = input.accept
       ? `Teklif kabul edildi: ${formatPrice(offerPrice)}. Buluşma yerini ve saatini konuşabilirsiniz.`
@@ -829,9 +872,11 @@ export async function markMarketConversationReadService(
   const conversationRef = database.doc(`marketConversations/${conversationId}`);
   const stateRef = database.doc(`marketUserState/${uid}`);
   return database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, uid, MARKET_ROLES);
     const [conversation, state] = await Promise.all([transaction.get(conversationRef), transaction.get(stateRef)]);
     const participants = conversation.get("participants");
-    if (!conversation.exists || !Array.isArray(participants) || !participants.includes(uid)) {
+    if (!conversation.exists || conversation.get("status") === "deleting"
+      || !Array.isArray(participants) || !participants.includes(uid)) {
       throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
     }
     const unread = Number(conversation.get(`unread.${uid}`) ?? 0);
@@ -857,7 +902,8 @@ export async function blockMarketUserService(
     await requireActiveActor(database, transaction, uid, MARKET_ROLES);
     const [conversation, state] = await Promise.all([transaction.get(conversationRef), transaction.get(stateRef)]);
     const participants = conversation.get("participants");
-    if (!conversation.exists || !Array.isArray(participants) || !participants.includes(uid)) {
+    if (!conversation.exists || conversation.get("status") === "deleting"
+      || !Array.isArray(participants) || !participants.includes(uid)) {
       throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
     }
     const otherUid = String(participants.find((participant) => participant !== uid));
@@ -892,7 +938,8 @@ export async function unblockMarketUserService(
     await requireActiveActor(database, transaction, uid, MARKET_ROLES);
     const conversation = await transaction.get(conversationRef);
     const participants = conversation.get("participants");
-    if (!conversation.exists || !Array.isArray(participants) || !participants.includes(uid)) {
+    if (!conversation.exists || conversation.get("status") === "deleting"
+      || !Array.isArray(participants) || !participants.includes(uid)) {
       throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
     }
     const otherUid = String(participants.find((participant) => participant !== uid));
@@ -913,6 +960,7 @@ export async function unblockMarketUserService(
 
 /** Conversations the caller blocked, for the "Engellediklerin" list. */
 export async function listMarketBlockedService(database: Firestore, uid: string) {
+  await requireMarketReader(database, uid);
   const page = await database.collection("marketConversations").where("blockedBy", "==", uid).limit(100).get();
   return {
     blocked: page.docs
@@ -960,7 +1008,8 @@ export async function reportMarketContentService(
     } else {
       const conversation = await transaction.get(database.doc(`marketConversations/${targetId}`));
       const participants = conversation.get("participants");
-      if (!conversation.exists || !Array.isArray(participants) || !participants.includes(uid)) {
+      if (!conversation.exists || conversation.get("status") === "deleting"
+      || !Array.isArray(participants) || !participants.includes(uid)) {
         throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
       }
       listingId = String(conversation.get("listingId"));
@@ -1128,6 +1177,7 @@ export async function getMarketListingService(
 }
 
 export async function listMyMarketListingsService(database: Firestore, uid: string) {
+  await requireMarketReader(database, uid);
   const page = await database.collection("marketListings")
     .where("sellerUid", "==", uid)
     .orderBy("createdAt", "desc")
@@ -1165,6 +1215,7 @@ function conversationForStudent(conversation: DocumentSnapshot, uid: string) {
 }
 
 export async function listMarketConversationsService(database: Firestore, uid: string) {
+  await requireMarketReader(database, uid);
   const page = await database.collection("marketConversations")
     .where("participants", "array-contains", uid)
     .orderBy("lastMessageAt", "desc")
@@ -1173,7 +1224,8 @@ export async function listMarketConversationsService(database: Firestore, uid: s
   const state = await database.doc(`marketUserState/${uid}`).get();
   return {
     unreadCount: Number(state.get("unreadCount") ?? 0),
-    conversations: page.docs.map((conversation) => conversationForStudent(conversation, uid)),
+    conversations: page.docs.filter((conversation) => conversation.get("status") !== "deleting")
+      .map((conversation) => conversationForStudent(conversation, uid)),
   };
 }
 
@@ -1186,11 +1238,13 @@ export async function getMarketMessagesService(
   uid: string,
   input: { conversationId?: unknown; after?: unknown },
 ) {
+  await requireMarketReader(database, uid);
   const { conversationId } = parseConversationId(input.conversationId);
   const conversationRef = database.doc(`marketConversations/${conversationId}`);
   const conversation = await conversationRef.get();
   const participants = conversation.get("participants");
-  if (!conversation.exists || !Array.isArray(participants) || !participants.includes(uid)) {
+  if (!conversation.exists || conversation.get("status") === "deleting"
+      || !Array.isArray(participants) || !participants.includes(uid)) {
     throw new HttpsError("permission-denied", "MARKET_NOT_PARTICIPANT");
   }
   let query = conversationRef.collection("messages").orderBy("createdAt", "desc");
@@ -1249,6 +1303,7 @@ export async function setMarketFavoriteService(
 
 /** Saved listings that are still visible, newest saved first; vanished ones are dropped from the list. */
 export async function listMarketFavoritesService(database: Firestore, uid: string) {
+  await requireMarketReader(database, uid);
   const state = await database.doc(`marketUserState/${uid}`).get();
   const ids = ((state.get("favoriteIds") ?? []) as string[]).slice().reverse();
   if (ids.length === 0) return { listings: [] };
@@ -1260,7 +1315,10 @@ export async function listMarketFavoritesService(database: Firestore, uid: strin
     && !blocked.has(String(listing.get("sellerUid"))));
   const gone = ids.filter((id) => !visible.some((listing) => listing.id === id));
   if (gone.length > 0) {
-    await database.doc(`marketUserState/${uid}`).set({ favoriteIds: FieldValue.arrayRemove(...gone) }, { merge: true });
+    await database.runTransaction(async (transaction) => {
+      await requireActiveActor(database, transaction, uid, MARKET_ROLES);
+      transaction.update(database.doc(`marketUserState/${uid}`), { favoriteIds: FieldValue.arrayRemove(...gone) });
+    });
   }
   return { listings: visible.map((listing) => listingForStudent(listing, uid, false, favorites)) };
 }
@@ -1272,24 +1330,77 @@ export async function listMarketFavoritesService(database: Firestore, uid: strin
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_BATCH = 200;
 
-async function dropConversation(database: Firestore, conversation: DocumentSnapshot): Promise<void> {
-  // Keep the participants' unread badges in step with the conversations that remain.
-  for (const participant of (conversation.get("participants") ?? []) as string[]) {
-    const unread = Number(conversation.get(`unread.${participant}`) ?? 0);
-    if (unread <= 0) continue;
-    const stateRef = database.doc(`marketUserState/${participant}`);
-    await database.runTransaction(async (transaction) => {
-      const state = await transaction.get(stateRef);
-      if (!state.exists) return;
-      transaction.update(stateRef, { unreadCount: Math.max(0, Number(state.get("unreadCount") ?? 0) - unread) });
+async function dropConversation(
+  database: Firestore, conversation: DocumentSnapshot, before?: Timestamp,
+): Promise<boolean> {
+  const token = await database.runTransaction(async (transaction) => {
+    const current = await transaction.get(conversation.ref);
+    if (!current.exists) return null;
+    const lastMessageAt = current.get("lastMessageAt");
+    if (before && (!(lastMessageAt instanceof Timestamp) || lastMessageAt.toMillis() >= before.toMillis())) return null;
+    if (current.get("status") === "deleting" && typeof current.get("cleanupToken") === "string") {
+      return String(current.get("cleanupToken"));
+    }
+    const participants = (current.get("participants") ?? []) as string[];
+    const states = await Promise.all(participants.map((uid) => transaction.get(database.doc(`marketUserState/${uid}`))));
+    states.forEach((state, index) => {
+      const unread = Number(current.get(`unread.${participants[index]}`) ?? 0);
+      if (state.exists && unread > 0) {
+        transaction.update(state.ref, { unreadCount: Math.max(0, Number(state.get("unreadCount") ?? 0) - unread) });
+      }
     });
+    const cleanupToken = randomUUID();
+    transaction.update(current.ref, { status: "deleting", unread: {}, cleanupToken });
+    return cleanupToken;
+  });
+  if (!token) return false;
+  while (true) {
+    const finished = await database.runTransaction(async (transaction) => {
+      const current = await transaction.get(conversation.ref);
+      // Another worker may have finished and a buyer may have started a fresh
+      // conversation with the same ID. Never delete that generation's messages.
+      if (!current.exists || current.get("status") !== "deleting" || current.get("cleanupToken") !== token) return true;
+      const messages = await transaction.get(conversation.ref.collection("messages").limit(CLEANUP_BATCH));
+      if (messages.empty) {
+        transaction.delete(current.ref);
+        return true;
+      }
+      messages.docs.forEach((message) => transaction.delete(message.ref));
+      return false;
+    });
+    if (finished) return true;
   }
-  await database.recursiveDelete(conversation.ref);
+}
+
+async function scanCleanupPages(query: Query, visit: (document: DocumentSnapshot) => Promise<void>): Promise<void> {
+  let cursor: DocumentSnapshot | undefined;
+  while (true) {
+    const page = await (cursor ? query.startAfter(cursor) : query).limit(CLEANUP_BATCH).get();
+    if (page.empty) return;
+    for (const document of page.docs) await visit(document);
+    cursor = page.docs.at(-1);
+    if (page.size < CLEANUP_BATCH) return;
+  }
+}
+
+async function deleteRetainedListing(
+  database: Firestore, listing: DocumentSnapshot, eligible: (current: DocumentSnapshot) => boolean,
+  deletePhotos: (prefix: string) => Promise<void>, now: number,
+): Promise<boolean> {
+  const removed = await database.runTransaction(async (transaction) => {
+    const current = await transaction.get(listing.ref);
+    if (!current.exists || !eligible(current)) return false;
+    queueMarketPhotoDeletion(database, transaction, current.id, current.get("sellerUid"));
+    transaction.delete(current.ref);
+    return true;
+  });
+  if (removed) await tryMarketPhotoDeletion(database, listing.id, deletePhotos, now);
+  return removed;
 }
 
 /**
  * Daily KVKK cleanup for Kampüs Dolabı (see MARKET_RETENTION_DAYS). Each step
- * handles a bounded batch; anything left over is picked up the next day.
+ * drains pages when processed records still match; deleting queries remain bounded.
  */
 export async function cleanupMarketDataService(
   database: Firestore,
@@ -1303,66 +1414,92 @@ export async function cleanupMarketDataService(
     closedListings: 0, soldPhotos: 0, soldListings: 0, conversations: 0, violations: 0, reports: 0, verifications: 0,
   };
 
-  // Listing lifetime: expire what ran out, and remind sellers a few days before.
+  await retryMarketPhotoDeletions(database, deletePhotos, now);
+  const olderThan = (document: DocumentSnapshot, field: string, threshold: Timestamp) => {
+    const value = document.get(field);
+    return value instanceof Timestamp && value.toMillis() < threshold.toMillis();
+  };
+
   const live = ["published", "reserved"];
   const ranOut = await database.collection("marketListings").where("status", "in", live)
     .where("expiresAt", "<=", Timestamp.fromMillis(now)).limit(CLEANUP_BATCH).get();
   for (const listing of ranOut.docs) {
-    await listing.ref.update({ status: "expired", updatedAt: Timestamp.fromMillis(now) });
+    const expired = await database.runTransaction(async (transaction) => {
+      const current = await transaction.get(listing.ref);
+      const expiresAt = current.get("expiresAt");
+      if (!current.exists || !live.includes(String(current.get("status")))
+        || !(expiresAt instanceof Timestamp) || expiresAt.toMillis() > now) return null;
+      transaction.update(current.ref, { status: "expired", updatedAt: Timestamp.fromMillis(now) });
+      return current;
+    });
+    if (!expired) continue;
     counts.expired += 1;
-    const renewsLeft = MARKET_LISTING_LIFETIME.maxRenewals - Number(listing.get("renewCount") ?? 0);
-    await notify(String(listing.get("sellerUid")), {
+    const renewsLeft = MARKET_LISTING_LIFETIME.maxRenewals - Number(expired.get("renewCount") ?? 0);
+    await notify(String(expired.get("sellerUid")), {
       title: "İlanının süresi doldu",
-      body: renewsLeft > 0 ? `"${listing.get("title")}" yayından kalktı. İlanlarım'dan 30 gün daha yayında tutabilirsin.`
-        : `"${listing.get("title")}" yayından kalktı.`,
+      body: renewsLeft > 0 ? `"${expired.get("title")}" yayından kalktı. İlanlarım'dan 30 gün daha yayında tutabilirsin.`
+        : `"${expired.get("title")}" yayından kalktı.`,
       data: { type: "market_listing", listingId: listing.id },
     });
   }
-  const soon = await database.collection("marketListings").where("status", "in", live)
-    .where("expiresAt", "<=", Timestamp.fromMillis(now + MARKET_LISTING_LIFETIME.reminderDaysBefore * DAY_MS))
-    .limit(CLEANUP_BATCH).get();
-  for (const listing of soon.docs) {
-    const expiresAt = listing.get("expiresAt");
-    if (listing.get("expiryReminderSentAt") || !(expiresAt instanceof Timestamp) || expiresAt.toMillis() <= now) continue;
-    await listing.ref.update({ expiryReminderSentAt: Timestamp.fromMillis(now) });
+  const reminderUntil = now + MARKET_LISTING_LIFETIME.reminderDaysBefore * DAY_MS;
+  const soon = database.collection("marketListings").where("status", "in", live)
+    .where("expiresAt", "<=", Timestamp.fromMillis(reminderUntil));
+  await scanCleanupPages(soon, async (listing) => {
+    const reminder = await database.runTransaction(async (transaction) => {
+      const current = await transaction.get(listing.ref);
+      const expiresAt = current.get("expiresAt");
+      if (!current.exists || !live.includes(String(current.get("status"))) || current.get("expiryReminderSentAt")
+        || !(expiresAt instanceof Timestamp) || expiresAt.toMillis() <= now || expiresAt.toMillis() > reminderUntil) return null;
+      transaction.update(current.ref, { expiryReminderSentAt: Timestamp.fromMillis(now) });
+      return current;
+    });
+    if (!reminder) return;
     counts.reminders += 1;
-    await notify(String(listing.get("sellerUid")), {
+    await notify(String(reminder.get("sellerUid")), {
       title: "İlanın yakında yayından kalkacak",
-      body: `"${listing.get("title")}" ${MARKET_LISTING_LIFETIME.reminderDaysBefore} gün içinde kalkacak. Hâlâ satılıksa İlanlarım'dan süresini uzat.`,
+      body: `"${reminder.get("title")}" ${MARKET_LISTING_LIFETIME.reminderDaysBefore} gün içinde kalkacak. Hâlâ satılıksa İlanlarım'dan süresini uzat.`,
       data: { type: "market_listing", listingId: listing.id },
     });
-  }
+  });
 
-  const closed = await database.collection("marketListings")
-    .where("status", "in", ["removed", "removedByAdmin", "rejected", "expired"])
+  const closedStatuses = ["removed", "removedByAdmin", "rejected", "expired"];
+  const closed = await database.collection("marketListings").where("status", "in", closedStatuses)
     .where("updatedAt", "<", before(MARKET_RETENTION_DAYS.closedListing)).limit(CLEANUP_BATCH).get();
   for (const listing of closed.docs) {
-    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
-    await listing.ref.delete();
-    counts.closedListings += 1;
+    if (await deleteRetainedListing(database, listing, (current) => closedStatuses.includes(String(current.get("status")))
+      && olderThan(current, "updatedAt", before(MARKET_RETENTION_DAYS.closedListing)), deletePhotos, now)) counts.closedListings += 1;
   }
 
   const soldOld = await database.collection("marketListings").where("status", "==", "sold")
     .where("soldAt", "<", before(MARKET_RETENTION_DAYS.soldListing)).limit(CLEANUP_BATCH).get();
   for (const listing of soldOld.docs) {
-    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
-    await listing.ref.delete();
-    counts.soldListings += 1;
+    if (await deleteRetainedListing(database, listing, (current) => current.get("status") === "sold"
+      && olderThan(current, "soldAt", before(MARKET_RETENTION_DAYS.soldListing)), deletePhotos, now)) counts.soldListings += 1;
   }
-  const soldPhotos = await database.collection("marketListings").where("status", "==", "sold")
-    .where("soldAt", "<", before(MARKET_RETENTION_DAYS.soldPhotos)).limit(CLEANUP_BATCH).get();
-  for (const listing of soldPhotos.docs) {
-    if (((listing.get("photos") ?? []) as unknown[]).length === 0) continue;
-    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
-    await listing.ref.update({ photos: [], photosDeletedAt: Timestamp.fromMillis(now) });
-    counts.soldPhotos += 1;
-  }
+  const soldPhotos = database.collection("marketListings").where("status", "==", "sold")
+    .where("soldAt", "<", before(MARKET_RETENTION_DAYS.soldPhotos));
+  await scanCleanupPages(soldPhotos, async (listing) => {
+    if (((listing.get("photos") ?? []) as unknown[]).length === 0) return;
+    const queued = await database.runTransaction(async (transaction) => {
+      const current = await transaction.get(listing.ref);
+      if (!current.exists || current.get("status") !== "sold"
+        || !olderThan(current, "soldAt", before(MARKET_RETENTION_DAYS.soldPhotos))
+        || ((current.get("photos") ?? []) as unknown[]).length === 0) return false;
+      queueMarketPhotoDeletion(database, transaction, current.id, current.get("sellerUid"));
+      transaction.update(current.ref, { photos: [], photosCleanupQueuedAt: Timestamp.fromMillis(now) });
+      return true;
+    });
+    if (queued) {
+      await tryMarketPhotoDeletion(database, listing.id, deletePhotos, now);
+      counts.soldPhotos += 1;
+    }
+  });
 
   const conversations = await database.collection("marketConversations")
     .where("lastMessageAt", "<", before(MARKET_RETENTION_DAYS.conversation)).limit(CLEANUP_BATCH).get();
   for (const conversation of conversations.docs) {
-    await dropConversation(database, conversation);
-    counts.conversations += 1;
+    if (await dropConversation(database, conversation, before(MARKET_RETENTION_DAYS.conversation))) counts.conversations += 1;
   }
 
   const deleteAll = async (docs: DocumentSnapshot[]) => {
@@ -1470,6 +1607,7 @@ export async function reviewMarketListingService(
     const snapshot = await transaction.get(listingRef);
     if (!snapshot.exists) throw new HttpsError("not-found", "MARKET_LISTING_NOT_FOUND");
     if (snapshot.get("status") !== "pending") throw new HttpsError("failed-precondition", "MARKET_LISTING_NOT_PENDING");
+    if (status === "rejected") queueMarketPhotoDeletion(database, transaction, listingId, snapshot.get("sellerUid"));
     transaction.update(listingRef, {
       status,
       rejectReason: reason,
@@ -1487,9 +1625,7 @@ export async function reviewMarketListingService(
   });
 
   if (status === "rejected") {
-    await deps.photos.deletePrefix(`market-listings/${listingId}/`).catch((error) => {
-      console.error("market: photo cleanup failed", error);
-    });
+    await tryMarketPhotoDeletion(database, listingId, deps.photos.deletePrefix, now);
   }
   await deps.notify(String(listing.get("sellerUid")), status === "published"
     ? { title: "İlanın yayında", body: `"${listing.get("title")}" artık Kampüs Dolabı'nda.`,
@@ -1528,6 +1664,7 @@ export async function resolveMarketReportService(
       const listingRef = database.doc(`marketListings/${listingId}`);
       const listing = await transaction.get(listingRef);
       if (listing.exists) {
+        queueMarketPhotoDeletion(database, transaction, listingId, listing.get("sellerUid"));
         transaction.update(listingRef, { status: "removedByAdmin", photos: [], updatedAt: Timestamp.fromMillis(now) });
         removed = listingId;
       }
@@ -1544,7 +1681,7 @@ export async function resolveMarketReportService(
     return removed;
   });
   if (removedListingId) {
-    await deps.photos.deletePrefix(`market-listings/${removedListingId}/`).catch(() => undefined);
+    await tryMarketPhotoDeletion(database, removedListingId, deps.photos.deletePrefix, now);
   }
   return { resolved: true };
 }
@@ -1597,29 +1734,25 @@ export async function eraseMarketData(
   uid: string,
   deletePhotos: (prefix: string) => Promise<void>,
 ): Promise<void> {
+  await beginAccountDeletion(database, uid);
   const listings = await database.collection("marketListings").where("sellerUid", "==", uid).get();
   for (const listing of listings.docs) {
-    await deletePhotos(`market-listings/${listing.id}/`).catch(() => undefined);
-    await listing.ref.delete();
+    await database.runTransaction(async (transaction) => {
+      queueMarketPhotoDeletion(database, transaction, listing.id, uid);
+      transaction.delete(listing.ref);
+    });
   }
+  const photoJobs = await database.collection("marketPhotoDeletions").where("ownerUid", "==", uid).get();
+  let photosPending = false;
+  for (const job of photoJobs.docs) {
+    if (!await tryMarketPhotoDeletion(database, job.id, deletePhotos)) photosPending = true;
+  }
+  if (photosPending) throw new HttpsError("unavailable", "MARKET_PHOTO_CLEANUP_PENDING");
 
   const conversations = await database.collection("marketConversations")
     .where("participants", "array-contains", uid).get();
   for (const conversation of conversations.docs) {
-    const participants = conversation.get("participants") as string[];
-    const otherUid = participants.find((participant) => participant !== uid);
-    const otherUnread = otherUid ? Number(conversation.get(`unread.${otherUid}`) ?? 0) : 0;
-    if (otherUid && otherUnread > 0) {
-      const otherStateRef: DocumentReference = database.doc(`marketUserState/${otherUid}`);
-      await database.runTransaction(async (transaction) => {
-        const otherState = await transaction.get(otherStateRef);
-        if (!otherState.exists) return;
-        transaction.update(otherStateRef, {
-          unreadCount: Math.max(0, Number(otherState.get("unreadCount") ?? 0) - otherUnread),
-        });
-      });
-    }
-    await database.recursiveDelete(conversation.ref);
+    await dropConversation(database, conversation);
   }
 
   for (const field of ["reporterUid", "reportedUid"]) {

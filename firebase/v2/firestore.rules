@@ -87,6 +87,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if currentUserIsActive() && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /users/{userId}/notificationPreferences/{preferenceId} {
+      allow read: if currentUserIsActive() && request.auth.uid == userId;
+      allow write: if false;
+    }
     match /organizations/{organizationId} {
       allow get, list: if isGood4Admin()
         || isActiveOrganizationMember(organizationId)
@@ -115,9 +123,9 @@ service cloud.firestore {
     }
 
     match /campaigns/{campaignId} {
-      allow get, list: if isGood4Admin()
-        || isActiveOrganizationMember(resource.data.organizationId)
-        || (signedIn() && resource.data.status == 'published');
+      allow get, list: if (signedIn() && resource.data.status == 'published')
+        || isGood4Admin()
+        || isActiveOrganizationMember(resource.data.organizationId);
       allow create, update, delete: if false;
     }
 
@@ -136,9 +144,9 @@ service cloud.firestore {
     }
 
     match /events/{eventId} {
-      allow get, list: if isGood4Admin()
-        || isActiveOrganizationMember(resource.data.organizationId)
-        || (signedIn() && resource.data.status == 'published');
+      allow get, list: if (signedIn() && resource.data.status == 'published')
+        || isGood4Admin()
+        || isActiveOrganizationMember(resource.data.organizationId);
       allow create, update, delete: if false;
 
       match /registrations/{registrationId} {
@@ -185,7 +193,7 @@ service cloud.firestore {
 
     match /app_config/{documentId} {
       allow get: if signedIn() && documentId in ['akdeniz_dining_menu', 'home_banner', 'home_banner_2',
-        'home_banner_3', 'home_banner_4', 'campus_weather'];
+        'home_banner_3', 'home_banner_4', 'campus_weather', 'update_notice'];
       allow list, create, update, delete: if false;
     }
 

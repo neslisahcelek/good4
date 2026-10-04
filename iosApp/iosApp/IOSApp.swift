@@ -1,10 +1,10 @@
 import SwiftUI
+import Foundation
 import PhotosUI
 import StoreKit
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
-import FirebaseStorage
 import GoogleSignIn
 import ComposeApp
 import VisionKit
@@ -16,39 +16,18 @@ import Security
 
 @main
 struct IOSApp: App {
-    @UIApplicationDelegateAdaptor(CampusPushAppDelegate.self) private var pushDelegate
+    @UIApplicationDelegateAdaptor(Good4PushAppDelegate.self) private var pushDelegate
     @State private var isComposeReady = false
 
     init() {
-        FirebaseConfiguration.shared.setLoggerLevel(.warning)
-        FirebaseApp.configure()
         #if DEBUG
-        // Launch with `-useFirebaseEmulator YES` to use the local Firebase emulators.
-        if UserDefaults.standard.bool(forKey: "useFirebaseEmulator") {
-            let host = "127.0.0.1"
-            Auth.auth().useEmulator(withHost: host, port: 9199)
-            let settings = Firestore.firestore().settings
-            settings.host = "\(host):8285"
-            settings.isSSLEnabled = false
-            settings.cacheSettings = MemoryCacheSettings()
-            Firestore.firestore().settings = settings
-            Storage.storage().useEmulator(withHost: host, port: 9295)
-            FirebaseEmulator.shared.host = host
-            // Optional `-emulatorEmail … -emulatorPassword …` signs a seeded demo account in;
-            // the session persists, so the next launch opens straight into the app.
-            if let email = UserDefaults.standard.string(forKey: "emulatorEmail"),
-               let password = UserDefaults.standard.string(forKey: "emulatorPassword"),
-               Auth.auth().currentUser?.email?.lowercased() != email.lowercased() {
-                try? Auth.auth().signOut()
-                Auth.auth().signIn(withEmail: email, password: password) { _, error in
-                    if let error { print("Emulator sign-in failed: \(error.localizedDescription)") }
-                }
-            }
-        }
+        FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
-        NativePushBridge.shared.launcher = NativeCampusPush.shared
+        Good4AppCheck.configureFirebaseIfNeeded()
+        CampusNativePushBridge.shared.launcher = NativeCampusPush.shared
         CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
         StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
+        AppUpdateStorefrontBridge.shared.provider = NativeAppUpdateStorefrontProvider()
         GoogleSignInBridge.shared.launcher = NativeGoogleSignInLauncher()
         let appleLauncher = NativeAppleSignInLauncher()
         AppleSignInBridge.shared.launcher = appleLauncher
@@ -407,6 +386,21 @@ private struct NativeLaunchPlaceholderView: View {
                     .progressViewStyle(.circular)
                     .tint(Color.black)
             }
+        }
+    }
+}
+
+private final class NativeAppUpdateStorefrontProvider: NSObject, NativeUpdateStorefrontProvider {
+    func requestCountry(callback: NativeUpdateStorefrontCallback) {
+        Task { @MainActor in
+            guard let storefront = await Storefront.current else {
+                callback.onCountry(countryCode: nil)
+                return
+            }
+            // StoreKit uses alpha-3; the lookup API requires alpha-2. Foundation canonicalizes ISO aliases.
+            let code = storefront.countryCode.uppercased()
+            let country = code == "XKX" ? "XK" : Locale(identifier: "und_\(code)").region?.identifier
+            callback.onCountry(countryCode: country?.count == 2 ? country : nil)
         }
     }
 }

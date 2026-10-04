@@ -72,6 +72,9 @@ sealed class Route {
 
     @Serializable
     data class CampusClosetChat(val conversationId: String) : Route()
+
+    @Serializable
+    data class NotificationEvent(val organizationId: String, val eventId: String, val showTicket: Boolean = false) : Route()
     
     @Serializable
     data class ProductDetail(val productId: String) : Route()

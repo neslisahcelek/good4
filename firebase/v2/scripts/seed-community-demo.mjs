@@ -21,7 +21,8 @@ export const DEMO_PASSWORD = "Good4Demo!2026";
 const ORGANIZATION_ID = "demo-topluluk";
 const UNIVERSITY = "Akdeniz Üniversitesi";
 
-initializeApp({ projectId: "good4tr-v2" });
+// Same project id the debug app uses against the emulators (AppEnvironment / AppCheck.swift).
+initializeApp({ projectId: process.env.GCLOUD_PROJECT ?? "demo-good4-v2" });
 const auth = getAuth();
 const database = getFirestore();
 

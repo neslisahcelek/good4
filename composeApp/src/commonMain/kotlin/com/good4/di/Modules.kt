@@ -45,6 +45,9 @@ import org.koin.dsl.module
 expect val platformModule: org.koin.core.module.Module
 
 val commonModule = module {
+    viewModel { com.good4.update.AppUpdateViewModel(get<AppConfigRepository>()) }
+    single { com.good4.notification.NotificationRepository(get(), get()) }
+    viewModel { com.good4.notification.NotificationsViewModel(get<com.good4.notification.NotificationRepository>()) }
     single { com.good4.review.StoreReviewCoordinator(com.good4.review.DeviceReviewStorage()) }
     viewModel { com.good4.review.StoreReviewViewModel(get()) }
     single { com.good4.student.home.HomeLayoutStore(com.good4.student.home.DeviceHomeLayoutStorage()) }
@@ -70,6 +73,8 @@ val commonModule = module {
     single { com.good4.campuscloset.CampusClosetBadge() }
     single { com.good4.campuscloset.CampusEmailVerificationRepository(get<AuthRepository>()) }
     single { com.good4.campuscloset.CampusClosetRepository(get<AuthRepository>(), get()) }
+    single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
+    single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel {

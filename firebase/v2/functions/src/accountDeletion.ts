@@ -193,6 +193,15 @@ async function removeEmailKeyedAccess(database: Firestore, email: string | null)
     database.doc(`community_access/${candidate}`).delete()));
 }
 
+/** Close the write gate before any account-owned collection is scanned. */
+export async function beginAccountDeletion(database: Firestore, uid: string): Promise<void> {
+  await database.runTransaction(async (transaction) => {
+    const userRef = database.doc(`users/${uid}`);
+    const user = await transaction.get(userRef);
+    if (user.exists) transaction.update(userRef, { status: "deleting", updatedAt: FieldValue.serverTimestamp() });
+  });
+}
+
 /**
  * Erases or de-identifies the V2 records linked to an account. Shared event,
  * campaign, organization, and audit history is retained with the account UID
@@ -205,11 +214,15 @@ export async function eraseAccountData(
   email: string | null = null,
 ): Promise<void> {
   const userRef = database.doc(`users/${uid}`);
-  const user = await userRef.get();
-  if (user.exists) {
-    await userRef.update({ status: "deleting", updatedAt: FieldValue.serverTimestamp() });
-  }
+  await beginAccountDeletion(database, uid);
   await erasePushDevices(database, uid);
+  // Delivery receipts include installation IDs; recursively remove both the account path and children.
+  while (true) {
+    const receipts = await database.collectionGroup("deliveries").where("uid", "==", uid).limit(100).get();
+    if (receipts.empty) break;
+    for (const receipt of receipts.docs) await database.recursiveDelete(receipt.ref);
+  }
+  await replaceMatchingField(database, database.collection("notificationJobs").where("actorUid", "==", uid), "actorUid");
   // Applicants may not have a users document yet. Remove the application early
   // so a pending request cannot provision a manager after account deletion.
   await database.doc(`communityApplications/${uid}`).delete();

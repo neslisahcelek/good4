@@ -128,7 +128,8 @@ internal fun CommunityManagerFlow(
             onPreviewStudent = onPreviewStudent,
             onOpenEvent = { viewModel.clearAdmissionMessage(); openEventId = it.id },
             onCreateEvent = { viewModel.clearError(); editor = EditorTarget(null, CommunityEntryDto()) },
-            onRetry = { viewModel.select(community) }
+            onRetry = { viewModel.select(community) },
+            onLoadMore = viewModel::loadMoreEntries
         )
     }
 }
@@ -146,7 +147,8 @@ private fun ManagerHome(
     onPreviewStudent: () -> Unit,
     onOpenEvent: (CommunityEntry) -> Unit,
     onCreateEvent: () -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onLoadMore: () -> Unit
 ) {
     val events = state.entries.filter { it.isEvent() }
     val counts = ManagerFilter.entries.associateWith { f -> events.count { it.matches(f, now) } }
@@ -232,6 +234,10 @@ private fun ManagerHome(
                 items(shown, key = { it.id }) { entry ->
                     ManagerEventRow(entry, state.registrationsByEntry[entry.id]?.size, now, onClick = { onOpenEvent(entry) })
                 }
+            }
+            // Events arrive in pages; counts and filters cover only what has been loaded so far.
+            if (!state.loading && state.entriesCursor != null) item(key = "load-more") {
+                TextButton(onClick = onLoadMore, modifier = Modifier.fillMaxWidth()) { Text("Daha fazla etkinlik yükle") }
             }
         }
     }

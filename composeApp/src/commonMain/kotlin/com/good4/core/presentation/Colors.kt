@@ -56,3 +56,14 @@ val AppBackground: Color @Composable get() = LocalGood4Colors.current.appBackgro
 val SecondaryContainer = Color(0xFFD8E5B4)
 val DeepGreen = Color(0xFFA7D80A)
 val TertiaryOlive = Color(0xFF4B6400)
+
+// Campus categories share these accents with cards, filters and offer states.
+val ClosetOfferAccent = Color(0xFFE08A1E)
+val ClosetClothingAccent = Color(0xFFE59AC0)
+val ClosetAccessoriesAccent = Color(0xFFF2A66F)
+val ClosetElectronicsAccent = Color(0xFF4B9FD1)
+val ClosetSportsAccent = Color(0xFF75D9BE)
+val ClosetBooksAccent = Color(0xFFA58DEB)
+val ClosetDormAccent = Color(0xFF8CB7ED)
+val ClosetHobbyAccent = Color(0xFF68CCDC)
+val ClosetOtherAccent = Color(0xFFB8B08D)

@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import {
   browserLocalPersistence,
   connectAuthEmulator,
@@ -20,7 +21,20 @@ const firebaseConfig = {
   appId: "1:654697131931:web:ceff2acfa4ff4529603b3e",
 };
 
-const app = initializeApp(firebaseConfig);
+const useFirebaseEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
+const app = initializeApp(useFirebaseEmulators ? { apiKey: "demo-api-key", projectId: "demo-good4-v2", appId: "1:123456789:web:demo", authDomain: "localhost" } : firebaseConfig);
+
+if (!useFirebaseEmulators) {
+  // Configure App Check before Auth, Functions, or Firestore can issue requests.
+  if (import.meta.env.DEV) {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider("6LdG2r0tAAAAAIOzRvZPbhrWE4m-Q4CBQGO-b4zO"),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
 export const auth = getAuth(app);
 export const functions = getFunctions(app, "europe-west1");
 let firestorePromise: Promise<Firestore> | null = null;
@@ -29,8 +43,8 @@ export function getFirestoreDb(): Promise<Firestore> {
   if (!firestorePromise) {
     firestorePromise = import("firebase/firestore/lite").then(({ connectFirestoreEmulator, getFirestore }) => {
       const database = getFirestore(app);
-      if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
-        connectFirestoreEmulator(database, "127.0.0.1", 8180);
+      if (useFirebaseEmulators) {
+        connectFirestoreEmulator(database, "127.0.0.1", 8285);
       }
       return database;
     });
@@ -40,7 +54,7 @@ export function getFirestoreDb(): Promise<Firestore> {
 
 void setPersistence(auth, browserLocalPersistence);
 
-if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
+if (useFirebaseEmulators) {
   connectAuthEmulator(auth, "http://127.0.0.1:9199", { disableWarnings: true });
   connectFunctionsEmulator(functions, "127.0.0.1", 5105);
 }

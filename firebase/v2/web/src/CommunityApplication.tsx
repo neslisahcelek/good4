@@ -218,7 +218,7 @@ export default function CommunityApplicationPage() {
           <div className="login-card__brand"><BrandMark /></div>
           <h1>Topluluk başvurusu</h1>
           <p className="card-intro">
-            Topluluğunuzu Good4'e ekleyin. Başvurunuz onaylandığında etkinliklerinizi yönetim panelinden yayınlayabilir,
+            Topluluğunuzu Good4'a ekleyin. Başvurunuz onaylandığında etkinliklerinizi yönetim panelinden yayınlayabilir,
             öğrencilere uygulamada ulaşabilirsiniz.
           </p>
           {user && (

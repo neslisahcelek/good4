@@ -1,4 +1,5 @@
 import {
+  FieldPath,
   FieldValue,
   Timestamp,
   type DocumentSnapshot,
@@ -115,6 +116,7 @@ export interface AcademicCalendarEventSummary {
 }
 
 export interface AdminDashboardResult {
+  nextCursors: Record<string, string | null>;
   businesses: AdminBusinessSummary[];
   communities: AdminCommunitySummary[];
   legacyBusinesses: LegacyBusinessSummary[];
@@ -371,10 +373,20 @@ export async function getAdminDashboardService(
   database: Firestore,
   legacyTestDatabase: Firestore,
   actorUid: string,
+  input: Record<string, unknown> = {},
 ): Promise<AdminDashboardResult> {
   await requireGood4Admin(database, actorUid);
   console.info("[getAdminDashboard] Loading dashboard", { actorUid });
 
+  function pageQuery(db: Firestore, path: string, cursor: unknown, size = 100) {
+    let query = db.collection(path).orderBy(FieldPath.documentId()).limit(size);
+    if (cursor !== undefined) {
+      const id = requireNonEmptyString(cursor, "cursor", 128);
+      if (!/^[A-Za-z0-9_-]+$/.test(id)) throw new HttpsError("invalid-argument", "CURSOR_INVALID");
+      query = query.startAfter(id);
+    }
+    return query;
+  }
   const [
     organizations,
     auditsSnapshot,
@@ -383,12 +395,12 @@ export async function getAdminDashboardService(
     homeBannerDocument,
     calendarEventsSnapshot,
   ] = await Promise.all([
-    database.collection("organizations").get(),
+    pageQuery(database, "organizations", input.organizationsCursor).get(),
     database.collection("auditLogs").orderBy("createdAt", "desc").limit(50).get(),
     database.collection("feedbackSubmissions").orderBy("createdAt", "desc").limit(100).get(),
     database.doc("app_config/akdeniz_dining_menu").get(),
     database.doc("app_config/home_banner").get(),
-    database.collection("academic_calendar_events").get(),
+    pageQuery(database, "academic_calendar_events", input.calendarCursor).get(),
   ]);
   const diningMenu = diningMenuFromDocument(diningMenuDocument);
   const homeBanner = homeBannerFromDocument(homeBannerDocument);
@@ -399,24 +411,17 @@ export async function getAdminDashboardService(
   const calendarEvents = calendarEventsSnapshot.docs
     .map(calendarEventFromDocument)
     .sort((left, right) => left.startDate.localeCompare(right.startDate) || left.title.localeCompare(right.title, "tr"));
-  const [legacyBusinessDocuments, legacyCommunityDocuments, legacyFeedbackDocuments] = await Promise.all([
+  const [legacyBusinessDocuments, legacyCommunityDocuments] = await Promise.all([
     safeLegacyDocuments(
-      legacyTestDatabase.collection("businesses").get().then((snapshot) => snapshot.docs),
+      input.includeLegacy === true ? pageQuery(legacyTestDatabase, "businesses", input.legacyBusinessesCursor).get().then((snapshot) => snapshot.docs) : Promise.resolve([]),
       "LEGACY_BUSINESSES",
     ),
     safeLegacyDocuments(
-      legacyTestDatabase.collection("communities").get().then((snapshot) => snapshot.docs),
+      input.includeLegacy === true ? pageQuery(legacyTestDatabase, "communities", input.legacyCommunitiesCursor).get().then((snapshot) => snapshot.docs) : Promise.resolve([]),
       "LEGACY_COMMUNITIES",
     ),
-    safeLegacyDocuments(
-      legacyTestDatabase.collection("feedbackSubmissions").orderBy("createdAt", "desc").limit(100).get()
-        .then((snapshot) => snapshot.docs),
-      "LEGACY_FEEDBACK",
-    ),
-    diningMenu
-      ? mirrorDiningMenuToLegacy(legacyTestDatabase, diningMenu, actorUid)
-          .catch((error) => console.error("[getAdminDashboard] Dining menu mirror failed", { error: String(error) }))
-      : Promise.resolve(),
+
+
   ]);
 
   const businesses = organizations.docs
@@ -446,7 +451,7 @@ export async function getAdminDashboardService(
 
   const pendingCouponsNested = await Promise.all(legacyCommunityDocuments.map(async (community) => {
     const entries = await safeLegacyDocuments(
-      community.ref.collection("entries").get().then((snapshot) => snapshot.docs),
+      community.ref.collection("entries").where("kind", "==", "coupon").where("status", "==", "pending").limit(50).get().then((snapshot) => snapshot.docs),
       `LEGACY_COMMUNITY_ENTRIES_${community.id}`,
     );
     return entries
@@ -484,7 +489,7 @@ export async function getAdminDashboardService(
 
   const feedback = [
     ...v2FeedbackSnapshot.docs.map((document) => ({ document, environment: "v2" as const })),
-    ...legacyFeedbackDocuments.map((document) => ({ document, environment: "legacyTest" as const })),
+
   ].map(({ document, environment }) => ({
     id: `${environment}:${document.id}`,
     subject: String(document.get("subject") ?? "Geri bildirim"),
@@ -506,6 +511,10 @@ export async function getAdminDashboardService(
   })).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 
   const result = {
+    nextCursors: { organizations: organizations.size === 100 ? organizations.docs.at(-1)!.id : null,
+      calendar: calendarEventsSnapshot.size === 100 ? calendarEventsSnapshot.docs.at(-1)!.id : null,
+      legacyBusinesses: legacyBusinessDocuments.length === 100 ? legacyBusinessDocuments.at(-1)!.id : null,
+      legacyCommunities: legacyCommunityDocuments.length === 100 ? legacyCommunityDocuments.at(-1)!.id : null },
     businesses,
     communities: v2Communities,
     legacyBusinesses,

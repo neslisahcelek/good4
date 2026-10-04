@@ -1,13 +1,13 @@
 ---
 name: pre-commit-review
-description: Good4 V2'de commit atmadan önce yapılan bütün değişiklikleri güvenlik öncelikli olarak gözden geçirir (sızan secret, Firestore/Storage kuralları, Cloud Functions yetki kontrolleri, istemci tarafı güven varsayımları, kişisel veri). Commit, push ya da PR öncesinde, ayrıca kullanıcı "review et", "commit at", "güvenlik kontrolü yap" dediğinde kullan.
+description: Good4 V2 değişikliklerini commit/push/PR öncesinde güvenlik, doğruluk, KMP uyumu ve mimari regresyonlar açısından inceler. Kullanıcı review istediğinde de kullan.
 ---
 
-# Commit öncesi review (güvenlik öncelikli)
+# Good4 code review
 
-Kural: **Review bitip bulgular kullanıcıya gösterilmeden commit atılmaz.** Kritik veya yüksek bulgu varsa commit durur; önce düzeltilir ya da kullanıcı açıkça onaylar.
+Review yaparken önce `AGENTS.md`, `.agents/skills/good4-architecture/SKILL.md` ve gerekiyorsa `docs/REPEATED_REVIEW_PATTERNS.md` oku. Güncel kod ve diff kanıttır; varsayımla bulgu yazma. İnceleme istenmişse kodu kendiliğinden değiştirme. Review tamamlanıp bulgular gösterilmeden commit/push yapma.
 
-## 1. Kapsamı çıkar
+## Kapsam ve kullanıcı değişiklikleri
 
 ```bash
 git status --short
@@ -17,84 +17,73 @@ git diff --cached
 git ls-files --others --exclude-standard
 ```
 
-- Bu oturumda **senin** yaptığın değişikliklerle kullanıcının önceden var olan değişikliklerini ayır. Kullanıcı değişikliklerini (ör. `tools/install-v2-iphone.sh`) geri alma, izinsiz stage etme; yalnızca bulguları raporla.
-- `git add -A` / `git add .` kullanma; dosyaları tek tek stage et.
-- Finder kopyası `* 2.*` dosyaları (`admin 2.ts`, `firestore 2.rules` vb.) commit'e girmemeli.
+- Base/head ve değişen dosyaları belirle; gerekirse diff'in bağlamını kaynak dosyadan oku.
+- Kullanıcının önceden var olan değişikliklerini ayır. Geri alma, izinsiz stage etme veya `git add -A` kullanma.
+- `* 2.*` biçimli Finder kopyalarını ve gizli/yerel yapılandırmaları commit kapsamına alma.
+- Her bulgu için değiştirilmiş satıra yakın dosya ve satır belirt; etki ve somut tetiklenme/istismar koşulunu açıkla.
 
-## 2. Güvenlik kontrol listesi
+## Güvenlik: repo özel kontrolleri
 
-Her değişen dosyayı ilgili başlıklara göre incele. Şüpheli her satırı `dosya:satır` olarak not et.
+### Secret ve gizlilik
 
-### Secret ve yapılandırma sızıntısı
-- API key, token, private key, servis hesabı JSON'u, parola, `Bearer`, `-----BEGIN` ya da `AIza...` gibi değerler diff'te var mı?
-  ```bash
-  git diff --cached -U0 | grep -nEi 'api[_-]?key|secret|token|password|passwd|private[_-]?key|BEGIN [A-Z ]*PRIVATE|AIza[0-9A-Za-z_-]{20,}|service[_-]?account|client[_-]?secret'
-  ```
-- Hiçbiri stage edilmemeli: `GoogleService-Info*.plist`, `google-services*.json`, `local.properties`, `*.keystore`, `*.jks`, `*.p8`, `*.p12`, `.env*`, `firebase-debug*.log`, `firestore-debug.log`. `.gitignore` kurallarının delinmediğini `git check-ignore -v <dosya>` ile doğrula.
-- Log ve `println` çağrıları token, e-posta, öğrenci numarası ya da konum basmamalı.
+- Diff'te API key/token/parola/private key/service account/Bearer/`AIza...` benzeri sırları ara. `GoogleService-Info*.plist`, `google-services*.json`, `local.properties`, keystore, `.env*`, Firebase debug logları stage edilmemeli.
+- `println`/log'larda token, e-posta, öğrenci numarası, konum veya özel içerik olmadığını kontrol et.
+- Yeni kişisel veri `docs/legal` metinleriyle uyumlu mu, veri gereksiz/korumasız mı değerlendir.
 
-### Firestore / Storage kuralları (`firebase/v2/firestore.rules`, `storage.rules`, `firebase/community/*.rules`)
-- `allow read, write: if true;` veya `request.auth != null` tek başına geniş yetki veriyor mu?
-- Yazma kuralları `request.auth.uid` ile sahipliği kontrol ediyor mu? `resource.data` ve `request.resource.data` ayrımı doğru mu?
-- Kullanıcı kendi rolünü, admin veya topluluk yöneticisi alanını, doğrulama bayrağını (`eduVerified` vb.), sayaçları ya da puanları yazabiliyor mu? Bu alanlar yalnızca sunucuda yazılmalı.
-- `request.resource.data.keys().hasOnly([...])` ile alan beyaz listesi, tür ve uzunluk sınırları var mı?
-- Liste sorguları, başkalarının kişisel verisini (e-posta, telefon, öğrenci no) açığa çıkarıyor mu?
-- Storage: boyut ve `contentType` sınırı ile yol sahipliği (`/users/{uid}/...`) kontrol ediliyor mu?
-- Kural değiştiyse `firebase/v2/rules.test.mjs` güncellendi mi? Yeni yetki reddi için negatif test var mı?
+### Firestore, Storage ve Cloud Functions
 
-### Cloud Functions (`firebase/v2/functions/src`)
-- Her callable/HTTP fonksiyonu başta `context.auth` / `request.auth` kontrolü yapıyor mu? Admin, topluluk portalı ve işletme uçlarında rol, custom claim ya da Firestore'daki rol **sunucuda** doğrulanıyor mu?
-- Girdi doğrulaması: tür, uzunluk, izin verilen değerler. İstemciden gelen `uid`, `role`, `communityId` gibi değerlere körü körüne güvenilmemeli; kimlik `auth.uid`'den alınmalı.
-- Başka bir kullanıcının kaynağına erişirken IDOR kontrolü yapılıyor mu (ör. topluluk admini yalnızca kendi topluluğunu düzenleyebilmeli)?
-- Admin SDK kuralları atlar; bu yüzden fonksiyon içindeki yetki kontrolü tek savunmadır.
-- Harici HTTP çağrıları (hava durumu, scraper vb.): URL kullanıcıdan gelmemeli (SSRF), zaman aşımı olmalı, yanıt doğrulanmalı.
-- Hata mesajları iç ayrıntı, stack trace ya da başka kullanıcının verisini döndürmemeli.
-- Secret'lar `defineSecret` / ortam değişkeniyle gelmeli, kaynak koda gömülmemeli.
-- Hesap silme ve Apple token iptali gibi akışlarda kısmi başarısızlık veri bırakıyor mu?
+- İlgili kurallar: `firebase/v2/firestore.rules`, `firebase/v2/storage.rules`; toplulukta `firebase/community/*.rules`.
+- `allow read/write: if true` veya yalnız `request.auth != null` ile açılan hassas erişim var mı? Sahiplik, `resource`/`request.resource`, alan allowlist'i, tür, uzunluk ve Storage boyut/contentType/path kontrolleri doğru mu?
+- Kullanıcı rol, admin/community admin, doğrulama, sayaç veya puan alanını yazabiliyor mu? Başkalarının e-posta/telefon/öğrenci no gibi kişisel verileri listeleme sorgusundan açılıyor mu?
+- Kuralların kapsadığı her hassas server/admin SDK callable veya HTTP yolunda auth + aktif hesap + rol + ownership denetimi var mı? Admin SDK rules'u atlar.
+- İstemciden gelen UID/role/communityId gibi yetki girdilerine güveniliyor mu; IDOR veya block kontrolü atlanıyor mu? Mesaj/teklif/yanıt iki taraflı block denetimi yapıyor mu?
+- Callable girdi şeması sınırlandırılmış mı? Hata stack/başka kullanıcı verisi/secret sızdırıyor mu? Harici çağrılarda SSRF, timeout ve yanıt doğrulaması var mı?
+- Silme/cleanup kararı transaction'da güncel state ile mi veriliyor? Hesap önce `deleting` oluyor mu? Storage silmesi için durable retry kaydı var mı ve iş başarılı silmeden kaldırılıyor mu?
+- `Promise.all` erken reject'i paralel yüklemeler sürerken cleanup başlatıyor mu? Gerekirse `allSettled` ile hepsinin bitişini bekle ve cleanup başarısızlığını kalıcılaştır.
+- Cleanup sayfalaması silinen ilk sayfa yüzünden kilitleniyor mu? Sorgu snapshot'ı transaction'da yeniden doğrulanıyor mu? Kota oluşturma/yenileme/yeniden yayınlama yollarının hepsinde transaction ile korunuyor mu?
+- Callable export adı birden çok özelliğin API'siyse payload açık ve doğrulanmış mı; export çakışması var mı?
 
-### Mobil istemci (`composeApp/src`, `iosApp`)
-- Yetki kararları yalnızca istemcide mi veriliyor? Admin paneli ve topluluk yönetimi butonlarını gizlemek güvenlik değildir; arkasında kural veya fonksiyon kontrolü olmalı.
-- WebView / deep link: gelen URL doğrulanıyor mu, JavaScript köprüsü açık mı, keyfi URL açılabiliyor mu?
-- `http://` bağlantı, ATS istisnası (`NSAllowsArbitraryLoads`) ya da sertifika doğrulamasını kapatan kod eklendi mi?
-- Hassas veri (token, oturum) `UserDefaults` / `SharedPreferences` içinde düz metin mi duruyor? Keychain veya şifreli depolama kullanılmalı.
-- `Info.plist` izin açıklamaları ve yeni entitlement'lar gerekli mi, kapsamı dar mı?
-- Build flavor karışıklığı: `v2` / `prod` build'i staging projesine (`good4tr-test`) bağlanmamalı. `EMAIL_VERIFICATION_REQUIRED` gibi güvenlik bayrakları gevşetilmemeli.
+### Mobil / KMP
 
-### Bağımlılıklar
-- `package.json`, `package-lock.json`, `gradle/libs.versions.toml` ya da `Podfile` değiştiyse yeni paketin kaynağını ve sürümünü kontrol et. Node tarafında `npm audit --omit=dev` çalıştır (`firebase/v2/functions`).
+- `commonMain`'de Android API/import, `Dispatchers.Main/IO`, Android lifecycle artifact'ı var mı? Lifecycle-aware collection ve platform actual'ları tamam mı?
+- iOS/Android `platformModule` gerçek Auth/Firestore impl bağlıyor mu? iOS Koin, Compose lambda dışında mı? Firebase App Check, servisler kurulmadan önce mi?
+- Firestore kullanan yeni DTO iOS serializer map ve timestamp/nested decoder'ına eklendi mi?
+- UI gizlemesi tek güvenlik kontrolü mü? Deep link/WebView keyfi URL veya güvensiz JS bridge açıyor mu? ATS/certificate kontrolleri gevşetilmiş mi?
+- Token/hassas veri düz metin tercihlerde mi? Yeni izin/entitlement dar kapsamlı ve Info.plist açıklaması ekli mi? Prod/staging flavor doğru Firebase projesine mi bağlı?
+- iOS picker gerçek implementasyon mu, placeholder mı?
 
-### Kişisel veri ve moderasyon
-- Yeni toplanan kişisel veri gizlilik metniyle (`docs/legal`) uyumlu mu?
-- Kullanıcı içeriği (etkinlik, yorum, rapor) sınırlanıyor ve moderasyona uygun mu?
+## Doğruluk, mimari ve kullanıcı deneyimi
 
-## 3. Doğruluk ve kalite (kısa)
-- Mantık hataları, null/boş durumlar, crash riski (`!!`, zorla cast, index taşması).
-- Yarım kalan kod, debug çıktısı, yorum satırına alınmış blok, TODO.
-- Metinler Türkçe ve tutarlı mı?
+- İş kuralı repository/UI içine sızmış mı? Repository yalnız veri erişimi; ViewModel iş/UI state; Composable state tüketip event gönderiyor mu?
+- DTO → domain null fallback, `Result.Error` için anlaşılır localized UI hata yolu var mı?
+- Filtre/arama değişince eski async sonuçlar veya cursor yeni sayfaya karışabilir mi? Request generation ve cancellation korunuyor mu? Sayfalama hatası görünür ve retry edilebilir mi?
+- `StateFlow.update {}` kullanımı, lifecycle-aware collection, lazy list stable key ve ortak component kullanımını denetle.
+- Kullanıcı metinleri `strings.xml`'de mi; kategori/status/error etiketleri presentation kaynak kimliğine map ediliyor mu? Compose resource formatında yüzde literal'i (`%%`) doğru mu?
+- `!!`, zorla cast, boş/null/index sınırları, tekrar submit, loading/error/empty state, yarış ve yeniden deneme koşullarını kontrol et.
+- Route/UserRole/NavGraph/home ve logout akışları tutarlı mı? Tema paleti ve mevcut ortak form/profile/card/button bileşenleri kullanılıyor mu?
+- Hata olumsuz veya dayanıklılık sınırında ne olur? Örn. Storage/Firestore kısmi başarısızlık, hesap devre dışı, konuşma cleanup ile eşzamanlı yazı.
 
-## 4. Doğrulama komutları
-Yalnızca değişen alanlarla ilgili olanları çalıştır:
+## Secret taraması için örnek
 
 ```bash
-# Firestore kuralları ve functions (emülatör gerekir)
-npm --prefix firebase/v2 run test:rules
-npm --prefix firebase/v2 run test:functions
+git diff --cached -U0 | grep -nEi 'api[_-]?key|secret|token|password|passwd|private[_-]?key|BEGIN [A-Z ]*PRIVATE|AIza[0-9A-Za-z_-]{20,}|service[_-]?account|client[_-]?secret'
 ```
 
-```bash
-# Kotlin ortak kod derlemesi
-./gradlew :composeApp:compileKotlinIosSimulatorArm64
-```
+Stage edilmiş diff yoksa aynı kontrolü incelemenin diff kapsamına göre staged/unstaged diff üzerinde yap.
 
-Çalıştıramadığın komutu atladığını açıkça söyle; geçmiş gibi raporlama.
+## Doğrulama
 
-## 5. Rapor formatı
-Commit öncesinde kullanıcıya şunu göster:
+- Yalnız değişiklikle ilgili mevcut test/derleme komutlarını seç; test/verify kullanıcı tarafından istenmediyse yeni test ekleme veya tüm suite'i gereksiz çalıştırma.
+- Firebase kuralları/functions değişikliklerinde uygunsa `npm --prefix firebase/v2 run test:rules` ve `npm --prefix firebase/v2 run test:functions`.
+- KMP değişikliğinde ilgili hedefi kullan; ör. `./gradlew :composeApp:compileKotlinIosSimulatorArm64` veya etkilenen Android/common target.
+- Bağımlılık değişikliğinde paket kaynağı/sürümünü gözden geçir; Node production bağımlılıkları için uygun olduğunda `npm audit --omit=dev`.
+- Çalışmayan/çalıştırılmayan komutları ve kısıtları açıkça yaz. Komutu çalıştırmadıysan başarılı gibi gösterme.
+- Güvenlik kuralı değişince mevcut kural testlerini incele; yeni yetki reddi için negatif test eksikliğini bulgu olarak belirt.
 
-1. **Kapsam:** hangi dosyalar commit'e girecek, hangileri kullanıcının ayrı değişikliği.
-2. **Güvenlik bulguları:** her biri için önem (Kritik / Yüksek / Orta / Düşük), `dosya:satır`, sorun, somut istismar senaryosu ve önerilen düzeltme. Bulgu yoksa "güvenlik bulgusu yok" de ve neleri kontrol ettiğini listele.
-3. **Diğer bulgular:** doğruluk ve kalite.
-4. **Çalıştırılan kontroller** ve sonuçları.
-5. **Karar:** "commit'e hazır" ya da "önce şunlar düzeltilmeli".
+## Rapor
 
-Kritik veya yüksek bulgu varsa commit atma; kullanıcıya sor.
+Önce yalnızca düzeltilmesi gereken bulguları önem sırasıyla yaz:
+
+`[Kritik|Yüksek|Orta|Düşük] dosya:satır — Sorun, gerçekleşme koşulu/etkisi ve uygulanabilir düzeltme.`
+
+Sonra kapsamı, kontrolleri ve sınırlamaları özetle. Bulgu yoksa açıkça “Bulgu yok” de ve hangi ana alanları kontrol ettiğini belirt. Commit öncesi review ise kullanıcı değişikliklerini, güvenlik bulgularını, diğer bulguları, çalıştırılan kontrolleri ve “commit'e hazır / önce düzelt” kararını ayrı başlıklarla raporla. Kritik/Yüksek bulgu varken commit atma.

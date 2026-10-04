@@ -405,3 +405,22 @@ test('Kampüs Dolabı collections are closed to clients; the callables own every
   await assertFails(getDoc(doc(buyerDb, 'marketReports/listing_l1_buyer-1')));
   await assertFails(getDoc(doc(buyerDb, 'marketViolations/v1')));
 });
+
+test('notification inbox is self-readable and every mutation and endpoint is server-only', async () => {
+  await seed('users/student-1', { role: 'student', status: 'active' });
+  await seed('users/student-2', { role: 'student', status: 'active' });
+  await seed('users/student-1/notifications/n1', { title: 'Duyuru', readAt: 0 });
+  await seed('users/student-1/notificationPreferences/default', { announcements: false });
+  await seed('pushDevices/phone', { uid: 'student-1', token: 'secret' });
+  await seed('notificationJobs/job', { status: 'queued' });
+  const own = testEnv.authenticatedContext('student-1').firestore();
+  const other = testEnv.authenticatedContext('student-2').firestore();
+  await assertSucceeds(getDocs(collection(own, 'users/student-1/notifications')));
+  await assertSucceeds(getDoc(doc(own, 'users/student-1/notificationPreferences/default')));
+  await assertFails(getDoc(doc(other, 'users/student-1/notifications/n1')));
+  await assertFails(updateDoc(doc(own, 'users/student-1/notifications/n1'), { readAt: 1 }));
+  await assertFails(setDoc(doc(own, 'users/student-1/notificationPreferences/default'), { announcements: true }));
+  await assertFails(getDoc(doc(own, 'pushDevices/phone')));
+  await assertFails(setDoc(doc(own, 'notificationJobs/job2'), { status: 'queued' }));
+  await assertFails(getDoc(doc(own, 'notificationJobs/job')));
+});

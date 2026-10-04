@@ -42,6 +42,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation("com.google.android.play:review:2.0.2")
+            implementation("com.google.android.play:app-update:2.1.0")
             implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
@@ -123,12 +124,16 @@ android {
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".test"
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", providers.gradleProperty("good4.useFirebaseEmulators").orElse("true").get())
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"${providers.gradleProperty("good4.firebaseEmulatorHost").orElse("10.0.2.2").get()}\"")
             versionNameSuffix = "-test"
-            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "false")
+            buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
             buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-test\"")
         }
         create("prod") {
             dimension = "env"
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", "false")
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"10.0.2.2\"")
             buildConfigField("boolean", "EMAIL_VERIFICATION_REQUIRED", "true")
             buildConfigField("String", "FIREBASE_ENVIRONMENT", "\"good4tr-v2\"")
         }
@@ -159,7 +164,12 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            buildConfigField("boolean", "SIMULATE_APP_UPDATE",
+                providers.gradleProperty("good4.simulateAppUpdate").orElse("true").get())
+        }
         getByName("release") {
+            buildConfigField("boolean", "SIMULATE_APP_UPDATE", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

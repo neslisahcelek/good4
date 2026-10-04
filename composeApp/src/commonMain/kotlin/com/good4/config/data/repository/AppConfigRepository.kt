@@ -5,10 +5,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import com.good4.config.data.dto.AppConfigDto
 import com.good4.config.data.dto.HomeBannerDto
+import com.good4.config.data.dto.UpdateNoticeDto
 import com.good4.config.data.dto.UniversitiesConfigDto
 import com.good4.config.domain.AppConfig
 import com.good4.config.domain.AppDefaults
 import com.good4.config.domain.HomeBanner
+import com.good4.config.domain.UpdateNotice
 import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.domain.Result
 import com.good4.core.util.AppEnvironment
@@ -38,9 +40,26 @@ class AppConfigRepository(
     private val _universities = MutableStateFlow<List<String>>(emptyList())
     val universities: StateFlow<List<String>> = _universities.asStateFlow()
 
-    // V2 rules expose only the dining menu, home banner and weather documents; the legacy
+    // V2 rules expose selected app_config documents; the legacy
     // global and universities documents would fail with permission-denied, so use defaults.
     private val legacyConfigAvailable get() = AppEnvironment.firebaseBackend != FirebaseBackend.V2
+
+    private val updateNoticeCache = com.good4.core.data.repository.ReadCache<UpdateNotice?>(60)
+
+    /** Missing or unreadable optional copy leaves presentation defaults in place. */
+    suspend fun getUpdateNotice(): UpdateNotice? = updateNoticeCache.load {
+        when (val result = firestoreRepository.getDocument(
+            collectionPath = "app_config",
+            documentId = "update_notice",
+            clazz = UpdateNoticeDto::class
+        )) {
+            is Result.Success -> UpdateNotice(
+                title = result.data.title ?: "",
+                message = result.data.message ?: ""
+            )
+            is Result.Error -> null
+        }
+    }
 
     suspend fun loadConfig() {
         if (!legacyConfigAvailable) {
@@ -94,7 +113,9 @@ class AppConfigRepository(
     }
 
     /** Active slider banners in slot order (home_banner, home_banner_2 … home_banner_4). */
-    suspend fun getActiveHomeBanners(today: String): List<HomeBanner> = coroutineScope {
+    private val bannerCache = com.good4.core.data.repository.ReadCache<List<HomeBanner>>(3600)
+    suspend fun getActiveHomeBanners(today: String): List<HomeBanner> = bannerCache.load(today) { loadHomeBanners(today) }
+    private suspend fun loadHomeBanners(today: String): List<HomeBanner> = coroutineScope {
         HOME_BANNER_DOCUMENTS.map { documentId -> async { getActiveHomeBanner(documentId, today) } }
             .awaitAll()
             .filterNotNull()

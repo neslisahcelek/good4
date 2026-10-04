@@ -1,6 +1,6 @@
 # Good4 V2 canonical data model
 
-This document is the Phase 1 contract for `good4tr-v2`. Persisted date/time fields are Firestore `Timestamp` values. IDs that relate records are stored explicitly; display names are snapshots, never authorization inputs.
+This document is the shared V2 contract for production (`good4tr-v2`) and test (`good4tr-test`). Persisted date/time fields are Firestore `Timestamp` values. IDs that relate records are stored explicitly; display names are snapshots, never authorization inputs.
 
 ## Identity and organizations
 
@@ -67,8 +67,20 @@ Before enabling uploads, a trusted service must create immutable metadata contai
 
 ## Backward compatibility
 
-- The staging and production legacy flavors keep their current repositories and v1 QR format.
-- The V2 flavor reads canonical organizations/events and uses callable transactions for registration/check-in.
-- Existing legacy records remain untouched; there is no bulk rewrite or dual-write.
+### Update notice copy
+
+`app_config/update_notice` contains optional string fields `title` and `message` for the mobile update card. Authenticated clients may get this document; client listing and all writes remain denied. Operators edit it through Firebase Console or a trusted Admin SDK. Presentation accepts a nonblank title up to 120 characters and message up to 400 characters, otherwise uses localized resource defaults. Download/install copy and update eligibility stay in the app. See [setup instructions](../../docs/app-update-notice.md).
+
+- The supported staging and production flavors both read canonical organizations/events and use V2 callable transactions for registration/check-in.
+- `scripts/align-test-schema.mjs` previews the test-only transition by default. Applying it requires active test callables, backs up existing test records, normalizes user roles/dates, and adds canonical organizations/events. Legacy event, coupon and attendance history remains in place; incompatible image-only campaign documents are archived to `legacyCampaigns`.
+- The legacy production project `good4tr` is outside this transition. No private production data or Auth accounts are copied into test.
 - Legacy numeric/string dates may still be decoded by compatibility adapters, but every new V2 server write uses Firestore `Timestamp`.
 - Temporary legacy links support only functionality not migrated in this phase (notably coupons). They are not a new canonical model.
+
+## Kampüs Dolabı temizleme işleri — 4 Ekim 2026
+
+`marketPhotoDeletions/{listingId}` yalnızca sunucuya açık, kalıcı Storage silme kuyruğudur. İlanın silinmesi/gizlenmesiyle aynı transaction içinde `prefix`, `ownerUid`, `attemptedAt` yazılır. Başarısız denemelerde `attempts` artar; iş başarılı Storage silmesinden sonra kaldırılır. Günlük temizleme görevi yeniden dener. Hesap silme, ilan artık bulunmasa bile `ownerUid` ile kalan işleri bulur; fotoğraf işi tamamlanmamışsa başarı dönmez.
+
+`marketUserState.listingQuotaRevision` aktivasyonların ortak kota kilididir. Aktif (`pending/published/reserved`) ilan sınırı 15'tir; oluşturma, yenileme ve tekrar yayımlama aynı kotayı uygular. `marketListings.photosCleanupQueuedAt` kuyruk tarihidir, Storage başarı tarihi değildir. `marketConversations.cleanupToken`, paralel temizlik çalışmaları sırasında yeni konuşma neslinin yanlışlıkla silinmesini önler.
+
+[İnceleme ve doğrulama kaydı](../../docs/code-review-2026-10-04.md).

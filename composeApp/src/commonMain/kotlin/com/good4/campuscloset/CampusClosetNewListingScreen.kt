@@ -1,13 +1,18 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,9 +24,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,11 +79,25 @@ internal fun CampusClosetNewListingContent(
     onSubmit: () -> Unit
 ) {
     var pickingPhoto by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val dismissKeyboard = {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+        Unit
+    }
     Good4Scaffold(
-        modifier = Modifier.imePadding(),
+        modifier = Modifier.pointerInput(focusManager, keyboardController) {
+            detectTapGestures(onTap = { dismissKeyboard() })
+        }.imePadding(),
         topBar = {
-            Good4TopBar(title = "İlan ver", navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") }
+            Good4TopBar(title = stringResource(Res.string.campus_closet_create_listing), navigationIcon = {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) }
+            }, actions = {
+                if (keyboardVisible) {
+                    TextButton(onClick = dismissKeyboard) { Text(stringResource(Res.string.campus_closet_bitti)) }
+                }
             })
         },
         bottomBar = {
@@ -82,17 +107,20 @@ internal fun CampusClosetNewListingContent(
                         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("İlanın yaklaşık 30 dakika içinde incelenir.", color = TextSecondary, fontSize = 12.sp)
+                        Text(
+                            state.validationMessage?.asString() ?: stringResource(Res.string.campus_closet_ilanin_yaklasik_30_dakika_icinde_incelenir),
+                            color = TextSecondary, fontSize = 12.sp
+                        )
                         Button(
-                            onClick = onSubmit, enabled = state.canSubmit,
+                            onClick = { dismissKeyboard(); onSubmit() }, enabled = state.canSubmit,
                             modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             if (state.submitting) {
-                                CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                                CircularProgressIndicator(Modifier.size(StandardButtonLoadingIndicatorSize), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                                 Spacer(Modifier.width(8.dp))
                             }
-                            Text(if (state.submitting) "Gönderiliyor…" else "İncelemeye gönder", fontWeight = FontWeight.SemiBold)
+                            Text(if (state.submitting) stringResource(Res.string.campus_closet_gonderiliyor) else stringResource(Res.string.campus_closet_incelemeye_gonder), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -107,24 +135,24 @@ internal fun CampusClosetNewListingContent(
                     .verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Dolabında yer aç, kampüste paylaş.", color = TextSecondary, fontSize = 14.sp)
+                Text(stringResource(Res.string.campus_closet_dolabinda_yer_ac_kampuste_paylas), color = TextSecondary, fontSize = 14.sp)
                 ClosetCard {
-                    ClosetSectionHeading("Fotoğraflar", Icons.Outlined.AddPhotoAlternate, "En az 1, en fazla 3 fotoğraf ekle.")
+                    ClosetSectionHeading(stringResource(Res.string.campus_closet_fotograflar), Icons.Outlined.AddPhotoAlternate, stringResource(Res.string.campus_closet_en_az_1_en_fazla_3_fotograf_ekle))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         repeat(CampusClosetLimits.MAX_PHOTOS) { index ->
                             PhotoSlot(
                                 bytes = state.photos.getOrNull(index), index = index,
                                 enabled = !state.submitting,
                                 modifier = Modifier.weight(1f),
-                                onAdd = { pickingPhoto = true }, onRemove = { onRemovePhoto(index) }
+                                onAdd = { dismissKeyboard(); pickingPhoto = true }, onRemove = { onRemovePhoto(index) }
                             )
                         }
                     }
-                    Text("İlk fotoğraf ilanın kapak görseli olur. Ürünü farklı açılardan göster.", fontSize = 12.sp, lineHeight = 17.sp, color = TextSecondary)
+                    Text(stringResource(Res.string.campus_closet_ilk_fotograf_ilanin_kapak_gorseli_olur_urunu_farkli_acilardan), fontSize = 12.sp, lineHeight = 17.sp, color = TextSecondary)
                 }
                 ClosetCard {
-                    ClosetSectionHeading("Ürün bilgisi", Icons.Outlined.Inventory2)
-                    FormLabel("Kategori")
+                    ClosetSectionHeading(stringResource(Res.string.campus_closet_urun_bilgisi), Icons.Outlined.Inventory2)
+                    FormLabel(stringResource(Res.string.campus_closet_kategori))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         MARKET_CATEGORIES.forEach { (id, label) ->
                             val style = CATEGORY_STYLES.getValue(id)
@@ -136,17 +164,17 @@ internal fun CampusClosetNewListingContent(
                             ) {
                                 Row(Modifier.padding(horizontal = 10.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     TiltedIcon(style.icon, style.accent, size = 26, iconSize = 15)
-                                    Text(label, fontSize = 12.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, color = if (selected) MaterialTheme.colorScheme.primary else TextPrimary)
+                                    Text(stringResource(label), fontSize = 12.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, color = if (selected) MaterialTheme.colorScheme.primary else TextPrimary)
                                 }
                             }
                         }
                     }
-                    FormLabel("Ürünün durumu")
+                    FormLabel(stringResource(Res.string.campus_closet_urunun_durumu))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         MARKET_CONDITIONS.forEach { (id, label) ->
                             FilterChip(
                                 selected = state.condition == id, onClick = { onCondition(id) }, enabled = !state.submitting,
-                                label = { Text(label, fontSize = 12.sp) }, shape = RoundedCornerShape(12.dp),
+                                label = { Text(stringResource(label), fontSize = 12.sp) }, shape = RoundedCornerShape(12.dp),
                                 leadingIcon = if (state.condition == id) ({ Icon(Icons.Outlined.Check, null, Modifier.size(16.dp)) }) else null,
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), selectedLabelColor = MaterialTheme.colorScheme.primary)
                             )
@@ -154,23 +182,27 @@ internal fun CampusClosetNewListingContent(
                     }
                     OutlinedTextField(
                         value = state.title, onValueChange = onTitle, enabled = !state.submitting,
-                        label = { Text("Başlık") }, placeholder = { Text("Örn. Kışlık mont, M beden") },
-                        supportingText = { Text("${state.title.length}/${CampusClosetLimits.MAX_TITLE}") },
+                        label = { Text(stringResource(Res.string.campus_closet_baslik)) }, placeholder = { Text(stringResource(Res.string.campus_closet_orn_kislik_mont_m_beden)) },
+                        supportingText = { Text(stringResource(Res.string.campus_closet_en_az_3_karakter, state.title.trim().length, CampusClosetLimits.MAX_TITLE)) },
+                        isError = state.title.isNotEmpty() && state.title.trim().length < 3,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
                         singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = formColors()
                     )
                     OutlinedTextField(
                         value = state.description, onValueChange = onDescription, enabled = !state.submitting,
-                        label = { Text("Açıklama") }, placeholder = { Text("Durumu, bedeni ve kullanım süresi…") },
-                        supportingText = { Text("${state.description.length}/${CampusClosetLimits.MAX_DESCRIPTION} · Telefon numarası yazma") },
+                        label = { Text(stringResource(Res.string.campus_closet_aciklama)) }, placeholder = { Text(stringResource(Res.string.campus_closet_durumu_bedeni_ve_kullanim_suresi)) },
+                        supportingText = { Text(stringResource(Res.string.campus_closet_en_az_10_karakter_telefon_numarasi_yazma, state.description.trim().length, CampusClosetLimits.MAX_DESCRIPTION)) },
+                        isError = state.description.isNotEmpty() && state.description.trim().length < 10,
                         minLines = 4, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = formColors()
                     )
                 }
                 ClosetCard {
-                    ClosetSectionHeading("Fiyat", Icons.Outlined.LocalOffer)
+                    ClosetSectionHeading(stringResource(Res.string.campus_closet_fiyat), Icons.Outlined.LocalOffer)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(Modifier.weight(1f)) {
-                            Text("Ücretsiz / bağış", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                            Text("Bir arkadaşına hediye et.", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(Res.string.campus_closet_ucretsiz_bagis), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Text(stringResource(Res.string.campus_closet_bir_arkadasina_hediye_et), color = TextSecondary, fontSize = 12.sp)
                         }
                         Switch(checked = state.isFree, onCheckedChange = onFree, enabled = !state.submitting,
                             colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
@@ -178,16 +210,17 @@ internal fun CampusClosetNewListingContent(
                     if (!state.isFree) {
                         OutlinedTextField(
                             value = state.priceText, onValueChange = onPrice, enabled = !state.submitting,
-                            label = { Text("Fiyat") }, suffix = { Text("₺") }, singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            label = { Text(stringResource(Res.string.campus_closet_fiyat)) }, suffix = { Text(stringResource(Res.string.campus_closet_currency)) }, singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { dismissKeyboard() }),
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = formColors()
                         )
                     } else {
-                        Text("İlanında fiyat yerine “Ücretsiz” yazacak.", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                        Text(stringResource(Res.string.campus_closet_ilaninda_fiyat_yerine_ucretsiz_yazacak), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                     }
                 }
                 MarketNotice(
-                    "İlanlar yayınlanmadan önce incelenir. Sigara, alkol, ilaç, silah, kaçak ve sahte ürünlerin satışı yasaktır.",
+                    stringResource(Res.string.campus_closet_ilanlar_yayinlanmadan_once_incelenir_sigara_alkol_ilac_silah_kacak),
                     color = TextSecondary
                 )
                 state.error?.let { MarketNotice(it, color = ErrorRed) }
@@ -201,7 +234,7 @@ internal fun CampusClosetNewListingContent(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                ClosetSectionHeading("Fotoğraf ekle", Icons.Outlined.AddPhotoAlternate, "Ürünün net göründüğü bir fotoğraf seç.")
+                ClosetSectionHeading(stringResource(Res.string.campus_closet_fotograf_ekle), Icons.Outlined.AddPhotoAlternate, stringResource(Res.string.campus_closet_urunun_net_gorundugu_bir_fotograf_sec))
                 ProductImagePicker(
                     currentRemoteImageUrl = "", pendingImageBytes = null, isUploading = false,
                     onPendingImageChange = { bytes -> bytes?.let { onAddPhoto(it); pickingPhoto = false } },
@@ -233,20 +266,20 @@ private fun PhotoSlot(bytes: ByteArray?, index: Int, enabled: Boolean, modifier:
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (bytes != null) {
-                AsyncImage(model = bytes, contentDescription = "Fotoğraf ${index + 1}", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                AsyncImage(model = bytes, contentDescription = stringResource(Res.string.campus_closet_fotograf, index + 1), contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 Surface(
                     onClick = onRemove, enabled = enabled, shape = CircleShape, color = Color.Black.copy(alpha = 0.6f),
                     modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(30.dp)
-                ) { Icon(Icons.Outlined.Close, "Fotoğraf ${index + 1} kaldır", tint = Color.White, modifier = Modifier.padding(6.dp)) }
+                ) { Icon(Icons.Outlined.Close, stringResource(Res.string.campus_closet_fotograf_kaldir, index + 1), tint = Color.White, modifier = Modifier.padding(6.dp)) }
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(Icons.Outlined.AddPhotoAlternate, "Fotoğraf ${index + 1} ekle", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
-                    Text(if (index == 0) "Kapak" else "Fotoğraf ${index + 1}", fontSize = 11.sp, color = TextSecondary)
+                    Icon(Icons.Outlined.AddPhotoAlternate, stringResource(Res.string.campus_closet_fotograf_ekle_2, index + 1), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+                    Text(if (index == 0) stringResource(Res.string.campus_closet_kapak) else stringResource(Res.string.campus_closet_fotograf, index + 1), fontSize = 11.sp, color = TextSecondary)
                 }
             }
             if (index == 0 && bytes != null) {
                 Surface(modifier = Modifier.align(Alignment.BottomStart).padding(5.dp), shape = RoundedCornerShape(6.dp), color = SurfaceDefault) {
-                    Text("Kapak", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                    Text(stringResource(Res.string.campus_closet_kapak), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                 }
             }
         }
@@ -260,13 +293,13 @@ private fun SubmittedState(onOpenMyListings: () -> Unit, onBack: () -> Unit) {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 TiltedIcon(Icons.Outlined.CheckCircle, PrimaryGreen, size = 64, iconSize = 32)
                 Spacer(Modifier.height(24.dp))
-                Text("İlanın inceleniyor", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, textAlign = TextAlign.Center)
+                Text(stringResource(Res.string.campus_closet_ilanin_inceleniyor), fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(10.dp))
-                Text("Yaklaşık 30 dakika içinde yayına alınır. Durumunu İlanlarım sayfasından takip edebilirsin.", color = TextSecondary, fontSize = 14.sp, lineHeight = 21.sp, textAlign = TextAlign.Center)
+                Text(stringResource(Res.string.campus_closet_yaklasik_30_dakika_icinde_yayina_alinir_durumunu_ilanlarim_sayfasindan), color = TextSecondary, fontSize = 14.sp, lineHeight = 21.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(24.dp))
                 Button(onClick = onOpenMyListings, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { Text("İlanlarıma git", fontWeight = FontWeight.SemiBold) }
-                TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) { Text("Kampüs Dolabı'na dön", color = TextSecondary) }
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { Text(stringResource(Res.string.campus_closet_ilanlarima_git), fontWeight = FontWeight.SemiBold) }
+                TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) { Text(stringResource(Res.string.campus_closet_kampus_dolabi_na_don), color = TextSecondary) }
             }
         }
     }

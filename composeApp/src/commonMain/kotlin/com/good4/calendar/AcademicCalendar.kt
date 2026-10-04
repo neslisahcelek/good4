@@ -34,8 +34,21 @@ data class AcademicCalendarEvent(
 )
 
 class AcademicCalendarRepository(private val firestore: FirestoreRepository) {
-    suspend fun load(): Result<List<AcademicCalendarEvent>, com.good4.core.domain.Error> =
-        when (val result = firestore.queryCollectionWithIds("academic_calendar_events", "active", true, AcademicCalendarEventDto::class)) {
+    private val cache = com.good4.core.data.repository.ReadCache<Result<List<AcademicCalendarEvent>, com.good4.core.domain.Error>>(86400)
+    suspend fun load(): Result<List<AcademicCalendarEvent>, com.good4.core.domain.Error> = cache.load(cacheable = { it is Result.Success }) { loadUncached() }
+    private suspend fun allEvents(): Result<List<com.good4.core.data.repository.DocumentWithId<AcademicCalendarEventDto>>, com.good4.core.domain.Error> {
+        val items = mutableListOf<com.good4.core.data.repository.DocumentWithId<AcademicCalendarEventDto>>()
+        var cursor: String? = null
+        do {
+            when (val page = firestore.queryPage("academic_calendar_events", mapOf("active" to true), AcademicCalendarEventDto::class, cursor = cursor)) {
+                is Result.Error -> return page
+                is Result.Success -> { items.addAll(page.data.items); cursor = page.data.nextCursor }
+            }
+        } while (cursor != null)
+        return Result.Success(items)
+    }
+    private suspend fun loadUncached(): Result<List<AcademicCalendarEvent>, com.good4.core.domain.Error> =
+        when (val result = allEvents()) {
             is Result.Success -> Result.Success(result.data.mapNotNull { document ->
                 val item = document.data
                 val start = item.startDate.orEmpty()
