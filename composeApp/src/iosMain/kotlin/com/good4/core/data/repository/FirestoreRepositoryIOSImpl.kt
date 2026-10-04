@@ -566,6 +566,8 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "UniversitiesConfigDto" to UniversitiesConfigDto.serializer(),
         "AkdenizDiningMenuDto" to AkdenizDiningMenuDto.serializer(),
         "KykMenuDayDto" to com.good4.dining.data.dto.KykMenuDayDto.serializer(),
+        "MealRatingSummaryDto" to com.good4.dining.data.repository.MealRatingSummaryDto.serializer(),
+        "MealRatingVoteDto" to com.good4.dining.data.repository.MealRatingVoteDto.serializer(),
         "FeedbackSubmissionDto" to com.good4.feedback.FeedbackSubmissionDto.serializer()
     )
 

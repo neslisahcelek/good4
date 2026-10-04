@@ -2,7 +2,9 @@ package com.good4.dining.presentation
 
 import com.good4.dining.domain.AkdenizDiningMenu
 import com.good4.dining.domain.AkdenizDiningMenuDay
+import com.good4.dining.domain.DailyMeal
 import com.good4.dining.domain.KykMenuDay
+import com.good4.dining.domain.MealRating
 import kotlinx.datetime.LocalDate
 
 data class AkdenizDiningMenuState(
@@ -11,7 +13,11 @@ data class AkdenizDiningMenuState(
     val kykDay: KykMenuDay? = null,
     /** The Istanbul date (yyyy-MM-dd) the menus were loaded for; a new day triggers a reload. */
     val loadedDate: String = "",
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    /** Today's 😋/😐/😕 counters and own vote per meal; missing until loaded. */
+    val ratings: Map<DailyMeal, MealRating> = emptyMap(),
+    val ratingInFlight: Set<DailyMeal> = emptySet(),
+    val ratingError: String? = null
 ) {
     val cafeteriaToday: AkdenizDiningMenuDay?
         get() = menu?.days?.firstOrNull { it.date == loadedDate }

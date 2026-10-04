@@ -276,6 +276,23 @@ test('signed-in users can read a KYK menu day but clients cannot list or write t
   await assertFails(setDoc(doc(adminDb, 'kyk_menu_days/2026-10-02'), { date: '2026-10-02', breakfast: ['Çay'] }));
 });
 
+test('meal rating counters are readable, a vote only by its owner, and clients cannot write either', async () => {
+  await seed('users/student-1', { role: 'student', status: 'active' });
+  await seed('users/student-2', { role: 'student', status: 'active' });
+  await seed('meal_ratings/2026-10-04_kyk_dinner', { date: '2026-10-04', meal: 'kyk_dinner', good: 3, okay: 1, bad: 0 });
+  await seed('meal_ratings/2026-10-04_kyk_dinner/votes/student-1', { rating: 'good' });
+  const studentDb = testEnv.authenticatedContext('student-1').firestore();
+  const otherDb = testEnv.authenticatedContext('student-2').firestore();
+  await assertSucceeds(getDoc(doc(studentDb, 'meal_ratings/2026-10-04_kyk_dinner')));
+  await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'meal_ratings/2026-10-04_kyk_dinner')));
+  await assertSucceeds(getDoc(doc(studentDb, 'meal_ratings/2026-10-04_kyk_dinner/votes/student-1')));
+  await assertFails(getDoc(doc(otherDb, 'meal_ratings/2026-10-04_kyk_dinner/votes/student-1')));
+  await assertFails(getDocs(collection(studentDb, 'meal_ratings/2026-10-04_kyk_dinner/votes')));
+  await assertFails(getDocs(collection(studentDb, 'meal_ratings')));
+  await assertFails(setDoc(doc(studentDb, 'meal_ratings/2026-10-04_kyk_dinner'), { good: 999 }));
+  await assertFails(setDoc(doc(studentDb, 'meal_ratings/2026-10-04_kyk_dinner/votes/student-1'), { rating: 'bad' }));
+});
+
 test('signed-in users can read the extra home slider banners but clients cannot write them', async () => {
   await seed('users/student-1', { role: 'student', status: 'active' });
   await seed('app_config/home_banner_4', { imageUrl: 'https://example.com/4.jpg', active: true });

@@ -191,6 +191,16 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
     }
 
+    // Daily 😋/😐/😕 counters per meal; votes are written only by the rateMeal function.
+    match /meal_ratings/{ratingId} {
+      allow get: if signedIn();
+      allow list, create, update, delete: if false;
+      match /votes/{voterUid} {
+        allow get: if signedIn() && request.auth.uid == voterUid;
+        allow list, create, update, delete: if false;
+      }
+    }
+
     match /app_config/{documentId} {
       allow get: if signedIn() && documentId in ['akdeniz_dining_menu', 'home_banner', 'home_banner_2',
         'home_banner_3', 'home_banner_4', 'campus_weather', 'update_notice'];

@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.good4.core.domain.Result
 import com.good4.dining.data.repository.AkdenizDiningMenuRepository
 import com.good4.dining.data.repository.KykMenuRepository
+import com.good4.dining.data.repository.MealRatingRepository
 import com.good4.dining.domain.AkdenizDiningMenu
 import com.good4.dining.domain.AkdenizDiningMenuDay
+import com.good4.dining.domain.DailyMeal
+import com.good4.dining.domain.MealVote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -18,7 +21,8 @@ import kotlinx.datetime.toLocalDateTime
 
 class AkdenizDiningMenuViewModel(
     private val repository: AkdenizDiningMenuRepository,
-    private val kykRepository: KykMenuRepository
+    private val kykRepository: KykMenuRepository,
+    private val ratingRepository: MealRatingRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(AkdenizDiningMenuState())
     val state = _state.asStateFlow()
@@ -38,7 +42,64 @@ class AkdenizDiningMenuViewModel(
                 loadedDate = today,
                 isLoading = false
             )
+            loadRatings()
         }
+    }
+
+    /** Ratings are read only for meals that were published today (the KYK fallback day is not today). */
+    private suspend fun loadRatings() {
+        val state = _state.value
+        val published = buildList {
+            if (state.kykDay?.date == state.loadedDate) {
+                if (state.kykDay.breakfast.isNotEmpty()) add(DailyMeal.KYK_BREAKFAST)
+                if (state.kykDay.dinner.isNotEmpty()) add(DailyMeal.KYK_DINNER)
+            }
+            if (state.cafeteriaToday != null) add(DailyMeal.CAFETERIA)
+        }
+        published.forEach { meal ->
+            val rating = runCatching { ratingRepository.load(state.loadedDate, meal) }.getOrNull() ?: return@forEach
+            _state.update { it.copy(ratings = it.ratings + (meal to rating)) }
+        }
+    }
+
+    fun rate(meal: DailyMeal, vote: MealVote) {
+        val current = _state.value
+        if (meal in current.ratingInFlight || current.ratings[meal]?.myVote == vote) return
+        val before = current.ratings[meal]
+        // Show the chosen face at once; the server's counters replace it, or the old vote returns on failure.
+        _state.update {
+            it.copy(
+                ratings = it.ratings + (meal to (before ?: com.good4.dining.domain.MealRating()).copy(myVote = vote)),
+                ratingInFlight = it.ratingInFlight + meal,
+                ratingError = null
+            )
+        }
+        viewModelScope.launch {
+            val result = runCatching { ratingRepository.rate(meal, vote) }
+            _state.update { state ->
+                result.fold(
+                    onSuccess = { state.copy(ratings = state.ratings + (meal to it), ratingInFlight = state.ratingInFlight - meal) },
+                    onFailure = { error ->
+                        state.copy(
+                            ratings = if (before == null) state.ratings - meal else state.ratings + (meal to before),
+                            ratingInFlight = state.ratingInFlight - meal,
+                            ratingError = ratingErrorMessage(error.message)
+                        )
+                    }
+                )
+            }
+        }
+    }
+
+    fun dismissRatingError() = _state.update { it.copy(ratingError = null) }
+
+    private fun ratingErrorMessage(code: String?): String = when {
+        code == null -> "Oyun kaydedilemedi. Tekrar dene."
+        "MEAL_NOT_STARTED" in code -> "Bu öğün henüz başlamadı."
+        "EDU_VERIFICATION_REQUIRED" in code -> "Puan vermek için üniversite e-postanı doğrulamalısın."
+        "STUDENT_REQUIRED" in code -> "Yalnızca öğrenciler puan verebilir."
+        "RATE_LIMIT" in code || "resource-exhausted" in code -> "Çok hızlı denedin, biraz sonra tekrar dene."
+        else -> "Oyun kaydedilemedi. Tekrar dene."
     }
 
     /** Reloads when the calendar day has changed since the last load, so the page always shows today. */

@@ -281,6 +281,8 @@ fun StudentHomeScreenRoot(
                         state = diningMenuState,
                         initialMeal = dailyMenuMeal,
                         onRefreshIfDayChanged = diningMenuViewModel::refreshIfDayChanged,
+                        onRate = diningMenuViewModel::rate,
+                        onDismissRatingError = diningMenuViewModel::dismissRatingError,
                         onBackClick = { selectedItemIndex = 0 }
                     )
                 }

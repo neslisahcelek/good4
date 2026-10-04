@@ -29,6 +29,7 @@ import com.good4.core.presentation.sessionrestore.SessionRestoreViewModel
 import com.good4.core.presentation.splash.SplashViewModel
 import com.good4.dining.data.repository.AkdenizDiningMenuRepository
 import com.good4.dining.data.repository.KykMenuRepository
+import com.good4.dining.data.repository.MealRatingRepository
 import com.good4.dining.presentation.AkdenizDiningMenuViewModel
 import com.good4.feedback.FeedbackRepository
 import com.good4.feedback.FeedbackViewModel
@@ -65,6 +66,7 @@ val commonModule = module {
     single { CodeRepository(get<FirestoreRepository>(), get<FirestoreBusinessRepository>(), get<FirestoreProductRepository>(), get<AppConfigRepository>()) }
     single { AkdenizDiningMenuRepository(get<FirestoreRepository>()) }
     single { KykMenuRepository(get<FirestoreRepository>()) }
+    single { MealRatingRepository(get<FirestoreRepository>(), get()) }
     single { com.good4.suspendedmeal.SuspendedMealRepository(get<FirestoreRepository>()) }
     single { com.good4.weather.CampusWeatherRepository(get<FirestoreRepository>()) }
     single { AcademicCalendarRepository(get<FirestoreRepository>()) }
@@ -162,7 +164,7 @@ val commonModule = module {
         )
     }
     viewModel { SessionRestoreViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
-    viewModel { AkdenizDiningMenuViewModel(get<AkdenizDiningMenuRepository>(), get<KykMenuRepository>()) }
+    viewModel { AkdenizDiningMenuViewModel(get<AkdenizDiningMenuRepository>(), get<KykMenuRepository>(), get<MealRatingRepository>()) }
     viewModel { AcademicCalendarViewModel(get<AcademicCalendarRepository>()) }
     viewModel { ClassScheduleViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { FeedbackViewModel(get<FeedbackRepository>()) }

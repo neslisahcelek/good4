@@ -57,6 +57,7 @@ import {
 } from "./communityApplications.js";
 import { submitFeedbackService } from "./feedback.js";
 import { saveKykMenuService } from "./kykMenu.js";
+import { rateMealService } from "./mealRatings.js";
 import { ensureStudentProfileService } from "./studentAuth.js";
 import { eraseAccountData } from "./accountDeletion.js";
 import { refreshCampusWeatherService } from "./weather.js";
@@ -429,6 +430,12 @@ export const recordEventAttendance = onCall(callableOptions, async (request) => 
   const uid = requireAuthenticatedUid(request.auth?.uid);
   await limitRequest(uid, "community", 30);
   return recordEventAttendanceService(db, uid, request.data);
+});
+
+export const rateMeal = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "mealRating", 10);
+  return rateMealService(db, uid, request.data ?? {});
 });
 
 export const submitFeedback = onCall(callableOptions, async (request) => {
