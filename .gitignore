@@ -50,6 +50,16 @@ AGENTS.md
 skills-lock.json
 .stitch/
 
+# Shared Claude/Codex project skills
+!.agents/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/good4-architecture/
+!.agents/skills/good4-architecture/SKILL.md
+!.agents/skills/good4-code-review/
+!.agents/skills/good4-code-review/SKILL.md
+
 # CocoaPods
 iosApp/Pods/
 composeApp/*.podspec

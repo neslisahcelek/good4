@@ -1,6 +1,6 @@
 ---
-name: pre-commit-review
-description: Good4 V2 değişikliklerini commit/push/PR öncesinde güvenlik, doğruluk, KMP uyumu ve mimari regresyonlar açısından inceler. Kullanıcı review istediğinde de kullan.
+name: good4-code-review
+description: Good4 V2 değişikliklerini güvenlik, doğruluk, KMP uyumu ve mimari regresyonlar açısından inceler. Kullanıcı review istediğinde ve commit/push/PR öncesinde kullan.
 ---
 
 # Good4 code review
