@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import "./DownloadPage.css";
 
-const APP_STORE_URL = "https://apps.apple.com/tr/app/good4/id6762288474?l=tr";
-const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.good4&pcampaignid=web_share";
+export const APP_STORE_URL = "https://apps.apple.com/tr/app/good4/id6762288474?l=tr";
+export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.good4&pcampaignid=web_share";
 
-function AppleIcon() {
+export function AppleIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M17.05 12.54c.03 2.04 1.8 2.72 1.82 2.73-.02.05-.28.98-.94 1.94-.57.83-1.16 1.65-2.1 1.67-.92.02-1.22-.54-2.28-.54-1.06 0-1.39.52-2.26.56-.91.03-1.6-.9-2.17-1.72-1.18-1.69-2.08-4.78-.87-6.86a3.37 3.37 0 0 1 2.84-1.73c.89-.02 1.72.61 2.27.61.54 0 1.56-.76 2.63-.65.45.02 1.72.18 2.53 1.38-.07.04-1.51.88-1.47 2.61ZM15.4 7.41c.48-.58.8-1.39.71-2.21-.7.03-1.55.47-2.05 1.05-.45.52-.84 1.34-.74 2.13.78.06 1.58-.4 2.08-.97Z" />
@@ -12,7 +12,7 @@ function AppleIcon() {
   );
 }
 
-function PlayIcon() {
+export function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path fill="#4285F4" d="M3.6 2.4 13.9 12 3.6 21.6c-.3-.3-.5-.8-.5-1.4V3.8c0-.6.2-1.1.5-1.4Z" />
