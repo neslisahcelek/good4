@@ -3,6 +3,9 @@ package com.good4
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.good4.review.StoreReviewCoordinator
+import org.koin.compose.koinInject
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -24,6 +27,11 @@ fun App(
     startDestination: Route = Route.Splash,
     onSplashReady: (() -> Unit)? = null
 ) {
+    val reviewCoordinator: StoreReviewCoordinator = koinInject()
+    LifecycleResumeEffect(reviewCoordinator) {
+        reviewCoordinator.onForeground()
+        onPauseOrDispose { reviewCoordinator.onBackground() }
+    }
     var isDarkMode by remember { mutableStateOf(loadDarkModePreference()) }
     Good4Theme(darkTheme = isDarkMode) {
         CompositionLocalProvider(

@@ -35,10 +35,6 @@ commonMain/dev/
 **/google-services*.json
 **/GoogleService-Info.plist
 **/firebase-debug.json
-**/firebase.json
-firestore.rules
-!firebase/v2/firebase.json
-!firebase/v2/firestore.rules
 keystore.properties
 
 # Gradle local and signing
@@ -68,6 +64,9 @@ iosApp/iosApp.xcworkspace/
 **/.firebase/
 /tmp/
 /output/
+
+# AI review status
+.ai_approved
 
 # Finder duplicate copies ("file 2.ext")
 * 2

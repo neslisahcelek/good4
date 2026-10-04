@@ -552,6 +552,7 @@ private fun HomeAdvertisementBanner(
     val feedbackState by feedbackViewModel.state.collectAsStateWithLifecycle()
     var showAdInfo by remember { mutableStateOf(false) }
     var showAdReport by remember { mutableStateOf(false) }
+    com.good4.review.ReviewModalBlocker(showAdInfo || showAdReport)
     var reportReason by remember { mutableStateOf("") }
     Box(
         modifier = modifier

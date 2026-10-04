@@ -7,9 +7,9 @@ here="$root/tools/schedule-audit"
 out="${1:-${TMPDIR:-/tmp}/good4-schedule-audit}"
 mkdir -p "$out"
 cd "$root"
-./gradlew -q :composeApp:compileV2DebugKotlinAndroid
+./gradlew -q :composeApp:compileProdDebugKotlinAndroid
 stdlib="$(find ~/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib -name 'kotlin-stdlib-2*.jar' ! -name '*sources*' | sort | tail -1)"
-cp="$root/composeApp/build/tmp/kotlin-classes/v2Debug:$stdlib"
+cp="$root/composeApp/build/tmp/kotlin-classes/prodDebug:$stdlib"
 javac -d "$out" "$here/Dump.java" "$here/Combos.java"
 python3 "$here/combos.py" composeApp/src/commonMain/kotlin/com/good4/user/presentation/accountsettings/AccountSettingsScreen.kt > "$out/combos.tsv"
 java -cp "$out:$cp" Dump "$out/all.tsv" "$out/combos.tsv"

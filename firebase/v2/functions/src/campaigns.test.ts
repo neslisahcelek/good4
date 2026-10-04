@@ -16,6 +16,7 @@ const topLevelCollections = [
   "campaignClaims",
   "redemptions",
   "auditLogs",
+  "rateLimits",
 ];
 
 beforeEach(async () => {
@@ -130,6 +131,55 @@ test("staff outside the target business receives wrong_business", async () => {
     code: issued.code,
   });
   assert.equal(result.outcome, "wrong_business");
+});
+
+test("failed redemption cooldown persists and expires after five minutes", async () => {
+  await seedBase();
+  const now = Date.now();
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    assert.deepEqual(await redeemCampaignCodeService(db, "business-1", {
+      code: "MISSING1",
+    }, now + attempt * 1000), { outcome: "not_found" });
+  }
+  const isBlocked = (error: unknown) => (
+    error instanceof Error && error.message === "TOO_MANY_FAILED_ATTEMPTS"
+  );
+  await assert.rejects(() => redeemCampaignCodeService(db, "business-1", {
+    code: "MISSING1",
+  }, now + 4000), isBlocked);
+
+  const issued = await issueCampaignCodeService(db, "student-1", { campaignId: "campaign-1" });
+  await assert.rejects(() => redeemCampaignCodeService(db, "business-1", {
+    code: issued.code,
+  }, now + 5000), isBlocked);
+  const result = await redeemCampaignCodeService(db, "business-1", {
+    code: issued.code,
+  }, now + 305_000);
+  assert.equal(result.outcome, "redeemed");
+});
+
+test("code issuance is limited across campaigns and retries keep the existing claim", async () => {
+  await seedBase();
+  const now = Date.now();
+  const campaign = (await db.doc("campaigns/campaign-1").get()).data()!;
+  for (let index = 2; index <= 6; index += 1) {
+    await db.doc(`campaigns/campaign-${index}`).set(campaign);
+  }
+  for (let index = 1; index <= 5; index += 1) {
+    const input = { campaignId: `campaign-${index}` };
+    const issued = await issueCampaignCodeService(db, "student-1", input, now);
+    assert.equal(issued.outcome, "issued");
+    const retry = await issueCampaignCodeService(db, "student-1", input, now);
+    assert.equal(retry.outcome, "already_issued");
+    assert.equal(retry.code, issued.code);
+  }
+  await assert.rejects(() => issueCampaignCodeService(db, "student-1", {
+    campaignId: "campaign-6",
+  }, now + 1000), (error: unknown) => error instanceof Error && error.message === "RATE_LIMIT_EXCEEDED");
+  assert.equal((await db.collection("campaignCodes").get()).size, 5);
+  assert.equal((await issueCampaignCodeService(db, "student-1", {
+    campaignId: "campaign-6",
+  }, now + 61_000)).outcome, "issued");
 });
 
 test("expired codes cannot be redeemed", async () => {

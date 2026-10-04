@@ -25,6 +25,8 @@ Tasarım önceki mağaza setiyle aynı yeşil arka plan ve Türkçe metinleri ku
 
 **Yayın ayarı notu:** Projenin mevcut hedef cihaz ailesi yalnızca iPhone'dur (`TARGETED_DEVICE_FAMILY=1`). Bu çekimde uygulamayı yerel iPad arayüzünde çalıştırmak için derleme komutunda `TARGETED_DEVICE_FAMILY=1,2` geçici olarak verilmiştir. Kaynak proje ayarları değiştirilmemiştir. Bu dosyalar iPad önizleme derlemesinin gerçek ekranlarıdır; iPad desteğinin mağaza sürümünde açıldığı anlamına gelmez. iPad yayını yapılacaksa hedef cihaz ailesi ve iPad uyumluluğu ayrıca tamamlanmalıdır.
 
+Bu çekim eski `iosApp V2` şeması kaldırılmadan önce yapılmıştır. Aşağıdaki komut tarihsel çekim kaydıdır; mevcut derlemeler için `iosApp Prod` veya `iosApp Test` kullanılır. Güncel ortam eşleşmeleri: [mobil kurulum rehberi](../../../../firebase/v2/mobile/README.md).
+
 Derleme Desktop dışında DerivedData kullanılarak başarıyla tamamlandı:
 
 ```sh

@@ -80,6 +80,16 @@ fun CommunitiesScreen(
     var pendingFeaturedEvent by remember { mutableStateOf<CommunityFeaturedEvent?>(null) }
     var reportTarget by remember { mutableStateOf<CommunityEntry?>(null) }
     var pendingBlock by remember { mutableStateOf<Community?>(null) }
+    val reviewListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    com.good4.review.ReviewFeaturePrompt(
+        feature = com.good4.review.ReviewFeature.COMMUNITIES,
+        contentReady = !state.loading && state.error == null && (state.communities.isNotEmpty() || state.selected != null),
+        isScrolling = reviewListState.isScrollInProgress,
+        canPrompt = query.isBlank() && !state.saving && !state.codeGenerating && !state.admissionBusy &&
+            !state.reportSending && state.registrationLoadingIds.isEmpty() && state.ticket == null &&
+            editor == null && !profileEditor && detail == null && pendingRemoval == null &&
+            admissionEntry == null && pendingFeaturedEvent == null && reportTarget == null && pendingBlock == null
+    )
     val community = state.selected
     val managerView = state.canManage && !previewAsStudent
     val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
@@ -146,6 +156,7 @@ fun CommunitiesScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = reviewListState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),

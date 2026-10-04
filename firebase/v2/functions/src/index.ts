@@ -86,6 +86,7 @@ const callableOptions = {
   memory: "256MiB" as const,
   timeoutSeconds: 30,
   maxInstances: 20,
+  enforceAppCheck: process.env.ENFORCE_APP_CHECK === "true",
 };
 
 export const registerPushDevice = onCall(callableOptions, async (request) =>

@@ -210,6 +210,9 @@ export async function eraseAccountData(
     await userRef.update({ status: "deleting", updatedAt: FieldValue.serverTimestamp() });
   }
   await erasePushDevices(database, uid);
+  // Applicants may not have a users document yet. Remove the application early
+  // so a pending request cannot provision a manager after account deletion.
+  await database.doc(`communityApplications/${uid}`).delete();
 
   const registrations = database.collectionGroup("registrations").where("userId", "==", uid);
   while (true) {

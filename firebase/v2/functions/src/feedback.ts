@@ -1,6 +1,7 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
+import { assertRateLimits } from "./rateLimit.js";
 
 export async function submitFeedbackService(
   database: Firestore,
@@ -12,6 +13,7 @@ export async function submitFeedbackService(
     reportEntryId?: unknown;
     reportEntryKind?: unknown;
   },
+  nowMillis = Date.now(),
 ): Promise<{ feedbackId: string }> {
   const subject = requireNonEmptyString(input.subject, "subject", 120);
   const message = requireNonEmptyString(input.message, "message", 2000);
@@ -34,7 +36,21 @@ export async function submitFeedbackService(
     throw new HttpsError("invalid-argument", "REPORT_ENTRY_KIND_INVALID");
   }
 
-  await database.runTransaction((transaction) => requireActiveActor(database, transaction, actorUid));
+  await database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, actorUid);
+    // Rate limit: max 2 submissions per minute, max 5 per hour
+    await assertRateLimits(database, transaction, [{
+      key: `feedback_min:${actorUid}`,
+      limit: 2,
+      windowSeconds: 60,
+      errorMessage: "FEEDBACK_RATE_LIMIT_EXCEEDED",
+    }, {
+      key: `feedback_hr:${actorUid}`,
+      limit: 5,
+      windowSeconds: 3600,
+      errorMessage: "FEEDBACK_RATE_LIMIT_EXCEEDED",
+    }], nowMillis);
+  });
   const user = await database.doc(`users/${actorUid}`).get();
   const feedback = database.collection("feedbackSubmissions").doc();
   await feedback.set({

@@ -7,6 +7,12 @@ import {
 import { HttpsError } from "firebase-functions/v2/https";
 import { hasVerifiedEduEmail } from "./eduVerification.js";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
+import {
+  assertNotBlocked,
+  assertRateLimit,
+  clearFailedAttempts,
+  recordFailedAttempt,
+} from "./rateLimit.js";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 8;
@@ -52,6 +58,7 @@ export async function issueCampaignCodeService(
   database: Firestore,
   actorUid: string,
   input: IssueCampaignCodeInput,
+  nowMillis = Date.now(),
 ): Promise<IssueCampaignCodeResult> {
   const campaignId = requireNonEmptyString(input.campaignId, "campaignId", 128);
 
@@ -124,6 +131,12 @@ export async function issueCampaignCodeService(
         const expiresAt = shortExpiry.toMillis() < endsAt.toMillis() ? shortExpiry : endsAt;
         const auditRef = database.collection("auditLogs").doc();
 
+        await assertRateLimit(database, transaction, {
+          key: `issue_code:${actorUid}`,
+          limit: 5,
+          windowSeconds: 60,
+          errorMessage: "RATE_LIMIT_EXCEEDED",
+        }, nowMillis);
         transaction.create(codeRef, {
           code,
           campaignId,
@@ -186,19 +199,30 @@ export async function redeemCampaignCodeService(
   database: Firestore,
   actorUid: string,
   input: RedeemCampaignCodeInput,
+  nowMillis = Date.now(),
 ): Promise<RedeemCampaignCodeResult> {
   const code = normalizeCampaignCode(input.code);
 
-  return database.runTransaction(async (transaction) => {
+  const result = await database.runTransaction<RedeemCampaignCodeResult | { rateLimitError: HttpsError }>(async (transaction) => {
     await requireActiveActor(
       database,
       transaction,
       actorUid,
       ["businessOwner", "businessStaff"],
     );
+    await assertNotBlocked(database, transaction, `redeem_fail:${actorUid}`, nowMillis);
+
     const codeRef = database.doc(`campaignCodes/${code}`);
     const codeSnapshot = await transaction.get(codeRef);
     if (!codeSnapshot.exists) {
+      const failure = await recordFailedAttempt(database, transaction, {
+        key: `redeem_fail:${actorUid}`,
+        maxAttempts: 5,
+        windowSeconds: 60,
+        blockDurationSeconds: 300,
+        errorMessage: "TOO_MANY_FAILED_ATTEMPTS",
+      }, nowMillis);
+      if (failure.error) return { rateLimitError: failure.error };
       return { outcome: "not_found" };
     }
 
@@ -229,6 +253,14 @@ export async function redeemCampaignCodeService(
       || !memberSnapshot.exists
       || memberSnapshot.get("status") !== "active"
       || !["owner", "staff"].includes(memberSnapshot.get("role"))) {
+      const failure = await recordFailedAttempt(database, transaction, {
+        key: `redeem_fail:${actorUid}`,
+        maxAttempts: 5,
+        windowSeconds: 60,
+        blockDurationSeconds: 300,
+        errorMessage: "TOO_MANY_FAILED_ATTEMPTS",
+      }, nowMillis);
+      if (failure.error) return { rateLimitError: failure.error };
       return { outcome: "wrong_business" };
     }
     if (codeSnapshot.get("status") === "redeemed") {
@@ -309,6 +341,7 @@ export async function redeemCampaignCodeService(
       metadata: { campaignId, organizationId },
       createdAt: FieldValue.serverTimestamp(),
     });
+    await clearFailedAttempts(database, transaction, `redeem_fail:${actorUid}`);
 
     return {
       outcome: "redeemed",
@@ -316,4 +349,6 @@ export async function redeemCampaignCodeService(
       campaignTitle: String(campaignSnapshot.get("title") ?? ""),
     };
   });
+  if ("rateLimitError" in result) throw result.rateLimitError;
+  return result;
 }
