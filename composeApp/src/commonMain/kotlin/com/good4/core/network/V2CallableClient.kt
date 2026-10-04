@@ -32,14 +32,9 @@ private val callableClient = HttpClient {
 expect suspend fun currentFirebaseIdToken(): String
 expect suspend fun currentAppCheckToken(): String?
 
-object V2Functions {
-    /** Debug builds point this at the local Functions emulator (see tools/landing-demo/README.md). */
-    var baseUrl: String = "https://europe-west1-good4tr-v2.cloudfunctions.net"
-}
-
 suspend fun callV2Function(name: String, data: JsonObject): JsonObject {
     val appCheckToken = runCatching { currentAppCheckToken() }.getOrNull()
-    val response = callableClient.post("${V2Functions.baseUrl}/$name") {
+    val response = callableClient.post("https://europe-west1-good4tr-v2.cloudfunctions.net/$name") {
         contentType(ContentType.Application.Json)
         bearerAuth(currentFirebaseIdToken())
         if (!appCheckToken.isNullOrBlank()) {

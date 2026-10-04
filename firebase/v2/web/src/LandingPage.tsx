@@ -100,7 +100,7 @@ function StoreButtons({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Screens are exported at their exact display size (tools/landing-demo/export-screens.py). */
+/** Screens are exported at their exact display size (tools/export-landing-screens.py). */
 function screenSources(name: string) {
   return {
     src: `/landing/${name}@2x.webp`,

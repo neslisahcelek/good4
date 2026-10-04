@@ -3,7 +3,6 @@ import StoreKit
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
-import FirebaseStorage
 import GoogleSignIn
 import ComposeApp
 import VisionKit
@@ -22,7 +21,7 @@ struct IOSApp: App {
         #if DEBUG
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
-        configureFirebase()
+        FirebaseApp.configure()
         NativePushBridge.shared.launcher = NativeCampusPush.shared
         CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
         StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
@@ -65,37 +64,6 @@ struct IOSApp: App {
             }
         }
     }
-}
-
-/// Debug builds started with GOOD4_EMULATOR_HOST use the local Firebase emulators under the
-/// demo project, so demo data never touches good4tr-v2 (tools/landing-demo/README.md).
-private func configureFirebase() {
-    #if DEBUG
-    if let host = ProcessInfo.processInfo.environment["GOOD4_EMULATOR_HOST"], !host.isEmpty,
-       let options = FirebaseOptions.defaultOptions() {
-        let projectId = "demo-good4-v2"
-        options.projectID = projectId
-        options.storageBucket = "\(projectId).appspot.com"
-        FirebaseApp.configure(options: options)
-        Auth.auth().useEmulator(withHost: host, port: 9399)
-        let settings = Firestore.firestore().settings
-        settings.host = "\(host):8385"
-        settings.isSSLEnabled = false
-        settings.cacheSettings = MemoryCacheSettings()
-        Firestore.firestore().settings = settings
-        Storage.storage().useEmulator(withHost: host, port: 9495)
-        V2Functions.shared.baseUrl = "http://\(host):5305/\(projectId)/europe-west1"
-        // The release login has no e-mail form; the demo account signs in once and stays signed in.
-        let env = ProcessInfo.processInfo.environment
-        if let email = env["GOOD4_DEMO_EMAIL"], let password = env["GOOD4_DEMO_PASSWORD"] {
-            Auth.auth().signIn(withEmail: email, password: password) { _, error in
-                if let error { print("Demo sign-in failed: \(error)") }
-            }
-        }
-        return
-    }
-    #endif
-    FirebaseApp.configure()
 }
 
 private final class NativeCampusEmailAuthLauncher: NSObject, CampusEmailAuthLauncher {

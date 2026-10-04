@@ -1,7 +1,7 @@
 """Exports landing-page images at the exact pixel sizes they are shown, so the browser only
 rotates them and never downscales (downscaling + rotation makes text wobbly).
 
-  python3 tools/landing-demo/export-screens.py
+  python3 tools/export-landing-screens.py
 
 Screens: design/landing-screens/*.png (full-resolution simulator screenshots).
 Writes:  firebase/v2/web/public/landing/<name>@{1,2,3}x.webp
@@ -10,7 +10,7 @@ from pathlib import Path
 
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 SCREENS = ROOT / "design/landing-screens"
 OUT = ROOT / "firebase/v2/web/public/landing"
 
