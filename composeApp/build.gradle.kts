@@ -42,6 +42,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation("com.google.android.play:review:2.0.2")
+            implementation("com.google.android.play:app-update:2.1.0")
             implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
@@ -163,7 +164,12 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            buildConfigField("boolean", "SIMULATE_APP_UPDATE",
+                providers.gradleProperty("good4.simulateAppUpdate").orElse("true").get())
+        }
         getByName("release") {
+            buildConfigField("boolean", "SIMULATE_APP_UPDATE", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

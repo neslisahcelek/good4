@@ -67,6 +67,10 @@ Before enabling uploads, a trusted service must create immutable metadata contai
 
 ## Backward compatibility
 
+### Update notice copy
+
+`app_config/update_notice` contains optional string fields `title` and `message` for the mobile update card. Authenticated clients may get this document; client listing and all writes remain denied. Operators edit it through Firebase Console or a trusted Admin SDK. Presentation accepts a nonblank title up to 120 characters and message up to 400 characters, otherwise uses localized resource defaults. Download/install copy and update eligibility stay in the app. See [setup instructions](../../docs/app-update-notice.md).
+
 - The supported staging and production flavors both read canonical organizations/events and use V2 callable transactions for registration/check-in.
 - `scripts/align-test-schema.mjs` previews the test-only transition by default. Applying it requires active test callables, backs up existing test records, normalizes user roles/dates, and adds canonical organizations/events. Legacy event, coupon and attendance history remains in place; incompatible image-only campaign documents are archived to `legacyCampaigns`.
 - The legacy production project `good4tr` is outside this transition. No private production data or Auth accounts are copied into test.

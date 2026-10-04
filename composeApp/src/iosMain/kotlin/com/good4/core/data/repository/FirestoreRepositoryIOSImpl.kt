@@ -6,6 +6,7 @@ import com.good4.campaign.data.dto.CampaignDto
 import com.good4.code.data.dto.CodeDto
 import com.good4.config.data.dto.AppConfigDto
 import com.good4.config.data.dto.HomeBannerDto
+import com.good4.config.data.dto.UpdateNoticeDto
 import com.good4.config.data.dto.UniversitiesConfigDto
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
@@ -560,6 +561,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "UserDto" to UserDto.serializer(),
         "AppConfigDto" to AppConfigDto.serializer(),
         "HomeBannerDto" to HomeBannerDto.serializer(),
+        "UpdateNoticeDto" to UpdateNoticeDto.serializer(),
         "AcademicCalendarEventDto" to AcademicCalendarEventDto.serializer(),
         "UniversitiesConfigDto" to UniversitiesConfigDto.serializer(),
         "AkdenizDiningMenuDto" to AkdenizDiningMenuDto.serializer(),

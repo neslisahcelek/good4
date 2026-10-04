@@ -232,6 +232,7 @@ fun ProductListScreen(
     onEditHomeClick: () -> Unit = {},
     onAction: (ProductListAction) -> Unit
 ) {
+    val updateBanner = com.good4.update.LocalAppUpdateBanner.current
     val listState = rememberLazyListState()
     LaunchedEffect(state.activeReservation) {
         if (state.activeReservation != null) {
@@ -275,6 +276,14 @@ fun ProductListScreen(
                             bottom = 16.dp
                         )
                     ) {
+                        if (updateBanner != null) {
+                            item(key = "app_update") {
+                                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                    updateBanner()
+                                }
+                            }
+                        }
+
                         item {
                             CampusSummaryCards(
                                 diningMenuState = diningMenuState,

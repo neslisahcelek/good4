@@ -751,4 +751,13 @@
     <string name="campus_closet_bildirimleri_ac" formatted="false">Bildirimleri aç</string>
     <string name="campus_closet_offer_discount_detail"> · %%1$s indirim</string>
     <string name="account_delete_photo_cleanup_pending">Fotoğrafların silinmesi tamamlanamadı. Hesabın yeni işlemlere kapatıldı. Hesap silmeyi tekrar deneyerek tamamlayabilirsin.</string>
+    <string name="app_update_title">Good4’a yenilikler geldi</string>
+    <string name="app_update_body">Yeni özellikleri ve iyileştirmeleri kullanmak için uygulamanı güncelle.</string>
+    <string name="app_update_action">Güncelle</string>
+    <string name="app_update_later">Daha sonra</string>
+    <string name="app_update_downloading">Güncelleme arka planda indiriliyor. Good4’u kullanmaya devam edebilirsin.</string>
+    <string name="app_update_ready_title">Güncellemen hazır</string>
+    <string name="app_update_ready_body">Uygun olduğunda yeniden başlatarak yeni sürüme geçebilirsin.</string>
+    <string name="app_update_restart">Yeniden başlat</string>
+    <string name="app_update_error">Güncelleme tamamlanamadı. Tekrar deneyebilir veya daha sonra devam edebilirsin.</string>
 </resources>

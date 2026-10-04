@@ -206,7 +206,8 @@ fun StudentHomeScreenRoot(
             }
         }
     ) { paddingValues ->
-        Box(
+        com.good4.update.UpdateHomeContent(
+            enabled = selectedItemIndex == 0 && !menuOpen,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

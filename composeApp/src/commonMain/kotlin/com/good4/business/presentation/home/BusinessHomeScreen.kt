@@ -120,7 +120,8 @@ fun BusinessHomeScreenRoot(
             }
         }
     ) { paddingValues ->
-        Box(
+        com.good4.update.UpdateHomeContent(
+            enabled = selectedItemIndex == 0,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

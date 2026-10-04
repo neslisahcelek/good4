@@ -144,7 +144,8 @@ fun AdminHomeScreenRoot(
                 }
             }
         ) { paddingValues ->
-            Box(
+            com.good4.update.UpdateHomeContent(
+                enabled = selectedItemIndex == 0 && selectedDrawerItem == -1 && drawerState.isClosed,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)

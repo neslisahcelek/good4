@@ -74,6 +74,7 @@ fun BusinessDashboardScreen(
     onProfileClick: (() -> Unit)? = null,
     onOpenProductsTab: () -> Unit = {}
 ) {
+    val updateBanner = com.good4.update.LocalAppUpdateBanner.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -122,6 +123,10 @@ fun BusinessDashboardScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if (updateBanner != null) {
+                    item(key = "app_update") { updateBanner() }
+                }
+
                 item {
                     DashboardSectionTitle(
                         text = stringResource(Res.string.dashboard_section_products)

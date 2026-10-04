@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import PhotosUI
 import StoreKit
 import FirebaseCore
@@ -26,6 +27,7 @@ struct IOSApp: App {
         CampusNativePushBridge.shared.launcher = NativeCampusPush.shared
         CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
         StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
+        AppUpdateStorefrontBridge.shared.provider = NativeAppUpdateStorefrontProvider()
         GoogleSignInBridge.shared.launcher = NativeGoogleSignInLauncher()
         let appleLauncher = NativeAppleSignInLauncher()
         AppleSignInBridge.shared.launcher = appleLauncher
@@ -384,6 +386,21 @@ private struct NativeLaunchPlaceholderView: View {
                     .progressViewStyle(.circular)
                     .tint(Color.black)
             }
+        }
+    }
+}
+
+private final class NativeAppUpdateStorefrontProvider: NSObject, NativeUpdateStorefrontProvider {
+    func requestCountry(callback: NativeUpdateStorefrontCallback) {
+        Task { @MainActor in
+            guard let storefront = await Storefront.current else {
+                callback.onCountry(countryCode: nil)
+                return
+            }
+            // StoreKit uses alpha-3; the lookup API requires alpha-2. Foundation canonicalizes ISO aliases.
+            let code = storefront.countryCode.uppercased()
+            let country = code == "XKX" ? "XK" : Locale(identifier: "und_\(code)").region?.identifier
+            callback.onCountry(countryCode: country?.count == 2 ? country : nil)
         }
     }
 }
