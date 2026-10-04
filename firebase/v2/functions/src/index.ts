@@ -33,6 +33,7 @@ import {
   saveCommunityPortalEntryService,
 } from "./communityPortal.js";
 import { recordEventAttendanceService, setEventRegistrationService } from "./events.js";
+import { uploadCommunityEventImageService } from "./communityImages.js";
 import { getFollowingCommunityIdsService, setCommunityFollowingService } from "./communityFollowing.js";
 import {
   getMyCommunityApplicationService,
@@ -317,6 +318,15 @@ export const uploadHomeBannerImage = onCall({
   return {
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/${storageBucket.name}/o/${encodeURIComponent(objectName)}?alt=media&token=${downloadToken}`,
   };
+});
+
+export const uploadCommunityEventImage = onCall({
+  ...callableOptions,
+  memory: "512MiB",
+  timeoutSeconds: 60,
+}, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return uploadCommunityEventImageService(db, uid, request.data ?? {});
 });
 
 export const getCommunityPortalDashboard = onCall(callableOptions, async (request) => {

@@ -18,6 +18,8 @@ export interface CommunityPortalEntry {
   description: string;
   date: string;
   time: string;
+  endDate: string;
+  endTime: string;
   location: string;
   categoryId: string;
   businessId: string;
@@ -26,7 +28,7 @@ export interface CommunityPortalEntry {
   discountValue: number;
   capacity: number;
   totalLimit: number;
-  status: "published" | "pending" | "cancelled";
+  status: "published" | "draft" | "pending" | "cancelled";
   registrationCount: number;
   attendanceCount: number;
   participants: Array<{ userId: string; displayName: string; registeredAt: string | null; checkedIn: boolean }>;
@@ -123,13 +125,15 @@ export async function getCommunityPortalDashboardService(
       registeredAt: instant(item.get("registeredAt")), checkedIn: arrived.has(item.id),
     })).sort((a, b) => (b.registeredAt ?? "").localeCompare(a.registeredAt ?? ""));
     const dateTime = eventDateTime(entry.get("startsAt"));
+    const end = eventDateTime(entry.get("endsAt"));
     return {
       id: entry.id, kind: "event", title: String(entry.get("title") ?? ""),
       description: String(entry.get("description") ?? ""), date: dateTime.date, time: dateTime.time,
+      endDate: end.date, endTime: end.time,
       location: String(entry.get("location") ?? ""), businessId: "", businessName: "",
       categoryId: String(entry.get("categoryId") ?? ""),
       discountType: "percentage", discountValue: 0, capacity: integer(entry.get("capacity")), totalLimit: 0,
-      status: entry.get("status") === "cancelled" ? "cancelled" : "published",
+      status: entry.get("status") === "cancelled" ? "cancelled" : entry.get("status") === "draft" ? "draft" : "published",
       registrationCount: integer(entry.get("registrationCount"), participants.length),
       attendanceCount: integer(entry.get("attendanceCount"), arrived.size), participants,
     };
@@ -143,6 +147,7 @@ export async function getCommunityPortalDashboardService(
     return {
       id: entry.id, kind: "coupon", title: String(entry.get("title") ?? ""),
       description: String(entry.get("description") ?? ""), date: String(entry.get("date") ?? ""), time: "",
+      endDate: "", endTime: "",
       location: String(entry.get("location") ?? ""), businessId, businessName: businessNames.get(businessId) ?? "",
       categoryId: "",
       discountType, discountValue: integer(entry.get("discountValue")), capacity: 0,
@@ -167,7 +172,7 @@ export async function getCommunityPortalDashboardService(
 
 export async function saveCommunityPortalEntryService(
   database: Firestore, legacyDatabase: Firestore, actorUid: string, input: Record<string, unknown>,
-): Promise<{ entryId: string; status: "published" | "pending" }> {
+): Promise<{ entryId: string; status: "published" | "draft" | "pending" }> {
   const context = await getCommunityContextService(database, actorUid);
   if (context.membershipRole !== "manager") throw new HttpsError("permission-denied", "COMMUNITY_MANAGER_REQUIRED");
   const kind = input.kind === "coupon" ? "coupon" : input.kind === "event" ? "event" : null;
@@ -175,11 +180,12 @@ export async function saveCommunityPortalEntryService(
   if (kind === "event") {
     const result = await saveEventService(database, actorUid, context.organizationId, {
       eventId: input.entryId, title: input.title, description: input.description,
-      date: input.date, time: input.time, location: input.location, capacity: input.capacity,
-      status: "published", imageUrl: input.imageUrl,
+      date: input.date, time: input.time, endDate: input.endDate, endTime: input.endTime,
+      location: input.location, capacity: input.capacity,
+      status: input.status === "draft" ? "draft" : "published", imageUrl: input.imageUrl,
       categoryId: input.categoryId,
     });
-    return { entryId: result.eventId, status: "published" };
+    return { entryId: result.eventId, status: result.status === "draft" ? "draft" : "published" };
   }
   if (!context.legacyTestCommunityId) throw new HttpsError("failed-precondition", "LEGACY_COUPON_NOT_LINKED");
   const entryId = typeof input.entryId === "string" && input.entryId.trim() ? safeId(input.entryId, "entryId") : "";

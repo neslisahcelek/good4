@@ -1,5 +1,6 @@
 package com.good4.community
 
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -84,9 +85,9 @@ actual suspend fun recordEventAdmission(communityId: String, eventId: String, us
 }
 
 @Composable
-actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit) {
+actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit, modifier: Modifier) {
     var scanning by remember { mutableStateOf(false) }
-    Button(enabled = enabled && !scanning, onClick = {
+    Button(modifier = modifier, enabled = enabled && !scanning, onClick = {
         val launcher = EventScannerBridge.launcher
         if (launcher == null) onError("Kamera kullanılamıyor. Manuel giriş kullanabilirsiniz.") else {
             scanning = true
@@ -97,5 +98,5 @@ actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onE
                 }
             })
         }
-    }) { Text(if (scanning) "Kamera açılıyor…" else "QR okut") }
+    }) { Text(if (scanning) "Kamera açılıyor…" else "QR ile giriş al") }
 }

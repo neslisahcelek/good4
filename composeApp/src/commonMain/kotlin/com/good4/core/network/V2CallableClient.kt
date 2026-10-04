@@ -29,12 +29,19 @@ private val callableClient = HttpClient {
     }
 }
 
+/** Set by the debug iOS host when it points Firebase at the local emulators. */
+object FirebaseEmulator {
+    var host: String? = null
+}
+
 expect suspend fun currentFirebaseIdToken(): String
 expect suspend fun currentAppCheckToken(): String?
 
 suspend fun callV2Function(name: String, data: JsonObject): JsonObject {
     val appCheckToken = runCatching { currentAppCheckToken() }.getOrNull()
-    val response = callableClient.post("https://europe-west1-good4tr-v2.cloudfunctions.net/$name") {
+    val url = FirebaseEmulator.host?.let { "http://$it:5105/good4tr-v2/europe-west1/$name" }
+        ?: "https://europe-west1-good4tr-v2.cloudfunctions.net/$name"
+    val response = callableClient.post(url) {
         contentType(ContentType.Application.Json)
         bearerAuth(currentFirebaseIdToken())
         if (!appCheckToken.isNullOrBlank()) {

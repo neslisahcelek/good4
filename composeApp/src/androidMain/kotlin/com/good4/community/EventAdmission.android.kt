@@ -1,5 +1,6 @@
 package com.good4.community
 
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -96,10 +97,10 @@ actual suspend fun recordEventAdmission(communityId: String, eventId: String, us
 }
 
 @Composable
-actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit) {
+actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit, modifier: Modifier) {
     val context = LocalContext.current
     var scanning by remember { mutableStateOf(false) }
-    Button(enabled = enabled && !scanning, onClick = {
+    Button(modifier = modifier, enabled = enabled && !scanning, onClick = {
         scanning = true
         val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
         GmsBarcodeScanning.getClient(context, options).startScan()
@@ -108,5 +109,5 @@ actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onE
                 barcode.rawValue?.let(onScanned) ?: onError("QR kod okunamadı.")
             }.addOnCanceledListener { scanning = false }
             .addOnFailureListener { scanning = false; onError("Kamera açılamadı. Google Play hizmetlerini ve bağlantınızı kontrol edin; manuel giriş kullanabilirsiniz.") }
-    }) { Text(if (scanning) "Kamera açılıyor…" else "QR okut") }
+    }) { Text(if (scanning) "Kamera açılıyor…" else "QR ile giriş al") }
 }

@@ -1,5 +1,8 @@
 package com.good4.community
 
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -19,12 +22,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.ManageAccounts
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
@@ -44,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import coil3.compose.AsyncImage
+import com.good4.campuscloset.TiltedIcon
 import com.good4.core.presentation.*
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
@@ -54,6 +60,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Instant
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
@@ -93,12 +100,18 @@ fun CommunitiesScreen(
     val community = state.selected
     val managerView = state.canManage && !previewAsStudent
     val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
-    val featuredEvents = state.filteredFeaturedEvents
+    val studentView = isV2 && !state.canManage && !previewAsStudent
+    var studentFilter by rememberSaveable(community?.id) { mutableStateOf(StudentEventFilter.UPCOMING) }
+    var now by remember { mutableStateOf(eventNow()) }
+    val featuredEvents = if (studentView) {
+        filterFeaturedCommunityEvents(state.featuredEvents, "", state.followedOnly, state.followedCommunityIds)
+    } else state.filteredFeaturedEvents
     var today by remember { mutableStateOf(currentCampusDate()) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(60_000)
             today = currentCampusDate()
+            now = eventNow()
         }
     }
     LaunchedEffect(state.loading, state.communities, state.selected, today) {
@@ -127,318 +140,479 @@ fun CommunitiesScreen(
         }
         onPauseOrDispose { viewModel.pauseUpdates() }
     }
-    Good4NestedScaffold(
-        topBar = {
-            Good4TopBar(
-                title = when {
-                    community == null -> "Topluluklar"
-                    managerView -> "Topluluğumu Yönet"
-                    else -> community.data.name
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (previewAsStudent) {
-                                previewAsStudent = false
-                            } else if (community == null) {
-                                onBack()
-                            } else if (managerEntryMode) {
-                                onBack()
-                            } else {
-                                viewModel.back()
+    if (isV2 && managerView && community != null) {
+        CommunityManagerFlow(
+            state = state,
+            community = community,
+            viewModel = viewModel,
+            onExit = { if (managerEntryMode) onBack() else viewModel.back() },
+            onPreviewStudent = { previewAsStudent = true }
+        )
+        return
+    }
+    val studentDetail = detail?.takeIf { studentView && it.data.kind == "event" }
+        ?.let { selectedEntry -> state.entries.firstOrNull { it.id == selectedEntry.id } ?: selectedEntry }
+    if (studentView) DisposableEffect(studentDetail?.id) {
+        viewModel.setStudentEventVisible(studentDetail?.id)
+        onDispose { viewModel.setStudentEventVisible(null) }
+    }
+    if (studentDetail != null && community != null) {
+        CommunityBackHandler { detail = null }
+        CommunityStudentEventPage(
+            community = community, entry = studentDetail, state = state, now = now,
+            onBack = { detail = null },
+            onToggleRegistration = { viewModel.toggleRegistration(studentDetail) },
+            onShowTicket = { viewModel.showTicket(studentDetail) },
+            onReport = { viewModel.clearReportStatus(); reportTarget = studentDetail },
+            onDismissError = viewModel::clearError,
+            onDismissRegistrationFeedback = viewModel::clearRegistrationFeedback
+        )
+    } else {
+        Good4NestedScaffold(
+            topBar = {
+                Good4TopBar(
+                    title = when {
+                        community == null -> "Topluluklar"
+                        managerView -> "Topluluğumu Yönet"
+                        studentView -> "Topluluk"
+                        else -> community.data.name
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                if (previewAsStudent) {
+                                    previewAsStudent = false
+                                } else if (community == null) {
+                                    onBack()
+                                } else if (managerEntryMode) {
+                                    onBack()
+                                } else {
+                                    viewModel.back()
+                                }
+                            }
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri")
+                        }
+                    },
+                    actions = {
+                        if (community != null && !state.canManage && !previewAsStudent) {
+                            var menuOpen by remember(community.id) { mutableStateOf(false) }
+                            Box {
+                                RoundIconAction(Icons.Outlined.MoreVert, "Diğer işlemler") { menuOpen = true }
+                                DropdownMenu(
+                                    expanded = menuOpen,
+                                    onDismissRequest = { menuOpen = false },
+                                    containerColor = SurfaceDefault
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Topluluğu engelle", color = ErrorRed) },
+                                        leadingIcon = { Icon(Icons.Outlined.Block, contentDescription = null, tint = ErrorRed) },
+                                        onClick = {
+                                            menuOpen = false
+                                            pendingBlock = community
+                                        }
+                                    )
+                                }
                             }
                         }
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri")
                     }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            state = reviewListState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (community == null) {
-                if (isV2) item(key = "community-event-filters") {
-                    CommunityEventFilterRow(
-                        selectedId = state.selectedCategoryId,
-                        enabled = !state.loading,
-                        onSelect = viewModel::selectCategory,
-                        followedOnly = state.followedOnly,
-                        onFollowedOnlyChange = viewModel::setFollowedOnly,
-                    )
-                }
-                item(key = "featured-community-events") {
-                    if (state.followedOnly && (state.followingLoading || state.followingError != null || !state.followingLoaded)) {
-                        CommunityEventsBannerPlaceholder(
-                            loading = state.followingLoading,
-                            hasError = state.followingError != null,
-                            message = state.followingError ?: "Takip ettiğiniz topluluklar yükleniyor.",
-                            onRetry = { viewModel.refreshFollowing(force = true) },
-                        )
-                    } else if (featuredEvents.isNotEmpty()) {
-                        FeaturedCommunityEventsCarousel(
-                            events = featuredEvents,
-                            onEventClick = { featured ->
-                                pendingFeaturedEvent = featured
-                                viewModel.select(featured.community)
+                )
+            }
+        ) { padding ->
+            LazyColumn(
+                state = reviewListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (community == null) {
+                    if (studentView) {
+                        item(key = "community-search") {
+                            CommunitySearchField(query = query, onQueryChange = { query = it })
+                        }
+                        item(key = "community-follow-tabs") {
+                            CommunityDiscoveryTabs(
+                                followedOnly = state.followedOnly,
+                                enabled = !state.loading,
+                                onSelect = viewModel::setFollowedOnly
+                            )
+                        }
+                        val followingPending = state.followedOnly &&
+                            (state.followingLoading || !state.followingLoaded || state.followingError != null)
+                        val filtered = state.communities.filter {
+                            (!state.followedOnly || it.id in state.followedCommunityIds) &&
+                                (it.data.name.contains(query, ignoreCase = true) ||
+                                    it.data.description.contains(query, ignoreCase = true))
+                        }
+                        if (query.isBlank() && !followingPending) {
+                            item(key = "student-featured-heading") {
+                                Text("Yaklaşan etkinlikler", fontSize = 19.sp, fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary, modifier = Modifier.padding(top = 4.dp))
                             }
-                        )
-                    } else if ((state.selectedCategoryId.isNotEmpty() || state.followedOnly)
-                        && !state.featuredEventsLoading && state.featuredEventsError == null && !state.loading) {
-                        EmptyCommunityContent(
-                            title = "Filtrelere uygun etkinlik bulunamadı",
-                            subtitle = if (state.followedOnly && state.followedCommunityIds.isEmpty())
-                                "Takip ettiğin bir topluluk yok. Toplulukları keşfedip takip edebilirsin."
-                            else "Farklı bir kategori seçebilir veya filtreleri kaldırabilirsin.",
-                        )
-                    } else if (AppEnvironment.isDebug && state.selectedCategoryId.isEmpty() && !state.followedOnly) {
-                        DemoCommunityEventsCarousel()
+                            item(key = "student-featured-events") {
+                                when {
+                                    featuredEvents.isNotEmpty() -> StudentPosterRow(featuredEvents.take(10)) { featured ->
+                                        pendingFeaturedEvent = featured
+                                        viewModel.select(featured.community)
+                                    }
+                                    state.featuredEventsError != null -> NoticeCard(
+                                        state.featuredEventsError.orEmpty(), ErrorRed, actionLabel = "Tekrar dene",
+                                        onAction = { viewModel.refreshFeaturedEvents(today, force = true) })
+                                    state.featuredEventsLoading || state.loading ->
+                                        Text("Etkinlikler yükleniyor…", fontSize = 13.sp, color = TextSecondary)
+                                    else -> Text("Yaklaşan etkinlik yok.", fontSize = 13.sp, color = TextSecondary)
+                                }
+                            }
+                        }
+                        item(key = "community-list-heading") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    if (state.followedOnly) "Takip ettiğin topluluklar" else "Toplulukları keşfet",
+                                    fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (!state.loading && !followingPending) {
+                                    Text("${filtered.size} topluluk", fontSize = 12.sp, color = TextSecondary)
+                                }
+                            }
+                        }
+                        if (followingPending) {
+                            item(key = "community-follow-status") {
+                                if (state.followingError != null) {
+                                    NoticeCard(state.followingError.orEmpty(), ErrorRed, actionLabel = "Tekrar dene",
+                                        onAction = { viewModel.refreshFollowing(force = true) })
+                                } else {
+                                    Text("Takip ettiğin topluluklar yükleniyor…", color = TextSecondary, fontSize = 13.sp)
+                                }
+                            }
+                        } else {
+                            items(filtered, key = { "community-${it.id}" }) { item ->
+                                CommunityListCard(community = item, studentStyle = true, onClick = {
+                                    tab = 0
+                                    viewModel.select(item)
+                                })
+                            }
+                            if (!state.loading && state.error == null && filtered.isEmpty()) {
+                                item(key = "community-list-empty") {
+                                    EmptyCommunityContent(
+                                        title = when {
+                                            query.isNotBlank() -> "Aramana uygun topluluk bulunamadı"
+                                            state.followedOnly -> "Henüz bir topluluğu takip etmiyorsun"
+                                            else -> "Topluluklar yakında burada"
+                                        },
+                                        subtitle = when {
+                                            query.isNotBlank() -> "Farklı bir kelimeyle tekrar deneyebilirsin."
+                                            state.followedOnly -> "Tümü sekmesinden toplulukları keşfedip takip edebilirsin."
+                                            else -> "Yeni topluluklar eklendikçe burada keşfedebilirsin."
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        if (state.blockedCommunityIds.isNotEmpty()) item(key = "community-unblock") {
+                            TextButton(onClick = viewModel::unblockAllCommunities, modifier = Modifier.fillMaxWidth()) {
+                                Text("Engellediğiniz ${state.blockedCommunityIds.size} topluluğu yeniden göster",
+                                    fontSize = 13.sp, color = TextSecondary)
+                            }
+                        }
                     } else {
-                        CommunityEventsBannerPlaceholder(
-                            loading = state.featuredEventsLoading,
-                            hasError = state.featuredEventsError != null,
-                            onRetry = { viewModel.refreshFeaturedEvents(today, force = true) }
-                        )
-                    }
-                }
-                item {
-                    CommunitySearchField(
-                        query = query,
-                        onQueryChange = { query = it }
-                    )
-                }
-                val filtered = state.communities.filter {
-                    it.data.name.contains(query, ignoreCase = true) ||
-                        it.data.description.contains(query, ignoreCase = true)
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Keşfet",
-                            fontSize = 19.sp,
-                            lineHeight = 24.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
-                        if (!state.loading) {
-                            Text(
-                                text = "${filtered.size} topluluk",
-                                fontSize = 12.sp,
-                                color = TextSecondary
+                        if (isV2) item(key = "community-event-filters") {
+                            CommunityEventFilterRow(
+                                selectedId = state.selectedCategoryId,
+                                enabled = !state.loading,
+                                onSelect = viewModel::selectCategory,
+                                followedOnly = state.followedOnly,
+                                onFollowedOnlyChange = viewModel::setFollowedOnly,
+                                studentStyle = studentView,
                             )
                         }
-                    }
-                }
-                items(filtered, key = { it.id }) { item ->
-                    CommunityListCard(
-                        community = item,
-                        onClick = {
-                            tab = 0
-                            viewModel.select(item)
+                        item(key = "featured-community-events") {
+                            if (state.followedOnly && (state.followingLoading || state.followingError != null || !state.followingLoaded)) {
+                                CommunityEventsBannerPlaceholder(
+                                    loading = state.followingLoading,
+                                    hasError = state.followingError != null,
+                                    message = state.followingError ?: "Takip ettiğiniz topluluklar yükleniyor.",
+                                    onRetry = { viewModel.refreshFollowing(force = true) },
+                                )
+                            } else if (featuredEvents.isNotEmpty()) {
+                                FeaturedCommunityEventsCarousel(
+                                    events = featuredEvents,
+                                    onEventClick = { featured ->
+                                        pendingFeaturedEvent = featured
+                                        viewModel.select(featured.community)
+                                    }
+                                )
+                            } else if ((state.selectedCategoryId.isNotEmpty() || state.followedOnly)
+                                && !state.featuredEventsLoading && state.featuredEventsError == null && !state.loading) {
+                                EmptyCommunityContent(
+                                    title = "Filtrelere uygun etkinlik bulunamadı",
+                                    subtitle = if (state.followedOnly && state.followedCommunityIds.isEmpty())
+                                        "Takip ettiğin bir topluluk yok. Toplulukları keşfedip takip edebilirsin."
+                                    else "Farklı bir kategori seçebilir veya filtreleri kaldırabilirsin.",
+                                )
+                            } else if (AppEnvironment.isDebug && state.selectedCategoryId.isEmpty() && !state.followedOnly) {
+                                DemoCommunityEventsCarousel()
+                            } else {
+                                CommunityEventsBannerPlaceholder(
+                                    loading = state.featuredEventsLoading,
+                                    hasError = state.featuredEventsError != null,
+                                    onRetry = { viewModel.refreshFeaturedEvents(today, force = true) }
+                                )
+                            }
                         }
-                    )
-                }
-                if (state.blockedCommunityIds.isNotEmpty()) {
-                    item {
-                        TextButton(
-                            onClick = viewModel::unblockAllCommunities,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                "Engellediğiniz ${state.blockedCommunityIds.size} topluluğu yeniden göster",
-                                fontSize = 13.sp,
-                                color = TextSecondary
-                            )
-                        }
-                    }
-                }
-                if (!state.loading && state.error == null && filtered.isEmpty()) {
-                    item {
-                        EmptyCommunityContent(
-                            title = if (query.isBlank()) "Topluluklar yakında burada" else "Aramana uygun topluluk bulunamadı",
-                            subtitle = if (query.isBlank()) "Yeni topluluklar eklendikçe burada keşfedebilirsin." else "Farklı bir kelimeyle tekrar deneyebilirsin."
-                        )
-                    }
-                }
-            } else {
-                if (managerView) {
-                    item {
-                        ManagerCommunityIdentity(
-                            community = community,
-                            onEditProfile = { profileEditor = true }
-                        )
-                    }
-                    item {
-                        val upcomingEvents = state.entries.count {
-                            it.data.kind == "event" && it.data.status == "published" && it.data.date >= today
-                        }
-                        val currentMonth = today.take(7)
-                        CommunityManagementActions(
-                            upcomingEventCount = upcomingEvents,
-                            registrationCount = state.registrationsByEntry.values.sumOf { it.size },
-                            monthlyAttendanceCount = state.entries
-                                .filter { it.data.kind == "event" && it.data.date.startsWith(currentMonth) }
-                                .sumOf { state.attendanceByEntry[it.id]?.size ?: 0 },
-                            followerCount = state.followerCount,
-                            onAddEvent = {
-                                editingId = null
-                                editor = CommunityEntryDto()
-                            },
-                            onAddCoupon = {
-                                editingId = null
-                                editor = CommunityEntryDto(kind = "coupon", status = "pending")
-                            },
-                            onEditProfile = { profileEditor = true },
-                            onSwitchToStudent = { previewAsStudent = true }
-                        )
-                    }
-                } else {
-                    item {
-                        CommunityDetailHeader(
-                            community = community,
-                            canManage = state.canManage,
-                            previewAsStudent = previewAsStudent,
-                            isFollowing = state.isFollowing,
-                            followLoading = state.followLoading,
-                            onFollowClick = viewModel::toggleFollow,
-                            onBlockClick = { pendingBlock = community }
-                        )
-                    }
-                    if (previewAsStudent) {
                         item {
-                            StudentPreviewBanner(onReturnToManagement = { previewAsStudent = false })
+                            CommunitySearchField(
+                                query = query,
+                                onQueryChange = { query = it }
+                            )
                         }
-                    }
-                }
-                item {
-                    CommunityTabs(
-                        selectedTab = tab,
-                        onTabSelected = { tab = it },
-                        manager = managerView
-                    )
-                }
-                if (managerView && tab == 0) item {
-                    ManagerEventFilters(
-                        selected = eventFilter,
-                        onSelected = { eventFilter = it }
-                    )
-                }
-                if (!managerView && tab == 0) item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (isV2) EventCategorySelector(state.selectedCategoryId, true, !state.loading, viewModel::selectCategory)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            CommunityEventFilterChip(!registeredOnly, true, "Tüm etkinlikler", onClick = { registeredOnly = false })
-                            CommunityEventFilterChip(registeredOnly, true, "Etkinlik kayıtlarım", onClick = { registeredOnly = true })
+                        val filtered = state.communities.filter {
+                            it.data.name.contains(query, ignoreCase = true) ||
+                                it.data.description.contains(query, ignoreCase = true)
                         }
-                    }
-                }
-                val entries = state.entries.filter { entry ->
-                    val kindMatches = entry.data.kind == (if (tab == 0) "event" else "coupon")
-                    val visibilityMatches = if (managerView) true else entry.data.status == "published"
-                    val registrationMatches = managerView || tab != 0 || !registeredOnly || entry.id in state.registeredEventIds
-                    val categoryMatches = managerView || tab != 0 || matchesEventCategory(entry.data.categoryId, state.selectedCategoryId)
-                    val managerFilterMatches = !managerView || tab != 0 || when (eventFilter) {
-                        0 -> entry.data.status == "published" && entry.data.date >= today
-                        1 -> entry.data.status == "draft"
-                        else -> entry.data.status == "cancelled" || (entry.data.status == "published" && entry.data.date < today)
-                    }
-                    kindMatches && visibilityMatches && registrationMatches && categoryMatches && managerFilterMatches
-                }.let { filtered ->
-                    if (managerView && tab == 0 && eventFilter == 2) filtered.sortedByDescending { it.data.date + it.data.time }
-                    else filtered
-                }
-                if (tab == 1 && !managerView && entries.isNotEmpty()) {
-                    item {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(end = 4.dp)
-                        ) {
-                            items(entries, key = { it.id }) { entry ->
-                                StudentCouponCard(entry = entry, onClick = { detail = entry })
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Keşfet",
+                                    fontSize = 19.sp,
+                                    lineHeight = 24.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                if (!state.loading) {
+                                    Text(
+                                        text = "${filtered.size} topluluk",
+                                        fontSize = 12.sp,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+                        }
+                        items(filtered, key = { it.id }) { item ->
+                            CommunityListCard(
+                                community = item,
+                                studentStyle = studentView,
+                                onClick = {
+                                    tab = 0
+                                    viewModel.select(item)
+                                }
+                            )
+                        }
+                        if (state.blockedCommunityIds.isNotEmpty()) {
+                            item {
+                                TextButton(
+                                    onClick = viewModel::unblockAllCommunities,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "Engellediğiniz ${state.blockedCommunityIds.size} topluluğu yeniden göster",
+                                        fontSize = 13.sp,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+                        }
+                        if (!state.loading && state.error == null && filtered.isEmpty()) {
+                            item {
+                                EmptyCommunityContent(
+                                    title = if (query.isBlank()) "Topluluklar yakında burada" else "Aramana uygun topluluk bulunamadı",
+                                    subtitle = if (query.isBlank()) "Yeni topluluklar eklendikçe burada keşfedebilirsin." else "Farklı bir kelimeyle tekrar deneyebilirsin."
+                                )
                             }
                         }
                     }
                 } else {
-                    items(entries, key = { it.id }) { entry ->
-                        CommunityEntryCard(
-                            entry = entry,
-                            registrationCount = state.registrationsByEntry[entry.id]?.size,
-                            attendanceCount = state.attendanceByEntry[entry.id]?.size,
-                            canManage = managerView,
-                            onManageAttendees = {
-                                viewModel.clearAdmissionMessage()
-                                admissionEntry = entry
-                            },
-                            onEdit = {
-                                editingId = entry.id
-                                editor = entry.data
-                            },
-                            onUnpublish = { pendingRemoval = entry },
-                            onClick = { detail = entry }
+                    if (managerView) {
+                        item {
+                            ManagerCommunityIdentity(
+                                community = community,
+                                onEditProfile = { profileEditor = true }
+                            )
+                        }
+                        item {
+                            val upcomingEvents = state.entries.count {
+                                it.data.kind == "event" && it.data.status == "published" && it.data.lastDate() >= today
+                            }
+                            val currentMonth = today.take(7)
+                            CommunityManagementActions(
+                                upcomingEventCount = upcomingEvents,
+                                registrationCount = state.registrationsByEntry.values.sumOf { it.size },
+                                monthlyAttendanceCount = state.entries
+                                    .filter { it.data.kind == "event" && it.data.date.startsWith(currentMonth) }
+                                    .sumOf { state.attendanceByEntry[it.id]?.size ?: 0 },
+                                followerCount = state.followerCount,
+                                onAddEvent = {
+                                    editingId = null
+                                    editor = CommunityEntryDto()
+                                },
+                                onAddCoupon = {
+                                    editingId = null
+                                    editor = CommunityEntryDto(kind = "coupon", status = "pending")
+                                },
+                                onEditProfile = { profileEditor = true },
+                                onSwitchToStudent = { previewAsStudent = true }
+                            )
+                        }
+                    } else {
+                        item {
+                            CommunityDetailHeader(
+                                community = community,
+                                canManage = state.canManage,
+                                previewAsStudent = previewAsStudent,
+                                isFollowing = state.isFollowing,
+                                followLoading = state.followLoading,
+                                onFollowClick = viewModel::toggleFollow
+                            )
+                        }
+                        if (previewAsStudent) {
+                            item {
+                                StudentPreviewBanner(onReturnToManagement = { previewAsStudent = false })
+                            }
+                        }
+                    }
+                    if (!studentView) item {
+                        CommunityTabs(
+                            selectedTab = tab,
+                            onTabSelected = { tab = it },
+                            manager = managerView
                         )
                     }
+                    if (managerView && tab == 0) item {
+                        ManagerEventFilters(
+                            selected = eventFilter,
+                            onSelected = { eventFilter = it }
+                        )
+                    }
+                    if (studentView) item {
+                        StudentEventFilters(state.entries, state.registeredEventIds, now, studentFilter) { studentFilter = it }
+                    }
+                    if (!studentView && !managerView && tab == 0) item {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (isV2) EventCategorySelector(state.selectedCategoryId, true, !state.loading, viewModel::selectCategory)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                CommunityEventFilterChip(!registeredOnly, true, "Tüm etkinlikler", onClick = { registeredOnly = false })
+                                CommunityEventFilterChip(registeredOnly, true, "Etkinlik kayıtlarım", onClick = { registeredOnly = true })
+                            }
+                        }
+                    }
+                    val entries = if (studentView) studentEventsFor(state.entries, studentFilter, state.registeredEventIds, now)
+                    else state.entries.filter { entry ->
+                        val kindMatches = entry.data.kind == (if (tab == 0) "event" else "coupon")
+                        val visibilityMatches = if (managerView) true else entry.data.status == "published"
+                        val registrationMatches = managerView || tab != 0 || !registeredOnly || entry.id in state.registeredEventIds
+                        val categoryMatches = managerView || tab != 0 || matchesEventCategory(entry.data.categoryId, state.selectedCategoryId)
+                        val managerFilterMatches = !managerView || tab != 0 || when (eventFilter) {
+                            0 -> entry.data.status == "published" && entry.data.lastDate() >= today
+                            1 -> entry.data.status == "draft"
+                            else -> entry.data.status == "cancelled" || (entry.data.status == "published" && entry.data.lastDate() < today)
+                        }
+                        kindMatches && visibilityMatches && registrationMatches && categoryMatches && managerFilterMatches
+                    }.let { filtered ->
+                        if (managerView && tab == 0 && eventFilter == 2) filtered.sortedByDescending { it.data.date + it.data.time }
+                        else filtered
+                    }
+                    if (!studentView && tab == 1 && !managerView && entries.isNotEmpty()) {
+                        item {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                contentPadding = PaddingValues(end = 4.dp)
+                            ) {
+                                items(entries, key = { it.id }) { entry ->
+                                    StudentCouponCard(entry = entry, onClick = { detail = entry })
+                                }
+                            }
+                        }
+                    } else {
+                        items(entries, key = { it.id }) { entry ->
+                            if (studentView) StudentEventRow(entry, entry.id in state.registeredEventIds, now) { detail = entry }
+                            else CommunityEntryCard(
+                                entry = entry,
+                                registrationCount = state.registrationsByEntry[entry.id]?.size,
+                                attendanceCount = state.attendanceByEntry[entry.id]?.size,
+                                canManage = managerView,
+                                onManageAttendees = {
+                                    viewModel.clearAdmissionMessage()
+                                    admissionEntry = entry
+                                },
+                                onEdit = {
+                                    editingId = entry.id
+                                    editor = entry.data
+                                },
+                                onUnpublish = { pendingRemoval = entry },
+                                onClick = { detail = entry }
+                            )
+                        }
+                    }
+                    if (!state.loading && state.error == null && entries.isEmpty()) {
+                        item {
+                            val managerEventTitle = when (eventFilter) {
+                                0 -> "Yaklaşan etkinlik yok"
+                                1 -> "Kaydedilmiş taslak yok"
+                                else -> "Geçmiş etkinlik yok"
+                            }
+                            val managerEventSubtitle = when (eventFilter) {
+                                0 -> "Yeni bir etkinlik oluşturduğunda burada görünecek."
+                                1 -> "Hazırlamaya ara verdiğin etkinlikleri taslak olarak kaydedebilirsin."
+                                else -> "Tamamlanan ve yayından kaldırılan etkinlikler burada tutulur."
+                            }
+                            EmptyCommunityContent(
+                                title = if (studentView) studentFilter.emptyTitle else if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Filtrelere uygun etkinlik bulunamadı" else if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok",
+                                subtitle = if (studentView) studentFilter.emptySubtitle else if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Kategori veya kayıt filtresini değiştirerek tekrar deneyebilirsin." else if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.",
+                                coupon = !studentView && tab == 1
+                            )
+                        }
+                    }
                 }
-                if (!state.loading && state.error == null && entries.isEmpty()) {
+                if (state.loading) {
                     item {
-                        val managerEventTitle = when (eventFilter) {
-                            0 -> "Yaklaşan etkinlik yok"
-                            1 -> "Kaydedilmiş taslak yok"
-                            else -> "Geçmiş etkinlik yok"
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         }
-                        val managerEventSubtitle = when (eventFilter) {
-                            0 -> "Yeni bir etkinlik oluşturduğunda burada görünecek."
-                            1 -> "Hazırlamaya ara verdiğin etkinlikleri taslak olarak kaydedebilirsin."
-                            else -> "Tamamlanan ve yayından kaldırılan etkinlikler burada tutulur."
-                        }
-                        EmptyCommunityContent(
-                            title = if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Filtrelere uygun etkinlik bulunamadı" else if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok",
-                            subtitle = if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Kategori veya kayıt filtresini değiştirerek tekrar deneyebilirsin." else if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.",
-                            coupon = tab == 1
-                        )
                     }
                 }
-            }
-            if (state.loading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-            state.error?.let { error ->
-                item {
-                    Text(error, color = MaterialTheme.colorScheme.error)
-                    TextButton(onClick = { if (community == null) viewModel.load() else viewModel.select(community) }) {
-                        Text("Tekrar dene")
+                state.error?.let { error ->
+                    item {
+                        Text(error, color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = { if (community == null) viewModel.load() else viewModel.select(community) }) {
+                            Text("Tekrar dene")
+                        }
                     }
                 }
             }
         }
     }
     if (editor != null && community != null) {
-        EntryEditor(initial = editor!!, businesses = state.businesses, saving = state.saving, error = state.error, onDismiss = { if (!state.saving) { editor = null; viewModel.clearError() } }, onSave = { draft, image -> viewModel.save(editingId, draft, image) { editor = null } })
+        EntryEditor(initial = editor!!, editing = editingId != null, businesses = state.businesses, saving = state.saving, error = state.error, onDismiss = { if (!state.saving) { editor = null; viewModel.clearError() } }, onSave = { draft, image -> viewModel.save(editingId, draft, image) { editor = null } })
     }
     if (profileEditor && community != null) {
         CommunityProfileEditor(community.data, state.saving, state.error, { if (!state.saving) { profileEditor = false; viewModel.clearError() } }) { data, logo, cover -> viewModel.updateProfile(data, logo, cover) { profileEditor = false } }
     }
     state.ticket?.let { ticket ->
         val entry = state.entries.firstOrNull { it.id == state.ticketEventId }
-        if (community != null && entry != null) EventTicketDialog(community.id, entry, ticket, viewModel::closeTicket)
+        if (community != null && entry != null) {
+            if (studentView) EventTicketDialog(
+                community.id, entry, ticket, viewModel::closeTicket,
+                onCancelRegistration = if (!entry.data.hasEnded(now)) ({ viewModel.toggleRegistration(entry) }) else null,
+                registrationBusy = entry.id in state.registrationLoadingIds,
+                error = state.error
+            )
+            else LegacyEventTicketDialog(community.id, entry, ticket, viewModel::closeTicket)
+        }
     }
     admissionEntry?.let { entry ->
         EventAdmissionScreen(entry, state.registrationsByEntry[entry.id].orEmpty(), state.attendanceByEntry[entry.id].orEmpty(),
@@ -447,7 +621,7 @@ fun CommunitiesScreen(
             onScanned = { viewModel.admit(entry, scanned = it) }, onError = viewModel::reportError,
             onAdmit = { userId, undo -> viewModel.admit(entry, userId = userId, undo = undo) })
     }
-    detail?.let { entry ->
+    detail?.takeUnless { studentView && it.data.kind == "event" }?.let { entry ->
         CommunityEntryDetailDialog(
             entry = entry,
             canManage = managerView,
@@ -514,6 +688,62 @@ fun CommunitiesScreen(
     }
 }
 
+@Composable
+private fun CommunityDiscoveryTabs(followedOnly: Boolean, enabled: Boolean, onSelect: (Boolean) -> Unit) {
+    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = SurfaceMuted) {
+        Row(Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf(false to "Tümü", true to "Takip ettiklerim").forEach { (followed, label) ->
+                val selected = followedOnly == followed
+                Surface(
+                    onClick = { onSelect(followed) }, enabled = enabled,
+                    modifier = Modifier.weight(1f).height(42.dp), shape = RoundedCornerShape(12.dp),
+                    color = if (selected) SurfaceDefault else Color.Transparent,
+                    border = if (selected) androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.55f)) else null
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (selected) MaterialTheme.colorScheme.primary else TextSecondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Small 4:5 posters, about two and a half on screen, scrolled by hand. */
+@Composable
+private fun StudentPosterRow(events: List<CommunityFeaturedEvent>, onEventClick: (CommunityFeaturedEvent) -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val cardWidth = maxWidth * 0.40f
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(events, key = { it.entry.id }) { event ->
+                val data = event.entry.data
+                Column(
+                    modifier = Modifier.width(cardWidth).clip(RoundedCornerShape(14.dp)).clickable { onEventClick(event) },
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (data.imageUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = data.imageUrl, contentDescription = "${data.title} etkinlik afişi", contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxWidth().aspectRatio(CoverImageSpec.ASPECT_RATIO)
+                                .clip(RoundedCornerShape(14.dp)).background(PistachioGreen)
+                        )
+                    } else {
+                        EventDateTile(data, Modifier.fillMaxWidth().aspectRatio(CoverImageSpec.ASPECT_RATIO))
+                    }
+                    Column(Modifier.padding(horizontal = 2.dp)) {
+                        Text(data.title, color = TextPrimary, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(formatEventShort(data), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Instagram-style 4:5 posters in a row, with the next one peeking in from the edge. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FeaturedCommunityEventsCarousel(
@@ -521,40 +751,25 @@ private fun FeaturedCommunityEventsCarousel(
     onEventClick: (CommunityFeaturedEvent) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { events.size })
-    val currentPage by remember { derivedStateOf { pagerState.currentPage } }
-    LaunchedEffect(events.size) {
-        if (events.size > 1) {
+    val dragged by pagerState.interactionSource.collectIsDraggedAsState()
+    LaunchedEffect(events.size, dragged) {
+        if (events.size > 1 && !dragged) {
             while (true) {
-                delay(4_500)
+                delay(5_000)
                 pagerState.animateScrollToPage((pagerState.currentPage + 1) % events.size)
             }
         }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val cardWidth = maxWidth * 0.54f
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().aspectRatio(12f / 5f)
+            pageSize = PageSize.Fixed(cardWidth),
+            pageSpacing = 12.dp,
+            verticalAlignment = Alignment.Top
         ) { page ->
             val event = events[page]
-            FeaturedCommunityEventCard(event = event, onClick = { onEventClick(event) })
-        }
-        if (events.size > 1) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(events.size) { index ->
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 3.dp)
-                            .width(if (index == currentPage) 18.dp else 6.dp)
-                            .height(6.dp)
-                            .clip(CircleShape)
-                            .background(if (index == currentPage) MaterialTheme.colorScheme.primary else BorderMuted)
-                    )
-                }
-            }
+            FeaturedCommunityEventCard(event = event, width = cardWidth, onClick = { onEventClick(event) })
         }
     }
 }
@@ -704,22 +919,33 @@ private fun CommunityEventsBannerPlaceholder(
 }
 
 @Composable
-private fun FeaturedCommunityEventCard(event: CommunityFeaturedEvent, onClick: () -> Unit) {
+private fun FeaturedCommunityEventCard(event: CommunityFeaturedEvent, width: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     val entry = event.entry.data
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxSize(),
-        shape = RoundedCornerShape(18.dp),
-        color = PistachioGreen,
-        shadowElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+    Column(
+        modifier = Modifier.width(width).clip(RoundedCornerShape(18.dp)).clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        AsyncImage(
-            model = entry.imageUrl,
-            contentDescription = "${entry.title} etkinlik afişi",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
+        Surface(
+            modifier = Modifier.fillMaxWidth().aspectRatio(CoverImageSpec.ASPECT_RATIO),
+            shape = RoundedCornerShape(18.dp),
+            color = PistachioGreen,
+            shadowElevation = 1.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+        ) {
+            AsyncImage(
+                model = entry.imageUrl,
+                contentDescription = "${entry.title} etkinlik afişi",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+        Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(entry.title, color = TextPrimary, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.SemiBold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(formatEventShort(entry), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(event.community.data.name, color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
@@ -753,21 +979,25 @@ private fun CommunitySearchField(query: String, onQueryChange: (String) -> Unit)
 }
 
 @Composable
-private fun CommunityListCard(community: Community, onClick: () -> Unit) {
+private fun CommunityListCard(community: Community, studentStyle: Boolean = false, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = SurfaceDefault,
         shadowElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = if (studentStyle) 0.55f else 0.18f))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            CommunityLogo(community.data.logoUrl, size = 54.dp)
+            if (studentStyle && community.data.logoUrl.isBlank()) {
+                TiltedIcon(Icons.Outlined.Groups, CommunityAccent)
+            } else {
+                CommunityLogo(community.data.logoUrl, size = 54.dp)
+            }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
@@ -807,85 +1037,80 @@ private fun CommunityDetailHeader(
     previewAsStudent: Boolean,
     isFollowing: Boolean,
     followLoading: Boolean,
-    onFollowClick: () -> Unit,
-    onBlockClick: (() -> Unit)? = null
+    onFollowClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         color = SurfaceDefault,
         shadowElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.55f))
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .background(PistachioGreen)
-            ) {
-                if (community.data.coverUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = community.data.coverUrl,
-                        contentDescription = "${community.data.name} kapak görseli",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        Icons.Outlined.Groups,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                        modifier = Modifier.size(58.dp).align(Alignment.Center)
-                    )
-                }
-            }
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                CommunityLogo(community.data.logoUrl, size = 64.dp)
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = community.data.name,
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
                         lineHeight = 22.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
-                    Text(
-                        text = community.data.description,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp,
-                        color = TextSecondary
+                    if (community.data.university.isNotBlank()) {
+                        Text(
+                            text = community.data.university,
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                if (community.data.logoUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = community.data.logoUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp))
                     )
-                }
-            }
-            if (!canManage) Button(
-                onClick = onFollowClick,
-                enabled = !followLoading,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = if (isFollowing) {
-                    ButtonDefaults.buttonColors(containerColor = SurfaceMuted, contentColor = TextPrimary)
                 } else {
-                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
+                    TiltedIcon(Icons.Outlined.Groups, CommunityAccent, size = 40, iconSize = 22)
                 }
-            ) {
-                Text(if (followLoading) "Kaydediliyor…" else if (isFollowing) "Takip ediliyor" else "Takip et", fontWeight = FontWeight.SemiBold)
             }
-            if (!canManage && onBlockClick != null) {
-                TextButton(
-                    onClick = onBlockClick,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Icon(Icons.Outlined.Block, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Bu topluluğu engelle", fontSize = 13.sp, color = TextSecondary)
+            if (community.data.description.isNotBlank()) {
+                CollapsibleDescription(community.data.description, key = community.id)
+            }
+            if (!canManage) {
+                if (isFollowing) {
+                    OutlinedButton(
+                        onClick = onFollowClick,
+                        enabled = !followLoading,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
+                    ) {
+                        Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (followLoading) "Kaydediliyor…" else "Takip ediliyor", fontWeight = FontWeight.SemiBold)
+                    }
+                } else {
+                    Button(
+                        onClick = onFollowClick,
+                        enabled = !followLoading,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(if (followLoading) "Kaydediliyor…" else "Takip et", fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
             if (canManage && previewAsStudent) {
@@ -894,8 +1119,6 @@ private fun CommunityDetailHeader(
                     fontSize = 12.sp,
                     color = TextSecondary
                 )
-            }
-            if (community.data.university.isNotBlank()) Text(community.data.university, color = TextSecondary)
             }
         }
     }
@@ -1150,7 +1373,7 @@ private fun CommunityEntryCard(
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(entry.data.title, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                        Text("${entry.data.date} ${entry.data.time}".trim(), fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        Text(if (entry.data.kind == "event") formatEventSchedule(entry.data) else "${entry.data.date} ${entry.data.time}".trim(), fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.primary)
                     }
                     if (canManage) {
                         Surface(
@@ -1374,9 +1597,7 @@ private fun CommunityEntryDetailDialog(
     onReport: (() -> Unit)? = null
 ) {
     val isCoupon = entry.data.kind == "coupon"
-    val dateTime = listOf(entry.data.date, entry.data.time)
-        .filter { it.isNotBlank() }
-        .joinToString(" · ")
+    val dateTime = if (isCoupon) entry.data.date else formatEventSchedule(entry.data)
 
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
@@ -1709,11 +1930,15 @@ private fun EmptyCommunityContent(title: String, subtitle: String, coupon: Boole
     }
 }
 
-internal fun validateCommunityEntry(entry: CommunityEntryDto): String? {
+internal fun validateCommunityEntry(
+    entry: CommunityEntryDto,
+    initial: CommunityEntryDto? = null,
+    now: kotlinx.datetime.LocalDateTime = eventNow()
+): String? {
     if (entry.kind == "event" && AppEnvironment.firebaseBackend == FirebaseBackend.V2 && EventCategory.fromId(entry.categoryId) == null) return "Etkinlik kategorisini seçin."
     if (entry.title.isBlank() || entry.description.isBlank() || entry.location.isBlank()) return "Başlık, açıklama ve ${if (entry.kind == "coupon") "işletme" else "konum"} alanlarını doldurun."
-    if (runCatching { LocalDate.parse(entry.date) }.isFailure) return "Tarihi yıl-ay-gün biçiminde girin. Örnek: 2026-10-15"
-    if (entry.kind == "event" && !Regex("([01][0-9]|2[0-3]):[0-5][0-9]").matches(entry.time)) return "Saati 14:30 biçiminde girin."
+    if (entry.kind == "event") validateEventSchedule(entry, initial, now)?.let { return it }
+    else if (runCatching { LocalDate.parse(entry.date) }.isFailure) return "Son kullanım tarihini seçin."
     if (entry.kind == "event" && entry.capacity > 100_000) return "Kontenjan 100.000 kişiden fazla olamaz."
     if (entry.kind == "coupon" && entry.businessId.isBlank()) return "Kuponu doğrulayacak işletmeyi seçin."
     if (entry.kind == "coupon" && entry.discountType !in setOf("percentage", "fixed", "freeItem")) return "Geçerli bir indirim türü seçin."
@@ -1725,27 +1950,38 @@ internal fun validateCommunityEntry(entry: CommunityEntryDto): String? {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBusiness>, saving: Boolean, error: String?, onDismiss: () -> Unit, onSave: (CommunityEntryDto, ByteArray?) -> Unit) {
-    var draft by remember { mutableStateOf(initial) }
+private fun EntryEditor(initial: CommunityEntryDto, editing: Boolean, businesses: List<CommunityBusiness>, saving: Boolean, error: String?, onDismiss: () -> Unit, onSave: (CommunityEntryDto, ByteArray?) -> Unit) {
+    var draft by remember { mutableStateOf(initial.withSuggestedEnd()) }
     var image by remember { mutableStateOf<ByteArray?>(null) }
     var localError by remember { mutableStateOf<String?>(null) }
     var preview by remember { mutableStateOf(false) }
-    var datePicker by remember { mutableStateOf(false) }
-    var timePicker by remember { mutableStateOf(false) }
-    val pickerState = rememberDatePickerState()
-    val timeState = rememberTimePickerState(initialHour = initial.time.substringBefore(':').toIntOrNull() ?: 14, initialMinute = initial.time.substringAfter(':').toIntOrNull() ?: 0, is24Hour = true)
+    var dateTarget by remember { mutableStateOf<ScheduleField?>(null) }
+    var timeTarget by remember { mutableStateOf<ScheduleField?>(null) }
     val coupon = draft.kind == "coupon"
+    val originalForValidation = if (editing) initial else null
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = SurfaceCanvasWarm) {
         Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(if (preview) "Önizleme" else if (coupon) "Kupon ekle" else "Etkinlik ekle", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(when {
+                preview -> "Önizleme"
+                coupon -> if (editing) "Kuponu düzenle" else "Kupon ekle"
+                else -> if (editing) "Etkinliği düzenle" else "Etkinlik ekle"
+            }, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             if (!preview) {
                 ProductImagePicker(currentRemoteImageUrl = draft.imageUrl, pendingImageBytes = image, isUploading = saving, onPendingImageChange = { image = it }, onError = { localError = it })
                 EditorField("Başlık", draft.title, saving) { draft = draft.copy(title = it) }
                 if (!coupon && AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
                     EventCategorySelector(draft.categoryId, false, !saving) { draft = draft.copy(categoryId = it) }
                 }
-                OutlinedButton(onClick = { datePicker = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text((if (coupon) "Son kullanım tarihi: " else "Tarih: ") + draft.date.ifBlank { "Seç" }) }
-                if (!coupon) OutlinedButton(onClick = { timePicker = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text("Saat: " + draft.time.ifBlank { "Seç" }) }
+                if (coupon) {
+                    OutlinedButton(onClick = { dateTarget = ScheduleField.START }, enabled = !saving, modifier = Modifier.fillMaxWidth()) {
+                        Text("Son kullanım tarihi: " + draft.date.ifBlank { "Seç" }.let(::formatEventDate))
+                    }
+                } else {
+                    ScheduleRow("Başlangıç", draft.date, draft.time, !saving,
+                        onDate = { dateTarget = ScheduleField.START }, onTime = { timeTarget = ScheduleField.START })
+                    ScheduleRow("Bitiş", draft.endDate, draft.endTime, !saving,
+                        onDate = { dateTarget = ScheduleField.END }, onTime = { timeTarget = ScheduleField.END })
+                }
                 if (coupon) {
                     BusinessSelector(
                         businesses = businesses,
@@ -1780,7 +2016,7 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
             } else {
                 Text(draft.title, style = MaterialTheme.typography.titleLarge)
                 if (!coupon && AppEnvironment.firebaseBackend == FirebaseBackend.V2) Text(EventCategory.labelFor(draft.categoryId), color = MaterialTheme.colorScheme.primary)
-                Text("${draft.date} ${draft.time}"); Text(draft.location); Text(draft.description)
+                Text(if (coupon) formatEventDate(draft.date) else formatEventSchedule(draft)); Text(draft.location); Text(draft.description)
                 if (!coupon) Text(if (draft.capacity > 0) "Kontenjan: ${draft.capacity} kişi" else "Kontenjan: Sınırsız")
                 if (coupon) {
                     Text(
@@ -1825,7 +2061,7 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
                 }
             }
             Button(onClick = {
-                localError = validateCommunityEntry(draft)
+                localError = validateCommunityEntry(draft, originalForValidation)
                 if (localError == null) {
                     if (preview) {
                         onSave(
@@ -1845,15 +2081,22 @@ private fun EntryEditor(initial: CommunityEntryDto, businesses: List<CommunityBu
             }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text(if (saving) "Kaydediliyor…" else if (!preview) "Önizle" else if (coupon) "Onaya gönder" else "Yayınla") }
         }
     }
-    if (datePicker) DatePickerDialog(onDismissRequest = { datePicker = false }, confirmButton = {
-        TextButton(enabled = pickerState.selectedDateMillis != null, onClick = {
-            pickerState.selectedDateMillis?.let { draft = draft.copy(date = Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.UTC).date.toString()) }
-            datePicker = false
-        }) { Text("Seç") }
-    }, dismissButton = { TextButton(onClick = { datePicker = false }) { Text("Vazgeç") } }) { DatePicker(state = pickerState) }
-    if (timePicker) AlertDialog(onDismissRequest = { timePicker = false }, title = { Text("Saat seç") }, text = { TimeInput(timeState) }, confirmButton = {
-        TextButton(onClick = { draft = draft.copy(time = "${timeState.hour.toString().padStart(2, '0')}:${timeState.minute.toString().padStart(2, '0')}"); timePicker = false }) { Text("Seç") }
-    }, dismissButton = { TextButton(onClick = { timePicker = false }) { Text("Vazgeç") } })
+    SchedulePickerDialogs(draft, dateTarget, timeTarget, onChange = { draft = it }, onCloseDate = { dateTarget = null }, onCloseTime = { timeTarget = null })
+}
+
+@Composable
+private fun ScheduleRow(label: String, date: String, time: String, enabled: Boolean, onDate: () -> Unit, onTime: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onDate, enabled = enabled, modifier = Modifier.weight(1.6f)) {
+                Text(if (date.isBlank()) "Tarih seç" else formatEventDate(date), maxLines = 1)
+            }
+            OutlinedButton(onClick = onTime, enabled = enabled, modifier = Modifier.weight(1f)) {
+                Text(time.ifBlank { "Saat seç" }, maxLines = 1)
+            }
+        }
+    }
 }
 
 @Composable
@@ -1891,6 +2134,7 @@ private fun CommunityEventFilterRow(
     onSelect: (String) -> Unit,
     followedOnly: Boolean = false,
     onFollowedOnlyChange: ((Boolean) -> Unit)? = null,
+    studentStyle: Boolean = false,
 ) {
     val categories = remember {
         listOf("" to "Tümü") + EventCategory.entries.map { it.id to it.label } +
@@ -1922,16 +2166,24 @@ private fun CommunityEventFilterRow(
         contentPadding = PaddingValues(vertical = 4.dp),
     ) {
         if (onFollowedOnlyChange != null) item(key = "followed") {
-            CommunityEventFilterChip(
-                selected = followedOnly,
-                enabled = true,
-                label = "Takip ettiklerim",
-                onClick = { onFollowedOnlyChange(!followedOnly) },
-                leadingIcon = { Icon(Icons.Outlined.Groups, null, Modifier.size(18.dp)) },
-            )
+            if (studentStyle) {
+                SmallToggle("Takip ettiklerim", followedOnly, onClick = { onFollowedOnlyChange(!followedOnly) })
+            } else {
+                CommunityEventFilterChip(
+                    selected = followedOnly,
+                    enabled = true,
+                    label = "Takip ettiklerim",
+                    onClick = { onFollowedOnlyChange(!followedOnly) },
+                    leadingIcon = { Icon(Icons.Outlined.Groups, null, Modifier.size(18.dp)) },
+                )
+            }
         }
         items(categories, key = { "category-${it.first}" }) { (id, label) ->
-            CommunityEventFilterChip(selectedId == id, enabled, label, onClick = { onSelect(id) })
+            if (studentStyle) {
+                SmallToggle(label, selectedId == id, enabled, onClick = { onSelect(id) })
+            } else {
+                CommunityEventFilterChip(selectedId == id, enabled, label, onClick = { onSelect(id) })
+            }
         }
     }
 }

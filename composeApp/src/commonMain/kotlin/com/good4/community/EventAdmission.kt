@@ -1,6 +1,7 @@
 package com.good4.community
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.EncodeDefault
@@ -47,7 +48,7 @@ interface EventScannerLauncher { fun launch(completion: EventScannerCallback) }
 object EventScannerBridge { var launcher: EventScannerLauncher? = null }
 
 @Composable
-expect fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit)
+expect fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit, modifier: Modifier = Modifier)
 
 fun eventTicketPayload(communityId: String, eventId: String, token: String) =
     if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) "good4:event:v2/$eventId/$token"

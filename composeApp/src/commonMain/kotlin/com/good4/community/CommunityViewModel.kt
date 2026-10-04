@@ -41,6 +41,9 @@ data class CommunityState(
     val admissionMessage: String? = null,
     val registeredEventIds: Set<String> = emptySet(),
     val registrationLoadingIds: Set<String> = emptySet(),
+    /** Subset of [registrationLoadingIds] whose pending request cancels a registration. */
+    val cancellingRegistrationIds: Set<String> = emptySet(),
+    val justRegisteredEntryId: String? = null,
     val loading: Boolean = true,
     val saving: Boolean = false,
     val error: String? = null,
@@ -55,6 +58,20 @@ data class CommunityState(
     )
 }
 
+internal fun CommunityState.withStudentRegistration(entryId: String, registered: Boolean, showFeedback: Boolean = false): CommunityState {
+    val adjustment = if (registered == (entryId in registeredEventIds)) 0 else if (registered) 1 else -1
+    return copy(
+        registeredEventIds = if (registered) registeredEventIds + entryId else registeredEventIds - entryId,
+        registrationLoadingIds = registrationLoadingIds - entryId,
+        cancellingRegistrationIds = cancellingRegistrationIds - entryId,
+        justRegisteredEntryId = if (registered && showFeedback) entryId else null,
+        entries = entries.map { entry ->
+            if (entry.id == entryId) entry.copy(data = entry.data.copy(registrationCount = (entry.data.registrationCount + adjustment).coerceAtLeast(0)))
+            else entry
+        }
+    )
+}
+
 class CommunityViewModel(private val repository: CommunityRepository, private val admission: EventAdmissionGateway = NativeEventAdmissionGateway) : ViewModel() {
     private val mutable = MutableStateFlow(CommunityState())
     val state = mutable.asStateFlow()
@@ -66,6 +83,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     private var followingUserId: String? = null
     private var observedUserId = repository.currentUserId
     private var updatesVisible = false
+    private var visibleStudentEventId: String? = null
 
     init {
         load()
@@ -211,7 +229,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 ticket = null,
                 ticketEventId = null,
                 admissionMessage = null,
-                registeredEventIds = emptySet()
+                registeredEventIds = emptySet(),
+                justRegisteredEntryId = null
             )
         }
         loadingJob = viewModelScope.launch {
@@ -255,11 +274,17 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 generatedCouponCode = null,
                 generatedCouponEntryId = null,
                 registrationsByEntry = emptyMap(),
-                registeredEventIds = emptySet()
+                registeredEventIds = emptySet(),
+                justRegisteredEntryId = null
             )
         }
     }
     fun clearError() { mutable.update { it.copy(error = null) } }
+    fun clearRegistrationFeedback() { mutable.update { it.copy(justRegisteredEntryId = null) } }
+    fun setStudentEventVisible(entryId: String?) {
+        visibleStudentEventId = entryId
+        clearRegistrationFeedback()
+    }
 
     fun blockCommunity(community: Community) {
         val blocked = mutable.value.blockedCommunityIds + community.id
@@ -350,14 +375,14 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     }
 
     fun save(entryId: String?, entry: CommunityEntryDto, image: ByteArray?, onSaved: () -> Unit) = change(onSaved) { community ->
-        val url = image?.let { uploadCommunityImage(community.id, it) } ?: entry.imageUrl
+        val url = image?.let { uploadCommunityImage(it) } ?: entry.imageUrl
         repository.saveEntry(community.id, entryId, entry.copy(imageUrl = url))
     }
     fun cancel(entryId: String, onSaved: () -> Unit) = change(onSaved) { community -> repository.cancelEntry(community.id, entryId) }
     fun updateProfile(data: CommunityDto, logo: ByteArray?, cover: ByteArray?, onSaved: () -> Unit) = change(onSaved) { community ->
         val updated = data.copy(
-            logoUrl = logo?.let { uploadCommunityImage(community.id, it) } ?: data.logoUrl,
-            coverUrl = cover?.let { uploadCommunityImage(community.id, it) } ?: data.coverUrl
+            logoUrl = logo?.let { uploadCommunityImage(it) } ?: data.logoUrl,
+            coverUrl = cover?.let { uploadCommunityImage(it) } ?: data.coverUrl
         )
         repository.saveCommunity(community.id, updated)
         mutable.update { state -> state.copy(selected = Community(community.id, updated), communities = state.communities.map { if (it.id == community.id) Community(it.id, updated) else it }) }
@@ -393,20 +418,32 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         val community = mutable.value.selected ?: return
         if (entry.id in mutable.value.registrationLoadingIds) return
         val next = entry.id !in mutable.value.registeredEventIds
+        val studentV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2 && !mutable.value.canManage
         viewModelScope.launch {
-            mutable.update { it.copy(registrationLoadingIds = it.registrationLoadingIds + entry.id, error = null) }
+            mutable.update {
+                it.copy(
+                    registrationLoadingIds = it.registrationLoadingIds + entry.id,
+                    cancellingRegistrationIds = if (next) it.cancellingRegistrationIds else it.cancellingRegistrationIds + entry.id,
+                    error = null
+                )
+            }
             try {
                 repository.setRegistration(community.id, entry, next)
+                if (studentV2 && mutable.value.selected?.id != community.id) {
+                    mutable.update { it.copy(registrationLoadingIds = it.registrationLoadingIds - entry.id, cancellingRegistrationIds = it.cancellingRegistrationIds - entry.id) }
+                    return@launch
+                }
                 mutable.update {
-                    it.copy(
+                    if (studentV2) it.withStudentRegistration(entry.id, next, showFeedback = visibleStudentEventId == entry.id) else it.copy(
                         registeredEventIds = if (next) it.registeredEventIds + entry.id else it.registeredEventIds - entry.id,
-                        registrationLoadingIds = it.registrationLoadingIds - entry.id
+                        registrationLoadingIds = it.registrationLoadingIds - entry.id,
+                        cancellingRegistrationIds = it.cancellingRegistrationIds - entry.id
                     )
                 }
-                if (next) showTicket(entry) else closeTicket()
+                if (next && !studentV2) showTicket(entry) else if (!next) closeTicket()
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
-                mutable.update { it.copy(registrationLoadingIds = it.registrationLoadingIds - entry.id, error = e.message) }
+                mutable.update { it.copy(registrationLoadingIds = it.registrationLoadingIds - entry.id, cancellingRegistrationIds = it.cancellingRegistrationIds - entry.id, error = e.message) }
             }
         }
     }
@@ -466,11 +503,39 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
 
     private fun communityErrorMessage(error: Exception): String {
         val detail = error.message.orEmpty()
-        return when {
+        return communityServerMessages[detail.trim()] ?: when {
             "unauthorized" in detail.lowercase() || "permission denied" in detail.lowercase() ->
                 "Görsel yüklenemedi. Topluluk yönetici yetkinizi kontrol edip tekrar deneyin."
-            detail.isBlank() -> "İşlem tamamlanamadı. Lütfen tekrar deneyin."
+            detail.isBlank() || Regex("[A-Z_]+").matches(detail.trim()) -> "İşlem tamamlanamadı. Lütfen tekrar deneyin."
             else -> detail
         }
     }
 }
+
+/** Turkish copy for the error codes the community callables return. */
+internal val communityServerMessages = mapOf(
+    "TITLE_REQUIRED" to "Etkinlik başlığını girin.", "TITLE_INVALID" to "Başlık en fazla 120 karakter olabilir.",
+    "DESCRIPTION_REQUIRED" to "Etkinlik açıklamasını girin.", "DESCRIPTION_INVALID" to "Etkinlik açıklamasını girin.",
+    "LOCATION_REQUIRED" to "Etkinlik konumunu girin.", "LOCATION_INVALID" to "Etkinlik konumunu girin.",
+    "EVENT_DATE_TIME_INVALID" to "Başlangıç ve bitiş zamanını kontrol edin.",
+    "ENDDATE_REQUIRED" to "Bitiş tarihini seçin.", "ENDTIME_REQUIRED" to "Bitiş saatini seçin.",
+    "EVENT_START_IN_PAST" to "Başlangıç geçmiş bir zaman olamaz.",
+    "EVENT_END_BEFORE_START" to "Bitiş, başlangıçtan sonra olmalı.",
+    "EVENT_DURATION_TOO_LONG" to "Etkinlik en fazla 14 gün sürebilir.",
+    "EVENT_CATEGORY_INVALID" to "Etkinlik kategorisini seçin.",
+    "CAPACITY_INVALID" to "Kontenjanı sayı olarak girin.",
+    "EVENT_NOT_EDITABLE" to "İptal edilen etkinlik düzenlenemez.",
+    "EVENT_ALREADY_PUBLISHED" to "Yayındaki etkinlik taslağa alınamaz.",
+    "EVENT_NOT_FOUND" to "Etkinlik bulunamadı. Listeyi yenileyip tekrar deneyin.",
+    "IMAGE_URL_INVALID" to "Kapak görseli kaydedilemedi. Başka bir görsel deneyin.",
+    "COMMUNITY_IMAGE_INVALID" to "Görsel yüklenemedi. Görseli yeniden seçip tekrar deneyin.",
+    "COMMUNITY_IMAGE_TYPE_INVALID" to "Görsel JPEG, PNG veya WebP biçiminde olmalı.",
+    "COMMUNITY_IMAGE_SIZE_INVALID" to "Görsel boş olmamalı ve en fazla 5 MB olabilir.",
+    "COMMUNITY_IMAGE_CONTENT_INVALID" to "Görsel dosyası geçersiz. Başka bir JPEG, PNG veya WebP görseli seçin.",
+    "COMMUNITY_MANAGER_REQUIRED" to "Bu işlemi yalnızca topluluk yöneticisi yapabilir.",
+    "COMMUNITY_MEMBERSHIP_NOT_FOUND" to "Aktif topluluk yönetim üyeliğiniz bulunamadı.",
+    "ACCOUNT_NOT_ACTIVE" to "Bu işlem için hesabınız aktif olmalı.",
+    "ROLE_NOT_ALLOWED" to "Bu işlem için topluluk yönetici yetkisi gerekiyor.",
+    "COMMUNITY_MEMBERSHIP_REQUIRED" to "Bu topluluğu yönetme yetkiniz bulunmuyor.",
+    "COMMUNITY_NOT_ACTIVE" to "Topluluk şu an aktif değil.",
+)

@@ -5,27 +5,93 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.good4.core.presentation.SurfaceDefault
+import com.good4.core.presentation.ErrorRed
+import com.good4.core.presentation.TextPrimary
+import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4ConfirmDialog
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventTicketDialog(communityId: String, entry: CommunityEntry, ticket: CommunityEventRegistrationDto, onDismiss: () -> Unit) {
+fun EventTicketDialog(
+    communityId: String, entry: CommunityEntry, ticket: CommunityEventRegistrationDto, onDismiss: () -> Unit,
+    onCancelRegistration: (() -> Unit)? = null, registrationBusy: Boolean = false, error: String? = null
+) {
+    var confirmCancel by remember(entry.id) { mutableStateOf(false) }
+    ModalBottomSheet(
+        onDismissRequest = { if (!registrationBusy) onDismiss() },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = SurfaceDefault,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(entry.data.title, color = TextPrimary, fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+            Text(formatEventSchedule(entry.data), color = TextSecondary, textAlign = TextAlign.Center)
+            if (entry.data.location.isNotBlank()) {
+                Text(entry.data.location, color = TextSecondary, textAlign = TextAlign.Center)
+            }
+            Image(
+                painter = rememberQrCodePainter(eventTicketPayload(communityId, entry.id, ticket.ticketToken)),
+                contentDescription = "Etkinlik giriş QR kodu",
+                modifier = Modifier.widthIn(max = 340.dp).fillMaxWidth().aspectRatio(1f)
+                    .background(Color.White).padding(20.dp),
+            )
+            Text(ticket.displayName, color = TextPrimary, fontWeight = FontWeight.SemiBold)
+            Text("Girişte bu bileti görevliye göster. Bilet sana özeldir; başkalarıyla paylaşma.",
+                color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center)
+            error?.let { NoticeCard(it, ErrorRed, "Kapat", onDismiss) }
+            Button(onClick = onDismiss, enabled = !registrationBusy, modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(16.dp)) {
+                Text("Kapat")
+            }
+            if (onCancelRegistration != null) {
+                TextButton(onClick = { confirmCancel = true }, enabled = !registrationBusy) {
+                    Text(if (registrationBusy) "Kaydediliyor…" else "Kaydımı iptal et", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+    if (confirmCancel && onCancelRegistration != null) {
+        Good4ConfirmDialog(
+            title = "Kaydımı iptal et",
+            message = "${entry.data.title} etkinliğine kaydın ve QR biletin iptal edilecek.",
+            confirmLabel = "İptal et", dismissLabel = "Vazgeç", enabled = !registrationBusy,
+            onConfirm = { confirmCancel = false; onCancelRegistration() },
+            onDismiss = { confirmCancel = false }
+        )
+    }
+}
+
+@Composable
+internal fun LegacyEventTicketDialog(communityId: String, entry: CommunityEntry, ticket: CommunityEventRegistrationDto, onDismiss: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss,
         title = { Text("QR giriş biletin") },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(entry.data.title)
-                Text("${entry.data.date} · ${entry.data.time}")
+                Text(formatEventSchedule(entry.data))
                 Image(rememberQrCodePainter(eventTicketPayload(communityId, entry.id, ticket.ticketToken)),
                     "Etkinlik giriş QR kodu", Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White).padding(20.dp))
                 Text(ticket.displayName)

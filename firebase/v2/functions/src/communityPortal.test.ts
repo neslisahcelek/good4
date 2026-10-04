@@ -58,7 +58,7 @@ test("community dashboard returns live registration and attendance totals", asyn
 test("community event writes only to the canonical V2 event collection", async () => {
   await db.doc("organizations/community-org").update({ legacyTestCommunityId: FieldValue.delete() });
   const created = await saveCommunityPortalEntryService(db, legacyTestDb, "manager-1", {
-    kind: "event", title: "V2 Buluşması", description: "Tek kaynak", date: "2026-10-01",
+    kind: "event", title: "V2 Buluşması", description: "Tek kaynak", date: "2030-10-01",
     time: "18:00", location: "Kampüs", capacity: 50, categoryId: "career-entrepreneurship",
   });
   assert.equal(created.status, "published");
@@ -69,6 +69,26 @@ test("community event writes only to the canonical V2 event collection", async (
   assert.equal((await legacyTestDb.doc(`communities/demo-toplulugu/entries/${created.entryId}`).get()).exists, false);
   assert.equal((await getCommunityPortalDashboardService(db, legacyTestDb, "manager-1")).entries[0]?.id, created.entryId);
   assert.equal((await getCommunityPortalDashboardService(db, legacyTestDb, "manager-1")).entries[0]?.categoryId, "career-entrepreneurship");
+  const listed = (await getCommunityPortalDashboardService(db, legacyTestDb, "manager-1")).entries[0];
+  assert.deepEqual([listed?.date, listed?.time, listed?.endDate, listed?.endTime], ["2030-10-01", "18:00", "2030-10-01", "20:00"]);
+});
+
+test("community events can be saved as drafts and published later", async () => {
+  const input = {
+    kind: "event", title: "Taslak", description: "Hazırlanıyor", date: "2030-10-01",
+    time: "18:00", location: "Kampüs", capacity: 0, categoryId: "technology",
+  };
+  const draft = await saveCommunityPortalEntryService(db, legacyTestDb, "manager-1", { ...input, status: "draft" });
+  assert.equal(draft.status, "draft");
+  assert.equal((await db.doc(`events/${draft.entryId}`).get()).get("status"), "draft");
+  assert.equal((await getCommunityPortalDashboardService(db, legacyTestDb, "manager-1")).entries
+    .find((entry) => entry.id === draft.entryId)?.status, "draft");
+  const published = await saveCommunityPortalEntryService(db, legacyTestDb, "manager-1", { ...input, entryId: draft.entryId });
+  assert.equal(published.status, "published");
+  await assert.rejects(
+    saveCommunityPortalEntryService(db, legacyTestDb, "manager-1", { ...input, entryId: draft.entryId, status: "draft" }),
+    /EVENT_ALREADY_PUBLISHED/,
+  );
 });
 
 test("community manager can create a coupon and cancel it", async () => {

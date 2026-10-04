@@ -70,6 +70,9 @@ data class CommunityEntryDto(
     val description: String = "",
     val date: String = "",
     val time: String = "",
+    // V2 events only; blank for coupons and older entries.
+    val endDate: String = "",
+    val endTime: String = "",
     val location: String = "",
     val imageUrl: String = "",
     val code: String = "",
@@ -80,7 +83,8 @@ data class CommunityEntryDto(
     val totalLimit: Int = 0,
     val perUserLimit: Int = 1,
     val status: String = "published",
-    val categoryId: String = ""
+    val categoryId: String = "",
+    val registrationCount: Int = 0
 )
 
 @Serializable
@@ -263,8 +267,9 @@ class CommunityRepository(
             .filter { featured ->
                 val data = featured.entry.data
                 if (data.kind != "event" || data.status != "published" || data.imageUrl.isBlank()) return@filter false
-                val eventDate = runCatching { LocalDate.parse(data.date) }.getOrNull() ?: return@filter false
-                eventDate >= todayDate
+                // Multi-day events stay featured until their last day.
+                val lastDate = runCatching { LocalDate.parse(data.lastDate()) }.getOrNull() ?: return@filter false
+                lastDate >= todayDate
             }
             .sortedWith(compareBy({ it.entry.data.date }, { it.entry.data.time }))
             .toList()
@@ -272,19 +277,22 @@ class CommunityRepository(
 
     private fun mapV2Event(document: com.good4.core.data.repository.DocumentWithId<V2EventDto>): CommunityEntry {
         val event = document.data
-        val local = Instant.fromEpochSeconds(event.startsAt)
-            .toLocalDateTime(TimeZone.of(event.timezone.ifBlank { "Europe/Istanbul" }))
-        val hour = local.hour.toString().padStart(2, '0')
-        val minute = local.minute.toString().padStart(2, '0')
+        val zone = TimeZone.of(event.timezone.ifBlank { "Europe/Istanbul" })
+        val local = Instant.fromEpochSeconds(event.startsAt).toLocalDateTime(zone)
+        val end = event.endsAt.takeIf { it > event.startsAt }?.let { Instant.fromEpochSeconds(it).toLocalDateTime(zone) }
+        fun hhmm(hour: Int, minute: Int) = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
         return CommunityEntry(document.id, CommunityEntryDto(
             kind = "event",
             title = event.title,
             description = event.description,
             date = local.date.toString(),
-            time = "$hour:$minute",
+            time = hhmm(local.hour, local.minute),
+            endDate = end?.date?.toString().orEmpty(),
+            endTime = end?.let { hhmm(it.hour, it.minute) }.orEmpty(),
             location = event.location,
             imageUrl = event.imageUrl,
             capacity = event.capacity,
+            registrationCount = event.registrationCount,
             status = event.status,
             categoryId = event.categoryId
         ))
@@ -302,8 +310,12 @@ class CommunityRepository(
             callV2Function("saveCommunityPortalEntry", buildJsonObject {
                 put("kind", "event"); entryId?.let { put("entryId", it) }; put("title", entry.title)
                 put("description", entry.description); put("date", entry.date); put("time", entry.time)
+                if (entry.endDate.isNotBlank() && entry.endTime.isNotBlank()) {
+                    put("endDate", entry.endDate); put("endTime", entry.endTime)
+                }
                 put("location", entry.location); put("capacity", entry.capacity)
                 put("categoryId", entry.categoryId)
+                put("status", if (entry.status == "draft") "draft" else "published")
                 if (entry.imageUrl.isNotBlank()) put("imageUrl", entry.imageUrl)
             })
             return
