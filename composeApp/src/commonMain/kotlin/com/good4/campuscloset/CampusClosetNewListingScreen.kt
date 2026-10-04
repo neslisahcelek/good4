@@ -2,12 +2,14 @@ package com.good4.campuscloset
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,9 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,11 +76,25 @@ internal fun CampusClosetNewListingContent(
     onSubmit: () -> Unit
 ) {
     var pickingPhoto by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val dismissKeyboard = {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+        Unit
+    }
     Good4Scaffold(
-        modifier = Modifier.imePadding(),
+        modifier = Modifier.pointerInput(focusManager, keyboardController) {
+            detectTapGestures(onTap = { dismissKeyboard() })
+        }.imePadding(),
         topBar = {
             Good4TopBar(title = "İlan ver", navigationIcon = {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") }
+            }, actions = {
+                if (keyboardVisible) {
+                    TextButton(onClick = dismissKeyboard) { Text("Bitti") }
+                }
             })
         },
         bottomBar = {
@@ -82,9 +104,12 @@ internal fun CampusClosetNewListingContent(
                         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("İlanın yaklaşık 30 dakika içinde incelenir.", color = TextSecondary, fontSize = 12.sp)
+                        Text(
+                            state.validationMessage ?: "İlanın yaklaşık 30 dakika içinde incelenir.",
+                            color = TextSecondary, fontSize = 12.sp
+                        )
                         Button(
-                            onClick = onSubmit, enabled = state.canSubmit,
+                            onClick = { dismissKeyboard(); onSubmit() }, enabled = state.canSubmit,
                             modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
@@ -116,7 +141,7 @@ internal fun CampusClosetNewListingContent(
                                 bytes = state.photos.getOrNull(index), index = index,
                                 enabled = !state.submitting,
                                 modifier = Modifier.weight(1f),
-                                onAdd = { pickingPhoto = true }, onRemove = { onRemovePhoto(index) }
+                                onAdd = { dismissKeyboard(); pickingPhoto = true }, onRemove = { onRemovePhoto(index) }
                             )
                         }
                     }
@@ -155,13 +180,17 @@ internal fun CampusClosetNewListingContent(
                     OutlinedTextField(
                         value = state.title, onValueChange = onTitle, enabled = !state.submitting,
                         label = { Text("Başlık") }, placeholder = { Text("Örn. Kışlık mont, M beden") },
-                        supportingText = { Text("${state.title.length}/${CampusClosetLimits.MAX_TITLE}") },
+                        supportingText = { Text("${state.title.trim().length}/${CampusClosetLimits.MAX_TITLE} · En az 3 karakter") },
+                        isError = state.title.isNotEmpty() && state.title.trim().length < 3,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
                         singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = formColors()
                     )
                     OutlinedTextField(
                         value = state.description, onValueChange = onDescription, enabled = !state.submitting,
                         label = { Text("Açıklama") }, placeholder = { Text("Durumu, bedeni ve kullanım süresi…") },
-                        supportingText = { Text("${state.description.length}/${CampusClosetLimits.MAX_DESCRIPTION} · Telefon numarası yazma") },
+                        supportingText = { Text("${state.description.trim().length}/${CampusClosetLimits.MAX_DESCRIPTION} · En az 10 karakter · Telefon numarası yazma") },
+                        isError = state.description.isNotEmpty() && state.description.trim().length < 10,
                         minLines = 4, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = formColors()
                     )
                 }
@@ -179,7 +208,8 @@ internal fun CampusClosetNewListingContent(
                         OutlinedTextField(
                             value = state.priceText, onValueChange = onPrice, enabled = !state.submitting,
                             label = { Text("Fiyat") }, suffix = { Text("₺") }, singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { dismissKeyboard() }),
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = formColors()
                         )
                     } else {

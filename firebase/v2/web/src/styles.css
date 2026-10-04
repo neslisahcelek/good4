@@ -842,7 +842,23 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); box-shad
 
 /* Kampüs Dolabı moderation */
 .market-photo-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.market-photo-trigger { padding: 0; border: 0; border-radius: 10px; background: transparent; cursor: zoom-in; }
+.market-photo-trigger:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 .market-photo-row img { width: 112px; height: 112px; object-fit: cover; border-radius: 10px; border: 1px solid #ecebe7; display: block; }
+.market-photo-viewer { width: min(960px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 0; border-radius: 12px; background: transparent; color: #fff; }
+.market-photo-viewer::backdrop { background: rgba(0, 0, 0, .75); }
+.market-photo-viewer__content { background: #181818; }
+.market-photo-viewer__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; }
+.market-photo-viewer__header > span { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.market-photo-viewer button { min-height: 40px; padding: 8px 12px; border: 1px solid #666; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; }
+.market-photo-viewer button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.market-photo-viewer button:disabled { opacity: .4; cursor: default; }
+.market-photo-viewer__header button { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.market-photo-viewer__header button span { font-size: 23px; line-height: 1; }
+.market-photo-viewer__image { display: grid; place-items: center; min-height: 160px; }
+.market-photo-viewer__image img { display: block; width: 100%; max-height: calc(100dvh - 190px); object-fit: contain; }
+.market-photo-viewer__image p { padding: 24px; }
+.market-photo-viewer__navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; }
 .market-flags { margin: 8px 0 0; color: #b4580a; font-size: 13px; font-weight: 600; }
 .market-reject-box { margin-top: 10px; display: grid; gap: 8px; }
 .market-reject-box .coupon-tags button { font-size: 12px; padding: 4px 10px; }
