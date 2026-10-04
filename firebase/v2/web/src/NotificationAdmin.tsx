@@ -59,6 +59,7 @@ export function NotificationAdmin({ uid, communities }: { uid: string; communiti
   }
   async function send(test: boolean) {
     if (inFlight.current || !preview?.enabled || !current()) return;
+    if (!test && !window.confirm(`“${draft.title}” duyurusunu seçili hedef kitledeki ${preview.audienceCount} hesaba göndermek istiyor musun? Bu işlem gerçek bir gönderimdir.`)) return;
     inFlight.current = true; setBusy(true); setError("");
     const fingerprint = JSON.stringify({ ...draft, test });
     let persisted: { fingerprint: string; id: string } | null = requestRef.current;
@@ -69,7 +70,7 @@ export function NotificationAdmin({ uid, communities }: { uid: string; communiti
     try {
       await sendAnnouncement({ ...draft, requestId: persisted.id, test });
       if (current()) {
-        setMessage(test ? "Test bildirimi kendi mobil hesabına kuyruğa alındı. Bu hesapla telefonda giriş yapmış ve bildirim izni vermiş olmalısın." : "Duyuru kuyruğa alındı. Sonuçları gönderim geçmişinden takip edebilirsin.");
+        setMessage(test ? "Test bildirimi yalnızca panelde giriş yaptığın hesaba kuyruğa alındı. Aynı hesabın açık olduğu ve bildirim izni verdiğin cihazlara ulaşabilir." : "Duyuru kuyruğa alındı. Sonuçları gönderim geçmişinden takip edebilirsin.");
         setPreview(null);
         // Retain request id for this exact content; a retry or accidental second click returns the same job.
         await refreshHistory();
@@ -92,7 +93,8 @@ export function NotificationAdmin({ uid, communities }: { uid: string; communiti
     </form>
     {preview ? <div className="admin-card" aria-live="polite"><h3>{draft.title}</h3><p className="notification-preview-body">{draft.body}</p><p>Hedef kitle: {preview.audienceCount} hesap. Telefon gönderimi yalnızca bildirim izni ve ilgili kategori açık olan cihazlara yapılır.</p>
       {!preview.enabled ? <p role="status">Bildirim gönderimi henüz etkinleştirilmedi.</p> : null}
-      <div className="notification-actions"><button className="quiet-button" disabled={busy || !preview.enabled} onClick={() => void send(true)}>Kendi cihazıma test gönder</button><button className="primary-button" disabled={busy || !preview.enabled || preview.audienceCount === 0} onClick={() => void send(false)}>Duyuruyu gönder</button></div>
+      <p>Test alıcısı: <strong>{auth.currentUser?.email ?? uid}</strong>. Test yalnızca bu hesabın bildirim izni olan cihazlarına gönderilir; seçili hedef kitleye gönderilmez.</p>
+      <div className="notification-actions"><button className="quiet-button" disabled={busy || !preview.enabled} onClick={() => void send(true)}>Yalnızca kendi hesabıma test gönder</button><button className="primary-button" disabled={busy || !preview.enabled || preview.audienceCount === 0} onClick={() => void send(false)}>Duyuruyu gönder</button></div>
     </div> : null}
     {message ? <p role="status">{message}</p> : null}{error ? <p role="alert">{error}</p> : null}
     <div className="section-title-row"><ButtonCostControls /><h3>Gönderim geçmişi</h3><button className="quiet-button" disabled={busy} onClick={() => void refreshHistory()}>Yenile</button></div>

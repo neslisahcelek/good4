@@ -1,5 +1,8 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.UiText
+import good4.composeapp.generated.resources.*
+import kotlin.test.assertNotNull
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,12 +18,12 @@ class CampusClosetNewListingStateTest {
     @Test fun filledButShortDescriptionExplainsWhySubmissionIsDisabled() {
         val state = complete.copy(description = "test")
         assertFalse(state.canSubmit)
-        assertEquals("Açıklama en az 10 karakter olmalı.", state.validationMessage)
+        assertEquals(Res.string.campus_closet_aciklama_en_az_10_karakter_olmali, (state.validationMessage as UiText.StringResourceId).id)
         assertFalse(state.copy(description = "    test    ").canSubmit)
         val recorded = state.copy(description = "yeni gibi ")
         assertEquals(10, recorded.description.length)
         assertFalse(recorded.canSubmit)
-        assertEquals("Açıklama en az 10 karakter olmalı.", recorded.validationMessage)
+        assertEquals(Res.string.campus_closet_aciklama_en_az_10_karakter_olmali, (recorded.validationMessage as UiText.StringResourceId).id)
         assertTrue(state.copy(description = "1234567890").canSubmit)
     }
 
@@ -39,7 +42,7 @@ class CampusClosetNewListingStateTest {
             complete.copy(priceText = "100001")
         )) {
             assertFalse(state.canSubmit)
-            assertTrue(!state.validationMessage.isNullOrBlank())
+            assertNotNull(state.validationMessage)
         }
     }
 

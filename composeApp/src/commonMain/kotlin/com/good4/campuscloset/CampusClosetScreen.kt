@@ -1,5 +1,9 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.*
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.StringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -94,18 +98,18 @@ import com.good4.core.presentation.components.Good4TopBar
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Category icon and accent, taken from the home shortcut palette so the market feels part of Good4. */
-internal data class CategoryStyle(val label: String, val icon: ImageVector, val accent: Color)
+internal data class CategoryStyle(val label: StringResource, val icon: ImageVector, val accent: Color)
 
 internal val CATEGORY_STYLES: Map<String?, CategoryStyle> = mapOf(
-    null to CategoryStyle("Tümü", Icons.Outlined.GridView, PrimaryGreen),
-    "clothing" to CategoryStyle("Kıyafet", Icons.Outlined.Checkroom, Color(0xFFE59AC0)),
-    "accessories" to CategoryStyle("Aksesuar", Icons.Outlined.ShoppingBag, Color(0xFFF2A66F)),
-    "electronics" to CategoryStyle("Elektronik", Icons.Outlined.Devices, Color(0xFF4B9FD1)),
-    "sports" to CategoryStyle("Spor", Icons.Outlined.SportsSoccer, Color(0xFF75D9BE)),
-    "books" to CategoryStyle("Kitap", Icons.Outlined.MenuBook, Color(0xFFA58DEB)),
-    "dorm" to CategoryStyle("Yurt & Ev", Icons.Outlined.Bed, Color(0xFF8CB7ED)),
-    "hobby" to CategoryStyle("Hobi", Icons.Outlined.MusicNote, Color(0xFF68CCDC)),
-    "other" to CategoryStyle("Diğer", Icons.Outlined.Category, Color(0xFFB8B08D))
+    null to CategoryStyle(Res.string.campus_closet_all, Icons.Outlined.GridView, PrimaryGreen),
+    "clothing" to CategoryStyle(Res.string.campus_closet_kiyafet, Icons.Outlined.Checkroom, ClosetClothingAccent),
+    "accessories" to CategoryStyle(Res.string.campus_closet_aksesuar, Icons.Outlined.ShoppingBag, ClosetAccessoriesAccent),
+    "electronics" to CategoryStyle(Res.string.campus_closet_elektronik, Icons.Outlined.Devices, ClosetElectronicsAccent),
+    "sports" to CategoryStyle(Res.string.campus_closet_spor, Icons.Outlined.SportsSoccer, ClosetSportsAccent),
+    "books" to CategoryStyle(Res.string.campus_closet_kitap, Icons.Outlined.MenuBook, ClosetBooksAccent),
+    "dorm" to CategoryStyle(Res.string.campus_closet_yurt_ev, Icons.Outlined.Bed, ClosetDormAccent),
+    "hobby" to CategoryStyle(Res.string.campus_closet_hobi, Icons.Outlined.MusicNote, ClosetHobbyAccent),
+    "other" to CategoryStyle(Res.string.campus_closet_other, Icons.Outlined.Category, ClosetOtherAccent)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -146,9 +150,9 @@ fun CampusClosetScreen(
     Good4Scaffold(
         topBar = {
             Good4TopBar(
-                title = "Kampüs Dolabı",
+                title = stringResource(Res.string.campus_closet_title),
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.campus_closet_back)) }
                 },
                 actions = {
                     if (me != null) {
@@ -171,7 +175,7 @@ fun CampusClosetScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = RoundedCornerShape(18.dp),
                     icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                    text = { Text("İlan ver", fontWeight = FontWeight.SemiBold) }
+                    text = { Text(stringResource(Res.string.campus_closet_create_listing), fontWeight = FontWeight.SemiBold) }
                 )
             }
         }
@@ -181,11 +185,11 @@ fun CampusClosetScreen(
                 me == null && state.isLoading -> CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center)
                 )
-                me == null -> CenteredState(state.loadError ?: "Yüklenemedi.", "Tekrar dene", viewModel::load)
-                !me.enabled -> CenteredState("Kampüs Dolabı şu an bakımda. Daha sonra tekrar dene.")
+                me == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.campus_closet_yuklenemedi), stringResource(Res.string.campus_closet_retry), viewModel::load)
+                !me.enabled -> CenteredState(stringResource(Res.string.campus_closet_kampus_dolabi_su_an_bakimda_daha_sonra_tekrar_dene))
                 me.eduVerified && !me.termsAccepted -> CampusClosetTermsContent(
                     accepting = state.acceptingTerms,
-                    error = state.termsError,
+                    error = state.termsError?.asString(),
                     onAccept = { viewModel.acceptTerms(me.termsVersion) }
                 )
                 else -> FeedGrid(
@@ -246,11 +250,11 @@ private fun HeaderActions(
     ) {
         Row {
             IconButton(onClick = onOpenFavorites) {
-                Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Kaydedilenler", tint = TextPrimary)
+                Icon(Icons.Outlined.FavoriteBorder, contentDescription = stringResource(Res.string.campus_closet_kaydedilenler), tint = TextPrimary)
             }
             if (!sellerActions) return@Row
             IconButton(onClick = onOpenMyListings) {
-                Icon(Icons.Outlined.Inventory2, contentDescription = "İlanlarım", tint = TextPrimary)
+                Icon(Icons.Outlined.Inventory2, contentDescription = stringResource(Res.string.campus_closet_ilanlarim), tint = TextPrimary)
             }
             IconButton(onClick = onOpenInbox) {
                 BadgedBox(badge = {
@@ -260,7 +264,7 @@ private fun HeaderActions(
                         }
                     }
                 }) {
-                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = "Mesajlar", tint = TextPrimary)
+                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = stringResource(Res.string.campus_closet_mesajlar), tint = TextPrimary)
                 }
             }
         }
@@ -313,11 +317,14 @@ private fun FeedGrid(
                 VerifyCard(linkSentTo = linkSentTo, onClick = onVerify)
             }
         }
+        state.message?.let { message ->
+            item(span = { full }) { MarketNotice(message, color = ErrorRed) }
+        }
         me.suspendedUntil?.let {
             item(span = { full }) {
                 MarketNotice(
-                    "Yasak ürün içeren denemeler nedeniyle Kampüs Dolabı erişimin ${formatMarketTime(it)} tarihine kadar kapalı. " +
-                        "İlanlara göz atabilirsin.",
+                    stringResource(Res.string.campus_closet_yasak_urun_iceren_denemeler_nedeniyle_kampus_dolabi_erisimin_tarihine, formatMarketTime(it)) +
+                        stringResource(Res.string.campus_closet_ilanlara_goz_atabilirsin),
                     color = ErrorRed
                 )
             }
@@ -331,11 +338,11 @@ private fun FeedGrid(
         item(span = { full }) {
             Row(Modifier.fillMaxWidth().padding(top = 4.dp, start = 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    CATEGORY_STYLES[state.category]?.takeIf { state.category != null }?.label ?: "Yeni eklenenler",
+                    CATEGORY_STYLES[state.category]?.takeIf { state.category != null }?.label?.let { stringResource(it) } ?: stringResource(Res.string.campus_closet_yeni_eklenenler),
                     fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, modifier = Modifier.weight(1f)
                 )
                 if (visibleListings.isNotEmpty()) {
-                    Text("${visibleListings.size} ilan", fontSize = 13.sp, color = TextSecondary)
+                    Text(stringResource(Res.string.campus_closet_ilan_2, visibleListings.size), fontSize = 13.sp, color = TextSecondary)
                 }
             }
         }
@@ -346,7 +353,7 @@ private fun FeedGrid(
                 }
             }
             state.loadError != null && state.listings.isEmpty() -> item(span = { full }) {
-                CenteredState(state.loadError, "Tekrar dene", onRetry)
+                CenteredState(state.loadError, stringResource(Res.string.campus_closet_retry), onRetry)
             }
             visibleListings.isEmpty() -> item(span = { full }) {
                 EmptyCloset(
@@ -411,12 +418,12 @@ private fun VerifyCard(linkSentTo: String?, onClick: () -> Unit) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (linkSentTo != null) "Bağlantı e-postana gönderildi" else "Okul e-postanı doğrula",
+                    if (linkSentTo != null) stringResource(Res.string.campus_closet_baglanti_e_postana_gonderildi) else stringResource(Res.string.campus_closet_okul_e_postani_dogrula),
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary
                 )
                 Text(
-                    if (linkSentTo != null) "Outlook'u ve gereksiz e-posta / spam klasörünü kontrol et."
-                    else "İlan vermek, mesaj ve teklif göndermek için @ogr.akdeniz.edu.tr adresin gerekli.",
+                    if (linkSentTo != null) stringResource(Res.string.campus_closet_outlook_u_ve_gereksiz_e_posta_spam_klasorunu_kontrol)
+                    else stringResource(Res.string.campus_closet_ilan_vermek_mesaj_ve_teklif_gondermek_icin_ogr_akdeniz),
                     fontSize = 12.sp, lineHeight = 16.sp, color = TextSecondary,
                     maxLines = 2, overflow = TextOverflow.Ellipsis
                 )
@@ -433,12 +440,12 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         value = query,
         onValueChange = onQueryChange,
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text("Ürün ara", color = TextSecondary, maxLines = 1) },
+        placeholder = { Text(stringResource(Res.string.campus_closet_urun_ara), color = TextSecondary, maxLines = 1) },
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = TextSecondary) },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Aramayı temizle", tint = TextSecondary)
+                    Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.campus_closet_aramayi_temizle), tint = TextSecondary)
                 }
             }
         },
@@ -479,7 +486,7 @@ private fun CategoryRow(selected: String?, onSelect: (String?) -> Unit) {
                     TiltedIcon(style.icon, style.accent, size = 28, iconSize = 16)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        style.label,
+                        stringResource(style.label),
                         fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else TextPrimary,
@@ -502,27 +509,27 @@ private fun EmptyCloset(searching: Boolean, filtered: Boolean, canSell: Boolean,
         shadowElevation = 1.dp
     ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            TiltedIcon(Icons.Outlined.Checkroom, Color(0xFFE59AC0), size = 56, iconSize = 28)
+            TiltedIcon(Icons.Outlined.Checkroom, ClosetClothingAccent, size = 56, iconSize = 28)
             Spacer(Modifier.height(16.dp))
             Text(
                 when {
-                    searching -> "Aradığın ürün yok"
-                    filtered -> "Bu kategori henüz boş"
-                    else -> "Dolap henüz boş"
+                    searching -> stringResource(Res.string.campus_closet_aradigin_urun_yok)
+                    filtered -> stringResource(Res.string.campus_closet_bu_kategori_henuz_bos)
+                    else -> stringResource(Res.string.campus_closet_dolap_henuz_bos)
                 },
                 fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                if (searching) "Başka bir kelime dene ya da kategorilere göz at."
-                else "Kullanmadığın kıyafetler, kitaplar ve eşyalar başka bir öğrencinin işine yarar. İlk ilanı sen ver.",
+                if (searching) stringResource(Res.string.campus_closet_baska_bir_kelime_dene_ya_da_kategorilere_goz_at)
+                else stringResource(Res.string.campus_closet_kullanmadigin_kiyafetler_kitaplar_ve_esyalar_baska_bir_ogrencinin_isine),
                 fontSize = 13.sp, lineHeight = 19.sp, color = TextSecondary, textAlign = TextAlign.Center
             )
             if (!searching) {
                 Spacer(Modifier.height(16.dp))
                 Surface(onClick = onPrimary, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary) {
                     Text(
-                        if (canSell) "İlan ver" else "Doğrula, satmaya başla",
+                        if (canSell) stringResource(Res.string.campus_closet_create_listing) else stringResource(Res.string.campus_closet_dogrula_satmaya_basla),
                         modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                         color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp
                     )

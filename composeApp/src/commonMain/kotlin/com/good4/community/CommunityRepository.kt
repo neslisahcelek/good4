@@ -215,6 +215,15 @@ class CommunityRepository(
         }
     }
 
+    suspend fun publishedEntry(communityId: String, eventId: String): CommunityEntry? {
+        if (!isV2) return entries(communityId, false).firstOrNull { it.id == eventId && it.data.status == "published" }
+        return when (val result = store.getDocument("events", eventId, V2EventDto::class)) {
+            is Result.Success -> result.data.takeIf { it.organizationId == communityId && it.status == "published" }
+                ?.let { mapV2Event(com.good4.core.data.repository.DocumentWithId(eventId, it)) }
+            is Result.Error -> null
+        }
+    }
+
     suspend fun entryPage(id: String, manager: Boolean, cursor: String? = null): Pair<List<CommunityEntry>, String?> {
         if (!isV2) return entries(id, manager) to null
         val conditions: Map<String, Any> = if (manager) mapOf("organizationId" to id) else mapOf("organizationId" to id, "status" to "published")

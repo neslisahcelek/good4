@@ -27,6 +27,19 @@ class FirestoreRepositoryAndroidImpl(
     private val firestore: FirebaseFirestore
 ) : FirestoreRepository {
 
+    override suspend fun <T : Any> queryNumericPage(collectionPath: String, orderByField: String, clazz: KClass<T>,
+        pageSize: Long, cursor: com.good4.core.data.repository.NumericPageCursor?): Result<com.good4.core.data.repository.NumericDocumentPage<T>, Error> = try {
+        require(pageSize in 1..100)
+        var query = firestore.collection(collectionPath).orderBy(orderByField, Query.Direction.DESCENDING)
+            .orderBy(com.google.firebase.firestore.FieldPath.documentId(), Query.Direction.DESCENDING)
+        cursor?.let { query = query.startAfter(it.value, it.id) }
+        val documents = query.limit(pageSize).get().await().documents
+        val items = documents.map { DocumentWithId(it.id, decodeFromJsonString(convertMapToJsonString(it.data ?: emptyMap()), clazz)) }
+        val next = documents.lastOrNull()?.takeIf { documents.size.toLong() == pageSize }
+            ?.let { com.good4.core.data.repository.NumericPageCursor(it.getLong(orderByField) ?: error("Missing numeric sort value"), it.id) }
+        Result.Success(com.good4.core.data.repository.NumericDocumentPage(items, next))
+    } catch (e: Exception) { Result.Error(NetworkError(e.message ?: "Page load failed")) }
+
     override suspend fun <T : Any> queryPage(collectionPath: String, conditions: Map<String, Any>, clazz: KClass<T>,
         pageSize: Long, cursor: String?, minimumTimestamp: Pair<String, Long>?): Result<com.good4.core.data.repository.DocumentPage<T>, Error> = try {
         require(pageSize in 1..100)

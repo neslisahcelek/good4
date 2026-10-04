@@ -72,3 +72,11 @@ Before enabling uploads, a trusted service must create immutable metadata contai
 - The legacy production project `good4tr` is outside this transition. No private production data or Auth accounts are copied into test.
 - Legacy numeric/string dates may still be decoded by compatibility adapters, but every new V2 server write uses Firestore `Timestamp`.
 - Temporary legacy links support only functionality not migrated in this phase (notably coupons). They are not a new canonical model.
+
+## Kampüs Dolabı temizleme işleri — 4 Ekim 2026
+
+`marketPhotoDeletions/{listingId}` yalnızca sunucuya açık, kalıcı Storage silme kuyruğudur. İlanın silinmesi/gizlenmesiyle aynı transaction içinde `prefix`, `ownerUid`, `attemptedAt` yazılır. Başarısız denemelerde `attempts` artar; iş başarılı Storage silmesinden sonra kaldırılır. Günlük temizleme görevi yeniden dener. Hesap silme, ilan artık bulunmasa bile `ownerUid` ile kalan işleri bulur; fotoğraf işi tamamlanmamışsa başarı dönmez.
+
+`marketUserState.listingQuotaRevision` aktivasyonların ortak kota kilididir. Aktif (`pending/published/reserved`) ilan sınırı 15'tir; oluşturma, yenileme ve tekrar yayımlama aynı kotayı uygular. `marketListings.photosCleanupQueuedAt` kuyruk tarihidir, Storage başarı tarihi değildir. `marketConversations.cleanupToken`, paralel temizlik çalışmaları sırasında yeni konuşma neslinin yanlışlıkla silinmesini önler.
+
+[İnceleme ve doğrulama kaydı](../../docs/code-review-2026-10-04.md).

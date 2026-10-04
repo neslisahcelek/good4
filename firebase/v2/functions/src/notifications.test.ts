@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldPath, Timestamp } from "firebase-admin/firestore";
 import { db, legacyTestDb } from "./firebase.js";
 import { cancelEventService, saveEventService } from "./events.js";
 import { enqueueNotification, markNotificationsReadService, prepareEventReminders, processNotificationPage,
@@ -164,12 +164,20 @@ test("paged audiences and transient retries preserve inbox and completed endpoin
 
 test("admin preview targets mobile accounts and self-test never broadcasts", async () => {
   await registerPushDeviceService(db, "admin", { ...device, installationId: "admin-phone", token: "admin-token" });
+  await registerPushDeviceService(db, "admin", { ...device, installationId: "admin-tablet", token: "admin-tablet-token" });
   await registerPushDeviceService(db, "student", device);
+  await registerPushDeviceService(db, "other", { ...device, installationId: "other-phone", token: "other-token" });
+  for (const uid of ["student", "other"]) {
+    await updateNotificationPreferencesService(db, uid, { eventUpdates: true, reminders: true, announcements: true });
+  }
   const job = await sendAnnouncementService(db, "admin", { ...announcement, test: true });
+  assert.equal((await db.doc(`notificationJobs/${job.jobId}`).get()).get("audience"), "self");
   const sent: string[] = [];
   await processNotificationPage(db, job.jobId, async (token) => { sent.push(token); });
-  assert.deepEqual(sent, ["admin-token"]);
+  assert.deepEqual(sent.sort(), ["admin-tablet-token", "admin-token"].sort());
   assert.equal((await db.collection("users/student/notifications").get()).size, 0);
+  assert.equal((await db.collection("users/other/notifications").get()).size, 0);
+  assert.equal((await db.collection("users/admin/notifications").get()).size, 1);
 });
 
 test("daily recipient quota waits without inbox writes; resumed retries reserve only once", async () => {
@@ -209,4 +217,82 @@ test("a second bulk announcement waits instead of consuming another daily allowa
   const second = await sendAnnouncementService(db, "admin", { ...announcement, requestId: "second" });
   await processNotificationPage(db, second.jobId, async () => assert.fail("Second announcement cannot send"));
   assert.equal((await db.doc(`notificationJobs/${second.jobId}`).get()).get("waitReason"), "announcementQuota");
+});
+
+test("mark-read uses captured visible IDs beyond 100 unread notifications and leaves later arrivals unread", async () => {
+  const batch = db.batch();
+  const visible: string[] = [];
+  for (let index = 0; index < 150; index++) {
+    const notificationId = `notification-${String(index).padStart(3, "0")}`;
+    batch.set(db.doc(`users/student/notifications/${notificationId}`), { createdAt: index, readAt: 0 });
+    if (index >= 50) visible.push(notificationId);
+  }
+  await batch.commit();
+  await db.doc("users/student/notifications/later").set({ createdAt: 151, readAt: 0 });
+  await db.doc("users/other/notifications/notification-149").set({ createdAt: 149, readAt: 0 });
+  await markNotificationsReadService(db, "student", { notificationIds: visible });
+  const notifications = await db.collection("users/student/notifications").get();
+  assert.equal(notifications.docs.filter((document) => document.get("readAt") > 0).length, 100);
+  assert.equal((await db.doc("users/student/notifications/notification-000").get()).get("readAt"), 0);
+  assert.equal((await db.doc("users/student/notifications/later").get()).get("readAt"), 0);
+  assert.equal((await db.doc("users/other/notifications/notification-149").get()).get("readAt"), 0);
+  await assert.rejects(markNotificationsReadService(db, "student", { notificationIds: [...visible, "later"] }), /NOTIFICATION_IDS_INVALID/);
+  await markNotificationsReadService(db, "student", { all: true });
+  assert.ok((await db.doc("users/student/notifications/later").get()).get("readAt") > 0);
+  assert.equal((await db.doc("users/student/notifications/notification-000").get()).get("readAt"), 0);
+});
+
+test("a budget pause and resume cannot bypass an unreserved announcement quota", async () => {
+  await sendAnnouncementService(db, "admin", announcement);
+  const second = await sendAnnouncementService(db, "admin", { ...announcement, requestId: "budget-second" });
+  const jobRef = db.doc(`notificationJobs/${second.jobId}`);
+  await db.doc("system/cost_control").set({ manualPaused: true });
+  await processNotificationPage(db, second.jobId, async () => assert.fail("Paused job cannot send"));
+  assert.equal((await jobRef.get()).get("announcementQuotaReserved"), false);
+  await db.doc("system/cost_control").set({ manualPaused: false });
+  // Model a resume with a different wait reason; quota ownership is independent of it.
+  await jobRef.update({ status: "queued", waitReason: "budget" });
+  await processNotificationPage(db, second.jobId, async () => assert.fail("Second announcement cannot send"));
+  assert.equal((await jobRef.get()).get("waitReason"), "announcementQuota");
+  assert.equal((await db.doc(`notificationAnnouncementQuotas/${new Date().toISOString().slice(0, 10)}`).get()).get("count"), 1);
+  assert.equal((await db.doc(`users/student/notifications/${second.jobId}`).get()).exists, false);
+  const quotaRef = db.doc(`notificationAnnouncementQuotas/${new Date().toISOString().slice(0, 10)}`);
+  await quotaRef.set({ count: 0 });
+  await processNotificationPage(db, second.jobId, async () => {});
+  assert.equal((await jobRef.get()).get("announcementQuotaReserved"), true);
+  assert.equal((await quotaRef.get()).get("count"), 1);
+  await processNotificationPage(db, second.jobId, async () => assert.fail("Completed job cannot resend"));
+  assert.equal((await quotaRef.get()).get("count"), 1);
+});
+
+
+test("numeric inbox cursors retain equal-time notifications even after the cursor document is deleted", async () => {
+  const inbox = db.collection("users/student/notifications");
+  const batch = db.batch();
+  for (let index = 0; index < 61; index++) batch.set(inbox.doc(`item-${String(index).padStart(3, "0")}`), {
+    createdAt: Math.floor(index / 30), readAt: 0,
+  });
+  await batch.commit();
+  const query = inbox.orderBy("createdAt", "desc").orderBy(FieldPath.documentId(), "desc").limit(20);
+  const first = await query.get();
+  assert.equal(first.size, 20);
+  const boundary = first.docs.at(-1)!;
+  const cursor = { value: boundary.get("createdAt"), id: boundary.id };
+  await boundary.ref.delete();
+  await inbox.doc("new-push").set({ createdAt: 100, readAt: 0 });
+  const ids = first.docs.map((document) => document.id);
+  let next = cursor;
+  while (true) {
+    const page = await query.startAfter(next.value, next.id).get();
+    assert.ok(page.size <= 20);
+    ids.push(...page.docs.map((document) => document.id));
+    if (page.size < 20) break;
+    const last = page.docs.at(-1)!;
+    next = { value: last.get("createdAt"), id: last.id };
+  }
+  assert.equal(ids.length, 61);
+  assert.equal(new Set(ids).size, 61);
+  assert.equal(ids[0], "item-060");
+  assert.equal(ids.at(-1), "item-000");
+  assert.equal(ids.includes("new-push"), false);
 });

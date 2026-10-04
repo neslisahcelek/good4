@@ -27,6 +27,19 @@ import kotlin.reflect.KClass
 class FirestoreRepositoryIOSImpl : FirestoreRepository {
     private val firestore = Firebase.firestore
 
+    override suspend fun <T : Any> queryNumericPage(collectionPath: String, orderByField: String, clazz: KClass<T>,
+        pageSize: Long, cursor: NumericPageCursor?): Result<NumericDocumentPage<T>, Error> = try {
+        require(pageSize in 1..100)
+        var query = firestore.collection(collectionPath).orderBy(orderByField, Direction.DESCENDING)
+            .orderBy(dev.gitlive.firebase.firestore.FieldPath.documentId, Direction.DESCENDING)
+        cursor?.let { query = query.startAfter(it.value, it.id) }
+        val documents = query.limit(pageSize).get().documents
+        val items = documents.map { DocumentWithId(it.id, decodeDocumentSnapshot(it, clazz)) }
+        val next = documents.lastOrNull()?.takeIf { documents.size.toLong() == pageSize }
+            ?.let { NumericPageCursor(it.get<Long>(orderByField), it.id) }
+        Result.Success(NumericDocumentPage(items, next))
+    } catch (e: Exception) { Result.Error(NetworkError(e.message ?: "Page load failed")) }
+
     override suspend fun <T : Any> queryPage(collectionPath: String, conditions: Map<String, Any>, clazz: KClass<T>,
         pageSize: Long, cursor: String?, minimumTimestamp: Pair<String, Long>?): Result<DocumentPage<T>, Error> = try {
         require(pageSize in 1..100)

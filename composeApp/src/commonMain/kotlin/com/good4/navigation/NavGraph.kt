@@ -3,7 +3,6 @@ package com.good4.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.good4.notification.NotificationsViewModel
@@ -11,6 +10,8 @@ import com.good4.notification.PushSignals
 import com.good4.notification.NotificationPermissionEducation
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -64,11 +65,11 @@ fun Good4NavGraph(
     onSplashReady: (() -> Unit)? = null
 ) {
     val primaryAuth: AuthRepository = koinInject()
-    val primaryUser by primaryAuth.authStateFlow.collectAsState(primaryAuth.currentUser)
-    val campusLink by CampusEmailVerificationLinks.pending.collectAsState()
+    val primaryUser by primaryAuth.authStateFlow.collectAsStateWithLifecycle(initialValue = primaryAuth.currentUser)
+    val campusLink by CampusEmailVerificationLinks.pending.collectAsStateWithLifecycle()
     val currentEntry by navController.currentBackStackEntryAsState()
     val pushManager = androidx.compose.runtime.remember(primaryAuth) { com.good4.notification.PushRegistrationManager(primaryAuth) }
-    val pushDestination by com.good4.notification.CampusPushNotifications.pending.collectAsState()
+    val pushDestination by com.good4.notification.CampusPushNotifications.pending.collectAsStateWithLifecycle()
     if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
         LaunchedEffect(pushManager) { pushManager.observe() }
         androidx.lifecycle.compose.LifecycleResumeEffect(primaryUser?.uid) {

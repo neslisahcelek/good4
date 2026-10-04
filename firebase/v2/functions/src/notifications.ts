@@ -94,15 +94,21 @@ export async function updateNotificationPreferencesService(database: Firestore, 
 export async function markNotificationsReadService(database: Firestore, uid: string, input: Record<string, unknown>) {
   await database.runTransaction((transaction) => requireActiveActor(database, transaction, uid));
   const all = input.all === true;
-  const notificationId = all ? "" : id(input.notificationId, "notificationId", 256);
   const collection = database.collection(`users/${uid}/notifications`);
-  // Capture the IDs present at the time of the request: concurrent new messages remain unread.
-  const documents = all ? (await collection.where("readAt", "==", 0).limit(100).get()).docs : [await collection.doc(notificationId).get()];
-  for (let offset = 0; offset < documents.length; offset += 400) {
-    const batch = database.batch();
-    for (const document of documents.slice(offset, offset + 400)) if (document.exists) batch.update(document.ref, { readAt: Math.floor(Date.now() / 1000) });
-    await batch.commit();
-  }
+  if (input.notificationIds !== undefined && (!Array.isArray(input.notificationIds)
+    || input.notificationIds.length > 100)) throw new HttpsError("invalid-argument", "NOTIFICATION_IDS_INVALID");
+  // New clients capture the visible IDs; old clients use the same newest-100 window as the inbox.
+  const references = Array.isArray(input.notificationIds)
+    ? [...new Set(input.notificationIds.map((value) => id(value, "notificationId", 256)))].map((value) => collection.doc(value))
+    : all ? (await collection.orderBy("createdAt", "desc").limit(100).get()).docs.map((document) => document.ref)
+      : [collection.doc(id(input.notificationId, "notificationId", 256))];
+  if (references.length > 0) await database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, uid);
+    const documents = await transaction.getAll(...references);
+    for (const document of documents) if (document.exists && document.get("readAt") === 0) {
+      transaction.update(document.ref, { readAt: Math.floor(Date.now() / 1000) });
+    }
+  });
   return { saved: true };
 }
 
@@ -158,7 +164,7 @@ export async function sendAnnouncementService(database: Firestore, uid: string, 
     enqueueNotification(database, transaction, jobId, { ...job, ...(test ? { audience: "self", test: true } : {}) });
     if (waiting) transaction.update(database.doc(`notificationJobs/${jobId}`), { status: "waiting", waitReason: "announcementQuota" });
     else if (!test) transaction.set(quotaRef, { count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    transaction.update(database.doc(`notificationJobs/${jobId}`), { fingerprint });
+    transaction.update(database.doc(`notificationJobs/${jobId}`), { fingerprint, announcementQuotaReserved: test || !waiting });
     transaction.create(database.collection("auditLogs").doc(), { action: "notification.queued", actorUid: uid,
       targetType: "notification", targetId: jobId, metadata: { audience: job.audience, test }, createdAt: FieldValue.serverTimestamp() });
   });
@@ -294,15 +300,21 @@ export async function processNotificationPage(database: Firestore, jobId: string
   if (((document.get("expiresAt") as Timestamp | undefined)?.toMillis() ?? Infinity) < Date.now()) {
     await ref.update({ status: "expired", completedAt: Timestamp.now() }); return false;
   }
-  if (!(await optionalJobsAllowed(database))) { await ref.update({ status: "waiting", waitReason: "budget" }); return false; }
-  if (document.get("waitReason") === "announcementQuota") {
+  if (!(await optionalJobsAllowed(database))) {
+    await ref.update({ status: "waiting", waitReason: document.get("waitReason") === "announcementQuota" ? "announcementQuota" : "budget" });
+    return false;
+  }
+  if (document.get("announcementQuotaReserved") === false || document.get("waitReason") === "announcementQuota") {
     const allowed = await database.runTransaction(async (transaction) => {
       const quotaRef = database.doc(`notificationAnnouncementQuotas/${new Date().toISOString().slice(0, 10)}`);
       const [quota, current] = await Promise.all([transaction.get(quotaRef), transaction.get(ref)]);
-      if (current.get("waitReason") !== "announcementQuota") return true;
-      if ((quota.get("count") ?? 0) >= 1) return false;
+      if (current.get("announcementQuotaReserved") !== false && current.get("waitReason") !== "announcementQuota") return true;
+      if ((quota.get("count") ?? 0) >= 1) {
+        transaction.update(ref, { status: "waiting", waitReason: "announcementQuota" });
+        return false;
+      }
       transaction.set(quotaRef, { count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      transaction.update(ref, { waitReason: FieldValue.delete() }); return true;
+      transaction.update(ref, { announcementQuotaReserved: true, waitReason: FieldValue.delete() }); return true;
     });
     if (!allowed) return false;
   }

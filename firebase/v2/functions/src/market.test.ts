@@ -45,7 +45,7 @@ let deps: MarketDeps;
 beforeEach(async () => {
   await Promise.all([
     "users", "marketListings", "marketConversations", "marketUserState", "marketReports",
-    "marketViolations", "mail", "auditLogs", "app_config", "campusEmailVerifications",
+    "marketViolations", "mail", "auditLogs", "app_config", "campusEmailVerifications", "marketPhotoDeletions",
   ].map((collection) => db.recursiveDelete(db.collection(collection))));
   saved = [];
   deleted = [];
@@ -212,8 +212,8 @@ test("phone numbers are refused in public listings but allowed in messages", asy
     { conversationId: `${listingId}_${buyer}`, text: "Numaram 0532 123 45 67, yazabilirsin" }, deps);
 });
 
-test("a seller keeps at most ten active listings", async () => {
-  await Promise.all(Array.from({ length: 10 }, (_, index) => db.doc(`marketListings/old${index}`).set({
+test("a seller keeps at most fifteen active listings", async () => {
+  await Promise.all(Array.from({ length: MARKET_LIMITS.maxActiveListings }, (_, index) => db.doc(`marketListings/old${index}`).set({
     sellerUid: seller, status: index % 2 ? "published" : "pending",
   })));
   await rejectsWith(createMarketListingService(db, seller, await listingInput(), deps), "MARKET_ACTIVE_LISTING_LIMIT");
@@ -441,6 +441,8 @@ test("listing details, my listings and the inbox show only what the caller may s
   assert.equal(inbox.conversations[0]?.role, "seller");
   assert.equal(inbox.conversations[0]?.otherName, "M.. K..");
   assert.equal(inbox.conversations[0]?.unread, 1);
+  await rejectsWith(listMarketConversationsService(db, "stranger"), "ACCOUNT_NOT_ACTIVE");
+  await student("stranger", "Öğrenci", null);
   assert.deepEqual((await listMarketConversationsService(db, "stranger")).conversations, []);
 });
 
@@ -459,6 +461,7 @@ test("polling messages returns only newer ones and clears the reader's unread co
   await sendMarketMessageService(db, seller, { conversationId, text: "Üç" }, deps);
   const newer = await getMarketMessagesService(db, buyer, { conversationId, after: first.messages.at(-1)?.createdAt });
   assert.deepEqual(newer.messages.map((message) => [message.text, message.mine]), [["Üç", false]]);
+  await student("stranger", "Öğrenci", null);
   await rejectsWith(getMarketMessagesService(db, "stranger", { conversationId }), "MARKET_NOT_PARTICIPANT");
 });
 
@@ -676,4 +679,193 @@ test("approved listings live 30 days; sellers get a reminder, can renew three ti
   counts = await cleanupMarketDataService(db, async () => undefined, NOW + 62 * day, deps.notify);
   assert.equal(counts.closedListings, 2, "the expired listing and the one removed on day 31");
   assert.equal((await db.doc(`marketListings/${listingId}`).get()).exists, false);
+});
+
+
+test("inactive accounts cannot read or mutate private market state, but market suspensions remain read-only", async () => {
+  const listingId = await publishedListing();
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Merhaba" }, deps);
+  await db.doc(`marketUserState/${buyer}`).set({ suspendedUntil: Timestamp.fromMillis(NOW + 60_000) }, { merge: true });
+  assert.equal((await listMarketConversationsService(db, buyer)).conversations.length, 1);
+  for (const status of ["disabled", "deleting"]) {
+    await db.doc(`users/${buyer}`).update({ status });
+    for (const operation of [
+      () => getMarketMessagesService(db, buyer, { conversationId }),
+      () => listMarketConversationsService(db, buyer),
+      () => listMyMarketListingsService(db, buyer),
+      () => listMarketFavoritesService(db, buyer),
+      () => listMarketBlockedService(db, buyer),
+      () => markMarketConversationReadService(db, buyer, { conversationId }),
+    ]) await rejectsWith(operation(), "ACCOUNT_NOT_ACTIVE");
+  }
+});
+
+test("failed photo deletions survive loss of a listing and are retried", async () => {
+  const day = 86_400_000;
+  await db.doc("marketListings/orphan").set({ sellerUid: seller, status: "expired", updatedAt: Timestamp.fromMillis(NOW - 40 * day) });
+  let attempts = 0;
+  await cleanupMarketDataService(db, async () => { attempts++; throw new Error("Storage offline"); }, NOW);
+  assert.equal((await db.doc("marketListings/orphan").get()).exists, false);
+  assert.equal((await db.doc("marketPhotoDeletions/orphan").get()).exists, true);
+  await cleanupMarketDataService(db, async () => { attempts++; }, NOW + day);
+  assert.equal(attempts, 2);
+  assert.equal((await db.doc("marketPhotoDeletions/orphan").get()).exists, false);
+});
+
+test("seller and moderation removals queue photo failures atomically", async () => {
+  const offline = { ...deps, photos: { ...deps.photos, deletePrefix: async () => { throw new Error("offline"); } } };
+  const removed = await publishedListing();
+  await updateMarketListingStatusService(db, seller, { listingId: removed, action: "remove" }, offline);
+  const { listingId: rejected } = await createMarketListingService(db, seller, await listingInput(), deps);
+  await reviewMarketListingService(db, admin, { listingId: rejected, decision: "reject", reason: "Uygun değil" }, offline);
+  for (const id of [removed, rejected]) {
+    assert.equal((await db.doc(`marketPhotoDeletions/${id}`).get()).get("ownerUid"), seller);
+    assert.deepEqual((await db.doc(`marketListings/${id}`).get()).get("photos"), []);
+  }
+  await cleanupMarketDataService(db, async () => undefined, NOW);
+  assert.equal((await db.collection("marketPhotoDeletions").get()).empty, true);
+});
+
+test("account deletion closes the write gate before scanning and resumes after a Storage failure", async () => {
+  const listingId = await publishedListing();
+  const input = await listingInput();
+  let checked = false;
+  await rejectsWith(eraseMarketData(db, seller, async () => {
+    assert.equal((await db.doc(`users/${seller}`).get()).get("status"), "deleting");
+    await rejectsWith(createMarketListingService(db, seller, input, deps), "ACCOUNT_NOT_ACTIVE");
+    checked = true;
+    throw new Error("offline");
+  }), "MARKET_PHOTO_CLEANUP_PENDING");
+  assert.equal(checked, true);
+  assert.equal((await db.doc(`marketPhotoDeletions/${listingId}`).get()).exists, true);
+  const retried: string[] = [];
+  await eraseMarketData(db, seller, async (prefix) => { retried.push(prefix); });
+  assert.deepEqual(retried, [`market-listings/${listingId}/`]);
+  assert.equal((await db.collection("marketPhotoDeletions").get()).empty, true);
+  assert.equal((await db.collection("marketListings").where("sellerUid", "==", seller).get()).empty, true);
+});
+
+test("retention photo and reminder scans progress beyond 200 matching records", async () => {
+  const day = 86_400_000;
+  const batch = db.batch();
+  for (let index = 0; index < 201; index++) {
+    batch.set(db.doc(`marketListings/sold${index.toString().padStart(4, "0")}`), {
+      sellerUid: seller, status: "sold", soldAt: Timestamp.fromMillis(NOW - 31 * day), photos: [{ url: "u" }],
+    });
+    batch.set(db.doc(`marketListings/soon${index.toString().padStart(4, "0")}`), {
+      sellerUid: seller, status: "published", expiresAt: Timestamp.fromMillis(NOW + day),
+      ...(index < 200 ? { expiryReminderSentAt: Timestamp.fromMillis(NOW - day) } : {}),
+    });
+  }
+  await batch.commit();
+  const counts = await cleanupMarketDataService(db, async () => undefined, NOW, deps.notify);
+  assert.equal(counts.soldPhotos, 201);
+  assert.equal(counts.reminders, 1);
+  const second = await cleanupMarketDataService(db, async () => undefined, NOW + 1000, deps.notify);
+  assert.equal(second.soldPhotos, 0);
+  assert.equal(second.reminders, 0);
+});
+
+test("offer responses respect either participant's block and an unavailable listing", async () => {
+  const listingId = await publishedListing();
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, offerPercent: 10 }, deps);
+  for (const blocker of [seller, buyer]) {
+    const other = blocker === seller ? buyer : seller;
+    await db.doc(`marketUserState/${blocker}`).set({ blockedUids: [other] }, { merge: true });
+    const notifications = notified.length;
+    await rejectsWith(respondMarketOfferService(db, seller, { conversationId, accept: true }, deps), "MARKET_BLOCKED");
+    assert.equal(notified.length, notifications);
+    assert.equal((await db.collection(`marketConversations/${conversationId}/messages`).get()).size, 1);
+    await db.doc(`marketUserState/${blocker}`).update({ blockedUids: [] });
+  }
+  await blockMarketUserService(db, buyer, { conversationId }, deps);
+  await rejectsWith(respondMarketOfferService(db, seller, { conversationId, accept: false }, deps), "MARKET_BLOCKED");
+  await unblockMarketUserService(db, buyer, { conversationId }, deps);
+  await updateMarketListingStatusService(db, seller, { listingId, action: "markSold" }, deps);
+  await rejectsWith(respondMarketOfferService(db, seller, { conversationId, accept: true }, deps), "MARKET_OFFER_UNAVAILABLE");
+});
+
+test("a renewal after the expiry query cannot be overwritten by a stale cleanup snapshot", async () => {
+  for (const id of ["raceA", "raceB"]) await db.doc(`marketListings/${id}`).set({
+    sellerUid: seller, status: "published", expiresAt: Timestamp.fromMillis(NOW - 1), renewCount: 0,
+  });
+  let renewed = "";
+  const counts = await cleanupMarketDataService(db, async () => undefined, NOW, async (_uid, payload) => {
+    if (!renewed) {
+      renewed = payload.data?.listingId === "raceA" ? "raceB" : "raceA";
+      await renewMarketListingService(db, seller, { listingId: renewed }, deps);
+    }
+  });
+  assert.equal(counts.expired, 1);
+  const current = await db.doc(`marketListings/${renewed}`).get();
+  assert.equal(current.get("status"), "published");
+  assert.ok(current.get("expiresAt").toMillis() > NOW);
+});
+
+test("renewal and reactivation share the 15-active-listing quota under concurrency", async () => {
+  const batch = db.batch();
+  for (let index = 0; index < MARKET_LIMITS.maxActiveListings - 1; index++) batch.set(db.doc(`marketListings/live${index}`), {
+    sellerUid: seller, status: "published", photos: [{ url: "u" }],
+  });
+  for (const id of ["expiredA", "expiredB"]) batch.set(db.doc(`marketListings/${id}`), { sellerUid: seller, status: "expired" });
+  batch.set(db.doc("marketListings/sold"), { sellerUid: seller, status: "sold", photos: [{ url: "u" }] });
+  await batch.commit();
+  const results = await Promise.allSettled([
+    renewMarketListingService(db, seller, { listingId: "expiredA" }, deps),
+    renewMarketListingService(db, seller, { listingId: "expiredB" }, deps),
+    updateMarketListingStatusService(db, seller, { listingId: "sold", action: "markAvailable" }, deps),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  for (const result of results) if (result.status === "rejected") assert.equal(result.reason.message, "MARKET_ACTIVE_LISTING_LIMIT");
+  assert.equal((await db.collection("marketListings").where("sellerUid", "==", seller)
+    .where("status", "in", ["pending", "published", "reserved"]).get()).size, 15);
+});
+
+test("a partial upload settles before its failed cleanup is queued for retry", async () => {
+  let thumbnailFinished = false;
+  let deletionStartedAfterUpload = false;
+  const failing: MarketDeps = {
+    ...deps,
+    photos: {
+      async save(name) {
+        if (!name.endsWith("_thumb.jpg")) throw new Error("upload failed");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        thumbnailFinished = true;
+        return `https://example.test/${name}`;
+      },
+      async deletePrefix() {
+        deletionStartedAfterUpload = thumbnailFinished;
+        throw new Error("Storage offline");
+      },
+    },
+  };
+  await assert.rejects(createMarketListingService(db, seller, await listingInput(), failing), /upload failed/);
+  assert.equal(deletionStartedAfterUpload, true);
+  assert.equal((await db.collection("marketListings").get()).empty, true);
+  const jobs = await db.collection("marketPhotoDeletions").get();
+  assert.equal(jobs.size, 1);
+  assert.equal(jobs.docs[0]?.get("ownerUid"), seller);
+  await cleanupMarketDataService(db, async () => undefined, NOW);
+  assert.equal((await db.collection("marketPhotoDeletions").get()).empty, true);
+});
+
+test("overlapping conversation cleanup cannot remove a freshly recreated conversation", async () => {
+  const listingId = await publishedListing();
+  const conversationId = `${listingId}_${buyer}`;
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Eski konuşma" }, deps);
+  await db.doc(`marketConversations/${conversationId}`).update({ lastMessageAt: Timestamp.fromMillis(NOW - 366 * 86_400_000) });
+  const messageBatch = db.batch();
+  for (let index = 0; index < 250; index++) messageBatch.set(db.doc(`marketConversations/${conversationId}/messages/old${index}`), {
+    text: "Eski", senderUid: buyer, createdAt: Timestamp.fromMillis(NOW - 366 * 86_400_000),
+  });
+  await messageBatch.commit();
+  const cleanups = [cleanupMarketDataService(db, async () => undefined, NOW), cleanupMarketDataService(db, async () => undefined, NOW)];
+  await Promise.race(cleanups);
+  await sendMarketMessageService(db, buyer, { conversationId, text: "Yeni konuşma" }, { ...deps, now: () => NOW + 1000 });
+  await Promise.all(cleanups);
+  const current = await getMarketMessagesService(db, buyer, { conversationId });
+  assert.equal(current.conversation.status, "open");
+  assert.deepEqual(current.messages.map((message) => message.text), ["Yeni konuşma"]);
 });

@@ -1,5 +1,9 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
+import com.good4.core.presentation.*
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -71,7 +75,6 @@ import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import org.koin.compose.viewmodel.koinViewModel
 
-private val PendingAmber = Color(0xFFE08A1E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +88,6 @@ fun CampusClosetListingScreen(
     var reporting by remember { mutableStateOf(false) }
     var offering by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf(false) }
-    var editingPrice by remember { mutableStateOf(false) }
 
     LaunchedEffect(listingId) { viewModel.load(listingId) }
     LaunchedEffect(state.removed) { if (state.removed) onBack() }
@@ -101,21 +103,21 @@ fun CampusClosetListingScreen(
     Good4Scaffold(
         topBar = {
             Good4TopBar(
-                title = listing?.let { categoryLabel(it.category) } ?: "İlan",
+                title = listing?.let { categoryLabel(it.category) } ?: stringResource(Res.string.campus_closet_ilan),
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.campus_closet_back)) }
                 },
                 actions = {
                     if (listing != null && !listing.isMine) {
                         IconButton(onClick = viewModel::toggleFavorite) {
                             Icon(
                                 if (listing.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = if (listing.isFavorite) "Kaydedilenlerden çıkar" else "Kaydet",
+                                contentDescription = if (listing.isFavorite) stringResource(Res.string.campus_closet_kaydedilenlerden_cikar) else stringResource(Res.string.campus_closet_save),
                                 tint = if (listing.isFavorite) ErrorRed else TextSecondary
                             )
                         }
                         IconButton(onClick = { reporting = true }) {
-                            Icon(Icons.Outlined.Flag, contentDescription = "Şikayet et", tint = TextSecondary)
+                            Icon(Icons.Outlined.Flag, contentDescription = stringResource(Res.string.campus_closet_report), tint = TextSecondary)
                         }
                     }
                 }
@@ -142,7 +144,7 @@ fun CampusClosetListingScreen(
                 state.isLoading -> CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center)
                 )
-                listing == null -> CenteredState(state.loadError ?: "İlan bulunamadı.", "Geri dön", onBack)
+                listing == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.campus_closet_ilan_bulunamadi), stringResource(Res.string.campus_closet_geri_don), onBack)
                 else -> Column(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)
                 ) {
@@ -174,18 +176,18 @@ fun CampusClosetListingScreen(
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text("30 gün daha yayında tut (${listing.renewsLeft} hak)") }
+                            ) { Text(stringResource(Res.string.campus_closet_30_gun_daha_yayinda_tut_hak, listing.renewsLeft)) }
                         }
                         if (listing.isMine && listing.status in listOf("pending", "published", "reserved")) {
                             OutlinedButton(
-                                onClick = { editingPrice = true },
+                                onClick = viewModel::beginPriceEdit,
                                 enabled = !state.busy,
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Fiyatı düzenle")
+                                Text(stringResource(Res.string.campus_closet_edit_price))
                             }
                         }
                         SellerCard(listing)
@@ -193,7 +195,7 @@ fun CampusClosetListingScreen(
                         SafetyCard()
                         if (listing.isMine && listing.status in listOf("pending", "rejected")) {
                             TextButton(onClick = { confirmRemove = true }, enabled = !state.busy, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                                Text("İlanı kaldır", color = ErrorRed)
+                                Text(stringResource(Res.string.campus_closet_ilani_kaldir), color = ErrorRed)
                             }
                         }
                     }
@@ -204,7 +206,7 @@ fun CampusClosetListingScreen(
 
     if (reporting) {
         ReportDialog(
-            title = "İlanı şikayet et",
+            title = stringResource(Res.string.campus_closet_ilani_sikayet_et),
             onDismiss = { reporting = false },
             onSubmit = { reason, note ->
                 reporting = false
@@ -224,15 +226,9 @@ fun CampusClosetListingScreen(
             }
         }
     }
-    if (editingPrice && listing != null) {
-        PriceEditDialog(
-            currentPrice = listing.price,
-            onDismiss = { editingPrice = false },
-            onSave = { price ->
-                editingPrice = false
-                viewModel.updatePrice(price)
-            }
-        )
+    state.priceEdit?.let { draft ->
+        PriceEditDialog(draft, viewModel::setEditPrice, viewModel::setEditFree,
+            viewModel::dismissPriceEdit, viewModel::savePriceEdit)
     }
     if (confirmRemove && listing != null) {
         RemoveListingDialog(
@@ -296,7 +292,7 @@ private fun InfoChip(icon: ImageVector?, label: String, accent: Color? = null) {
 private fun InfoRow(listing: MarketListing) {
     val style = CATEGORY_STYLES[listing.category] ?: CATEGORY_STYLES[null]!!
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        InfoChip(style.icon, style.label, style.accent)
+        InfoChip(style.icon, stringResource(style.label), style.accent)
         conditionLabel(listing.condition).takeIf { it.isNotBlank() }?.let { InfoChip(null, it) }
         formatRelativeTime(listing.publishedAt ?: listing.createdAt).takeIf { it.isNotBlank() }?.let {
             InfoChip(Icons.Outlined.Schedule, it)
@@ -324,14 +320,14 @@ private fun SellerCard(listing: MarketListing) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    listing.sellerName.firstOrNull()?.uppercase() ?: "Ö",
+                    listing.sellerName.firstOrNull()?.uppercase() ?: stringResource(Res.string.campus_closet_o),
                     color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, fontSize = 18.sp
                 )
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (listing.isMine) "Senin ilanın" else listing.sellerName,
+                    if (listing.isMine) stringResource(Res.string.campus_closet_senin_ilanin) else listing.sellerName,
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary
                 )
                 Text(listing.universityName, fontSize = 12.sp, color = TextSecondary)
@@ -339,7 +335,7 @@ private fun SellerCard(listing: MarketListing) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Verified, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Doğrulanmış öğrenci", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                Text(stringResource(Res.string.campus_closet_dogrulanmis_ogrenci), fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -349,7 +345,7 @@ private fun SellerCard(listing: MarketListing) {
 private fun DescriptionCard(text: String) {
     SectionCard {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Açıklama", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Text(stringResource(Res.string.campus_closet_aciklama), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             Text(text, fontSize = 15.sp, lineHeight = 22.sp, color = TextPrimary)
         }
     }
@@ -360,9 +356,9 @@ private fun SafetyCard() {
     SectionCard {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Elden teslim", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                Text(stringResource(Res.string.campus_closet_elden_teslim), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
                 Text(
-                    "Kampüste kalabalık bir yerde buluş. Ürünü görmeden ödeme ya da kapora gönderme.",
+                    stringResource(Res.string.campus_closet_kampuste_kalabalik_bir_yerde_bulus_urunu_gormeden_odeme_ya),
                     fontSize = 12.sp, lineHeight = 17.sp, color = TextSecondary
                 )
             }
@@ -375,22 +371,22 @@ private fun SafetyCard() {
 @Composable
 private fun SellerNotice(listing: MarketListing) {
     when (listing.status) {
-        "pending" -> MarketNotice("İlanın inceleniyor. Yaklaşık 30 dakika içinde yayına alınır.", color = PendingAmber)
+        "pending" -> MarketNotice(stringResource(Res.string.campus_closet_ilanin_inceleniyor_yaklasik_30_dakika_icinde_yayina_alinir), color = ClosetOfferAccent)
         "rejected" -> MarketNotice(
-            "İlanın yayınlanmadı." + (listing.rejectReason?.let { " Gerekçe: $it" } ?: ""),
+            stringResource(Res.string.campus_closet_ilanin_yayinlanmadi) + (listing.rejectReason?.let { stringResource(Res.string.campus_closet_gerekce, it) } ?: ""),
             color = ErrorRed
         )
-        "reserved" -> MarketNotice("İlan rezerve olarak görünüyor; yeni teklif alınmıyor.", color = PendingAmber)
-        "sold" -> MarketNotice("İlan satıldı olarak işaretlendi.", color = TextSecondary)
+        "reserved" -> MarketNotice(stringResource(Res.string.campus_closet_ilan_rezerve_olarak_gorunuyor_yeni_teklif_alinmiyor), color = ClosetOfferAccent)
+        "sold" -> MarketNotice(stringResource(Res.string.campus_closet_ilan_satildi_olarak_isaretlendi), color = TextSecondary)
         "expired" -> MarketNotice(
-            if (listing.renewsLeft > 0) "İlanın süresi doldu ve yayından kalktı. 30 gün daha yayında tutabilirsin."
-            else "İlanın süresi doldu ve yayından kalktı. Hâlâ satılıksa yeni ilan verebilirsin.",
+            if (listing.renewsLeft > 0) stringResource(Res.string.campus_closet_ilanin_suresi_doldu_ve_yayindan_kalkti_30_gun_daha)
+            else stringResource(Res.string.campus_closet_ilanin_suresi_doldu_ve_yayindan_kalkti_hala_satiliksa_yeni),
             color = ErrorRed
         )
         "published", "reserved" -> listing.daysLeft(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())?.let { days ->
             MarketNotice(
-                if (days == 0) "İlanın bugün yayından kalkacak." else "İlanın $days gün sonra yayından kalkacak.",
-                color = if (days <= 3) PendingAmber else TextSecondary
+                if (days == 0) stringResource(Res.string.campus_closet_ilanin_bugun_yayindan_kalkacak) else stringResource(Res.string.campus_closet_ilanin_gun_sonra_yayindan_kalkacak, days),
+                color = if (days <= 3) ClosetOfferAccent else TextSecondary
             )
         }
     }
@@ -410,19 +406,19 @@ private fun ActionBar(
     val me = detail.me
     val content: (@Composable () -> Unit)? = when {
         listing.isMine -> when (listing.status) {
-            "published", "reserved" -> { { BarButtons("Yayından kaldır", { onStatus("remove") }, "Satıldı", { onStatus("markSold") }, busy) } }
-            "sold" -> { { BarButtons("Yayından kaldır", { onStatus("remove") }, "Tekrar yayına al", { onStatus("markAvailable") }, busy) } }
+            "published", "reserved" -> { { BarButtons(stringResource(Res.string.campus_closet_yayindan_kaldir), { onStatus("remove") }, stringResource(Res.string.campus_closet_satildi), { onStatus("markSold") }, busy) } }
+            "sold" -> { { BarButtons(stringResource(Res.string.campus_closet_yayindan_kaldir), { onStatus("remove") }, stringResource(Res.string.campus_closet_tekrar_yayina_al), { onStatus("markAvailable") }, busy) } }
             else -> null
         }
-        !me.eduVerified -> { { BarButtons(null, {}, "Doğrula, mesaj gönder", onVerify, busy) } }
-        me.suspendedUntil != null -> { { BarText("Kampüs Dolabı erişimin geçici olarak kapalı.") } }
-        !detail.sameCampus && detail.conversationId == null -> { { BarText("Bu ilan başka bir kampüste; yalnızca kendi kampüsündeki ilanlara yazabilirsin.") } }
+        !me.eduVerified -> { { BarButtons(null, {}, stringResource(Res.string.campus_closet_dogrula_mesaj_gonder), onVerify, busy) } }
+        me.suspendedUntil != null -> { { BarText(stringResource(Res.string.campus_closet_kampus_dolabi_erisimin_gecici_olarak_kapali)) } }
+        !detail.sameCampus && detail.conversationId == null -> { { BarText(stringResource(Res.string.campus_closet_bu_ilan_baska_bir_kampuste_yalnizca_kendi_kampusundeki_ilanlara)) } }
         else -> {
             {
                 val canOffer = listing.status == "published" && listing.price > 0
                 BarButtons(
-                    if (canOffer) "Teklif ver" else null, onOffer,
-                    if (detail.conversationId != null) "Mesajlara git" else "Mesaj gönder", onMessage,
+                    if (canOffer) stringResource(Res.string.campus_closet_teklif_ver) else null, onOffer,
+                    if (detail.conversationId != null) stringResource(Res.string.campus_closet_mesajlara_git) else stringResource(Res.string.campus_closet_mesaj_gonder), onMessage,
                     busy,
                     secondaryIcon = Icons.Outlined.LocalOffer,
                     primaryIcon = Icons.Outlined.ChatBubbleOutline
@@ -477,7 +473,7 @@ private fun BarButtons(
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             if (busy) {
-                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                CircularProgressIndicator(Modifier.size(StandardButtonLoadingIndicatorSize), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
             } else {
                 primaryIcon?.let {
                     Icon(it, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -495,9 +491,9 @@ private fun OfferSheet(price: Int, onOffer: (Int) -> Unit) {
         Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp).navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("Teklif ver", fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Text(stringResource(Res.string.campus_closet_teklif_ver), fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
         Text(
-            "İlan fiyatı ${formatPrice(price)}. Teklifin satıcıya mesaj olarak gider; satıcı kabul ya da reddeder.",
+            stringResource(Res.string.campus_closet_ilan_fiyati_teklifin_saticiya_mesaj_olarak_gider_satici_kabul, formatPrice(price)),
             fontSize = 13.sp, lineHeight = 18.sp, color = TextSecondary
         )
         CampusClosetLimits.OFFER_PERCENTS.forEach { percent ->
@@ -510,7 +506,7 @@ private fun OfferSheet(price: Int, onOffer: (Int) -> Unit) {
                 shadowElevation = 1.dp
             ) {
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("%$percent indirim", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary, modifier = Modifier.weight(1f))
+                    Text(stringResource(Res.string.campus_closet_indirim, percent), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary, modifier = Modifier.weight(1f))
                     Text(formatPrice(offerPrice(price, percent)), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             }

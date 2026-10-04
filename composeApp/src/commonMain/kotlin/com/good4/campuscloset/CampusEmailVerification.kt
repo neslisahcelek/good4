@@ -157,22 +157,6 @@ class CampusEmailVerificationRepository(private val auth: AuthRepository) {
     }
 }
 
-internal fun campusEmailVerificationError(error: Throwable): String = when (error.message) {
-    "CAMPUS_EMAIL_INVALID" -> "Yalnızca @ogr.akdeniz.edu.tr uzantılı öğrenci adresleri kabul edilir."
-    "EDU_EMAIL_IN_USE" -> "Bu üniversite adresi başka bir Good4 hesabıyla doğrulanmış."
-    "CAMPUS_EMAIL_RESEND_TOO_SOON" -> "Yeni bağlantı istemeden önce bir dakika bekleyin."
-    "CAMPUS_EMAIL_SEND_LIMIT" -> "Çok fazla bağlantı istendi. Bir saat sonra tekrar deneyin."
-    "CAMPUS_EMAIL_ACCOUNT_MISMATCH" -> "Bağlantıyı istediğiniz Good4 hesabıyla giriş yapın."
-    "CAMPUS_EMAIL_NO_LOCAL_REQUEST" -> "Bu cihazda bekleyen doğrulama isteği yok. Bağlantıyı başka cihazda istediyseniz bu cihazdan yeni bağlantı isteyin."
-    "CAMPUS_EMAIL_REQUEST_MISMATCH" -> "Bu bağlantı bu cihazdaki son doğrulama isteğine ait değil. En son gelen postayı kullanın; başka cihazda istediyseniz bu cihazdan yeni bağlantı isteyin."
-    "CAMPUS_EMAIL_LINK_EXPIRED" -> "Bağlantının süresi doldu. Yeni doğrulama bağlantısı isteyin."
-    "CAMPUS_EMAIL_PROOF_INVALID", "CAMPUS_EMAIL_SIGN_IN_FAILED" -> "Bağlantı doğrulanamadı. En son gelen e-postayı açın veya yeni bağlantı isteyin."
-    "CAMPUS_EMAIL_SEND_FAILED" -> "E-posta gönderilemedi. Bir dakika sonra tekrar deneyin."
-    "ROLE_NOT_ALLOWED" -> "Bu doğrulama yalnızca öğrenci hesapları için."
-    "ACCOUNT_NOT_ACTIVE", "AUTHENTICATION_REQUIRED" -> "Oturumunuzu kontrol edip tekrar giriş yapın."
-    else -> "İşlem tamamlanamadı. Bağlantınızı kontrol edip tekrar deneyin."
-}
-
 // The iOS application installs its native Firebase Auth implementation here.
 interface CampusEmailAuthCallback { fun complete(token: String?, error: String?) }
 interface CampusEmailAuthLauncher {

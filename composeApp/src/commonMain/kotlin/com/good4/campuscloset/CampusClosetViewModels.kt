@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import good4.composeapp.generated.resources.*
+import com.good4.core.presentation.UiText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -26,7 +28,7 @@ private suspend fun <T> attempt(block: suspend () -> T): kotlin.Result<T> = try 
 
 data class CampusClosetFeedState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     val me: MarketMe? = null,
     val category: String? = null,
     val query: String = "",
@@ -34,35 +36,44 @@ data class CampusClosetFeedState(
     val nextBefore: String? = null,
     val isLoadingMore: Boolean = false,
     val acceptingTerms: Boolean = false,
-    val termsError: String? = null,
-    val message: String? = null
+    val termsError: UiText? = null,
+    val message: UiText? = null
 )
 
-class CampusClosetFeedViewModel(private val repository: CampusClosetRepository) : ViewModel() {
+class CampusClosetFeedViewModel(private val repository: CampusClosetFeedDataSource) : ViewModel() {
     private val _state = MutableStateFlow(CampusClosetFeedState())
     val state = _state.asStateFlow()
     private var loadJob: Job? = null
     private var searchJob: Job? = null
+    private var paginationJob: Job? = null
+    private var requestVersion = 0L
 
     fun load() {
         val category = _state.value.category
         val query = _state.value.query
+        val version = ++requestVersion
         loadJob?.cancel()
+        paginationJob?.cancel()
+        _state.update { it.copy(isLoadingMore = false) }
         loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = it.listings.isEmpty(), loadError = null) }
             attempt { repository.feed(category, null, query) }
                 .onSuccess { feed ->
+                    if (version != requestVersion) return@onSuccess
                     _state.update {
                         it.copy(isLoading = false, me = feed.me, listings = feed.listings, nextBefore = feed.nextBefore)
                     }
                 }
-                .onFailure { error -> _state.update { it.copy(isLoading = false, loadError = campusClosetErrorMessage(error)) } }
+                .onFailure { error ->
+                    if (version == requestVersion) _state.update { it.copy(isLoading = false, loadError = campusClosetErrorMessage(error)) }
+                }
         }
     }
 
     fun selectCategory(category: String?) {
         if (category == _state.value.category) return
-        _state.update { it.copy(category = category, listings = emptyList(), nextBefore = null) }
+        searchJob?.cancel()
+        _state.update { it.copy(category = category, listings = emptyList(), nextBefore = null, message = null) }
         load()
     }
 
@@ -70,7 +81,10 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetRepository) 
     fun setQuery(value: String) {
         val query = value.take(60)
         if (query == _state.value.query) return
-        _state.update { it.copy(query = query) }
+        ++requestVersion
+        loadJob?.cancel()
+        paginationJob?.cancel()
+        _state.update { it.copy(query = query, isLoadingMore = false, message = null) }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(350)
@@ -97,20 +111,23 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetRepository) 
     fun loadMore() {
         val snapshot = _state.value
         val before = snapshot.nextBefore ?: return
-        if (snapshot.isLoadingMore) return
-        viewModelScope.launch {
-            _state.update { it.copy(isLoadingMore = true) }
+        if (snapshot.isLoadingMore || snapshot.isLoading) return
+        val version = requestVersion
+        _state.update { it.copy(isLoadingMore = true, message = null) }
+        paginationJob = viewModelScope.launch {
             attempt { repository.feed(snapshot.category, before, snapshot.query) }
                 .onSuccess { feed ->
+                    if (version != requestVersion) return@onSuccess
                     _state.update {
-                        it.copy(
-                            isLoadingMore = false,
-                            listings = (it.listings + feed.listings).distinctBy(MarketListing::id),
-                            nextBefore = feed.nextBefore
-                        )
+                        it.copy(isLoadingMore = false,
+                            listings = (it.listings + feed.listings).distinctBy(MarketListing::id), nextBefore = feed.nextBefore)
                     }
                 }
-                .onFailure { _state.update { it.copy(isLoadingMore = false) } }
+                .onFailure { error ->
+                    if (version == requestVersion) _state.update {
+                        it.copy(isLoadingMore = false, message = campusClosetErrorMessage(error))
+                    }
+                }
         }
     }
 
@@ -133,14 +150,28 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetRepository) 
 // Listing detail
 // ---------------------------------------------------------------------------
 
+data class CampusClosetPriceEditState(
+    val listingId: String,
+    val currentPrice: Int,
+    val priceText: String = if (currentPrice > 0) currentPrice.toString() else "",
+    val isFree: Boolean = currentPrice == 0
+) {
+    val price: Int? get() = if (isFree) 0 else priceText.toIntOrNull()
+    val canSave: Boolean get() = price?.let {
+        it in 0..CampusClosetLimits.MAX_PRICE && (isFree || it > 0) && it != currentPrice
+    } == true
+    fun withPrice(value: String) = copy(priceText = value.filter(Char::isDigit).take(6))
+}
+
 data class CampusClosetListingState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     val detail: MarketListingDetail? = null,
     val busy: Boolean = false,
-    val message: String? = null,
+    val message: UiText? = null,
     val openConversationId: String? = null,
-    val removed: Boolean = false
+    val removed: Boolean = false,
+    val priceEdit: CampusClosetPriceEditState? = null
 )
 
 class CampusClosetListingViewModel(private val repository: CampusClosetRepository) : ViewModel() {
@@ -184,8 +215,22 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
         val listingId = _state.value.detail?.listing?.id ?: return
         runAction {
             repository.report("listing", listingId, reason, note)
-            _state.update { it.copy(message = "Şikayetin alındı. Good4 ekibi inceleyecek.") }
+            _state.update { it.copy(message = UiText.StringResourceId(Res.string.campus_closet_sikayetin_alindi_good4_ekibi_inceleyecek)) }
         }
+    }
+
+    fun beginPriceEdit() {
+        val listing = _state.value.detail?.listing ?: return
+        _state.update { it.copy(priceEdit = CampusClosetPriceEditState(listing.id, listing.price)) }
+    }
+    fun setEditPrice(value: String) = _state.update { it.copy(priceEdit = it.priceEdit?.withPrice(value)) }
+    fun setEditFree(value: Boolean) = _state.update { it.copy(priceEdit = it.priceEdit?.copy(isFree = value)) }
+    fun dismissPriceEdit() = _state.update { it.copy(priceEdit = null) }
+    fun savePriceEdit() {
+        val draft = _state.value.priceEdit ?: return
+        if (!draft.canSave || _state.value.busy) return
+        dismissPriceEdit()
+        updatePrice(draft.price!!)
     }
 
     fun updatePrice(price: Int) {
@@ -195,7 +240,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
             _state.update { state ->
                 state.copy(
                     detail = state.detail?.let { it.copy(listing = it.listing.copy(price = price)) },
-                    message = "Fiyat güncellendi."
+                    message = UiText.StringResourceId(Res.string.campus_closet_fiyat_guncellendi)
                 )
             }
         }
@@ -206,7 +251,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
         runAction {
             repository.renew(listingId)
             load(listingId)
-            _state.update { it.copy(message = "İlan 30 gün daha yayında.") }
+            _state.update { it.copy(message = UiText.StringResourceId(Res.string.campus_closet_ilan_30_gun_daha_yayinda)) }
         }
     }
 
@@ -250,20 +295,20 @@ data class CampusClosetNewListingState(
     val isFree: Boolean = false,
     val photos: List<ByteArray> = emptyList(),
     val submitting: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val submitted: Boolean = false
 ) {
     val price: Int? get() = if (isFree) 0 else priceText.toIntOrNull()
-    val validationMessage: String?
+    val validationMessage: UiText?
         get() = when {
-            photos.isEmpty() -> "En az 1 fotoğraf ekle."
-            category == null -> "Ürünün kategorisini seç."
-            condition == null -> "Ürünün durumunu seç."
-            title.trim().length < 3 -> "Başlık en az 3 karakter olmalı."
-            description.trim().length < 10 -> "Açıklama en az 10 karakter olmalı."
-            price == null -> "Bir fiyat yaz veya ücretsiz seçeneğini aç."
-            price!! !in 0..CampusClosetLimits.MAX_PRICE -> "Fiyat 100.000 ₺'yi geçemez."
-            !isFree && price == 0 -> "0 ₺ için ücretsiz seçeneğini aç."
+            photos.isEmpty() -> UiText.StringResourceId(Res.string.campus_closet_en_az_1_fotograf_ekle)
+            category == null -> UiText.StringResourceId(Res.string.campus_closet_urunun_kategorisini_sec)
+            condition == null -> UiText.StringResourceId(Res.string.campus_closet_urunun_durumunu_sec)
+            title.trim().length < 3 -> UiText.StringResourceId(Res.string.campus_closet_baslik_en_az_3_karakter_olmali)
+            description.trim().length < 10 -> UiText.StringResourceId(Res.string.campus_closet_aciklama_en_az_10_karakter_olmali)
+            price == null -> UiText.StringResourceId(Res.string.campus_closet_bir_fiyat_yaz_veya_ucretsiz_secenegini_ac)
+            price!! !in 0..CampusClosetLimits.MAX_PRICE -> UiText.StringResourceId(Res.string.campus_closet_fiyat_100_000_yi_gecemez)
+            !isFree && price == 0 -> UiText.StringResourceId(Res.string.campus_closet_0_icin_ucretsiz_secenegini_ac)
             else -> null
         }
     val canSubmit: Boolean
@@ -285,7 +330,8 @@ class CampusClosetNewListingViewModel(private val repository: CampusClosetReposi
         if (it.photos.size >= CampusClosetLimits.MAX_PHOTOS) it else it.copy(photos = it.photos + bytes, error = null)
     }
     fun removePhoto(index: Int) = _state.update { it.copy(photos = it.photos.filterIndexed { i, _ -> i != index }) }
-    fun showError(message: String) = _state.update { it.copy(error = message) }
+    fun showError(message: String) = showError(UiText.DynamicString(message))
+    private fun showError(message: UiText) = _state.update { it.copy(error = message) }
 
     fun submit() {
         val snapshot = _state.value
@@ -319,10 +365,11 @@ class CampusClosetNewListingViewModel(private val repository: CampusClosetReposi
 
 data class CampusClosetMyListingsState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     val listings: List<MarketListing> = emptyList(),
     val busyId: String? = null,
-    val message: String? = null
+    val message: UiText? = null,
+    val priceEdit: CampusClosetPriceEditState? = null
 )
 
 class CampusClosetMyListingsViewModel(private val repository: CampusClosetRepository) : ViewModel() {
@@ -358,6 +405,19 @@ class CampusClosetMyListingsViewModel(private val repository: CampusClosetReposi
         }
     }
 
+    fun beginPriceEdit(listing: MarketListing) = _state.update {
+        it.copy(priceEdit = CampusClosetPriceEditState(listing.id, listing.price))
+    }
+    fun setEditPrice(value: String) = _state.update { it.copy(priceEdit = it.priceEdit?.withPrice(value)) }
+    fun setEditFree(value: Boolean) = _state.update { it.copy(priceEdit = it.priceEdit?.copy(isFree = value)) }
+    fun dismissPriceEdit() = _state.update { it.copy(priceEdit = null) }
+    fun savePriceEdit() {
+        val draft = _state.value.priceEdit ?: return
+        if (!draft.canSave || _state.value.busyId != null) return
+        dismissPriceEdit()
+        updatePrice(draft.listingId, draft.price!!)
+    }
+
     fun updatePrice(listingId: String, price: Int) {
         if (_state.value.busyId != null) return
         viewModelScope.launch {
@@ -377,7 +437,7 @@ class CampusClosetMyListingsViewModel(private val repository: CampusClosetReposi
 
 data class CampusClosetInboxState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     val conversations: List<MarketConversation> = emptyList()
 )
 
@@ -401,15 +461,15 @@ class CampusClosetInboxViewModel(private val repository: CampusClosetRepository)
 
 data class CampusClosetChatState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     /** True while the buyer has not sent the first message yet. */
     val isNew: Boolean = false,
     val conversation: MarketConversation? = null,
     val messages: List<MarketMessage> = emptyList(),
     val draft: String = "",
     val sending: Boolean = false,
-    val error: String? = null,
-    val info: String? = null
+    val error: UiText? = null,
+    val info: UiText? = null
 )
 
 class CampusClosetChatViewModel(private val repository: CampusClosetRepository) : ViewModel() {
@@ -476,6 +536,12 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
 
     fun setDraft(value: String) = _state.update { it.copy(draft = value.take(CampusClosetLimits.MAX_MESSAGE), error = null) }
 
+    fun appendMeetingPoint(point: String) {
+        viewModelScope.launch {
+            appendToDraft(org.jetbrains.compose.resources.getString(Res.string.campus_closet_bulusma_icin_uygun_mu_hangi_saat_olur, point))
+        }
+    }
+
     fun appendToDraft(text: String) = _state.update {
         val joined = if (it.draft.isBlank()) text else "${it.draft.trimEnd()} $text"
         it.copy(draft = joined.take(CampusClosetLimits.MAX_MESSAGE))
@@ -493,17 +559,17 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
 
     fun block() = runSend(clearDraft = false) {
         repository.block(conversationId)
-        _state.update { it.copy(info = "Kullanıcı engellendi. Bu konuşmaya artık mesaj gönderilemez.") }
+        _state.update { it.copy(info = UiText.StringResourceId(Res.string.campus_closet_kullanici_engellendi_bu_konusmaya_artik_mesaj_gonderilemez)) }
     }
 
     fun unblock() = runSend(clearDraft = false) {
         repository.unblock(conversationId)
-        _state.update { it.copy(info = "Engel kaldırıldı.") }
+        _state.update { it.copy(info = UiText.StringResourceId(Res.string.campus_closet_engel_kaldirildi)) }
     }
 
     fun report(reason: String, note: String) = runSend(clearDraft = false) {
         repository.report("conversation", conversationId, reason, note)
-        _state.update { it.copy(info = "Şikayetin alındı. Good4 ekibi konuşmayı inceleyecek.") }
+        _state.update { it.copy(info = UiText.StringResourceId(Res.string.campus_closet_sikayetin_alindi_good4_ekibi_konusmayi_inceleyecek)) }
     }
 
     fun clearInfo() = _state.update { it.copy(info = null) }
@@ -529,9 +595,9 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
 
 data class CampusClosetFavoritesState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     val listings: List<MarketListing> = emptyList(),
-    val message: String? = null
+    val message: UiText? = null
 )
 
 class CampusClosetFavoritesViewModel(private val repository: CampusClosetRepository) : ViewModel() {
@@ -559,10 +625,10 @@ class CampusClosetFavoritesViewModel(private val repository: CampusClosetReposit
 
 data class CampusClosetBlockedState(
     val isLoading: Boolean = true,
-    val loadError: String? = null,
+    val loadError: UiText? = null,
     val blocked: List<MarketBlockedUser> = emptyList(),
     val busyId: String? = null,
-    val message: String? = null
+    val message: UiText? = null
 )
 
 class CampusClosetBlockedViewModel(private val repository: CampusClosetRepository) : ViewModel() {

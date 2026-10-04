@@ -14,6 +14,7 @@ Good4, Akdeniz Üniversitesi öğrencileri için kampüs yaşamını kolaylaşt�
 
 - Öğrenci topluluklarını ve yayımladıkları etkinlikleri keşfet.
 - Etkinliklere kayıt ol ve katılım bilgilerini takip et.
+- Takip ettiğin toplulukların yeni etkinlikleri ve duyuruları ile kaydolduğun etkinliklerin değişiklik, iptal ve hatırlatmaları için isteğe bağlı bildirimler al.
 - Güncel yemekhane menüsünü ve akademik takvimi görüntüle.
 - Ders programını düzenle ve kampüs bilgilerine hızlıca ulaş.
 - Uygunsuz topluluk içeriklerini bildir veya bir topluluğu engelle.
@@ -46,9 +47,47 @@ This update replaces the previous supporter and suspended-meal flows with a stud
 
 Community events are posted by approved community managers. Students can report an event from its detail screen and block a community. Good4 administrators can review reports and remove reported content in the management portal.
 
+Push notifications are optional. They can cover new events from followed communities, changes or cancellations for registered events, reminders before registered events, and community announcements according to notification preferences. Notification permission is requested in the app; core browsing features remain available if permission is declined.
+
 Account deletion is available in Profile > Account Settings > Delete Account. The Terms of Use, Privacy Policy, and KVKK notice are linked in Account Settings and during registration.
 
 Review access: [Insert a working V2 student demo account and password in the secure App Review sign-in fields. Do not put credentials in this note or in Git.] The account must be verified and have sample events available. If a special setup step is needed, describe it here before submission.
+
+## Google Play Store metaverisi
+
+**Kısa açıklama**
+
+Akdeniz Üniversitesi etkinliklerini, yemekhane menüsünü ve kampüs yaşamını takip et.
+
+**Tam açıklama**
+
+Good4, Akdeniz Üniversitesi öğrencileri için kampüs yaşamını kolaylaştırır.
+
+- Öğrenci topluluklarını ve etkinliklerini keşfet.
+- Etkinliklere kaydol; katılım bilgilerini takip et.
+- Takip ettiğin toplulukların yeni etkinlikleri ve duyuruları için bildirim al.
+- Kaydolduğun etkinliklerin değişiklikleri, iptalleri ve yaklaşan etkinlik hatırlatmalarını bildirim ayarlarından yönet.
+- Yemekhane menüsünü ve akademik takvimi görüntüle.
+- Ders programını düzenle ve kampüs bilgilerine ulaş.
+- Uygunsuz topluluk içeriklerini bildir veya bir topluluğu engelle.
+
+Bildirimler isteğe bağlıdır. Bildirim izni verilmediğinde de uygulamanın temel özelliklerini kullanabilirsin. Özelliklerin kullanılabilirliği üniversiteye, topluluklara ve yayımlanan içeriğe göre değişebilir.
+
+Hesabını uygulama içinden yönetebilir ve silebilirsin. Destek için uygulamadaki geri bildirim alanını kullanabilirsin.
+
+**Gizlilik Politikası URL'si**
+
+https://good4tr-v2.web.app/gizlilik-politikasi
+
+**Destek e-postası / web sitesi**
+
+cannklnc7@gmail.com · https://good4tr.com/
+
+## Yayın öncesi push ve gizlilik kontrolü
+
+- Bu güncelleme taslağındaki push token'ı/cihaz kurulum kimliği, platform ve bildirim tercihleri açıklamasını canlı gizlilik politikasına aktar ve yayınlanan metinde göründüğünü doğrula.
+- Mağaza gizlilik/veri güvenliği beyanlarında push belirteçlerinin cihaz veya hesapla ilişkilendirildiğini ve iletim altyapısı sağlayıcılarıyla işlendiğini doğru sınıflandır. Tanılama/analitik kullanımıyla karıştırma.
+- İzin isteme ekranının açıklamasıyla bu sayfalardaki isteğe bağlılık ve bildirim türleri aynı olmalı.
 
 Apple sign-in: [Confirm the friend team's Apple Developer capability and Firebase provider are configured, then verify sign-in on the signed release build before submission.]
 

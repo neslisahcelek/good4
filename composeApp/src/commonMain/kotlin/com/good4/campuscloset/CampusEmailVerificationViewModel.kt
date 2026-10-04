@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import good4.composeapp.generated.resources.*
+import com.good4.core.presentation.UiText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -18,7 +20,7 @@ data class CampusEmailVerificationState(
     val isConfirming: Boolean = false,
     val resendSeconds: Int = 0,
     val hasReceivedLink: Boolean = false,
-    val error: String? = null
+    val error: UiText? = null
 )
 
 class CampusEmailVerificationViewModel(private val repository: CampusEmailVerificationRepository) : ViewModel() {
@@ -81,7 +83,7 @@ class CampusEmailVerificationViewModel(private val repository: CampusEmailVerifi
         val snapshot = state.value
         if (snapshot.isSending || snapshot.isConfirming || snapshot.resendSeconds > 0) return
         if (!isCampusStudentEmail(snapshot.email)) {
-            mutableState.update { it.copy(error = "Yalnızca @ogr.akdeniz.edu.tr uzantılı öğrenci adresleri kabul edilir.") }
+            mutableState.update { it.copy(error = UiText.StringResourceId(Res.string.campus_closet_yalnizca_ogr_akdeniz_edu_tr_uzantili_ogrenci_adresleri_kabul)) }
             return
         }
         viewModelScope.launch {

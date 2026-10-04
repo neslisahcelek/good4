@@ -195,7 +195,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         }
     }
 
-    fun select(community: Community) {
+    fun select(community: Community, targetEventId: String? = null) {
         loadingJob?.cancel()
         registrationJob?.cancel()
         mutable.update {
@@ -221,7 +221,9 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val access = repository.access()
                 val manager = access.active && community.id in access.communityIds
                 val page = repository.entryPage(community.id, manager)
-                val entries = page.first
+                val target = targetEventId?.takeIf { id -> page.first.none { it.id == id } }
+                    ?.let { repository.publishedEntry(community.id, it) }
+                val entries = if (target == null) page.first else page.first + target
                 val following = repository.isFollowing(community.id)
                 val events = entries.filter { it.data.kind == "event" && it.data.status == "published" }
                 val registrations = if (manager) {

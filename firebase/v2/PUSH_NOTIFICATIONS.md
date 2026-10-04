@@ -1,10 +1,34 @@
 # Good4 push notifications
 
-FCM delivery is **off by default**. Only `NOTIFICATIONS_ENABLED=true` enables
-new event jobs, reminder scheduling and admin announcements. Missing/false is
-safe, and workers cancel queued jobs while disabled. Keep the switch off until
-both mobile releases and the APNs configuration have passed acceptance tests.
-This first release is explicitly limited to `good4tr-v2`; the concurrent V2 test-environment migration does not automatically enable test push.
+Only `NOTIFICATIONS_ENABLED=true` enables new event jobs, reminder scheduling
+and admin announcements. The production configuration in
+`functions/.env.good4tr-v2` explicitly enables this switch for `good4tr-v2`.
+Missing/false remains disabled, and workers cancel queued jobs while disabled.
+This configuration does not establish that the installed mobile release or APNs
+setup has passed physical-device acceptance. The V2 test project does not
+dispatch production notification jobs.
+
+## İlk bildirimini güvenle dene
+
+1. Telefonda güncel üretim Good4 uygulamasına, web yönetim panelinde kullandığın
+   **aynı hesapla** giriş yap. Telefon ayarlarından Good4 bildirimlerine izin ver.
+2. [Yönetim panelini](https://good4tr-v2.web.app/admin) aç ve **Bildirimler**
+   bölümünde kısa bir başlık ile mesaj yaz. İlk testte etkinlik seçmen gerekmez.
+3. **Önizleme ve hedef kitle** düğmesine bas. **Test alıcısı** satırındaki hesabı
+   kontrol et ve **Yalnızca kendi hesabıma test gönder** düğmesini kullan.
+4. Test, formdaki hedef kitleyi kullanmaz. Sunucu alıcıyı doğrulanmış panel
+   oturumundan belirler; başka hesaplara bildirim veya inbox kaydı oluşturmaz.
+   Aynı hesabın başka telefon/tablette açıksa bu cihazlara da ulaşabilir.
+5. Test, uygulamadaki duyuru kategorisi kapalıyken de gönderilebilir. Telefonun
+   sistem bildirimi izni kapalıysa veya seçilen topluluk cihazda engelliyse
+   telefon bildirimi gönderilmez. Bu nedenle ilk testte etkinlik/topluluk
+   bağlantısı kullanmadan denemek daha kolaydır.
+
+**Duyuruyu gönder** gerçek hedef kitleye gönderim yapar ve alıcı sayısını
+gösteren ayrı bir onay ister. Genel duyuruların telefonlara ulaşması için
+kullanıcıların sistem izni ile uygulamadaki duyuru tercihi açık olmalıdır;
+duyuru tercihi varsayılan olarak kapalıdır. Test düğmesi aynı hesaba ait
+cihazları hedefler; belirli bir başka kişiyi seçme özelliği değildir.
 
 ## Configuration and rollout
 

@@ -102,7 +102,7 @@ fun CommunitiesScreen(
             previewAsStudent = true
             if (state.selected == null || (initialOrganizationId.isNotBlank() && state.selected?.id != initialOrganizationId)) {
                 val target = state.communities.firstOrNull { it.id == initialOrganizationId }
-                if (target != null) viewModel.select(target)
+                if (target != null) viewModel.select(target, initialEventId)
                 else { targetHandled = true; viewModel.reportError(unavailable) }
             } else {
                 targetHandled = true

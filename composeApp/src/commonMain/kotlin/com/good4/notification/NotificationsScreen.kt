@@ -27,7 +27,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: NotificationsViewModel, o
     val launcher = rememberNotificationPermissionLauncher()
     LaunchedEffect(Unit) { viewModel.refresh() }
     NotificationsContent(state, onBack, viewModel::select, { viewModel.read() }, viewModel::savePreferences,
-        { launcher.openSettings() }, viewModel::refresh)
+        { launcher.openSettings() }, viewModel::refresh, viewModel::loadMore)
     state.selected?.let { notification ->
         AlertDialog(
             onDismissRequest = viewModel::closeDetail,
@@ -53,7 +53,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: NotificationsViewModel, o
 private fun NotificationsContent(
     state: NotificationsState, onBack: () -> Unit, onSelect: (StudentNotification) -> Unit,
     onReadAll: () -> Unit, onPreferences: (NotificationPreferencesDto) -> Unit,
-    onSettings: () -> Unit, onRetry: () -> Unit
+    onSettings: () -> Unit, onRetry: () -> Unit, onLoadMore: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().background(AppBackground).windowInsetsPadding(WindowInsets.safeDrawing)) {
         Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -99,6 +99,16 @@ private fun NotificationsContent(
                     }
                 }
             }
+            if (state.nextCursor != null || state.loadingMore || state.pageError != null) item(key = "next-page") {
+                if (!state.loading && state.pageError == null) {
+                    LaunchedEffect(state.nextCursor) { onLoadMore() }
+                }
+                if (state.loadingMore) CircularProgressIndicator()
+                state.pageError?.let {
+                    Text(it.asString(), color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = onLoadMore) { Text(stringResource(Res.string.notification_retry)) }
+                }
+            }
         }
     }
 }
@@ -125,6 +135,6 @@ fun NotificationPermissionEducation() {
 @Composable
 private fun NotificationsPreview() {
     com.good4.core.presentation.Good4Theme {
-        NotificationsContent(NotificationsState(notifications = listOf(StudentNotification("preview", NotificationDto(title = "Etkinlik", body = "Kampüs etkinliği", createdAt = 1790000000)))), {}, {}, {}, {}, {}, {})
+        NotificationsContent(NotificationsState(notifications = listOf(StudentNotification("preview", NotificationDto(title = "Etkinlik", body = "Kampüs etkinliği", createdAt = 1790000000)))), {}, {}, {}, {}, {}, {}, {})
     }
 }

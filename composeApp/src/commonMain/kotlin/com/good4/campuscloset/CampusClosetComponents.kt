@@ -1,5 +1,10 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.*
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -52,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.good4.core.presentation.UiText
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.SurfaceDefault
@@ -63,22 +69,23 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-private val TURKISH_MONTHS = listOf("Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara")
+private val TURKISH_MONTHS = listOf(Res.string.campus_closet_oca, Res.string.campus_closet_sub, Res.string.campus_closet_mar, Res.string.campus_closet_nis, Res.string.campus_closet_may, Res.string.campus_closet_haz, Res.string.campus_closet_tem, Res.string.campus_closet_agu, Res.string.campus_closet_eyl, Res.string.campus_closet_eki, Res.string.campus_closet_kas, Res.string.campus_closet_ara)
 
+@Composable
 internal fun formatMarketTime(iso: String?): String {
     val instant = iso?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return ""
     val zone = TimeZone.currentSystemDefault()
     val time = instant.toLocalDateTime(zone)
     val today = Clock.System.now().toLocalDateTime(zone).date
     val clock = "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
-    return if (time.date == today) clock else "${time.dayOfMonth} ${TURKISH_MONTHS[time.monthNumber - 1]} $clock"
+    return if (time.date == today) clock else "${time.dayOfMonth} ${stringResource(TURKISH_MONTHS[time.monthNumber - 1])} $clock"
 }
 
 @Composable
 internal fun ListingStatusChip(status: String, modifier: Modifier = Modifier) {
     val color = when (status) {
         "published" -> MaterialTheme.colorScheme.primary
-        "pending", "reserved" -> Color(0xFFE08A1E)
+        "pending", "reserved" -> ClosetOfferAccent
         "rejected", "expired" -> ErrorRed
         else -> TextSecondary
     }
@@ -116,15 +123,16 @@ internal fun ListingPhoto(url: String?, modifier: Modifier = Modifier, category:
 }
 
 /** "şimdi", "12 dk önce", "3 sa önce", "dün", "4 gün önce", then the date. */
+@Composable
 internal fun formatRelativeTime(iso: String?): String {
     val instant = iso?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return ""
     val minutes = (Clock.System.now() - instant).inWholeMinutes
     return when {
-        minutes < 1 -> "şimdi"
-        minutes < 60 -> "$minutes dk önce"
-        minutes < 24 * 60 -> "${minutes / 60} sa önce"
-        minutes < 48 * 60 -> "dün"
-        minutes < 7 * 24 * 60 -> "${minutes / (24 * 60)} gün önce"
+        minutes < 1 -> stringResource(Res.string.campus_closet_simdi)
+        minutes < 60 -> stringResource(Res.string.campus_closet_dk_once, minutes)
+        minutes < 24 * 60 -> stringResource(Res.string.campus_closet_sa_once, minutes / 60)
+        minutes < 48 * 60 -> stringResource(Res.string.campus_closet_dun)
+        minutes < 7 * 24 * 60 -> stringResource(Res.string.campus_closet_gun_once, minutes / (24 * 60))
         else -> formatMarketTime(iso).substringBeforeLast(' ')
     }
 }
@@ -142,7 +150,7 @@ internal fun FavoriteButton(saved: Boolean, onToggle: () -> Unit, modifier: Modi
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 if (saved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                contentDescription = if (saved) "Kaydedilenlerden çıkar" else "Kaydet",
+                contentDescription = if (saved) stringResource(Res.string.campus_closet_kaydedilenlerden_cikar) else stringResource(Res.string.campus_closet_save),
                 tint = if (saved) ErrorRed else TextSecondary,
                 modifier = Modifier.size(18.dp)
             )
@@ -220,6 +228,14 @@ internal fun ListingGridCard(
 }
 
 @Composable
+internal fun MarketNotice(text: UiText, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.primary) =
+    MarketNotice(text.asString(), modifier, color)
+
+@Composable
+internal fun CenteredState(message: UiText, actionLabel: String? = null, onAction: () -> Unit = {}) =
+    CenteredState(message.asString(), actionLabel, onAction)
+
+@Composable
 internal fun MarketNotice(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.primary) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -268,13 +284,13 @@ internal fun ReportDialog(
                     ) {
                         RadioButton(selected = reason == id, onClick = null)
                         Spacer(Modifier.width(8.dp))
-                        Text(label, color = TextPrimary)
+                        Text(stringResource(label), color = TextPrimary)
                     }
                 }
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it.take(500) },
-                    label = { Text("Açıklama (isteğe bağlı)") },
+                    label = { Text(stringResource(Res.string.campus_closet_aciklama_istege_bagli)) },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     minLines = 2
                 )
@@ -282,21 +298,21 @@ internal fun ReportDialog(
         },
         confirmButton = {
             TextButton(onClick = { reason?.let { onSubmit(it, note) } }, enabled = reason != null) {
-                Text("Şikayet et", color = if (reason != null) ErrorRed else TextSecondary)
+                Text(stringResource(Res.string.campus_closet_report), color = if (reason != null) ErrorRed else TextSecondary)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.campus_closet_cancel)) } }
     )
 }
 
 private val BANNED_ITEMS = listOf(
-    "Sigara, tütün, nargile ve elektronik sigara ürünleri",
-    "Alkollü içkiler",
-    "Uyuşturucu ve uyarıcı maddeler, reçeteli ilaçlar",
-    "Silah, mermi, kurusıkı ve sustalı bıçak",
-    "Kaçak, bandrolsüz, çalıntı veya sahte (replika) ürünler",
-    "Sahte belge, kimlik ve öğrenci kartı, sınav soruları",
-    "Canlı hayvan"
+    Res.string.campus_closet_sigara_tutun_nargile_ve_elektronik_sigara_urunleri,
+    Res.string.campus_closet_alkollu_ickiler,
+    Res.string.campus_closet_uyusturucu_ve_uyarici_maddeler_receteli_ilaclar,
+    Res.string.campus_closet_silah_mermi_kurusiki_ve_sustali_bicak,
+    Res.string.campus_closet_kacak_bandrolsuz_calinti_veya_sahte_replika_urunler,
+    Res.string.campus_closet_sahte_belge_kimlik_ve_ogrenci_karti_sinav_sorulari,
+    Res.string.campus_closet_canli_hayvan
 )
 
 /** Shown once before a verified student starts using Kampüs Dolabı. */
@@ -312,28 +328,22 @@ internal fun CampusClosetTermsContent(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Kampüs Dolabı kuralları", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Text(stringResource(Res.string.campus_closet_kampus_dolabi_kurallari), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
         Text(
-            "Kampüs Dolabı, .edu.tr adresini doğrulayan öğrenciler arasında elden teslim ikinci el alışveriş içindir. " +
-                "Good4 satışın tarafı değildir, ödeme almaz ve aracılık etmez.",
+            stringResource(Res.string.campus_closet_kampus_dolabi_edu_tr_adresini_dogrulayan_ogrenciler_arasinda_elden),
             fontSize = 14.sp, lineHeight = 20.sp, color = TextPrimary
         )
         MarketNotice(
-            "Aşağıdaki ürünlerin satışı yasaktır. Bu ürünlerin satılması veya satışına aracılık edilmesi " +
-                "Türk Ceza Kanunu ve ilgili kanunlar (4207, 4733 ve 6136 sayılı Kanunlar, TCK 188) kapsamında suçtur. " +
-                "Bu tür ilanlar kaldırılır, hesaplar kapatılır ve gerektiğinde yetkili makamlara bildirilir.",
+            stringResource(Res.string.campus_closet_asagidaki_urunlerin_satisi_yasaktir_bu_urunlerin_satilmasi_veya_satisina),
             color = ErrorRed
         )
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             BANNED_ITEMS.forEach { item ->
-                Text("•  $item", fontSize = 14.sp, lineHeight = 20.sp, color = TextPrimary)
+                Text("•  ${stringResource(item)}", fontSize = 14.sp, lineHeight = 20.sp, color = TextPrimary)
             }
         }
         Text(
-            "• Yasak içerik içeren ilanlar ve mesajlar otomatik olarak engellenir; tekrarlayan denemeler erişimini askıya alır.\n" +
-                "• İlanlar yayına alınmadan önce Good4 ekibi tarafından incelenir.\n" +
-                "• Telefon numaranı yalnızca anlaştığın kişiyle mesajlarda paylaş.\n" +
-                "• Şikayet edilen ilanlar ve konuşmalar Good4 ekibi tarafından incelenebilir.",
+            stringResource(Res.string.campus_closet_yasak_icerik_iceren_ilanlar_ve_mesajlar_otomatik_olarak_engellenir),
             fontSize = 13.sp, lineHeight = 19.sp, color = TextSecondary
         )
         Row(
@@ -347,7 +357,7 @@ internal fun CampusClosetTermsContent(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                "Kuralları okudum. Yasak ürünlerin satışının suç olduğunu biliyorum ve kabul ediyorum.",
+                stringResource(Res.string.campus_closet_kurallari_okudum_yasak_urunlerin_satisinin_suc_oldugunu_biliyorum_ve),
                 fontSize = 14.sp, lineHeight = 19.sp, color = TextPrimary
             )
         }
@@ -355,12 +365,12 @@ internal fun CampusClosetTermsContent(
         Button(
             onClick = onAccept,
             enabled = checked && !accepting,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth().height(StandardButtonHeight),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            if (accepting) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            else Text("Kabul ediyorum, devam et", fontWeight = FontWeight.SemiBold)
+            if (accepting) CircularProgressIndicator(Modifier.size(StandardButtonLoadingIndicatorSize), strokeWidth = 2.dp)
+            else Text(stringResource(Res.string.campus_closet_kabul_ediyorum_devam_et), fontWeight = FontWeight.SemiBold)
         }
     }
 }

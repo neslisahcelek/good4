@@ -2,6 +2,8 @@ package com.good4.notification
 
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -49,6 +51,13 @@ object NativePushBridge { var launcher: NativePushLauncher? = null }
 
 /** Native callbacks only signal refresh/open intents; all UI state belongs to the ViewModel. */
 object PushSignals {
+    private val _received = MutableSharedFlow<NotificationOpen>(extraBufferCapacity = 64)
+    val received = _received.asSharedFlow()
+    fun received(notificationId: String, recipientUid: String) {
+        if (notificationId.matches(Regex("[A-Za-z0-9_-]{1,256}")) && recipientUid.isNotBlank()) {
+            _received.tryEmit(NotificationOpen(notificationId, recipientUid))
+        }
+    }
     private val _revision = MutableStateFlow(0)
     val revision = _revision.asStateFlow()
     private val _pendingOpen = MutableStateFlow<NotificationOpen?>(null)

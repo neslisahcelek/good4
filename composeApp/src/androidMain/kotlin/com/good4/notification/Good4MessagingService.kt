@@ -20,7 +20,7 @@ class Good4MessagingService : FirebaseMessagingService() {
     }
     override fun onMessageReceived(message: RemoteMessage) {
         if (message.data["recipientUid"] != FirebaseAuth.getInstance().currentUser?.uid) return
-        PushSignals.refresh()
+        message.data["notificationId"]?.let { PushSignals.received(it, message.data["recipientUid"].orEmpty()) }
         val intent = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         message.data.forEach { (key, value) -> intent.putExtra(key, value) }
         createNotificationChannels(this)
@@ -47,6 +47,6 @@ class Good4MessagingService : FirebaseMessagingService() {
                 .setContentIntent(pending).setAutoCancel(true)
         }
         val id = notificationId?.hashCode() ?: (message.data["type"] + message.data["conversationId"] + message.data["listingId"]).hashCode()
-        runCatching { manager.notify(id, 0, builder.build()) }
+        runCatching { manager.notify(id, builder.build()) }
     }
 }

@@ -442,7 +442,7 @@
     <string name="store_review_open_failed">Mağaza açılamadı. Lütfen daha sonra tekrar dene.</string>
     <string name="notification_title">Bildirimler</string>
     <string name="notification_back">Geri</string>
-    <string name="notification_read_all">Tümünü okundu işaretle</string>
+    <string name="notification_read_all">Yüklenenleri okundu işaretle</string>
     <string name="notification_preferences">Bildirim tercihleri</string>
     <string name="notification_event_updates">Yeni etkinlikler ve değişiklikler</string>
     <string name="notification_reminders">Etkinlik hatırlatmaları</string>
@@ -464,4 +464,291 @@
     <string name="notification_enable">Bildirimleri aç</string>
     <string name="notification_later">Daha sonra</string>
     <string name="community_load_more">Daha fazla etkinlik yükle</string>
+
+    <!-- Kampüs Dolabı -->
+    <string name="campus_closet_back" formatted="false">Geri</string>
+    <string name="campus_closet_ilanlarim" formatted="false">İlanlarım</string>
+    <string name="campus_closet_retry" formatted="false">Tekrar dene</string>
+    <string name="campus_closet_dolabin_henuz_bos" formatted="false">Dolabın henüz boş</string>
+    <string name="campus_closet_ilk_ilanini_paylas_artik_kullanmadigin_urunler_kampuste_yeni_birine" formatted="false">İlk ilanını paylaş; artık kullanmadığın ürünler kampüste yeni birine ulaşsın.</string>
+    <string name="campus_closet_ilanin_var">%1$s ilanın var</string>
+    <string name="campus_closet_ilanlarinin_durumunu_buradan_takip_et" formatted="false">İlanlarının durumunu buradan takip et.</string>
+    <string name="campus_closet_bugun_yayindan_kalkacak" formatted="false">Bugün yayından kalkacak</string>
+    <string name="campus_closet_gun_sonra_yayindan_kalkacak">%1$s gün sonra yayından kalkacak</string>
+    <string name="campus_closet_suresi_doldu_30_gun_daha_yayinda_tutabilirsin" formatted="false">Süresi doldu · 30 gün daha yayında tutabilirsin.</string>
+    <string name="campus_closet_suresi_doldu_yeni_ilan_verebilirsin" formatted="false">Süresi doldu · yeni ilan verebilirsin.</string>
+    <string name="campus_closet_inceleniyor_yaklasik_30_dakika_icinde_yayina_alinir" formatted="false">İnceleniyor · yaklaşık 30 dakika içinde yayına alınır.</string>
+    <string name="campus_closet_ilanin_yayinlanmadi_ayrintilar_icin_ilanini_acabilirsin" formatted="false">İlanın yayınlanmadı. Ayrıntılar için ilanını açabilirsin.</string>
+    <string name="campus_closet_ilani_ac" formatted="false">İlanı aç</string>
+    <string name="campus_closet_30_gun_uzat" formatted="false">30 gün uzat</string>
+    <string name="campus_closet_edit_price" formatted="false">Fiyatı düzenle</string>
+    <string name="campus_closet_yayindan_kaldir" formatted="false">Yayından kaldır</string>
+    <string name="campus_closet_satildi" formatted="false">Satıldı</string>
+    <string name="campus_closet_ilani_kaldir" formatted="false">İlanı kaldır</string>
+    <string name="campus_closet_mesajlar" formatted="false">Mesajlar</string>
+    <string name="campus_closet_engellediklerin" formatted="false">Engellediklerin</string>
+    <string name="campus_closet_konusma_burada_baslar" formatted="false">Konuşma burada başlar</string>
+    <string name="campus_closet_begendigin_bir_ilanin_saticisina_yaz_urun_ve_bulusma_ayrintilarini" formatted="false">Beğendiğin bir ilanın satıcısına yaz; ürün ve buluşma ayrıntılarını birlikte konuşun.</string>
+    <string name="campus_closet_kampusteki_konusmalarin" formatted="false">Kampüsteki konuşmaların</string>
+    <string name="campus_closet_student" formatted="false">Öğrenci</string>
+    <string name="campus_closet_alici" formatted="false">Alıcı</string>
+    <string name="campus_closet_satici" formatted="false">Satıcı</string>
+    <string name="campus_closet_99" formatted="false">99+</string>
+    <string name="campus_closet_sen" formatted="false">Sen: </string>
+    <string name="campus_closet_teklif_bekliyor" formatted="false">Teklif bekliyor</string>
+    <string name="campus_closet_kaydedilenler" formatted="false">Kaydedilenler</string>
+    <string name="campus_closet_kaydettigin_ilan_yok" formatted="false">Kaydettiğin ilan yok</string>
+    <string name="campus_closet_begendigin_ilanlardaki_kalbe_dokun_burada_toplanirlar_satilan_ya_da" formatted="false">Beğendiğin ilanlardaki kalbe dokun; burada toplanırlar. Satılan ya da kaldırılan ilanlar listeden düşer.</string>
+    <string name="campus_closet_engelledigin_kimse_yok" formatted="false">Engellediğin kimse yok</string>
+    <string name="campus_closet_bir_konusmada_kullaniciyi_engellersen_burada_gorunur_ve_engeli_buradan" formatted="false">Bir konuşmada kullanıcıyı engellersen burada görünür ve engeli buradan kaldırabilirsin.</string>
+    <string name="campus_closet_kaldiriliyor" formatted="false">Kaldırılıyor…</string>
+    <string name="campus_closet_engeli_kaldir" formatted="false">Engeli kaldır</string>
+    <string name="campus_closet_create_listing" formatted="false">İlan ver</string>
+    <string name="campus_closet_bitti" formatted="false">Bitti</string>
+    <string name="campus_closet_ilanin_yaklasik_30_dakika_icinde_incelenir" formatted="false">İlanın yaklaşık 30 dakika içinde incelenir.</string>
+    <string name="campus_closet_gonderiliyor" formatted="false">Gönderiliyor…</string>
+    <string name="campus_closet_incelemeye_gonder" formatted="false">İncelemeye gönder</string>
+    <string name="campus_closet_dolabinda_yer_ac_kampuste_paylas" formatted="false">Dolabında yer aç, kampüste paylaş.</string>
+    <string name="campus_closet_fotograflar" formatted="false">Fotoğraflar</string>
+    <string name="campus_closet_en_az_1_en_fazla_3_fotograf_ekle" formatted="false">En az 1, en fazla 3 fotoğraf ekle.</string>
+    <string name="campus_closet_ilk_fotograf_ilanin_kapak_gorseli_olur_urunu_farkli_acilardan" formatted="false">İlk fotoğraf ilanın kapak görseli olur. Ürünü farklı açılardan göster.</string>
+    <string name="campus_closet_urun_bilgisi" formatted="false">Ürün bilgisi</string>
+    <string name="campus_closet_kategori" formatted="false">Kategori</string>
+    <string name="campus_closet_urunun_durumu" formatted="false">Ürünün durumu</string>
+    <string name="campus_closet_baslik" formatted="false">Başlık</string>
+    <string name="campus_closet_orn_kislik_mont_m_beden" formatted="false">Örn. Kışlık mont, M beden</string>
+    <string name="campus_closet_en_az_3_karakter">%1$s/%2$s · En az 3 karakter</string>
+    <string name="campus_closet_aciklama" formatted="false">Açıklama</string>
+    <string name="campus_closet_durumu_bedeni_ve_kullanim_suresi" formatted="false">Durumu, bedeni ve kullanım süresi…</string>
+    <string name="campus_closet_en_az_10_karakter_telefon_numarasi_yazma">%1$s/%2$s · En az 10 karakter · Telefon numarası yazma</string>
+    <string name="campus_closet_fiyat" formatted="false">Fiyat</string>
+    <string name="campus_closet_ucretsiz_bagis" formatted="false">Ücretsiz / bağış</string>
+    <string name="campus_closet_bir_arkadasina_hediye_et" formatted="false">Bir arkadaşına hediye et.</string>
+    <string name="campus_closet_currency" formatted="false">₺</string>
+    <string name="campus_closet_ilaninda_fiyat_yerine_ucretsiz_yazacak" formatted="false">İlanında fiyat yerine “Ücretsiz” yazacak.</string>
+    <string name="campus_closet_ilanlar_yayinlanmadan_once_incelenir_sigara_alkol_ilac_silah_kacak" formatted="false">İlanlar yayınlanmadan önce incelenir. Sigara, alkol, ilaç, silah, kaçak ve sahte ürünlerin satışı yasaktır.</string>
+    <string name="campus_closet_fotograf_ekle" formatted="false">Fotoğraf ekle</string>
+    <string name="campus_closet_urunun_net_gorundugu_bir_fotograf_sec" formatted="false">Ürünün net göründüğü bir fotoğraf seç.</string>
+    <string name="campus_closet_fotograf">Fotoğraf %1$s</string>
+    <string name="campus_closet_fotograf_kaldir">Fotoğraf %1$s kaldır</string>
+    <string name="campus_closet_fotograf_ekle_2">Fotoğraf %1$s ekle</string>
+    <string name="campus_closet_kapak" formatted="false">Kapak</string>
+    <string name="campus_closet_ilanin_inceleniyor" formatted="false">İlanın inceleniyor</string>
+    <string name="campus_closet_yaklasik_30_dakika_icinde_yayina_alinir_durumunu_ilanlarim_sayfasindan" formatted="false">Yaklaşık 30 dakika içinde yayına alınır. Durumunu İlanlarım sayfasından takip edebilirsin.</string>
+    <string name="campus_closet_ilanlarima_git" formatted="false">İlanlarıma git</string>
+    <string name="campus_closet_kampus_dolabi_na_don" formatted="false">Kampüs Dolabı\'na dön</string>
+    <string name="campus_closet_merkez_kutuphane" formatted="false">Merkez Kütüphane</string>
+    <string name="campus_closet_olbia_carsisi" formatted="false">Olbia Çarşısı</string>
+    <string name="campus_closet_merkezi_yemekhane" formatted="false">Merkezi Yemekhane</string>
+    <string name="campus_closet_bulusma_icin_uygun_mu_hangi_saat_olur">Buluşma için %1$s uygun mu? Hangi saat olur?</string>
+    <string name="campus_closet_sohbet" formatted="false">Sohbet</string>
+    <string name="campus_closet_other" formatted="false">Diğer</string>
+    <string name="campus_closet_ilani_goruntule" formatted="false">İlanı görüntüle</string>
+    <string name="campus_closet_report" formatted="false">Şikayet et</string>
+    <string name="campus_closet_kullaniciyi_engelle" formatted="false">Kullanıcıyı engelle</string>
+    <string name="campus_closet_geri_don" formatted="false">Geri dön</string>
+    <string name="campus_closet_kampuste_kalabalik_bir_yerde_bulusun_urunu_gormeden_odeme_yapmayin" formatted="false">Kampüste kalabalık bir yerde buluşun. Ürünü görmeden ödeme yapmayın. Telefon numaranızı yalnızca anlaştığınız kişiyle paylaşın.</string>
+    <string name="campus_closet_saticiya_ilk_mesajini_yaz_urunun_durumu_bulusma_yeri_ve" formatted="false">Satıcıya ilk mesajını yaz. Ürünün durumu, buluşma yeri ve saati hakkında konuşabilirsiniz.</string>
+    <string name="campus_closet_konusmayi_sikayet_et" formatted="false">Konuşmayı şikayet et</string>
+    <string name="campus_closet_kullanici_engellensin_mi" formatted="false">Kullanıcı engellensin mi?</string>
+    <string name="campus_closet_bu_kisi_sana_artik_mesaj_gonderemez_ve_ilanlari_sana" formatted="false">Bu kişi sana artık mesaj gönderemez ve ilanları sana gösterilmez.</string>
+    <string name="campus_closet_engelle" formatted="false">Engelle</string>
+    <string name="campus_closet_cancel" formatted="false">Vazgeç</string>
+    <string name="campus_closet_teklif_ver" formatted="false">Teklif ver</string>
+    <string name="campus_closet_ilan_fiyati_uzerinden_indirim_sec" formatted="false">İlan fiyatı üzerinden indirim seç.</string>
+    <string name="campus_closet_indirim">%%1$s indirim</string>
+    <string name="campus_closet_kampus_ilani" formatted="false">Kampüs ilanı</string>
+    <string name="campus_closet_fiyati_ilanda_gor" formatted="false">Fiyatı ilanda gör</string>
+    <string name="campus_closet_ilana_git" formatted="false">İlana git</string>
+    <string name="campus_closet_teklif">Teklif%1$s</string>
+    <string name="campus_closet_reddet" formatted="false">Reddet</string>
+    <string name="campus_closet_kabul_et" formatted="false">Kabul et</string>
+    <string name="campus_closet_bu_kullaniciyi_engelledin" formatted="false">Bu kullanıcıyı engelledin.</string>
+    <string name="campus_closet_bu_konusmaya_mesaj_gonderilemiyor" formatted="false">Bu konuşmaya mesaj gönderilemiyor.</string>
+    <string name="campus_closet_mesaj_yaz" formatted="false">Mesaj yaz</string>
+    <string name="campus_closet_gonder" formatted="false">Gönder</string>
+    <string name="campus_closet_e_postan_onaylandi" formatted="false">E-postan onaylandı</string>
+    <string name="campus_closet_ilan_vermek_icin_okul_e_postani_dogrula" formatted="false">İlan vermek için okul e-postanı doğrula</string>
+    <string name="campus_closet_dogrulama_e_postana_outlook_uzerinden_ulasabilirsin_gereksiz_e_posta" formatted="false">Doğrulama e-postana Outlook üzerinden ulaşabilirsin. Gereksiz E-posta/Spam klasörünü kontrol etmeyi unutma.</string>
+    <string name="campus_closet_ilan_verebilirsin" formatted="false">İlan verebilirsin.</string>
+    <string name="campus_closet_ogrenci_numaran" formatted="false">Öğrenci numaran</string>
+    <string name="campus_closet_numaran" formatted="false">Numaran</string>
+    <string name="campus_closet_tekrar_dene_sn">Tekrar dene (%1$s sn)</string>
+    <string name="campus_closet_dogrulama_e_postasi_gonder" formatted="false">Doğrulama e-postası gönder</string>
+    <string name="campus_closet_dogrulamadan_sonra_ilan_verebilirsin" formatted="false">Doğrulamadan sonra ilan verebilirsin.</string>
+    <string name="campus_closet_e_postan_dogrulaniyor" formatted="false">E-postan doğrulanıyor…</string>
+    <string name="campus_closet_e_postayi_degistir" formatted="false">E-postayı değiştir</string>
+    <string name="campus_closet_tekrar_gonder_sn">Tekrar gönder (%1$s sn)</string>
+    <string name="campus_closet_tekrar_gonder" formatted="false">Tekrar gönder</string>
+    <string name="campus_closet_yalnizca_ogr_akdeniz_edu_tr_uzantili_ogrenci_adresleri_kabul" formatted="false">Yalnızca @ogr.akdeniz.edu.tr uzantılı öğrenci adresleri kabul edilir.</string>
+    <string name="campus_closet_ilan" formatted="false">İlan</string>
+    <string name="campus_closet_kaydedilenlerden_cikar" formatted="false">Kaydedilenlerden çıkar</string>
+    <string name="campus_closet_save" formatted="false">Kaydet</string>
+    <string name="campus_closet_ilan_bulunamadi" formatted="false">İlan bulunamadı.</string>
+    <string name="campus_closet_30_gun_daha_yayinda_tut_hak">30 gün daha yayında tut (%1$s hak)</string>
+    <string name="campus_closet_ilani_sikayet_et" formatted="false">İlanı şikayet et</string>
+    <string name="campus_closet_o" formatted="false">Ö</string>
+    <string name="campus_closet_senin_ilanin" formatted="false">Senin ilanın</string>
+    <string name="campus_closet_dogrulanmis_ogrenci" formatted="false">Doğrulanmış öğrenci</string>
+    <string name="campus_closet_elden_teslim" formatted="false">Elden teslim</string>
+    <string name="campus_closet_kampuste_kalabalik_bir_yerde_bulus_urunu_gormeden_odeme_ya" formatted="false">Kampüste kalabalık bir yerde buluş. Ürünü görmeden ödeme ya da kapora gönderme.</string>
+    <string name="campus_closet_ilanin_inceleniyor_yaklasik_30_dakika_icinde_yayina_alinir" formatted="false">İlanın inceleniyor. Yaklaşık 30 dakika içinde yayına alınır.</string>
+    <string name="campus_closet_ilanin_yayinlanmadi" formatted="false">İlanın yayınlanmadı.</string>
+    <string name="campus_closet_gerekce"> Gerekçe: %1$s</string>
+    <string name="campus_closet_ilan_rezerve_olarak_gorunuyor_yeni_teklif_alinmiyor" formatted="false">İlan rezerve olarak görünüyor; yeni teklif alınmıyor.</string>
+    <string name="campus_closet_ilan_satildi_olarak_isaretlendi" formatted="false">İlan satıldı olarak işaretlendi.</string>
+    <string name="campus_closet_ilanin_suresi_doldu_ve_yayindan_kalkti_30_gun_daha" formatted="false">İlanın süresi doldu ve yayından kalktı. 30 gün daha yayında tutabilirsin.</string>
+    <string name="campus_closet_ilanin_suresi_doldu_ve_yayindan_kalkti_hala_satiliksa_yeni" formatted="false">İlanın süresi doldu ve yayından kalktı. Hâlâ satılıksa yeni ilan verebilirsin.</string>
+    <string name="campus_closet_ilanin_bugun_yayindan_kalkacak" formatted="false">İlanın bugün yayından kalkacak.</string>
+    <string name="campus_closet_ilanin_gun_sonra_yayindan_kalkacak">İlanın %1$s gün sonra yayından kalkacak.</string>
+    <string name="campus_closet_tekrar_yayina_al" formatted="false">Tekrar yayına al</string>
+    <string name="campus_closet_dogrula_mesaj_gonder" formatted="false">Doğrula, mesaj gönder</string>
+    <string name="campus_closet_kampus_dolabi_erisimin_gecici_olarak_kapali" formatted="false">Kampüs Dolabı erişimin geçici olarak kapalı.</string>
+    <string name="campus_closet_bu_ilan_baska_bir_kampuste_yalnizca_kendi_kampusundeki_ilanlara" formatted="false">Bu ilan başka bir kampüste; yalnızca kendi kampüsündeki ilanlara yazabilirsin.</string>
+    <string name="campus_closet_mesajlara_git" formatted="false">Mesajlara git</string>
+    <string name="campus_closet_mesaj_gonder" formatted="false">Mesaj gönder</string>
+    <string name="campus_closet_ilan_fiyati_teklifin_saticiya_mesaj_olarak_gider_satici_kabul">İlan fiyatı %1$s. Teklifin satıcıya mesaj olarak gider; satıcı kabul ya da reddeder.</string>
+    <string name="campus_closet_ilan_yayindan_kaldirilsin_mi" formatted="false">İlan yayından kaldırılsın mı?</string>
+    <string name="campus_closet_kampus_dolabindan_kaldirilir_ve_fotograflari_silinir_bu_islem_geri">\"%1$s\" Kampüs Dolabı’ndan kaldırılır ve fotoğrafları silinir. Bu işlem geri alınamaz. Yeniden paylaşmak için yeni ilan oluşturman gerekir.</string>
+    <string name="campus_closet_yalnizca_fiyat_degisir_ilan_yeniden_incelemeye_gitmez" formatted="false">Yalnızca fiyat değişir; ilan yeniden incelemeye gitmez.</string>
+    <string name="campus_closet_yeni_fiyat" formatted="false">Yeni fiyat (₺)</string>
+    <string name="campus_closet_all" formatted="false">Tümü</string>
+    <string name="campus_closet_kiyafet" formatted="false">Kıyafet</string>
+    <string name="campus_closet_aksesuar" formatted="false">Aksesuar</string>
+    <string name="campus_closet_elektronik" formatted="false">Elektronik</string>
+    <string name="campus_closet_spor" formatted="false">Spor</string>
+    <string name="campus_closet_kitap" formatted="false">Kitap</string>
+    <string name="campus_closet_yurt_ev" formatted="false">Yurt &amp; Ev</string>
+    <string name="campus_closet_hobi" formatted="false">Hobi</string>
+    <string name="campus_closet_title" formatted="false">Kampüs Dolabı</string>
+    <string name="campus_closet_yuklenemedi" formatted="false">Yüklenemedi.</string>
+    <string name="campus_closet_kampus_dolabi_su_an_bakimda_daha_sonra_tekrar_dene" formatted="false">Kampüs Dolabı şu an bakımda. Daha sonra tekrar dene.</string>
+    <string name="campus_closet_yasak_urun_iceren_denemeler_nedeniyle_kampus_dolabi_erisimin_tarihine">Yasak ürün içeren denemeler nedeniyle Kampüs Dolabı erişimin %1$s tarihine kadar kapalı. </string>
+    <string name="campus_closet_ilanlara_goz_atabilirsin" formatted="false">İlanlara göz atabilirsin.</string>
+    <string name="campus_closet_yeni_eklenenler" formatted="false">Yeni eklenenler</string>
+    <string name="campus_closet_ilan_2">%1$s ilan</string>
+    <string name="campus_closet_baglanti_e_postana_gonderildi" formatted="false">Bağlantı e-postana gönderildi</string>
+    <string name="campus_closet_okul_e_postani_dogrula" formatted="false">Okul e-postanı doğrula</string>
+    <string name="campus_closet_outlook_u_ve_gereksiz_e_posta_spam_klasorunu_kontrol" formatted="false">Outlook\'u ve gereksiz e-posta / spam klasörünü kontrol et.</string>
+    <string name="campus_closet_ilan_vermek_mesaj_ve_teklif_gondermek_icin_ogr_akdeniz" formatted="false">İlan vermek, mesaj ve teklif göndermek için @ogr.akdeniz.edu.tr adresin gerekli.</string>
+    <string name="campus_closet_urun_ara" formatted="false">Ürün ara</string>
+    <string name="campus_closet_aramayi_temizle" formatted="false">Aramayı temizle</string>
+    <string name="campus_closet_aradigin_urun_yok" formatted="false">Aradığın ürün yok</string>
+    <string name="campus_closet_bu_kategori_henuz_bos" formatted="false">Bu kategori henüz boş</string>
+    <string name="campus_closet_dolap_henuz_bos" formatted="false">Dolap henüz boş</string>
+    <string name="campus_closet_baska_bir_kelime_dene_ya_da_kategorilere_goz_at" formatted="false">Başka bir kelime dene ya da kategorilere göz at.</string>
+    <string name="campus_closet_kullanmadigin_kiyafetler_kitaplar_ve_esyalar_baska_bir_ogrencinin_isine" formatted="false">Kullanmadığın kıyafetler, kitaplar ve eşyalar başka bir öğrencinin işine yarar. İlk ilanı sen ver.</string>
+    <string name="campus_closet_dogrula_satmaya_basla" formatted="false">Doğrula, satmaya başla</string>
+    <string name="campus_closet_kiyafet_ayakkabi" formatted="false">Kıyafet &amp; Ayakkabı</string>
+    <string name="campus_closet_canta_aksesuar" formatted="false">Çanta &amp; Aksesuar</string>
+    <string name="campus_closet_spor_outdoor" formatted="false">Spor &amp; Outdoor</string>
+    <string name="campus_closet_kitap_kirtasiye" formatted="false">Kitap &amp; Kırtasiye</string>
+    <string name="campus_closet_yurt_ev_esyasi" formatted="false">Yurt &amp; Ev Eşyası</string>
+    <string name="campus_closet_hobi_muzik" formatted="false">Hobi &amp; Müzik</string>
+    <string name="campus_closet_yeni_etiketli" formatted="false">Yeni / etiketli</string>
+    <string name="campus_closet_yeni_gibi" formatted="false">Yeni gibi</string>
+    <string name="campus_closet_iyi" formatted="false">İyi</string>
+    <string name="campus_closet_kullanilmis" formatted="false">Kullanılmış</string>
+    <string name="campus_closet_yasakli_urun" formatted="false">Yasaklı ürün</string>
+    <string name="campus_closet_dolandiricilik_suphesi" formatted="false">Dolandırıcılık şüphesi</string>
+    <string name="campus_closet_taciz_veya_hakaret" formatted="false">Taciz veya hakaret</string>
+    <string name="campus_closet_uygunsuz_icerik" formatted="false">Uygunsuz içerik</string>
+    <string name="campus_closet_inceleniyor" formatted="false">İnceleniyor</string>
+    <string name="campus_closet_yayinda" formatted="false">Yayında</string>
+    <string name="campus_closet_rezerve" formatted="false">Rezerve</string>
+    <string name="campus_closet_yayinlanmadi" formatted="false">Yayınlanmadı</string>
+    <string name="campus_closet_suresi_doldu" formatted="false">Süresi doldu</string>
+    <string name="campus_closet_kaldirildi" formatted="false">Kaldırıldı</string>
+    <string name="campus_closet_free" formatted="false">Ücretsiz</string>
+    <string name="campus_closet_price_value">%1$s ₺</string>
+    <string name="campus_closet_bu_islem_icin_edu_tr_adresini_dogrulaman_gerekiyor" formatted="false">Bu işlem için .edu.tr adresini doğrulaman gerekiyor.</string>
+    <string name="campus_closet_devam_etmek_icin_kampus_dolabi_kurallarini_kabul_et" formatted="false">Devam etmek için Kampüs Dolabı kurallarını kabul et.</string>
+    <string name="campus_closet_kampus_dolabi_erisimin_gecici_olarak_kapatildi" formatted="false">Kampüs Dolabı erişimin geçici olarak kapatıldı.</string>
+    <string name="campus_closet_bu_urunun_satisi_kampus_dolabi_nda_yasaktir_yasak_urun" formatted="false">Bu ürünün satışı Kampüs Dolabı\'nda yasaktır. Yasak ürün satma girişimleri kayda alınır; tekrarlanırsa erişimin kapatılır.</string>
+    <string name="campus_closet_yasak_urun_iceren_tekrarlanan_denemeler_nedeniyle_kampus_dolabi_erisimin" formatted="false">Yasak ürün içeren tekrarlanan denemeler nedeniyle Kampüs Dolabı erişimin 24 saat kapatıldı.</string>
+    <string name="campus_closet_ilan_metnine_telefon_numarasi_yazilamaz_numarani_anlastigin_kisiyle_mesajlarda" formatted="false">İlan metnine telefon numarası yazılamaz. Numaranı anlaştığın kişiyle mesajlarda paylaşabilirsin.</string>
+    <string name="campus_closet_bugun_en_fazla_5_ilan_verebilirsin_yarin_tekrar_dene" formatted="false">Bugün en fazla 5 ilan verebilirsin. Yarın tekrar dene.</string>
+    <string name="campus_closet_ayni_anda_en_fazla_15_aktif_ilanin_olabilir_satilan" formatted="false">Aynı anda en fazla 15 aktif ilanın olabilir. Satılan ilanları \"Satıldı\" olarak işaretle.</string>
+    <string name="campus_closet_bu_ilan_icin_bugunku_200_mesaj_hakkin_doldu_yarin" formatted="false">Bu ilan için bugünkü 200 mesaj hakkın doldu. Yarın tekrar yazabilirsin.</string>
+    <string name="campus_closet_bugun_en_fazla_15_yeni_konusma_baslatabilirsin" formatted="false">Bugün en fazla 15 yeni konuşma başlatabilirsin.</string>
+    <string name="campus_closet_bu_ilan_artik_yayinda_degil" formatted="false">Bu ilan artık yayında değil.</string>
+    <string name="campus_closet_bu_ilan_baska_bir_kampuse_ait_kampus_dolabi_elden" formatted="false">Bu ilan başka bir kampüse ait. Kampüs Dolabı elden teslim olduğu için yalnızca kendi kampüsündeki ilanlara yazabilirsin.</string>
+    <string name="campus_closet_onceki_teklifin_henuz_yanitlanmadi" formatted="false">Önceki teklifin henüz yanıtlanmadı.</string>
+    <string name="campus_closet_bu_ilana_teklif_verilemiyor" formatted="false">Bu ilana teklif verilemiyor.</string>
+    <string name="campus_closet_bu_teklif_zaten_yanitlanmis" formatted="false">Bu teklif zaten yanıtlanmış.</string>
+    <string name="campus_closet_bu_konusmaya_erisimin_yok" formatted="false">Bu konuşmaya erişimin yok.</string>
+    <string name="campus_closet_kendi_ilanini_sikayet_edemezsin" formatted="false">Kendi ilanını şikayet edemezsin.</string>
+    <string name="campus_closet_fotograf_okunamadi_baska_bir_fotograf_dene" formatted="false">Fotoğraf okunamadı. Başka bir fotoğraf dene.</string>
+    <string name="campus_closet_baslik_3_60_karakter_olmali" formatted="false">Başlık 3-60 karakter olmalı.</string>
+    <string name="campus_closet_aciklama_10_600_karakter_olmali" formatted="false">Açıklama 10-600 karakter olmalı.</string>
+    <string name="campus_closet_fiyat_0_ile_100_000_arasinda_tam_sayi_olmali" formatted="false">Fiyat 0 ile 100.000 ₺ arasında tam sayı olmalı.</string>
+    <string name="campus_closet_bu_ilanin_durumu_bu_isleme_izin_vermiyor" formatted="false">Bu ilanın durumu bu işleme izin vermiyor.</string>
+    <string name="campus_closet_bu_ilan_en_fazla_3_kez_uzatilabilir_hala_satiliksa" formatted="false">Bu ilan en fazla 3 kez uzatılabilir. Hâlâ satılıksa yeni ilan verebilirsin.</string>
+    <string name="campus_closet_en_fazla_100_ilan_kaydedebilirsin_eskilerden_bazilarini_kaldir" formatted="false">En fazla 100 ilan kaydedebilirsin. Eskilerden bazılarını kaldır.</string>
+    <string name="campus_closet_arama_en_fazla_60_karakter_olabilir" formatted="false">Arama en fazla 60 karakter olabilir.</string>
+    <string name="campus_closet_mesaj_en_fazla_500_karakter_olabilir" formatted="false">Mesaj en fazla 500 karakter olabilir.</string>
+    <string name="campus_closet_hesabin_henuz_aktif_degil" formatted="false">Hesabın henüz aktif değil.</string>
+    <string name="campus_closet_kampus_dolabi_yalnizca_ogrenci_hesaplari_icin" formatted="false">Kampüs Dolabı yalnızca öğrenci hesapları için.</string>
+    <string name="campus_closet_islem_tamamlanamadi_baglantini_kontrol_edip_tekrar_dene" formatted="false">İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="campus_closet_bu_universite_adresi_baska_bir_good4_hesabiyla_dogrulanmis" formatted="false">Bu üniversite adresi başka bir Good4 hesabıyla doğrulanmış.</string>
+    <string name="campus_closet_yeni_baglanti_istemeden_once_bir_dakika_bekleyin" formatted="false">Yeni bağlantı istemeden önce bir dakika bekleyin.</string>
+    <string name="campus_closet_cok_fazla_baglanti_istendi_bir_saat_sonra_tekrar_deneyin" formatted="false">Çok fazla bağlantı istendi. Bir saat sonra tekrar deneyin.</string>
+    <string name="campus_closet_baglantiyi_istediginiz_good4_hesabiyla_giris_yapin" formatted="false">Bağlantıyı istediğiniz Good4 hesabıyla giriş yapın.</string>
+    <string name="campus_closet_bu_cihazda_bekleyen_dogrulama_istegi_yok_baglantiyi_baska_cihazda" formatted="false">Bu cihazda bekleyen doğrulama isteği yok. Bağlantıyı başka cihazda istediyseniz bu cihazdan yeni bağlantı isteyin.</string>
+    <string name="campus_closet_bu_baglanti_bu_cihazdaki_son_dogrulama_istegine_ait_degil" formatted="false">Bu bağlantı bu cihazdaki son doğrulama isteğine ait değil. En son gelen postayı kullanın; başka cihazda istediyseniz bu cihazdan yeni bağlantı isteyin.</string>
+    <string name="campus_closet_baglantinin_suresi_doldu_yeni_dogrulama_baglantisi_isteyin" formatted="false">Bağlantının süresi doldu. Yeni doğrulama bağlantısı isteyin.</string>
+    <string name="campus_closet_baglanti_dogrulanamadi_en_son_gelen_e_postayi_acin_veya" formatted="false">Bağlantı doğrulanamadı. En son gelen e-postayı açın veya yeni bağlantı isteyin.</string>
+    <string name="campus_closet_e_posta_gonderilemedi_bir_dakika_sonra_tekrar_deneyin" formatted="false">E-posta gönderilemedi. Bir dakika sonra tekrar deneyin.</string>
+    <string name="campus_closet_bu_dogrulama_yalnizca_ogrenci_hesaplari_icin" formatted="false">Bu doğrulama yalnızca öğrenci hesapları için.</string>
+    <string name="campus_closet_oturumunuzu_kontrol_edip_tekrar_giris_yapin" formatted="false">Oturumunuzu kontrol edip tekrar giriş yapın.</string>
+    <string name="campus_closet_islem_tamamlanamadi_baglantinizi_kontrol_edip_tekrar_deneyin" formatted="false">İşlem tamamlanamadı. Bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="campus_closet_oca" formatted="false">Oca</string>
+    <string name="campus_closet_sub" formatted="false">Şub</string>
+    <string name="campus_closet_mar" formatted="false">Mar</string>
+    <string name="campus_closet_nis" formatted="false">Nis</string>
+    <string name="campus_closet_may" formatted="false">May</string>
+    <string name="campus_closet_haz" formatted="false">Haz</string>
+    <string name="campus_closet_tem" formatted="false">Tem</string>
+    <string name="campus_closet_agu" formatted="false">Ağu</string>
+    <string name="campus_closet_eyl" formatted="false">Eyl</string>
+    <string name="campus_closet_eki" formatted="false">Eki</string>
+    <string name="campus_closet_kas" formatted="false">Kas</string>
+    <string name="campus_closet_ara" formatted="false">Ara</string>
+    <string name="campus_closet_simdi" formatted="false">şimdi</string>
+    <string name="campus_closet_dk_once">%1$s dk önce</string>
+    <string name="campus_closet_sa_once">%1$s sa önce</string>
+    <string name="campus_closet_dun" formatted="false">dün</string>
+    <string name="campus_closet_gun_once">%1$s gün önce</string>
+    <string name="campus_closet_aciklama_istege_bagli" formatted="false">Açıklama (isteğe bağlı)</string>
+    <string name="campus_closet_sigara_tutun_nargile_ve_elektronik_sigara_urunleri" formatted="false">Sigara, tütün, nargile ve elektronik sigara ürünleri</string>
+    <string name="campus_closet_alkollu_ickiler" formatted="false">Alkollü içkiler</string>
+    <string name="campus_closet_uyusturucu_ve_uyarici_maddeler_receteli_ilaclar" formatted="false">Uyuşturucu ve uyarıcı maddeler, reçeteli ilaçlar</string>
+    <string name="campus_closet_silah_mermi_kurusiki_ve_sustali_bicak" formatted="false">Silah, mermi, kurusıkı ve sustalı bıçak</string>
+    <string name="campus_closet_kacak_bandrolsuz_calinti_veya_sahte_replika_urunler" formatted="false">Kaçak, bandrolsüz, çalıntı veya sahte (replika) ürünler</string>
+    <string name="campus_closet_sahte_belge_kimlik_ve_ogrenci_karti_sinav_sorulari" formatted="false">Sahte belge, kimlik ve öğrenci kartı, sınav soruları</string>
+    <string name="campus_closet_canli_hayvan" formatted="false">Canlı hayvan</string>
+    <string name="campus_closet_kampus_dolabi_kurallari" formatted="false">Kampüs Dolabı kuralları</string>
+    <string name="campus_closet_kampus_dolabi_edu_tr_adresini_dogrulayan_ogrenciler_arasinda_elden" formatted="false">Kampüs Dolabı, .edu.tr adresini doğrulayan öğrenciler arasında elden teslim ikinci el alışveriş içindir. Good4 satışın tarafı değildir, ödeme almaz ve aracılık etmez.</string>
+    <string name="campus_closet_asagidaki_urunlerin_satisi_yasaktir_bu_urunlerin_satilmasi_veya_satisina" formatted="false">Aşağıdaki ürünlerin satışı yasaktır. Bu ürünlerin satılması veya satışına aracılık edilmesi Türk Ceza Kanunu ve ilgili kanunlar (4207, 4733 ve 6136 sayılı Kanunlar, TCK 188) kapsamında suçtur. Bu tür ilanlar kaldırılır, hesaplar kapatılır ve gerektiğinde yetkili makamlara bildirilir.</string>
+    <string name="campus_closet_yasak_icerik_iceren_ilanlar_ve_mesajlar_otomatik_olarak_engellenir" formatted="false">• Yasak içerik içeren ilanlar ve mesajlar otomatik olarak engellenir; tekrarlayan denemeler erişimini askıya alır.\n• İlanlar yayına alınmadan önce Good4 ekibi tarafından incelenir.\n• Telefon numaranı yalnızca anlaştığın kişiyle mesajlarda paylaş.\n• Şikayet edilen ilanlar ve konuşmalar Good4 ekibi tarafından incelenebilir.</string>
+    <string name="campus_closet_kurallari_okudum_yasak_urunlerin_satisinin_suc_oldugunu_biliyorum_ve" formatted="false">Kuralları okudum. Yasak ürünlerin satışının suç olduğunu biliyorum ve kabul ediyorum.</string>
+    <string name="campus_closet_kabul_ediyorum_devam_et" formatted="false">Kabul ediyorum, devam et</string>
+    <string name="campus_closet_sikayetin_alindi_good4_ekibi_inceleyecek" formatted="false">Şikayetin alındı. Good4 ekibi inceleyecek.</string>
+    <string name="campus_closet_fiyat_guncellendi" formatted="false">Fiyat güncellendi.</string>
+    <string name="campus_closet_ilan_30_gun_daha_yayinda" formatted="false">İlan 30 gün daha yayında.</string>
+    <string name="campus_closet_en_az_1_fotograf_ekle" formatted="false">En az 1 fotoğraf ekle.</string>
+    <string name="campus_closet_urunun_kategorisini_sec" formatted="false">Ürünün kategorisini seç.</string>
+    <string name="campus_closet_urunun_durumunu_sec" formatted="false">Ürünün durumunu seç.</string>
+    <string name="campus_closet_baslik_en_az_3_karakter_olmali" formatted="false">Başlık en az 3 karakter olmalı.</string>
+    <string name="campus_closet_aciklama_en_az_10_karakter_olmali" formatted="false">Açıklama en az 10 karakter olmalı.</string>
+    <string name="campus_closet_bir_fiyat_yaz_veya_ucretsiz_secenegini_ac" formatted="false">Bir fiyat yaz veya ücretsiz seçeneğini aç.</string>
+    <string name="campus_closet_fiyat_100_000_yi_gecemez" formatted="false">Fiyat 100.000 ₺\'yi geçemez.</string>
+    <string name="campus_closet_0_icin_ucretsiz_secenegini_ac" formatted="false">0 ₺ için ücretsiz seçeneğini aç.</string>
+    <string name="campus_closet_kullanici_engellendi_bu_konusmaya_artik_mesaj_gonderilemez" formatted="false">Kullanıcı engellendi. Bu konuşmaya artık mesaj gönderilemez.</string>
+    <string name="campus_closet_engel_kaldirildi" formatted="false">Engel kaldırıldı.</string>
+    <string name="campus_closet_sikayetin_alindi_good4_ekibi_konusmayi_inceleyecek" formatted="false">Şikayetin alındı. Good4 ekibi konuşmayı inceleyecek.</string>
+    <string name="campus_closet_yeni_mesaj_ve_teklifleri_kacirma" formatted="false">Yeni mesaj ve teklifleri kaçırma.</string>
+    <string name="campus_closet_bildirimleri_ac" formatted="false">Bildirimleri aç</string>
+    <string name="campus_closet_offer_discount_detail"> · %%1$s indirim</string>
+    <string name="account_delete_photo_cleanup_pending">Fotoğrafların silinmesi tamamlanamadı. Hesabın yeni işlemlere kapatıldı. Hesap silmeyi tekrar deneyerek tamamlayabilirsin.</string>
 </resources>

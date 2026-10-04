@@ -3,6 +3,9 @@ package com.good4.notification
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.community.loadBlockedCommunityIds
 import com.good4.core.data.repository.FirestoreRepository
+import com.good4.core.data.repository.NumericPageCursor
+import com.good4.auth.domain.AuthUser
+import kotlinx.coroutines.flow.Flow
 import com.good4.core.domain.Result
 import com.good4.core.network.callV2Function
 import com.good4.core.util.AppEnvironment
@@ -10,34 +13,51 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
 
-class NotificationRepository(private val store: FirestoreRepository, private val auth: AuthRepository) {
+data class NotificationPage(val items: List<StudentNotification>, val nextCursor: NumericPageCursor?, val fetchedCount: Int)
+
+interface NotificationDataSource {
+    val currentUserId: String?
+    val authStateFlow: Flow<AuthUser?>
+    val supported: Boolean
+    suspend fun inbox(cursor: NumericPageCursor? = null): NotificationPage
+    suspend fun notification(id: String): StudentNotification?
+    suspend fun preferences(): NotificationPreferencesDto
+    suspend fun savePreferences(value: NotificationPreferencesDto)
+    suspend fun markRead(ids: Set<String>)
+    suspend fun syncDevice(): PushSnapshot
+}
+
+class NotificationRepository(private val store: FirestoreRepository, private val auth: AuthRepository) : NotificationDataSource {
     private var registeredPayload: JsonObject? = null
     private var registeredUid: String? = null
     private var registeredRevision = -1
     private var registeredAt = 0L
-    val currentUserId get() = auth.currentUser?.uid
-    val authStateFlow get() = auth.authStateFlow
-    val supported get() = AppEnvironment.firebaseProjectId == "good4tr-v2"
+    override val currentUserId get() = auth.currentUser?.uid
+    override val authStateFlow get() = auth.authStateFlow
+    override val supported get() = AppEnvironment.firebaseProjectId == "good4tr-v2"
 
-    suspend fun inbox(): List<StudentNotification> {
-        val uid = currentUserId ?: return emptyList()
-        if (!supported) return emptyList()
-        return when (val result = store.queryCollectionWithMultipleConditionsAndLimit(
-            "users/$uid/notifications", emptyMap(), "createdAt", true, 100, NotificationDto::class
+    override suspend fun inbox(cursor: NumericPageCursor?): NotificationPage {
+        val uid = currentUserId ?: return NotificationPage(emptyList(), null, 0)
+        if (!supported) return NotificationPage(emptyList(), null, 0)
+        return when (val result = store.queryNumericPage(
+            "users/$uid/notifications", "createdAt", NotificationDto::class, pageSize = 20, cursor = cursor
         )) {
-            is Result.Success -> result.data.map { StudentNotification(it.id, it.data) }
-                .filter { it.data.organizationId !in loadBlockedCommunityIds() }
+            is Result.Success -> {
+                val blocked = loadBlockedCommunityIds()
+                NotificationPage(result.data.items.map { StudentNotification(it.id, it.data) }
+                    .filter { it.data.organizationId !in blocked }, result.data.nextCursor, result.data.items.size)
+            }
             is Result.Error -> error("notification_load_failed")
         }
     }
-    suspend fun notification(id: String): StudentNotification? {
+    override suspend fun notification(id: String): StudentNotification? {
         val uid = currentUserId ?: return null
         return when (val result = store.getDocument("users/$uid/notifications", id, NotificationDto::class)) {
             is Result.Success -> StudentNotification(id, result.data).takeIf { it.data.organizationId !in loadBlockedCommunityIds() }
             is Result.Error -> null
         }
     }
-    suspend fun preferences(): NotificationPreferencesDto {
+    override suspend fun preferences(): NotificationPreferencesDto {
         val uid = currentUserId ?: return NotificationPreferencesDto()
         if (!supported) return NotificationPreferencesDto()
         return when (val result = store.getDocument("users/$uid/notificationPreferences", "default", NotificationPreferencesDto::class)) {
@@ -45,16 +65,19 @@ class NotificationRepository(private val store: FirestoreRepository, private val
             is Result.Error -> NotificationPreferencesDto()
         }
     }
-    suspend fun savePreferences(value: NotificationPreferencesDto) {
+    override suspend fun savePreferences(value: NotificationPreferencesDto) {
         callV2Function("updateNotificationPreferences", buildJsonObject {
             put("eventUpdates", value.eventUpdates); put("reminders", value.reminders); put("announcements", value.announcements)
         })
     }
-    suspend fun markRead(id: String? = null) {
+    override suspend fun markRead(ids: Set<String>) {
         if (!supported) return
-        callV2Function("markNotificationsRead", buildJsonObject { if (id == null) put("all", true) else put("notificationId", id) })
+        if (ids.isEmpty()) return
+        callV2Function("markNotificationsRead", buildJsonObject {
+            put("notificationIds", buildJsonArray { ids.forEach { add(it) } })
+        })
     }
-    suspend fun syncDevice(): PushSnapshot = PushSession.mutex.withLock {
+    override suspend fun syncDevice(): PushSnapshot = PushSession.mutex.withLock {
         if (!supported || currentUserId == null || PushSession.detaching) return@withLock PushSnapshot()
         val uid = currentUserId
         val installation = pushInstallation()
