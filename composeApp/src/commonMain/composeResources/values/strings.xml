@@ -276,6 +276,8 @@
     <string name="error_product_delete_failed">Ürün silinemedi. Lütfen tekrar deneyin.</string>
     <string name="image_picker_gallery">Galeriden Seçin</string>
     <string name="image_picker_camera">Fotoğraf Çekin</string>
+    <string name="image_picker_opening">Fotoğraf seçici açılıyor…</string>
+    <string name="image_preparing">Fotoğraf hazırlanıyor…</string>
     <string name="image_uploading">Fotoğraf yükleniyor…</string>
     <string name="image_uploaded">Fotoğraf başarıyla yüklendi</string>
     <string name="product_image_selected_pending">Fotoğraf seçildi.</string>

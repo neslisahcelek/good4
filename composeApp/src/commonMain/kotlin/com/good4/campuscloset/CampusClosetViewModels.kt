@@ -254,10 +254,20 @@ data class CampusClosetNewListingState(
     val submitted: Boolean = false
 ) {
     val price: Int? get() = if (isFree) 0 else priceText.toIntOrNull()
+    val validationMessage: String?
+        get() = when {
+            photos.isEmpty() -> "En az 1 fotoğraf ekle."
+            category == null -> "Ürünün kategorisini seç."
+            condition == null -> "Ürünün durumunu seç."
+            title.trim().length < 3 -> "Başlık en az 3 karakter olmalı."
+            description.trim().length < 10 -> "Açıklama en az 10 karakter olmalı."
+            price == null -> "Bir fiyat yaz veya ücretsiz seçeneğini aç."
+            price!! !in 0..CampusClosetLimits.MAX_PRICE -> "Fiyat 100.000 ₺'yi geçemez."
+            !isFree && price == 0 -> "0 ₺ için ücretsiz seçeneğini aç."
+            else -> null
+        }
     val canSubmit: Boolean
-        get() = !submitting && category != null && condition != null && title.trim().length >= 3
-            && description.trim().length >= 10 && photos.isNotEmpty()
-            && (price ?: -1) in 0..CampusClosetLimits.MAX_PRICE && (isFree || (price ?: 0) > 0)
+        get() = !submitting && !submitted && validationMessage == null
 }
 
 class CampusClosetNewListingViewModel(private val repository: CampusClosetRepository) : ViewModel() {
@@ -279,7 +289,10 @@ class CampusClosetNewListingViewModel(private val repository: CampusClosetReposi
 
     fun submit() {
         val snapshot = _state.value
-        if (!snapshot.canSubmit) return
+        if (!snapshot.canSubmit) {
+            snapshot.validationMessage?.let(::showError)
+            return
+        }
         viewModelScope.launch {
             _state.update { it.copy(submitting = true, error = null) }
             attempt {

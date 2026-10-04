@@ -32,6 +32,8 @@ import good4.composeapp.generated.resources.error_image_picker_open_failed
 import good4.composeapp.generated.resources.error_image_prepare_failed
 import good4.composeapp.generated.resources.image_picker_camera
 import good4.composeapp.generated.resources.image_picker_gallery
+import good4.composeapp.generated.resources.image_picker_opening
+import good4.composeapp.generated.resources.image_preparing
 import good4.composeapp.generated.resources.image_uploading
 import good4.composeapp.generated.resources.product_image_saved_remote
 import good4.composeapp.generated.resources.product_image_selected_pending
@@ -40,12 +42,19 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.useContents
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSData
+import platform.PhotosUI.PHPickerConfiguration
+import platform.PhotosUI.PHPickerConfigurationAssetRepresentationModeCurrent
+import platform.PhotosUI.PHPickerFilter
+import platform.PhotosUI.PHPickerResult
+import platform.PhotosUI.PHPickerViewController
+import platform.PhotosUI.PHPickerViewControllerDelegateProtocol
 import platform.UIKit.UIApplication
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
@@ -72,11 +81,22 @@ actual fun ProductImagePicker(
     onError: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val delegateHolder = remember { mutableStateOf<ImagePickerDelegate?>(null) }
+    val delegateHolder = remember { mutableStateOf<NSObject?>(null) }
+    val openingPicker = remember { mutableStateOf(false) }
+    val preparingImage = remember { mutableStateOf(false) }
+    val galleryPicker = remember {
+        PHPickerViewController(configuration = PHPickerConfiguration().apply {
+            filter = PHPickerFilter.imagesFilter
+            selectionLimit = 1
+            preferredAssetRepresentationMode = PHPickerConfigurationAssetRepresentationModeCurrent
+        })
+    }
     val hadUploadingPhase = remember { mutableStateOf(false) }
     val showSavedRemoteStatus = remember { mutableStateOf(false) }
 
     val galleryLabel = stringResource(Res.string.image_picker_gallery)
+    val openingLabel = stringResource(Res.string.image_picker_opening)
+    val preparingLabel = stringResource(Res.string.image_preparing)
     val cameraLabel = stringResource(Res.string.image_picker_camera)
     val uploadingLabel = stringResource(Res.string.image_uploading)
     val selectedPendingLabel = stringResource(Res.string.product_image_selected_pending)
@@ -99,10 +119,13 @@ actual fun ProductImagePicker(
         }
     }
 
-    fun processPickedImage(image: UIImage) {
+    fun processPickedImage(loadImage: () -> UIImage?) {
         scope.launch {
+            openingPicker.value = false
+            preparingImage.value = true
             try {
                 val bytes = withContext(Dispatchers.Default) {
+                    val image = loadImage() ?: throw IllegalArgumentException("image decode failed")
                     val scaled = image.scaleToMaxEdge(ProductImageConstants.MAX_EDGE_PX.toDouble())
                     val nsData = UIImageJPEGRepresentation(
                         scaled,
@@ -113,18 +136,51 @@ actual fun ProductImagePicker(
                 withContext(Dispatchers.Main) {
                     onPendingImageChange(bytes)
                 }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (_: Exception) {
                 withContext(Dispatchers.Main) {
                     onError(prepareFailedMessage)
                 }
+            } finally {
+                preparingImage.value = false
             }
         }
+    }
+
+    fun openGallery() {
+        if (openingPicker.value || preparingImage.value || delegateHolder.value != null) return
+        val presenter = activeImagePickerPresenter()
+        if (presenter == null) {
+            onError(pickerOpenFailedMessage)
+            return
+        }
+        openingPicker.value = true
+        val delegate = PhotoLibraryPickerDelegate(
+            onSelection = {
+                openingPicker.value = false
+                preparingImage.value = true
+            },
+            onImagePicked = { data ->
+                scope.launch {
+                    delegateHolder.value = null
+                    processPickedImage { data?.let { UIImage.imageWithData(it) } }
+                }
+            },
+            onCancel = {
+                scope.launch { delegateHolder.value = null; openingPicker.value = false }
+            }
+        )
+        delegateHolder.value = delegate
+        galleryPicker.delegate = delegate
+        presenter.presentViewController(galleryPicker, animated = true) { openingPicker.value = false }
     }
 
     fun openPicker(
         sourceType: UIImagePickerControllerSourceType,
         openFailedMessage: String
     ) {
+        if (openingPicker.value || preparingImage.value || delegateHolder.value != null) return
         if (!UIImagePickerController.isSourceTypeAvailable(sourceType)) {
             onError(openFailedMessage)
             return
@@ -140,11 +196,13 @@ actual fun ProductImagePicker(
                         }
                     }
                 } else {
-                    processPickedImage(image)
+                    processPickedImage { image }
                 }
             },
             onEncodeFailed = {
                 scope.launch {
+                    delegateHolder.value = null
+                    openingPicker.value = false
                     withContext(Dispatchers.Main) {
                         onError(prepareFailedMessage)
                     }
@@ -152,6 +210,7 @@ actual fun ProductImagePicker(
             },
             onCancel = {
                 delegateHolder.value = null
+                openingPicker.value = false
             }
         )
         delegateHolder.value = delegate
@@ -161,14 +220,15 @@ actual fun ProductImagePicker(
         picker.allowsEditing = false
         picker.delegate = delegate
 
-        val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
+        val rootViewController = activeImagePickerPresenter()
         if (rootViewController == null) {
             delegateHolder.value = null
             onError(openFailedMessage)
             return
         }
 
-        rootViewController.presentViewController(picker, animated = true, completion = null)
+        openingPicker.value = true
+        rootViewController.presentViewController(picker, animated = true) { openingPicker.value = false }
     }
 
     Column(
@@ -181,12 +241,8 @@ actual fun ProductImagePicker(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = {
-                    openPicker(
-                        sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary,
-                        openFailedMessage = pickerOpenFailedMessage
-                    )
-                },
+                onClick = ::openGallery,
+                enabled = !isUploading && !openingPicker.value && !preparingImage.value,
                 colors = ButtonDefaults.buttonColors(containerColor = DeepGreen)
             ) {
                 Text(text = galleryLabel)
@@ -201,14 +257,15 @@ actual fun ProductImagePicker(
                             sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera,
                             openFailedMessage = cameraOpenFailedMessage
                         )
-                    }
+                    },
+                    enabled = !isUploading && !openingPicker.value && !preparingImage.value
                 ) {
                     Text(text = cameraLabel)
                 }
             }
         }
 
-        if (isUploading) {
+        if (isUploading || openingPicker.value || preparingImage.value) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -218,7 +275,11 @@ actual fun ProductImagePicker(
                     color = TextPrimary,
                     strokeWidth = 2.dp
                 )
-                Text(text = uploadingLabel)
+                Text(text = when {
+                    openingPicker.value -> openingLabel
+                    preparingImage.value -> preparingLabel
+                    else -> uploadingLabel
+                })
             }
         }
 
@@ -250,6 +311,34 @@ actual fun ProductImagePicker(
                 )
                 Text(text = savedRemoteLabel)
             }
+        }
+    }
+}
+
+private fun activeImagePickerPresenter(): platform.UIKit.UIViewController? {
+    var presenter = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return null
+    while (true) {
+        val presented = presenter.presentedViewController ?: return presenter
+        if (presented.isBeingDismissed()) return presenter
+        presenter = presented
+    }
+}
+
+private class PhotoLibraryPickerDelegate(
+    private val onSelection: () -> Unit,
+    private val onImagePicked: (NSData?) -> Unit,
+    private val onCancel: () -> Unit
+) : NSObject(), PHPickerViewControllerDelegateProtocol {
+    override fun picker(picker: PHPickerViewController, didFinishPicking: List<*>) {
+        val result = didFinishPicking.firstOrNull() as? PHPickerResult
+        picker.dismissViewControllerAnimated(true, completion = null)
+        if (result == null) {
+            onCancel()
+            return
+        }
+        onSelection()
+        result.itemProvider.loadDataRepresentationForTypeIdentifier("public.image") { data, _ ->
+            onImagePicked(data)
         }
     }
 }

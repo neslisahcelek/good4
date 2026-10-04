@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import StoreKit
 import FirebaseCore
 import FirebaseFirestore
@@ -18,9 +19,7 @@ struct IOSApp: App {
     @State private var isComposeReady = false
 
     init() {
-        #if DEBUG
-        FirebaseConfiguration.shared.setLoggerLevel(.debug)
-        #endif
+        FirebaseConfiguration.shared.setLoggerLevel(.warning)
         FirebaseApp.configure()
         NativePushBridge.shared.launcher = NativeCampusPush.shared
         CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
@@ -30,9 +29,7 @@ struct IOSApp: App {
         AppleSignInBridge.shared.launcher = appleLauncher
         AppleTokenRevocationBridge.shared.launcher = appleLauncher
         EventScannerBridge.shared.launcher = NativeEventScannerLauncher()
-        #if DEBUG
-        Firestore.enableLogging(true)
-        #endif
+        Firestore.enableLogging(false)
     }
 
     var body: some Scene {

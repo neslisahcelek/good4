@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
+import { ListingPhotoViewer } from "./ListingPhotoViewer";
 
 type MarketPhoto = { url: string; thumbUrl: string };
 type MarketListing = {
@@ -92,15 +93,25 @@ function errorText(error: unknown): string {
 }
 
 function ListingCard({ listing, children }: { listing: MarketListing; children?: ReactNode }) {
+  const [photoIndex, setPhotoIndex] = useState<number | null>(null);
   return (
     <div className="coupon-review-main">
       <div className="market-photo-row">
-        {listing.photos.map((photo) => (
-          <a key={photo.url} href={photo.url} target="_blank" rel="noopener noreferrer">
+        {listing.photos.map((photo, index) => (
+          <button
+            type="button"
+            className="market-photo-trigger"
+            key={photo.url}
+            onClick={() => setPhotoIndex(index)}
+            aria-label={`${listing.title}, fotoğraf ${index + 1}: büyüt`}
+          >
             <img src={photo.thumbUrl || photo.url} alt="" loading="lazy" />
-          </a>
+          </button>
         ))}
       </div>
+      {photoIndex !== null && (
+        <ListingPhotoViewer photos={listing.photos} title={listing.title} initialIndex={photoIndex} onClose={() => setPhotoIndex(null)} />
+      )}
       <div className="coupon-review-title">
         <div><h3>{listing.title}</h3><p>{formatPrice(listing.price)} · {CATEGORY_LABELS[listing.category] ?? listing.category}</p></div>
       </div>
