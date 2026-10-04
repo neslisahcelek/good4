@@ -575,7 +575,7 @@ function LoginScreen() {
           </button>
           <p className="support-copy">
             Hesap erişimi için Good4 yöneticinizle iletişime geçin.<br />
-            Topluluğunuzu Good4'e eklemek için <a href="/topluluk-basvuru">başvuru yapın</a>.
+            Topluluğunuzu Good4'a eklemek için <a href="/topluluk-basvuru">başvuru yapın</a>.
           </p>
         </div>
       </section>

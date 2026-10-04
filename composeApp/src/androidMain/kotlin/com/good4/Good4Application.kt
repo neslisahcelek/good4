@@ -1,6 +1,7 @@
 package com.good4
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.FirebaseAppCheck
@@ -15,8 +16,9 @@ import org.koin.core.context.startKoin
 class Good4Application : Application() {
     override fun onCreate() {
         super.onCreate()
-        
-        if (BuildConfig.DEBUG && BuildConfig.USE_FIREBASE_EMULATORS) {
+
+        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        if (shouldUseFirebaseEmulators(isDebuggable, BuildConfig.USE_FIREBASE_EMULATORS)) {
             // Replace the SDK's auto-created default app before Auth/Firestore are initialized.
             FirebaseApp.getApps(this).forEach { it.delete() }
             val options = com.google.firebase.FirebaseOptions.Builder().setProjectId("demo-good4-v2")
@@ -37,7 +39,7 @@ class Good4Application : Application() {
                 installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())
             }
         }
-        if (BuildConfig.DEBUG && BuildConfig.USE_FIREBASE_EMULATORS) {
+        if (shouldUseFirebaseEmulators(isDebuggable, BuildConfig.USE_FIREBASE_EMULATORS)) {
             val host = BuildConfig.FIREBASE_EMULATOR_HOST
             com.google.firebase.auth.FirebaseAuth.getInstance().useEmulator(host, 9199)
             com.google.firebase.firestore.FirebaseFirestore.getInstance().useEmulator(host, 8285)
@@ -45,10 +47,15 @@ class Good4Application : Application() {
             com.google.firebase.messaging.FirebaseMessaging.getInstance().isAutoInitEnabled = false
         }
         com.good4.notification.AndroidCampusPush.initialize(this)
-        
+
         startKoin {
             androidContext(this@Good4Application)
             modules(commonModule, platformModule, firebaseModule, firestoreModule)
         }
     }
+
+    private fun shouldUseFirebaseEmulators(
+        isDebuggable: Boolean,
+        emulatorsEnabled: Boolean
+    ): Boolean = isDebuggable && emulatorsEnabled
 }
