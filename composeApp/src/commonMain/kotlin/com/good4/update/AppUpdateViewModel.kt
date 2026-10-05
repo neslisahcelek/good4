@@ -72,7 +72,9 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
         checkJob = viewModelScope.launch {
             try {
                 current.check()
-                if (current.status.value == UpdateStatus.AVAILABLE || current.status.value == UpdateStatus.FAILED) {
+                if (current.status.value == UpdateStatus.AVAILABLE ||
+                    current.status.value == UpdateStatus.DOWNLOADING ||
+                    current.status.value == UpdateStatus.READY) {
                     val notice = configRepository.getUpdateNotice()
                     // Each optional field falls back independently; remote copy cannot inflate the card indefinitely.
                     val title = notice?.title?.trim()?.takeIf { it.isNotBlank() && it.length <= 120 }

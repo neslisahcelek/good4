@@ -12,6 +12,9 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
+import kotlin.native.Platform
+import kotlin.experimental.ExperimentalNativeApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
@@ -24,10 +27,18 @@ import platform.Foundation.NSUserDefaults
 import platform.UIKit.UIApplication
 import kotlin.coroutines.resume
 
-actual fun loadUpdateReminderAt(): Long =
+@OptIn(ExperimentalNativeApi::class)
+private val isDebugUpdateBuild get() = Platform.isDebugBinary
+
+private var debugUpdateReminderAt = 0L
+actual fun loadUpdateReminderAt(): Long = if (isDebugUpdateBuild) {
+    debugUpdateReminderAt
+} else {
     NSUserDefaults.standardUserDefaults.doubleForKey("update_reminder_at").toLong()
+}
 actual fun saveUpdateReminderAt(value: Long) {
-    NSUserDefaults.standardUserDefaults.setDouble(value.toDouble(), "update_reminder_at")
+    if (isDebugUpdateBuild) debugUpdateReminderAt = value
+    else NSUserDefaults.standardUserDefaults.setDouble(value.toDouble(), "update_reminder_at")
 }
 
 private suspend fun storefrontCountry(): String? {
@@ -44,6 +55,30 @@ private suspend fun storefrontCountry(): String? {
                 }
             })
         }
+    }
+}
+
+private class DebugIosAppUpdateService : AppUpdateService {
+    private val _status = MutableStateFlow(UpdateStatus.AVAILABLE)
+    override val status = _status.asStateFlow()
+
+    override suspend fun check() = Unit
+
+    override suspend fun start(): Boolean {
+        if (_status.value != UpdateStatus.AVAILABLE) return false
+        _status.update { UpdateStatus.DOWNLOADING }
+        try {
+            delay(3_000L)
+            _status.update { UpdateStatus.READY }
+            return true
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            _status.update { UpdateStatus.AVAILABLE }
+            throw cancelled
+        }
+    }
+
+    override suspend fun complete() {
+        _status.update { UpdateStatus.NONE }
     }
 }
 
@@ -88,6 +123,7 @@ private class IosAppUpdateService : AppUpdateService {
         return false
     }
 
+    @OptIn(ExperimentalNativeApi::class)
     override suspend fun start(): Boolean {
         val url = NSURL.URLWithString(checkNotNull(storeUrl)) ?: error("Invalid store URL")
         return suspendCancellableCoroutine { continuation ->
@@ -106,6 +142,9 @@ private class IosAppUpdateService : AppUpdateService {
 
 @Composable
 actual fun rememberAppUpdateService(): AppUpdateService {
+    if (isDebugUpdateBuild) {
+        return remember { DebugIosAppUpdateService() }
+    }
     val service = remember { IosAppUpdateService() }
     DisposableEffect(service) { onDispose { service.close() } }
     return service
