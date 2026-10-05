@@ -122,7 +122,9 @@ fun CommunitiesScreen(
     val community = state.selected
     val managerView = state.canManage && !previewAsStudent
     val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
-    val studentView = isV2 && !state.canManage && !previewAsStudent
+    // Managers previewing their community see exactly the student screens, without being able to register.
+    val studentView = isV2 && (!state.canManage || previewAsStudent)
+    val managerPreview = state.canManage && previewAsStudent
     var studentFilter by rememberSaveable(community?.id) { mutableStateOf(StudentEventFilter.UPCOMING) }
     var now by remember { mutableStateOf(eventNow()) }
     val featuredEvents = if (studentView) {
@@ -181,7 +183,7 @@ fun CommunitiesScreen(
     if (studentDetail != null && community != null) {
         CommunityBackHandler { detail = null }
         CommunityStudentEventPage(
-            community = community, entry = studentDetail, state = state, now = now,
+            community = community, entry = studentDetail, state = state, now = now, previewOnly = managerPreview,
             onBack = { detail = null },
             onToggleRegistration = { viewModel.toggleRegistration(studentDetail) },
             onShowTicket = { viewModel.showTicket(studentDetail) },
