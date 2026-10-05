@@ -135,7 +135,8 @@ internal fun StudentEventFilters(
 internal fun CommunityStudentEventPage(
     community: Community, entry: CommunityEntry, state: CommunityState, now: LocalDateTime,
     onBack: () -> Unit, onToggleRegistration: () -> Unit, onShowTicket: () -> Unit,
-    onReport: () -> Unit, onDismissError: () -> Unit, onDismissRegistrationFeedback: () -> Unit
+    onReport: () -> Unit, onDismissError: () -> Unit, onDismissRegistrationFeedback: () -> Unit,
+    previewOnly: Boolean = false
 ) {
     val data = entry.data
     val registered = entry.id in state.registeredEventIds
@@ -176,6 +177,7 @@ internal fun CommunityStudentEventPage(
             StickyActionBar {
                 Text(
                     when {
+                        previewOnly -> "Önizleme: öğrenciler bu düğmeyle kayıt olur."
                         ended -> "Bu etkinlik tamamlandı."
                         cancelling -> "Kaydın iptal ediliyor."
                         registrationLoading -> "Kaydın işleniyor."
@@ -188,7 +190,7 @@ internal fun CommunityStudentEventPage(
                 )
                 Button(
                     onClick = if (registered) onShowTicket else onToggleRegistration,
-                    enabled = !registrationLoading && !ended && (registered || !full),
+                    enabled = !previewOnly && !registrationLoading && !ended && (registered || !full),
                     modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
