@@ -130,10 +130,12 @@
 					D09141462F30FC02007C3994 = {
 						CreatedOnToolsVersion = 26.1.1;
 						SystemCapabilities = {
+							com.apple.AppAttest = {
+								enabled = 1;
+							};
 							com.apple.Push = {
 								enabled = 1;
 							};
-							com.apple.AppAttest = { enabled = 1; };
 							com.apple.SignInWithApple = {
 								enabled = 1;
 							};
@@ -150,12 +152,12 @@
 			);
 			mainGroup = D091413E2F30FC02007C3994;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			packageReferences = (
 				PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				PKG000022F30FC02007C3994 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				PKG000032F30FC02007C3994 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = D09141482F30FC02007C3994 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -189,27 +191,11 @@
 			name = "[MapLibre] Copy Archive dSYM";
 			outputFileListPaths = (
 			);
+			outputPaths = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/bash \"${SRCROOT}/scripts/maplibre-dsym.sh\" embed 6.17.1\n";
-		};
-		FD0000012F30FC02007C3994 /* [Kotlin] Embed and Sign Apple Framework */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Kotlin] Embed and Sign Apple Framework";
-			outputFileListPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
-			showEnvVarsInLog = 0;
 		};
 		A1B2C3D4E5F60718293A4B5C /* [Firebase] Copy GoogleService-Info.plist */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -230,6 +216,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Copy the Firebase plist selected by the active build configuration.\nSOURCE=\"${SRCROOT}/${FIREBASE_CONFIG_FILE}\"\nDEST=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\nif [ ! -f \"${SOURCE}\" ]; then\n  echo \"error: Missing Firebase config: ${SOURCE}\"\n  exit 1\nfi\nmkdir -p \"$(dirname \"${DEST}\")\"\ncp \"${SOURCE}\" \"${DEST}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		FD0000012F30FC02007C3994 /* [Kotlin] Embed and Sign Apple Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Kotlin] Embed and Sign Apple Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -376,9 +382,11 @@
 				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
-				OTHER_LDFLAGS = ("$(inherited)", "-framework", ComposeApp,);
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Test.plist";
-                APS_ENVIRONMENT = development;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.449563145023-ir6daksk0m7idh0tk83bfgf4m4hmde20";
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -395,15 +403,16 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
-				);
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					ComposeApp,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.good4.iosApp.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -433,13 +442,15 @@
 				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
-				OTHER_LDFLAGS = ("$(inherited)", "-framework", ComposeApp,);
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Prod.plist";
-                APS_ENVIRONMENT = production;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-11unm894ckuk8nl23vmrtb9d0iq5t7bs";
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Good4;
+				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.";
@@ -452,15 +463,16 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
-				);
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					ComposeApp,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.good4.iosApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -501,6 +513,7 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		PKG000012F30FC02007C3994 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;

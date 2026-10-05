@@ -1,0 +1,3 @@
+interface:
+  display_name: "Good4 Firebase Guardrails"
+  short_description: "Control Firebase cost and abuse risks in Good4"

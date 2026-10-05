@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
-	<key>FirebaseMessagingAutoInitEnabled</key>
-	<false/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -17,10 +13,12 @@
 	</array>
 	<key>FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED</key>
 	<true/>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>FirebaseCrashlyticsCollectionEnabled</key>
 	<false/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.</string>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<false/>
 </dict>

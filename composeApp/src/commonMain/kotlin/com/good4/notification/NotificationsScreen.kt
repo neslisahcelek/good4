@@ -1,18 +1,28 @@
 package com.good4.notification
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.good4.core.presentation.AppBackground
+import com.good4.core.presentation.*
 import com.good4.core.presentation.components.StandardButtonHeight
 import good4.composeapp.generated.resources.*
 import kotlinx.datetime.Instant
@@ -49,12 +59,25 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: NotificationsViewModel, o
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NotificationsContent(
     state: NotificationsState, onBack: () -> Unit, onSelect: (StudentNotification) -> Unit,
     onReadAll: () -> Unit, onPreferences: (NotificationPreferencesDto) -> Unit,
     onSettings: () -> Unit, onRetry: () -> Unit, onLoadMore: () -> Unit
 ) {
+    var showPreferences by rememberSaveable { mutableStateOf(false) }
+    if (showPreferences && state.supported) {
+        ModalBottomSheet(
+            onDismissRequest = { showPreferences = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = SurfaceDefault,
+            contentColor = TextPrimary,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            NotificationPreferencesContent(state, onPreferences, onSettings, { showPreferences = false })
+        }
+    }
     Column(Modifier.fillMaxSize().background(AppBackground).windowInsetsPadding(WindowInsets.safeDrawing)) {
         Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.notification_back)) }
@@ -62,22 +85,13 @@ private fun NotificationsContent(
             IconButton(onClick = onReadAll, enabled = state.supported && state.notifications.any { it.data.readAt == 0L }) {
                 Icon(Icons.Filled.DoneAll, stringResource(Res.string.notification_read_all))
             }
-        }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (state.supported) item(key = "preferences") {
-                ElevatedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(stringResource(Res.string.notification_preferences), style = MaterialTheme.typography.titleMedium)
-                        PreferenceRow(stringResource(Res.string.notification_event_updates), state.preferences.eventUpdates, !state.saving) { onPreferences(state.preferences.copy(eventUpdates = it)) }
-                        PreferenceRow(stringResource(Res.string.notification_reminders), state.preferences.reminders, !state.saving) { onPreferences(state.preferences.copy(reminders = it)) }
-                        PreferenceRow(stringResource(Res.string.notification_announcements), state.preferences.announcements, !state.saving) { onPreferences(state.preferences.copy(announcements = it)) }
-                        if (!state.permission) Text(stringResource(Res.string.notification_permission_off), style = MaterialTheme.typography.bodySmall)
-                        OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth().height(StandardButtonHeight)) {
-                            Text(stringResource(Res.string.notification_system_settings))
-                        }
-                    }
+            if (state.supported) {
+                IconButton(onClick = { showPreferences = true }) {
+                    Icon(Icons.Filled.Settings, stringResource(Res.string.notification_preferences), tint = TextPrimary)
                 }
             }
+        }
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             state.error?.let { error -> item(key = "error") {
                 Text(error.asString(), color = MaterialTheme.colorScheme.error)
                 TextButton(onClick = onRetry) { Text(stringResource(Res.string.notification_retry)) }
@@ -113,12 +127,90 @@ private fun NotificationsContent(
     }
 }
 @Composable
-private fun PreferenceRow(title: String, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-        Text(title, Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
+private fun NotificationPreferencesContent(
+    state: NotificationsState,
+    onPreferences: (NotificationPreferencesDto) -> Unit,
+    onSettings: () -> Unit,
+    onClose: () -> Unit
+) {
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(Res.string.notification_preferences), style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+                Text(stringResource(Res.string.notification_preferences_description), style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            }
+            IconButton(onClick = onClose) {
+                Icon(Icons.Filled.Close, stringResource(Res.string.notification_close), tint = TextSecondary)
+            }
+        }
+        Surface(shape = RoundedCornerShape(24.dp), color = SurfaceMuted) {
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                PreferenceRow(
+                    stringResource(Res.string.notification_event_updates),
+                    stringResource(Res.string.notification_event_updates_description),
+                    state.preferences.eventUpdates, !state.saving && !state.loading
+                ) { onPreferences(state.preferences.copy(eventUpdates = it)) }
+                HorizontalDivider(color = BorderMuted)
+                PreferenceRow(
+                    stringResource(Res.string.notification_reminders),
+                    stringResource(Res.string.notification_reminders_description),
+                    state.preferences.reminders, !state.saving && !state.loading
+                ) { onPreferences(state.preferences.copy(reminders = it)) }
+                HorizontalDivider(color = BorderMuted)
+                PreferenceRow(
+                    stringResource(Res.string.notification_announcements),
+                    stringResource(Res.string.notification_announcements_description),
+                    state.preferences.announcements, !state.saving && !state.loading
+                ) { onPreferences(state.preferences.copy(announcements = it)) }
+            }
+        }
+        state.error?.let { Text(it.asString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (!state.permission) {
+                Text(stringResource(Res.string.notification_permission_off), style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+            OutlinedButton(
+                onClick = onSettings,
+                modifier = Modifier.fillMaxWidth().height(StandardButtonHeight),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, BorderMuted),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
+            ) {
+                Text(stringResource(Res.string.notification_system_settings))
+            }
+        }
     }
 }
+
+@Composable
+private fun PreferenceRow(title: String, description: String, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, color = TextPrimary)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        }
+        Switch(
+            checked = checked, onCheckedChange = null, enabled = enabled,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = SurfaceDefault,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = SurfaceDefault,
+                uncheckedTrackColor = BorderMuted,
+                uncheckedBorderColor = BorderMuted
+            )
+        )
+    }
+}
+
 @Composable
 fun NotificationPermissionEducation() {
     val requested by PushSignals.education.collectAsStateWithLifecycle()
@@ -136,5 +228,15 @@ fun NotificationPermissionEducation() {
 private fun NotificationsPreview() {
     com.good4.core.presentation.Good4Theme {
         NotificationsContent(NotificationsState(notifications = listOf(StudentNotification("preview", NotificationDto(title = "Etkinlik", body = "Kampüs etkinliği", createdAt = 1790000000)))), {}, {}, {}, {}, {}, {}, {})
+    }
+}
+
+@Preview
+@Composable
+private fun NotificationPreferencesPreview() {
+    Good4Theme {
+        Surface(color = SurfaceDefault) {
+            NotificationPreferencesContent(NotificationsState(), {}, {}, {})
+        }
     }
 }
