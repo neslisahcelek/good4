@@ -81,7 +81,30 @@ private final class Good4NativePushLauncher: NSObject, NativePushLauncher {
         }
     }
     func openSettings() {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            if settings.authorizationStatus == .notDetermined {
+                // iOS creates the app's notification settings after the first permission request.
+                center.requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in
+                    DispatchQueue.main.async {
+                        UIApplication.shared.registerForRemoteNotifications()
+                        PushSignals.shared.refresh()
+                        self.openAppNotificationSettings()
+                    }
+                }
+            } else {
+                DispatchQueue.main.async { self.openAppNotificationSettings() }
+            }
+        }
+    }
+
+    private func openAppNotificationSettings() {
         guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        UIApplication.shared.open(url, options: [:]) { opened in
+            guard !opened, let appSettings = URL(string: UIApplication.openSettingsURLString) else { return }
+            DispatchQueue.main.async {
+                UIApplication.shared.open(appSettings, options: [:])
+            }
+        }
     }
 }

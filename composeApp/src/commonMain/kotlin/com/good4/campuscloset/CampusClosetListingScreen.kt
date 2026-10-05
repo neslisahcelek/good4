@@ -377,6 +377,7 @@ private fun SellerNotice(listing: MarketListing) {
             color = ErrorRed
         )
         "reserved" -> MarketNotice(stringResource(Res.string.campus_closet_ilan_rezerve_olarak_gorunuyor_yeni_teklif_alinmiyor), color = ClosetOfferAccent)
+        "inactive" -> MarketNotice(stringResource(Res.string.campus_closet_inactive_notice), color = TextSecondary)
         "sold" -> MarketNotice(stringResource(Res.string.campus_closet_ilan_satildi_olarak_isaretlendi), color = TextSecondary)
         "expired" -> MarketNotice(
             if (listing.renewsLeft > 0) stringResource(Res.string.campus_closet_ilanin_suresi_doldu_ve_yayindan_kalkti_30_gun_daha)

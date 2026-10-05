@@ -147,6 +147,7 @@ private fun MyListingCard(listing: MarketListing, busy: Boolean, onOpen: () -> U
                 if (listing.renewsLeft > 0) stringResource(Res.string.campus_closet_suresi_doldu_30_gun_daha_yayinda_tutabilirsin) else stringResource(Res.string.campus_closet_suresi_doldu_yeni_ilan_verebilirsin),
                 fontSize = 12.sp, color = ErrorRed
             )
+            "inactive" -> Text(stringResource(Res.string.campus_closet_inactive_notice), fontSize = 12.sp, color = TextSecondary)
             "pending" -> Text(stringResource(Res.string.campus_closet_inceleniyor_yaklasik_30_dakika_icinde_yayina_alinir), fontSize = 12.sp, lineHeight = 17.sp, color = TextSecondary)
             "rejected" -> MarketNotice(listing.rejectReason ?: stringResource(Res.string.campus_closet_ilanin_yayinlanmadi_ayrintilar_icin_ilanini_acabilirsin), color = ErrorRed)
         }

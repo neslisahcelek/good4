@@ -995,4 +995,6 @@
     <string name="community_kamera_aciliyor">Kamera açılıyor…</string>
     <string name="community_qr_ile_giris_al">QR ile giriş al</string>
     <string name="community_kamera_acilamadi_kamera_iznini_ve_baglantini_kontrol_edip_tekrar_">Kamera açılamadı. Kamera iznini ve bağlantını kontrol edip tekrar dene.</string>
+    <string name="campus_closet_inactive">Pasif</string>
+    <string name="campus_closet_inactive_notice">İlan şu anda pasif. Pazar listesinde görünmez.</string>
 </resources>

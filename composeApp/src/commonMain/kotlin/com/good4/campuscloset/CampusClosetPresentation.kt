@@ -40,6 +40,7 @@ internal fun conditionLabel(id: String) = MARKET_CONDITIONS.firstOrNull { it.fir
 @Composable
 internal fun statusLabel(status: String) = when (status) {
     "pending" -> stringResource(Res.string.campus_closet_inceleniyor)
+    "inactive" -> stringResource(Res.string.campus_closet_inactive)
     "published" -> stringResource(Res.string.campus_closet_yayinda)
     "reserved" -> stringResource(Res.string.campus_closet_rezerve)
     "sold" -> stringResource(Res.string.campus_closet_satildi)
