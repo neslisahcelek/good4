@@ -1,0 +1,70 @@
+{
+  "project_info": {
+    "project_number": "449563145023",
+    "project_id": "good4tr-test",
+    "storage_bucket": "good4tr-test.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449563145023:android:fae75aa992ae4c5b19d98a",
+        "android_client_info": {
+          "package_name": "com.good4.test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "449563145023-451ncjct1oqfavj557vu6eu2b0337abf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.good4.test",
+            "certificate_hash": "56bcac585a77684630985029bbcbbe43878bdaed"
+          }
+        },
+        {
+          "client_id": "449563145023-f8knc4m2nh5o4kr7c3bt6ncsd29sjp69.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.good4.test",
+            "certificate_hash": "e498a1a0209ea104202f1301871d4f55e5c63039"
+          }
+        },
+        {
+          "client_id": "449563145023-ujk8hgqkuvhn532i0ogqci160p0gsk0l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.good4.test",
+            "certificate_hash": "fc35137b4e7a9122a5be13452c1a2ffb4481a7bb"
+          }
+        },
+        {
+          "client_id": "449563145023-6ckge8ntl8nuevdbp6idoa6htktd5km7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuIH6vg42Njn7qOG9pk2VNUrEkhrjEGtc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "449563145023-6ckge8ntl8nuevdbp6idoa6htktd5km7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "449563145023-ir6daksk0m7idh0tk83bfgf4m4hmde20.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.good4.iosApp.test"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
