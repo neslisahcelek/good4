@@ -52,6 +52,13 @@ Bu skill, repodaki `AGENTS.md` ile birlikte okunur. Çelişki varsa kullanıcı 
 - Firestore/Storage kurallarında sahiplik, alan allowlist'i, tip/boyut sınırı uygula; kullanıcının rol, admin, doğrulama, sayaç veya puan alanlarını değiştiremediğini doğrula.
 - Yeni Firestore koleksiyonu için mevcut `getCollectionWithIds(...)` pattern'ini kullan. Veri modelini `CANONICAL_DATA_MODEL.md` ile uyumlu tut.
 
+## Senaryo bazlı kurallar
+
+Menü puanlama, etkinlik düzenleme, kişisel koleksiyon veya sayfalı ekran değişikliğinde [tekrarlayan hata kalıplarının](../../../docs/REPEATED_REVIEW_PATTERNS.md) “5 Ekim: veri yaşam döngüsü”, “5 Ekim: asenkron state ve zaman” ve “5 Ekim: form ve liste sözleşmeleri” bölümlerinden ilgili olanı oku. Yeni koleksiyonun hesap silme kapsamını, eski okumanın yeni yazmayı ezmesini, tarih/kullanıcı değişimini ve alanı göndermemek ile boş göndermek arasındaki farkı tasarımda ele al.
+
+- Görsel seçme, hazırlama veya yükleme değişikliğinde [good4-media](../good4-media/SKILL.md) rehberini kullan.
+- Firebase deploy istenirse [good4-firebase-release](../good4-firebase-release/SKILL.md) rehberini kullan. Bu yönlendirme kendiliğinden deploy yetkisi vermez.
+
 ## Değişiklik akışı
 
 1. İlgili source set'leri, route/state/repository zincirini, platform binding'lerini ve yakın testleri keşfet.

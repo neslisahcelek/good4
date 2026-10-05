@@ -67,3 +67,8 @@ val ClosetBooksAccent = Color(0xFFA58DEB)
 val ClosetDormAccent = Color(0xFF8CB7ED)
 val ClosetHobbyAccent = Color(0xFF68CCDC)
 val ClosetOtherAccent = Color(0xFFB8B08D)
+
+// Community screens share accents across student and manager views.
+val CommunityAccent = Color(0xFF75D9BE)
+val DraftAccent = Color(0xFFE08A1E)
+val CommunityAttendanceAccent = Color(0xFFA58DEB)

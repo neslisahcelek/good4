@@ -3,6 +3,12 @@ package com.good4.dining.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.core.domain.Result
+import com.good4.core.presentation.UiText
+import com.good4.dining.domain.MealRating
+import com.good4.dining.domain.ratingOpensAt
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import good4.composeapp.generated.resources.*
 import com.good4.dining.data.repository.AkdenizDiningMenuRepository
 import com.good4.dining.data.repository.KykMenuRepository
 import com.good4.dining.data.repository.MealRatingRepository
@@ -27,79 +33,138 @@ class AkdenizDiningMenuViewModel(
     private val _state = MutableStateFlow(AkdenizDiningMenuState())
     val state = _state.asStateFlow()
 
+    private var menuJob: Job? = null
+    private val voteJobs = mutableMapOf<DailyMeal, Job>()
+    private val voteVersions = mutableMapOf<DailyMeal, Int>()
+    private var generation = 0
+    private var observedUserId = ratingRepository.currentUserId
+
+    init {
+        viewModelScope.launch {
+            ratingRepository.authStateFlow.collect { user ->
+                if (observedUserId != user?.uid) {
+                    observedUserId = user?.uid
+                    generation++
+                    menuJob?.cancel()
+                    voteJobs.values.forEach { it.cancel() }
+                    voteJobs.clear()
+                    _state.update { AkdenizDiningMenuState(isLoading = user != null) }
+                    if (user != null) loadMenu()
+                }
+            }
+        }
+    }
+
     fun loadMenu() {
         val today = todayInIstanbul()
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+        val requestGeneration = ++generation
+        menuJob?.cancel()
+        voteJobs.values.forEach { it.cancel() }
+        voteJobs.clear()
+        voteVersions.clear()
+        _state.update { AkdenizDiningMenuState(isLoading = true) }
+        menuJob = viewModelScope.launch {
             val kykDay = async { kykRepository.getDayOrNext(today) }
             val menu = when (val result = repository.getCurrentMenu()) {
                 is Result.Success -> result.data.takeIf { it.days.isNotEmpty() && it.isCurrentWeek() }
                 is Result.Error -> null
             }
-            _state.value = AkdenizDiningMenuState(
+            val loaded = AkdenizDiningMenuState(
                 menu = menu ?: currentWeekFallback(),
                 kykDay = kykDay.await(),
                 loadedDate = today,
                 isLoading = false
             )
-            loadRatings()
+            if (generation != requestGeneration) return@launch
+            _state.update { loaded }
+            loadRatings(loaded, requestGeneration)
         }
     }
 
     /** Ratings are read only for meals that were published today (the KYK fallback day is not today). */
-    private suspend fun loadRatings() {
-        val state = _state.value
-        val published = buildList {
-            if (state.kykDay?.date == state.loadedDate) {
-                if (state.kykDay.breakfast.isNotEmpty()) add(DailyMeal.KYK_BREAKFAST)
-                if (state.kykDay.dinner.isNotEmpty()) add(DailyMeal.KYK_DINNER)
+    private suspend fun loadRatings(loaded: AkdenizDiningMenuState, requestGeneration: Int) {
+        publishedMeals(loaded).forEach { meal ->
+            if (meal in _state.value.ratingInFlight) return@forEach
+            val version = voteVersions[meal] ?: 0
+            try {
+                val rating = ratingRepository.load(loaded.loadedDate, meal)
+                if (generation == requestGeneration && (voteVersions[meal] ?: 0) == version) {
+                    _state.update { it.copy(ratings = it.ratings + (meal to rating)) }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (generation == requestGeneration && (voteVersions[meal] ?: 0) == version) _state.update {
+                    it.copy(ratingLoadFailed = true, ratingError = UiText.StringResourceId(Res.string.meal_rating_load_error))
+                }
             }
-            if (state.cafeteriaToday != null) add(DailyMeal.CAFETERIA)
         }
-        published.forEach { meal ->
-            val rating = runCatching { ratingRepository.load(state.loadedDate, meal) }.getOrNull() ?: return@forEach
-            _state.update { it.copy(ratings = it.ratings + (meal to rating)) }
+    }
+
+    private fun publishedMeals(loaded: AkdenizDiningMenuState): Set<DailyMeal> = buildSet {
+        loaded.kykDay?.takeIf { it.date == loaded.loadedDate }?.let { day ->
+            if (day.breakfast.isNotEmpty()) add(DailyMeal.KYK_BREAKFAST)
+            if (day.dinner.isNotEmpty()) add(DailyMeal.KYK_DINNER)
         }
+        if (!loaded.cafeteriaToday?.meals.isNullOrEmpty()) add(DailyMeal.CAFETERIA)
     }
 
     fun rate(meal: DailyMeal, vote: MealVote) {
         val current = _state.value
+        val now = Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul"))
+        if (current.loadedDate != now.date.toString()) { refreshIfDayChanged(); return }
+        if (current.isLoading || meal !in publishedMeals(current) || !meal.ratingOpensAt(now.hour)) return
         if (meal in current.ratingInFlight || current.ratings[meal]?.myVote == vote) return
+        val requestGeneration = generation
+        voteVersions[meal] = (voteVersions[meal] ?: 0) + 1
         val before = current.ratings[meal]
-        // Show the chosen face at once; the server's counters replace it, or the old vote returns on failure.
         _state.update {
             it.copy(
-                ratings = it.ratings + (meal to (before ?: com.good4.dining.domain.MealRating()).copy(myVote = vote)),
+                ratings = it.ratings + (meal to (before ?: MealRating()).copy(myVote = vote)),
                 ratingInFlight = it.ratingInFlight + meal,
+                ratingLoadFailed = false,
                 ratingError = null
             )
         }
-        viewModelScope.launch {
-            val result = runCatching { ratingRepository.rate(meal, vote) }
-            _state.update { state ->
-                result.fold(
-                    onSuccess = { state.copy(ratings = state.ratings + (meal to it), ratingInFlight = state.ratingInFlight - meal) },
-                    onFailure = { error ->
-                        state.copy(
-                            ratings = if (before == null) state.ratings - meal else state.ratings + (meal to before),
-                            ratingInFlight = state.ratingInFlight - meal,
-                            ratingError = ratingErrorMessage(error.message)
-                        )
-                    }
-                )
+        voteJobs[meal] = viewModelScope.launch {
+            try {
+                val rating = ratingRepository.rate(current.loadedDate, meal, vote)
+                if (generation == requestGeneration) _state.update {
+                    it.copy(ratings = it.ratings + (meal to rating), ratingInFlight = it.ratingInFlight - meal)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (generation == requestGeneration) _state.update {
+                    it.copy(
+                        ratings = if (before == null) it.ratings - meal else it.ratings + (meal to before),
+                        ratingInFlight = it.ratingInFlight - meal,
+                        ratingError = ratingErrorMessage(error.message)
+                    )
+                }
             }
         }
     }
 
-    fun dismissRatingError() = _state.update { it.copy(ratingError = null) }
-
-    private fun ratingErrorMessage(code: String?): String = when {
-        code == null -> "Oyun kaydedilemedi. Tekrar dene."
-        "MEAL_NOT_STARTED" in code -> "Bu öğün henüz başlamadı."
-        "ACCOUNT_NOT_ACTIVE" in code -> "Hesabın etkin olmadığı için puan veremezsin."
-        "RATE_LIMIT" in code || "resource-exhausted" in code -> "Çok hızlı denedin, biraz sonra tekrar dene."
-        else -> "Oyun kaydedilemedi. Tekrar dene."
+    fun retryRatings() {
+        val loaded = _state.value
+        if (loaded.isLoading) return
+        menuJob?.cancel()
+        val requestGeneration = generation
+        _state.update { it.copy(ratingLoadFailed = false, ratingError = null) }
+        menuJob = viewModelScope.launch { loadRatings(loaded, requestGeneration) }
     }
+
+    fun dismissRatingError() = _state.update { it.copy(ratingLoadFailed = false, ratingError = null) }
+
+    private fun ratingErrorMessage(code: String?): UiText = UiText.StringResourceId(when {
+        code?.contains("MEAL_NOT_STARTED") == true -> Res.string.meal_rating_not_started
+        code?.contains("MEAL_DATE_CHANGED") == true -> Res.string.meal_rating_date_changed
+        code?.contains("MEAL_NOT_PUBLISHED") == true -> Res.string.meal_rating_not_published
+        code?.contains("ACCOUNT_NOT_ACTIVE") == true -> Res.string.meal_rating_inactive
+        code?.contains("RATE_LIMIT") == true || code?.contains("resource-exhausted") == true -> Res.string.meal_rating_rate_limit
+        else -> Res.string.meal_rating_save_error
+    })
 
     /** Reloads when the calendar day has changed since the last load, so the page always shows today. */
     fun refreshIfDayChanged() {

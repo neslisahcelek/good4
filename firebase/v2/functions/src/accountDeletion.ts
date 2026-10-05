@@ -4,6 +4,7 @@ import {
   type Firestore,
   type Query,
 } from "firebase-admin/firestore";
+import { RATINGS } from "./mealRatings.js";
 import { erasePushDevices } from "./push.js";
 
 const DELETED_ACCOUNT_MARKER = "deleted-account";
@@ -103,6 +104,34 @@ async function removeOrphanCheckin(database: Firestore, checkinRef: DocumentRefe
       });
     }
   });
+}
+
+/** Remove the UID-bearing vote and adjust its public counters atomically. */
+async function removeMealVotes(database: Firestore, uid: string): Promise<void> {
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  while (true) {
+    let query = database.collection("meal_ratings").orderBy("__name__").limit(DELETE_PAGE_SIZE);
+    if (cursor) query = query.startAfter(cursor);
+    const page = await query.get();
+    if (page.empty) return;
+    for (const summary of page.docs) {
+      await database.runTransaction(async (transaction) => {
+        const voteRef = summary.ref.collection("votes").doc(uid);
+        const vote = await transaction.get(voteRef);
+        if (!vote.exists) return;
+        const current = await transaction.get(summary.ref);
+        const rating = vote.get("rating");
+        transaction.delete(voteRef);
+        if (current.exists && RATINGS.includes(rating)) {
+          transaction.update(summary.ref, {
+            [rating]: Math.max(0, Number(current.get(rating) ?? 0) - 1),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        }
+      });
+    }
+    cursor = page.docs.at(-1);
+  }
 }
 
 async function removeAccountAuditReferences(database: Firestore, uid: string): Promise<void> {
@@ -216,6 +245,7 @@ export async function eraseAccountData(
   const userRef = database.doc(`users/${uid}`);
   await beginAccountDeletion(database, uid);
   await erasePushDevices(database, uid);
+  await removeMealVotes(database, uid);
   // Delivery receipts include installation IDs; recursively remove both the account path and children.
   while (true) {
     const receipts = await database.collectionGroup("deliveries").where("uid", "==", uid).limit(100).get();

@@ -1,5 +1,11 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.findRootCoordinates
@@ -43,23 +48,24 @@ import com.good4.campuscloset.ClosetCard
 import com.good4.campuscloset.ClosetSectionHeading
 import com.good4.campuscloset.TiltedIcon
 import com.good4.core.presentation.*
+import com.good4.core.presentation.components.StandardButtonHeight
+import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.Good4ConfirmDialog
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 
-private enum class ManagerFilter(val label: String, val icon: ImageVector) {
-    UPCOMING("Yaklaşan", Icons.Outlined.Event),
-    DRAFT("Taslak", Icons.Outlined.EditNote),
-    PAST("Geçmiş", Icons.Outlined.History)
+private enum class ManagerFilter(val labelResource: StringResource, val icon: ImageVector) {
+    UPCOMING(Res.string.community_yaklasan, Icons.Outlined.Event),
+    DRAFT(Res.string.community_taslak, Icons.Outlined.EditNote),
+    PAST(Res.string.community_gecmis, Icons.Outlined.History);
+    val label: String @Composable get() = stringResource(labelResource)
 }
 
-private data class EditorTarget(val entryId: String?, val initial: CommunityEntryDto)
 
 private fun CommunityEntry.isEvent() = data.kind == "event"
 
@@ -82,7 +88,7 @@ internal fun CommunityManagerFlow(
     onPreviewStudent: () -> Unit
 ) {
     var openEventId by rememberSaveable(community.id) { mutableStateOf<String?>(null) }
-    var editor by remember(community.id) { mutableStateOf<EditorTarget?>(null) }
+    val editor = state.eventEditor
     var filter by rememberSaveable(community.id) { mutableStateOf(ManagerFilter.UPCOMING) }
     var now by remember { mutableStateOf(eventNow()) }
     LaunchedEffect(Unit) {
@@ -91,6 +97,9 @@ internal fun CommunityManagerFlow(
             now = eventNow()
         }
     }
+    if (editor == null) CommunityBackHandler {
+        if (openEventId != null) { openEventId = null; viewModel.clearAdmissionMessage() } else onExit()
+    }
     val openEvent = state.entries.firstOrNull { it.id == openEventId }
     val target = editor
     when {
@@ -98,12 +107,13 @@ internal fun CommunityManagerFlow(
             target = target,
             saving = state.saving,
             error = state.error,
-            onClose = { editor = null; viewModel.clearError() },
-            onSave = { draft, image ->
-                viewModel.save(target.entryId, draft, image) {
-                    editor = null
-                    if (target.entryId == null) filter = if (draft.status == "draft") ManagerFilter.DRAFT else ManagerFilter.UPCOMING
-                }
+            onClose = viewModel::closeEventEditor,
+            onDraftChange = viewModel::updateEventDraft,
+            onImageChange = viewModel::setEventImage,
+            onSubmit = { status ->
+                viewModel.submitEventEditor(status)
+                if (viewModel.state.value.eventEditor?.fieldErrors.isNullOrEmpty() && target.entryId == null)
+                    filter = if (status == "draft") ManagerFilter.DRAFT else ManagerFilter.UPCOMING
             }
         )
         openEvent != null -> ManagerEventPage(
@@ -111,7 +121,7 @@ internal fun CommunityManagerFlow(
             now = now,
             state = state,
             onBack = { openEventId = null; viewModel.clearAdmissionMessage() },
-            onEdit = { viewModel.clearError(); editor = EditorTarget(openEvent.id, openEvent.data) },
+            onEdit = { viewModel.openEventEditor(openEvent) },
             onPublish = { viewModel.save(openEvent.id, openEvent.data.copy(status = "published"), null) {} },
             onCancelEvent = { viewModel.cancel(openEvent.id) {} },
             onScanned = { viewModel.admit(openEvent, scanned = it) },
@@ -127,7 +137,7 @@ internal fun CommunityManagerFlow(
             onExit = onExit,
             onPreviewStudent = onPreviewStudent,
             onOpenEvent = { viewModel.clearAdmissionMessage(); openEventId = it.id },
-            onCreateEvent = { viewModel.clearError(); editor = EditorTarget(null, CommunityEntryDto()) },
+            onCreateEvent = { viewModel.openEventEditor() },
             onRetry = { viewModel.select(community) },
             onLoadMore = viewModel::loadMoreEntries
         )
@@ -163,10 +173,10 @@ private fun ManagerHome(
     Good4NestedScaffold(
         topBar = {
             Good4TopBar(
-                title = "Topluluğum",
-                navigationIcon = { IconButton(onClick = onExit) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") } },
+                title = stringResource(Res.string.community_toplulugum),
+                navigationIcon = { IconButton(onClick = onExit) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) } },
                 actions = {
-                    RoundIconAction(Icons.Outlined.Visibility, "Öğrencilerin gördüğü hâli", onPreviewStudent)
+                    RoundIconAction(Icons.Outlined.Visibility, stringResource(Res.string.community_ogrencilerin_gordugu_hali), onPreviewStudent)
                 }
             )
         },
@@ -174,13 +184,13 @@ private fun ManagerHome(
             StickyActionBar {
                 Button(
                     onClick = onCreateEvent,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(StandardButtonHeight),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Etkinlik oluştur", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(Res.string.community_etkinlik_olustur), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -193,13 +203,13 @@ private fun ManagerHome(
             item(key = "identity") { CommunityIdentityCard(community) }
             item(key = "stats") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatTile("Takipçi", state.followerCount?.toString() ?: "–", Icons.Outlined.Groups, CommunityAccent, Modifier.weight(1f))
-                    StatTile("Yaklaşan", counts.getValue(ManagerFilter.UPCOMING).toString(), Icons.Outlined.Event, PrimaryGreen, Modifier.weight(1f))
-                    StatTile("Bu ay gelen", monthlyArrivals.toString(), Icons.Outlined.HowToReg, Color(0xFFA58DEB), Modifier.weight(1f))
+                    StatTile(stringResource(Res.string.community_takipci), state.followerCount?.toString() ?: "–", Icons.Outlined.Groups, CommunityAccent, Modifier.weight(1f))
+                    StatTile(stringResource(Res.string.community_yaklasan), counts.getValue(ManagerFilter.UPCOMING).toString(), Icons.Outlined.Event, PrimaryGreen, Modifier.weight(1f))
+                    StatTile(stringResource(Res.string.community_bu_ay_gelen), monthlyArrivals.toString(), Icons.Outlined.HowToReg, CommunityAttendanceAccent, Modifier.weight(1f))
                 }
             }
             state.error?.let { error ->
-                item(key = "error") { NoticeCard(error, ErrorRed, actionLabel = "Tekrar dene", onAction = onRetry) }
+                item(key = "error") { NoticeCard(error, ErrorRed, actionLabel = stringResource(Res.string.campus_closet_retry), onAction = onRetry) }
             }
             if (nextEvent != null) {
                 item(key = "next") {
@@ -237,7 +247,7 @@ private fun ManagerHome(
             }
             // Events arrive in pages; counts and filters cover only what has been loaded so far.
             if (!state.loading && state.entriesCursor != null) item(key = "load-more") {
-                TextButton(onClick = onLoadMore, modifier = Modifier.fillMaxWidth()) { Text("Daha fazla etkinlik yükle") }
+                TextButton(onClick = onLoadMore, modifier = Modifier.fillMaxWidth()) { Text(stringResource(Res.string.community_load_more)) }
             }
         }
     }
@@ -275,7 +285,7 @@ private fun CommunityIdentityCard(community: Community) {
 @Composable
 private fun NextEventCard(entry: CommunityEntry, registrations: Int, onOpen: () -> Unit) {
     ClosetCard(modifier = Modifier.clickable(onClick = onOpen)) {
-        ClosetSectionHeading("Sıradaki etkinlik", Icons.Outlined.EventAvailable)
+        ClosetSectionHeading(stringResource(Res.string.community_siradaki_etkinlik), Icons.Outlined.EventAvailable)
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(entry.data.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(formatEventSchedule(entry.data), fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
@@ -286,7 +296,7 @@ private fun NextEventCard(entry: CommunityEntry, registrations: Int, onOpen: () 
             Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Girişleri yönet", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(stringResource(Res.string.community_girisleri_yonet), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         }
     }
@@ -314,7 +324,7 @@ private fun ManagerEventRow(entry: CommunityEntry, registrations: Int?, now: kot
                     EventStatusChip(entry.data, now)
                     if (registrations != null && entry.data.status != "draft") {
                         Text(
-                            if (entry.data.capacity > 0) "$registrations/${entry.data.capacity} kayıt" else "$registrations kayıt",
+                            if (entry.data.capacity > 0) stringResource(Res.string.community_registration_capacity, registrations, entry.data.capacity) else stringResource(Res.string.community_registration_count, registrations),
                             fontSize = 12.sp, color = TextSecondary
                         )
                     }
@@ -339,18 +349,18 @@ private fun EmptyEvents(filter: ManagerFilter, onCreateEvent: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text(
                 when (filter) {
-                    ManagerFilter.UPCOMING -> "Yaklaşan etkinlik yok"
-                    ManagerFilter.DRAFT -> "Taslak yok"
-                    ManagerFilter.PAST -> "Geçmiş etkinlik yok"
+                    ManagerFilter.UPCOMING -> stringResource(Res.string.community_yaklasan_etkinlik_yok)
+                    ManagerFilter.DRAFT -> stringResource(Res.string.community_taslak_yok)
+                    ManagerFilter.PAST -> stringResource(Res.string.community_gecmis_etkinlik_yok)
                 },
                 fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 when (filter) {
-                    ManagerFilter.UPCOMING -> "Bir etkinlik oluştur; takipçilerin ve kampüsteki öğrenciler Topluluklar sayfasında görsün."
-                    ManagerFilter.DRAFT -> "Hazırlamaya ara verdiğin etkinlikleri taslak olarak kaydedersen burada durur."
-                    ManagerFilter.PAST -> "Tamamlanan ve iptal edilen etkinlikler burada listelenir."
+                    ManagerFilter.UPCOMING -> stringResource(Res.string.community_bir_etkinlik_olustur_takipcilerin_ve_kampusteki_ogrenciler_toplul)
+                    ManagerFilter.DRAFT -> stringResource(Res.string.community_hazirlamaya_ara_verdigin_etkinlikleri_taslak_olarak_kaydedersen_b)
+                    ManagerFilter.PAST -> stringResource(Res.string.community_tamamlanan_ve_iptal_edilen_etkinlikler_burada_listelenir)
                 },
                 fontSize = 13.sp, lineHeight = 19.sp, color = TextSecondary, textAlign = TextAlign.Center
             )
@@ -358,7 +368,7 @@ private fun EmptyEvents(filter: ManagerFilter, onCreateEvent: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
                 Surface(onClick = onCreateEvent, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary) {
                     Text(
-                        "Etkinlik oluştur",
+                        stringResource(Res.string.community_etkinlik_olustur),
                         modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                         color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp
                     )
@@ -400,20 +410,20 @@ private fun ManagerEventPage(
     Good4NestedScaffold(
         topBar = {
             Good4TopBar(
-                title = "Etkinlik",
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") } },
+                title = stringResource(Res.string.community_etkinlik),
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) } },
                 actions = {
                     if (data.status != "cancelled") {
                         Box {
-                            RoundIconAction(Icons.Outlined.MoreVert, "Diğer işlemler") { menuOpen = true }
+                            RoundIconAction(Icons.Outlined.MoreVert, stringResource(Res.string.community_diger_islemler)) { menuOpen = true }
                             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = SurfaceDefault) {
                                 DropdownMenuItem(
-                                    text = { Text("Düzenle") },
+                                    text = { Text(stringResource(Res.string.edit)) },
                                     leadingIcon = { Icon(Icons.Outlined.Edit, null) },
                                     onClick = { menuOpen = false; onEdit() }
                                 )
                                 if (!ended) DropdownMenuItem(
-                                    text = { Text(if (data.status == "draft") "Taslağı kaldır" else "Etkinliği iptal et", color = ErrorRed) },
+                                    text = { Text(if (data.status == "draft") stringResource(Res.string.community_taslagi_kaldir) else stringResource(Res.string.community_etkinligi_iptal_et), color = ErrorRed) },
                                     leadingIcon = { Icon(Icons.Outlined.EventBusy, null, tint = ErrorRed) },
                                     onClick = { menuOpen = false; confirmCancel = true }
                                 )
@@ -426,18 +436,18 @@ private fun ManagerEventPage(
         bottomBar = {
             when {
                 data.status == "draft" -> StickyActionBar {
-                    Text("Taslaklar öğrencilere görünmez.", color = TextSecondary, fontSize = 12.sp)
+                    Text(stringResource(Res.string.community_taslaklar_ogrencilere_gorunmez), color = TextSecondary, fontSize = 12.sp)
                     Button(
                         onClick = onPublish, enabled = !state.saving,
-                        modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp)
-                    ) { Text(if (state.saving) "Yayınlanıyor…" else "Yayınla", fontWeight = FontWeight.SemiBold) }
+                        modifier = Modifier.fillMaxWidth().height(StandardButtonHeight), shape = RoundedCornerShape(16.dp)
+                    ) { Text(if (state.saving) stringResource(Res.string.community_yayinlaniyor) else stringResource(Res.string.community_yayinla), fontWeight = FontWeight.SemiBold) }
                 }
                 admissionOpen -> StickyActionBar {
                     EventScannerButton(
                         enabled = !state.admissionBusy,
                         onScanned = onScanned,
                         onError = onError,
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().height(StandardButtonHeight)
                     )
                 }
             }
@@ -453,7 +463,7 @@ private fun ManagerEventPage(
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
                         if (data.imageUrl.isNotBlank()) {
                             AsyncImage(
-                                model = data.imageUrl, contentDescription = "Kapak görseli", contentScale = ContentScale.Crop,
+                                model = data.imageUrl, contentDescription = stringResource(Res.string.community_kapak_gorseli), contentScale = ContentScale.Crop,
                                 modifier = Modifier.width(96.dp).aspectRatio(CoverImageSpec.ASPECT_RATIO)
                                     .clip(RoundedCornerShape(12.dp)).background(SurfaceMuted).clickable { viewingPoster = true }
                             )
@@ -476,10 +486,10 @@ private fun ManagerEventPage(
                 item(key = "counts") {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         StatTile(
-                            "Kayıt", if (data.capacity > 0) "${registrations.size}/${data.capacity}" else registrations.size.toString(),
+                            stringResource(Res.string.community_kayit), if (data.capacity > 0) "${registrations.size}/${data.capacity}" else registrations.size.toString(),
                             Icons.Outlined.ConfirmationNumber, PrimaryGreen, Modifier.weight(1f)
                         )
-                        StatTile("Giriş yaptı", arrivals.size.toString(), Icons.Outlined.HowToReg, Color(0xFFA58DEB), Modifier.weight(1f))
+                        StatTile(stringResource(Res.string.community_giris_yapti), arrivals.size.toString(), Icons.Outlined.HowToReg, CommunityAttendanceAccent, Modifier.weight(1f))
                     }
                 }
             }
@@ -492,23 +502,23 @@ private fun ManagerEventPage(
             if (data.status != "draft") {
                 item(key = "people-heading") {
                     ClosetSectionHeading(
-                        "Katılımcılar", Icons.Outlined.Groups,
-                        if (admissionOpen) "Girişler yalnızca öğrencinin QR bileti okutularak onaylanır."
-                        else "${registrations.size} öğrenci kayıt oldu."
+                        stringResource(Res.string.community_katilimcilar), Icons.Outlined.Groups,
+                        if (admissionOpen) stringResource(Res.string.community_girisler_yalnizca_ogrencinin_qr_bileti_okutularak_onaylanir)
+                        else stringResource(Res.string.community_registered_students, registrations.size)
                     )
                 }
                 if (registrations.size > 5) item(key = "search") {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Öğrenci ara", color = TextSecondary) },
+                        placeholder = { Text(stringResource(Res.string.community_ogrenci_ara), color = TextSecondary) },
                         leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary) },
                         singleLine = true, shape = RoundedCornerShape(18.dp), colors = managerFieldColors()
                     )
                 }
                 if (registrations.isNotEmpty()) item(key = "people-filter") {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SmallToggle("Tümü · ${registrations.size}", !arrivedOnly) { arrivedOnly = false }
-                        SmallToggle("Gelenler · ${arrivals.size}", arrivedOnly) { arrivedOnly = true }
+                        SmallToggle(stringResource(Res.string.community_people_all, registrations.size), !arrivedOnly) { arrivedOnly = false }
+                        SmallToggle(stringResource(Res.string.community_people_arrived, arrivals.size), arrivedOnly) { arrivedOnly = true }
                     }
                 }
                 item(key = "people") {
@@ -516,9 +526,9 @@ private fun ManagerEventPage(
                         if (shownPeople.isEmpty()) {
                             Text(
                                 when {
-                                    search.isNotBlank() -> "Aramana uygun öğrenci yok."
-                                    arrivedOnly -> "Henüz giriş yapan yok."
-                                    else -> "Henüz kayıtlı öğrenci yok."
+                                    search.isNotBlank() -> stringResource(Res.string.community_aramana_uygun_ogrenci_yok)
+                                    arrivedOnly -> stringResource(Res.string.community_henuz_giris_yapan_yok)
+                                    else -> stringResource(Res.string.community_henuz_kayitli_ogrenci_yok)
                                 },
                                 fontSize = 13.sp, color = TextSecondary
                             )
@@ -536,11 +546,11 @@ private fun ManagerEventPage(
     if (viewingPoster && data.imageUrl.isNotBlank()) PosterViewer(data.imageUrl) { viewingPoster = false }
     if (confirmCancel) {
         Good4ConfirmDialog(
-            title = if (data.status == "draft") "Taslağı kaldır" else "Etkinliği iptal et",
-            message = if (data.status == "draft") "Taslak yayınlanmadan Geçmiş'e taşınır."
-            else "${registrations.size} kayıtlı öğrenci var. İptal edilen etkinlik öğrencilere görünmez ve geri alınamaz.",
-            confirmLabel = if (data.status == "draft") "Kaldır" else "İptal et",
-            dismissLabel = "Vazgeç",
+            title = if (data.status == "draft") stringResource(Res.string.community_taslagi_kaldir) else stringResource(Res.string.community_etkinligi_iptal_et),
+            message = if (data.status == "draft") stringResource(Res.string.community_taslak_yayinlanmadan_gecmis_e_tasinir)
+            else stringResource(Res.string.community_cancel_registered_message, registrations.size),
+            confirmLabel = if (data.status == "draft") stringResource(Res.string.community_kaldir) else stringResource(Res.string.community_iptal_et),
+            dismissLabel = stringResource(Res.string.campus_closet_cancel),
             icon = Icons.Outlined.EventBusy,
             enabled = !state.saving,
             onConfirm = { confirmCancel = false; onCancelEvent() },
@@ -552,7 +562,7 @@ private fun ManagerEventPage(
 @Composable
 private fun ParticipantRow(person: CommunityEventRegistrationDto, arrival: EventAttendanceDto?) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        val name = person.displayName.ifBlank { "Good4 öğrencisi" }
+        val name = person.displayName.ifBlank { stringResource(Res.string.community_good4_ogrencisi) }
         Surface(Modifier.size(38.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
@@ -572,7 +582,7 @@ private fun ParticipantRow(person: CommunityEventRegistrationDto, arrival: Event
                 )
             }
         } else {
-            Text("Bekleniyor", fontSize = 12.sp, color = TextSecondary)
+            Text(stringResource(Res.string.community_bekleniyor), fontSize = 12.sp, color = TextSecondary)
         }
     }
 }
@@ -582,34 +592,34 @@ private fun ParticipantRow(person: CommunityEventRegistrationDto, arrival: Event
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ManagerEventEditor(
-    target: EditorTarget,
+    target: EventEditorState,
     saving: Boolean,
     error: String?,
     onClose: () -> Unit,
-    onSave: (CommunityEntryDto, ByteArray?) -> Unit
+    onDraftChange: (CommunityEntryDto) -> Unit,
+    onImageChange: (ByteArray?) -> Unit,
+    onSubmit: (String) -> Unit
 ) {
     val isNew = target.entryId == null
     val canDraft = isNew || target.initial.status == "draft"
-    val startingDraft = remember(target) { target.initial.withSuggestedEnd() }
-    var draft by remember(target) { mutableStateOf(startingDraft) }
-    var image by remember(target) { mutableStateOf<ByteArray?>(null) }
-    var pickerError by remember(target) { mutableStateOf<String?>(null) }
-    var showErrors by remember(target) { mutableStateOf(false) }
-    var customEnd by remember(target) { mutableStateOf(startingDraft.matchingDuration() == EventDuration.CUSTOM) }
+    val startingDraft = remember(target.entryId) { target.initial.withSuggestedEnd() }
+    val draft = target.draft
+    val image = target.image
+    var pickerError by remember(target.entryId) { mutableStateOf<String?>(null) }
+    var customEnd by remember(target.entryId) { mutableStateOf(startingDraft.matchingDuration() == EventDuration.CUSTOM) }
     var previewing by remember { mutableStateOf(false) }
     var viewingCover by remember { mutableStateOf(false) }
     val coverPicker = rememberCoverImagePicker(
-        onPicked = { image = it; pickerError = null },
+        onPicked = { onImageChange(it); pickerError = null },
         onError = { pickerError = it }
     )
     var confirmDiscard by remember { mutableStateOf(false) }
     var dateTarget by remember { mutableStateOf<ScheduleField?>(null) }
     var timeTarget by remember { mutableStateOf<ScheduleField?>(null) }
-    val dirty = draft != startingDraft || image != null
-    val fieldErrors = if (showErrors) validateEventFields(draft, if (isNew) null else target.initial, eventNow()) else emptyMap()
+    val dirty = target.dirty
+    val fieldErrors = target.fieldErrors.mapValues { (_, message) -> message.asString() }
     val fieldOffsets = remember { mutableStateMapOf<EventField, Int>() }
     val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     val density = LocalDensity.current
@@ -623,22 +633,15 @@ private fun ManagerEventEditor(
     fun Modifier.field(field: EventField) = onGloballyPositioned { fieldOffsets[field] = it.positionInParent().y.toInt() }
     fun submit(status: String) {
         dismissKeyboard()
-        val cleaned = draft.copy(
-            title = draft.title.trim(), description = draft.description.trim(),
-            location = draft.location.trim(), kind = "event", status = status
-        )
-        val errors = validateEventFields(cleaned, if (isNew) null else target.initial, eventNow())
-        if (errors.isEmpty()) {
-            showErrors = false
-            onSave(cleaned, image)
-        } else {
-            showErrors = true
-            errors.keys.firstOrNull()?.let { first ->
-                if (first == EventField.END) customEnd = true
-                scope.launch { scrollState.animateScrollTo(((fieldOffsets[first] ?: 0) - with(density) { 24.dp.roundToPx() }).coerceAtLeast(0)) }
-            }
+        onSubmit(status)
+    }
+    LaunchedEffect(fieldErrors) {
+        fieldErrors.keys.firstOrNull()?.let { first ->
+            if (first == EventField.END) customEnd = true
+            scrollState.animateScrollTo(((fieldOffsets[first] ?: 0) - with(density) { 24.dp.roundToPx() }).coerceAtLeast(0))
         }
     }
+    CommunityBackHandler { if (!saving) close() }
 
     Box(Modifier.fillMaxSize().onGloballyPositioned { coordinates ->
         val rootHeight = coordinates.findRootCoordinates().size.height
@@ -648,14 +651,14 @@ private fun ManagerEventEditor(
         modifier = Modifier.padding(bottom = keyboardPadding),
         topBar = {
             Good4TopBar(
-                title = if (isNew) "Yeni etkinlik" else "Etkinliği düzenle",
-                navigationIcon = { IconButton(onClick = close, enabled = !saving) { Icon(Icons.Outlined.Close, "Kapat") } },
+                title = if (isNew) stringResource(Res.string.community_yeni_etkinlik) else stringResource(Res.string.community_etkinligi_duzenle),
+                navigationIcon = { IconButton(onClick = close, enabled = !saving) { Icon(Icons.Outlined.Close, stringResource(Res.string.notification_close)) } },
                 actions = {
-                    if (keyboardVisible) TextButton(onClick = dismissKeyboard) { Text("Bitti") }
+                    if (keyboardVisible) TextButton(onClick = dismissKeyboard) { Text(stringResource(Res.string.campus_closet_bitti)) }
                     else TextButton(onClick = { previewing = true }, enabled = !saving) {
                         Icon(Icons.Outlined.Visibility, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Önizle")
+                        Text(stringResource(Res.string.community_onizle))
                     }
                 }
             )
@@ -665,40 +668,40 @@ private fun ManagerEventEditor(
                 val message = when {
                     error != null -> error
                     pickerError != null -> pickerError
-                    fieldErrors.size == 1 -> fieldErrors.entries.first().let { (field, text) -> "${field.label}: $text" }
-                    fieldErrors.isNotEmpty() -> "${fieldErrors.size} alanı kontrol et."
+                    fieldErrors.size == 1 -> fieldErrors.entries.first().let { (field, text) -> stringResource(Res.string.community_field_error, field.label, text) }
+                    fieldErrors.isNotEmpty() -> stringResource(Res.string.community_check_fields, fieldErrors.size)
                     else -> null
                 }
                 if (message != null) Text(message, color = ErrorRed, fontSize = 12.sp)
                 else Text(
                     when {
-                        canDraft -> "Taslaklar öğrencilere görünmez; hazır olunca yayınlarsın."
-                        !dirty -> "Henüz bir değişiklik yapmadın."
-                        else -> "Değişiklikler kayıtlı öğrencilerin biletlerinde de güncellenir."
+                        canDraft -> stringResource(Res.string.community_taslaklar_ogrencilere_gorunmez_hazir_olunca_yayinlarsin)
+                        !dirty -> stringResource(Res.string.community_henuz_bir_degisiklik_yapmadin)
+                        else -> stringResource(Res.string.community_degisiklikler_kayitli_ogrencilerin_biletlerinde_de_guncellenir)
                     },
                     color = TextSecondary, fontSize = 12.sp
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (canDraft) {
                         OutlinedButton(
-                            onClick = { submit("draft") }, enabled = !saving,
-                            modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(16.dp),
+                            onClick = { submit("draft") }, enabled = !saving && !coverPicker.preparing,
+                            modifier = Modifier.weight(1f).height(StandardButtonHeight), shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.8f))
-                        ) { Text("Taslak kaydet", fontWeight = FontWeight.Medium) }
+                        ) { Text(stringResource(Res.string.community_taslak_kaydet), fontWeight = FontWeight.Medium) }
                     }
                     Button(
-                        onClick = { submit("published") }, enabled = !saving && (canDraft || dirty),
-                        modifier = Modifier.weight(1.4f).height(50.dp), shape = RoundedCornerShape(16.dp)
+                        onClick = { submit("published") }, enabled = !saving && !coverPicker.preparing && (canDraft || dirty),
+                        modifier = Modifier.weight(1.4f).height(StandardButtonHeight), shape = RoundedCornerShape(16.dp)
                     ) {
                         if (saving) {
-                            CircularProgressIndicator(Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(StandardButtonLoadingIndicatorSize), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                             Spacer(Modifier.width(8.dp))
                         }
                         Text(
                             when {
                                 saving -> "Kaydediliyor…"
-                                canDraft -> "Yayınla"
-                                else -> "Kaydet"
+                                canDraft -> stringResource(Res.string.community_yayinla)
+                                else -> stringResource(Res.string.campus_closet_save)
                             },
                             fontWeight = FontWeight.SemiBold
                         )
@@ -715,38 +718,38 @@ private fun ManagerEventEditor(
             CoverField(
                 bytes = image, remoteUrl = draft.imageUrl, enabled = !saving, preparing = coverPicker.preparing,
                 onPick = coverPicker.open, onView = { viewingCover = true },
-                onRemove = { image = null; draft = draft.copy(imageUrl = "") }
+                onRemove = { onImageChange(null); onDraftChange(draft.copy(imageUrl = "")) }
             )
             ClosetCard {
-                ClosetSectionHeading("Etkinlik", Icons.Outlined.Event)
+                ClosetSectionHeading(stringResource(Res.string.community_etkinlik), Icons.Outlined.Event)
                 FormTextField(
-                    value = draft.title, label = "Başlık", placeholder = "Örn. Tanışma buluşması",
+                    value = draft.title, label = stringResource(Res.string.campus_closet_baslik), placeholder = stringResource(Res.string.community_orn_tanisma_bulusmasi),
                     error = fieldErrors[EventField.TITLE], enabled = !saving, modifier = Modifier.field(EventField.TITLE)
-                ) { draft = draft.copy(title = it.take(120)) }
+                ) { onDraftChange(draft.copy(title = it.take(120))) }
                 Column(Modifier.field(EventField.CATEGORY), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Kategori", color = TextSecondary, fontSize = 12.sp)
-                    CategoryChipRow(draft.categoryId, enabled = !saving) { draft = draft.copy(categoryId = it) }
+                    Text(stringResource(Res.string.campus_closet_kategori), color = TextSecondary, fontSize = 12.sp)
+                    CategoryChipRow(draft.categoryId, enabled = !saving) { onDraftChange(draft.copy(categoryId = it)) }
                     fieldErrors[EventField.CATEGORY]?.let { FieldError(it) }
                 }
                 FormTextField(
-                    value = draft.description, label = "Açıklama", placeholder = "Etkinlikte neler olacak, kimler katılabilir?",
+                    value = draft.description, label = stringResource(Res.string.campus_closet_aciklama), placeholder = stringResource(Res.string.community_etkinlikte_neler_olacak_kimler_katilabilir),
                     error = fieldErrors[EventField.DESCRIPTION], enabled = !saving, singleLine = false,
                     modifier = Modifier.field(EventField.DESCRIPTION)
-                ) { draft = draft.copy(description = it.take(4000)) }
+                ) { onDraftChange(draft.copy(description = it.take(4000))) }
             }
             ClosetCard {
-                ClosetSectionHeading("Zaman ve yer", Icons.Outlined.Schedule)
+                ClosetSectionHeading(stringResource(Res.string.community_zaman_ve_yer), Icons.Outlined.Schedule)
                 Column(Modifier.field(EventField.START), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PickerField("Başlangıç", Icons.Outlined.CalendarMonth, draft.date.takeIf { it.isNotBlank() }?.let(::formatEventDate),
-                            "Tarih seç", fieldErrors[EventField.START] != null, !saving, { dateTarget = ScheduleField.START }, Modifier.weight(1.6f))
-                        PickerField("Saat", Icons.Outlined.Schedule, draft.time.ifBlank { null },
-                            "Seç", fieldErrors[EventField.START] != null, !saving, { timeTarget = ScheduleField.START }, Modifier.weight(1f))
+                        PickerField(stringResource(Res.string.community_baslangic), Icons.Outlined.CalendarMonth, draft.date.takeIf { it.isNotBlank() }?.let(::formatEventDate),
+                            stringResource(Res.string.community_tarih_sec), fieldErrors[EventField.START] != null, !saving, { dateTarget = ScheduleField.START }, Modifier.weight(1.6f))
+                        PickerField(stringResource(Res.string.community_saat), Icons.Outlined.Schedule, draft.time.ifBlank { null },
+                            stringResource(Res.string.community_sec), fieldErrors[EventField.START] != null, !saving, { timeTarget = ScheduleField.START }, Modifier.weight(1f))
                     }
                     fieldErrors[EventField.START]?.let { FieldError(it) }
                 }
                 Column(Modifier.field(EventField.END), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Süre", color = TextSecondary, fontSize = 12.sp)
+                    Text(stringResource(Res.string.community_sure), color = TextSecondary, fontSize = 12.sp)
                     val matched = draft.matchingDuration()
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         EventDuration.entries.forEach { option ->
@@ -754,35 +757,35 @@ private fun ManagerEventEditor(
                             DurationChip(option.shortLabel, selected, enabled = !saving && draft.date.isNotBlank() && draft.time.isNotBlank(),
                                 modifier = Modifier.weight(if (option == EventDuration.ALL_DAY) 1.4f else 1f)) {
                                 if (option == EventDuration.CUSTOM) customEnd = true
-                                else { customEnd = false; draft = draft.withDuration(option) }
+                                else { customEnd = false; onDraftChange(draft.withDuration(option)) }
                             }
                         }
                     }
                     if (customEnd) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            PickerField("Bitiş", Icons.Outlined.CalendarMonth, draft.endDate.takeIf { it.isNotBlank() }?.let(::formatEventDate),
-                                "Tarih seç", fieldErrors[EventField.END] != null, !saving, { dateTarget = ScheduleField.END }, Modifier.weight(1.6f))
-                            PickerField("Saat", Icons.Outlined.Schedule, draft.endTime.ifBlank { null },
-                                "Seç", fieldErrors[EventField.END] != null, !saving, { timeTarget = ScheduleField.END }, Modifier.weight(1f))
+                            PickerField(stringResource(Res.string.community_bitis), Icons.Outlined.CalendarMonth, draft.endDate.takeIf { it.isNotBlank() }?.let(::formatEventDate),
+                                stringResource(Res.string.community_tarih_sec), fieldErrors[EventField.END] != null, !saving, { dateTarget = ScheduleField.END }, Modifier.weight(1.6f))
+                            PickerField(stringResource(Res.string.community_saat), Icons.Outlined.Schedule, draft.endTime.ifBlank { null },
+                                stringResource(Res.string.community_sec), fieldErrors[EventField.END] != null, !saving, { timeTarget = ScheduleField.END }, Modifier.weight(1f))
                         }
                     } else if (draft.endDate.isNotBlank() && draft.endTime.isNotBlank()) {
-                        Text("Bitiş: ${formatEventDate(draft.endDate)} · ${draft.endTime}", color = TextSecondary, fontSize = 12.sp)
+                        Text(stringResource(Res.string.community_end_summary, formatEventDate(draft.endDate), draft.endTime), color = TextSecondary, fontSize = 12.sp)
                     } else if (draft.date.isBlank() || draft.time.isBlank()) {
-                        Text("Önce başlangıcı seç; süre ona göre hesaplanır.", color = TextSecondary, fontSize = 12.sp)
+                        Text(stringResource(Res.string.community_once_baslangici_sec_sure_ona_gore_hesaplanir), color = TextSecondary, fontSize = 12.sp)
                     }
                     fieldErrors[EventField.END]?.let { FieldError(it) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     FormTextField(
-                        value = draft.location, label = "Konum", placeholder = "Örn. Merkezi Kafeterya",
+                        value = draft.location, label = stringResource(Res.string.community_konum), placeholder = stringResource(Res.string.community_orn_merkezi_kafeterya),
                         error = fieldErrors[EventField.LOCATION], enabled = !saving,
                         modifier = Modifier.weight(1.8f).field(EventField.LOCATION)
-                    ) { draft = draft.copy(location = it.take(200)) }
+                    ) { onDraftChange(draft.copy(location = it.take(200))) }
                     FormTextField(
-                        value = draft.capacity.takeIf { it > 0 }?.toString().orEmpty(), label = "Kontenjan", placeholder = "Sınırsız",
+                        value = draft.capacity.takeIf { it > 0 }?.toString().orEmpty(), label = stringResource(Res.string.community_kontenjan), placeholder = stringResource(Res.string.community_sinirsiz),
                         error = fieldErrors[EventField.CAPACITY], enabled = !saving, number = true,
                         modifier = Modifier.weight(1f).field(EventField.CAPACITY)
-                    ) { value -> draft = draft.copy(capacity = value.filter(Char::isDigit).take(6).toIntOrNull() ?: 0) }
+                    ) { value -> onDraftChange(draft.copy(capacity = value.filter(Char::isDigit).take(6).toIntOrNull() ?: 0)) }
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -790,7 +793,7 @@ private fun ManagerEventEditor(
     }
     }
 
-    SchedulePickerDialogs(draft, dateTarget, timeTarget, onChange = { draft = it }, onCloseDate = { dateTarget = null }, onCloseTime = { timeTarget = null })
+    SchedulePickerDialogs(draft, dateTarget, timeTarget, onChange = onDraftChange, onCloseDate = { dateTarget = null }, onCloseTime = { timeTarget = null })
     if (viewingCover) {
         (image ?: draft.imageUrl.takeIf { it.isNotBlank() })?.let { PosterViewer(it) { viewingCover = false } }
     }
@@ -803,17 +806,17 @@ private fun ManagerEventEditor(
                 Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                ClosetSectionHeading("Öğrencilerin göreceği", Icons.Outlined.Visibility, "Topluluk sayfasında etkinliğin böyle görünecek.")
+                ClosetSectionHeading(stringResource(Res.string.community_ogrencilerin_gorecegi), Icons.Outlined.Visibility, stringResource(Res.string.community_topluluk_sayfasinda_etkinligin_boyle_gorunecek))
                 EventPreviewCard(draft, image)
             }
         }
     }
     if (confirmDiscard) {
         Good4ConfirmDialog(
-            title = "Değişiklikler kaydedilmedi",
-            message = "Çıkarsan bu formda yaptığın değişiklikler kaybolacak.",
-            confirmLabel = "Çık",
-            dismissLabel = "Vazgeç",
+            title = stringResource(Res.string.community_degisiklikler_kaydedilmedi),
+            message = stringResource(Res.string.community_cikarsan_bu_formda_yaptigin_degisiklikler_kaybolacak),
+            confirmLabel = stringResource(Res.string.community_cik),
+            dismissLabel = stringResource(Res.string.campus_closet_cancel),
             onConfirm = { confirmDiscard = false; onClose() },
             onDismiss = { confirmDiscard = false }
         )
@@ -841,14 +844,14 @@ private fun EventPreviewCard(draft: CommunityEntryDto, image: ByteArray?) {
                 if (EventCategory.fromId(draft.categoryId) != null) {
                     Text(EventCategory.labelFor(draft.categoryId), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
-                Text(draft.title.ifBlank { "Etkinlik başlığı" }, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                Text(draft.title.ifBlank { stringResource(Res.string.community_etkinlik_basligi) }, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
                     color = if (draft.title.isBlank()) TextSecondary else TextPrimary)
                 if (draft.date.isNotBlank()) InfoLine(Icons.Outlined.CalendarMonth, formatEventSchedule(draft))
                 if (draft.location.isNotBlank()) InfoLine(Icons.Outlined.LocationOn, draft.location)
-                InfoLine(Icons.Outlined.Groups, if (draft.capacity > 0) "${draft.capacity} kişilik kontenjan" else "Kontenjan sınırsız")
+                InfoLine(Icons.Outlined.Groups, if (draft.capacity > 0) stringResource(Res.string.community_capacity_people, draft.capacity) else stringResource(Res.string.community_kontenjan_sinirsiz))
                 if (draft.description.isNotBlank()) Text(draft.description, fontSize = 14.sp, lineHeight = 20.sp, color = TextSecondary)
                 Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp)) {
-                    Text("Etkinliğe kayıt ol", modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
+                    Text(stringResource(Res.string.community_etkinlige_kayit_ol), modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
                         color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
@@ -898,7 +901,7 @@ private fun CoverField(
                 TiltedIcon(Icons.Outlined.AddPhotoAlternate, PrimaryGreen, size = 32, iconSize = 18)
             } else {
                 AsyncImage(
-                    model = model, contentDescription = "Kapak görseli", contentScale = ContentScale.Crop,
+                    model = model, contentDescription = stringResource(Res.string.community_kapak_gorseli), contentScale = ContentScale.Crop,
                     modifier = Modifier.width(64.dp).aspectRatio(CoverImageSpec.ASPECT_RATIO)
                         .clip(RoundedCornerShape(10.dp)).background(SurfaceMuted)
                 )
@@ -907,19 +910,19 @@ private fun CoverField(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     when {
-                        preparing -> "Görsel hazırlanıyor…"
-                        model == null -> "Kapak görseli ekle"
-                        else -> "Kapak görseli"
+                        preparing -> stringResource(Res.string.community_gorsel_hazirlaniyor)
+                        model == null -> stringResource(Res.string.community_kapak_gorseli_ekle)
+                        else -> stringResource(Res.string.community_kapak_gorseli)
                     },
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary
                 )
                 if (model == null) {
-                    Text("Instagram gönderisi gibi 4:5 dikey görsel önerilir.", fontSize = 12.sp, lineHeight = 16.sp, color = TextSecondary)
+                    Text(stringResource(Res.string.community_instagram_gonderisi_gibi_4_5_dikey_gorsel_onerilir), fontSize = 12.sp, lineHeight = 16.sp, color = TextSecondary)
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Değiştir", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
+                        Text(stringResource(Res.string.community_degistir), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.clickable(enabled = enabled && !preparing, onClick = onPick).padding(vertical = 6.dp))
-                        Text("Kaldır", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ErrorRed,
+                        Text(stringResource(Res.string.community_kaldir), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ErrorRed,
                             modifier = Modifier.clickable(enabled = enabled && !preparing, onClick = onRemove).padding(vertical = 6.dp))
                     }
                 }
@@ -1052,8 +1055,8 @@ internal fun SchedulePickerDialogs(
                     onChange(if (target == ScheduleField.END) draft.copy(endDate = picked) else draft.withStart(picked, draft.time))
                 }
                 onCloseDate()
-            }) { Text("Seç") }
-        }, dismissButton = { TextButton(onClick = onCloseDate) { Text("Vazgeç") } }) { DatePicker(state = pickerState) }
+            }) { Text(stringResource(Res.string.community_sec)) }
+        }, dismissButton = { TextButton(onClick = onCloseDate) { Text(stringResource(Res.string.campus_closet_cancel)) } }) { DatePicker(state = pickerState) }
     }
     timeTarget?.let { target ->
         val current = if (target == ScheduleField.END) draft.endTime else draft.time
@@ -1066,16 +1069,16 @@ internal fun SchedulePickerDialogs(
         }
         AlertDialog(
             onDismissRequest = onCloseTime,
-            title = { Text(if (target == ScheduleField.END) "Bitiş saati" else "Başlangıç saati") },
+            title = { Text(if (target == ScheduleField.END) stringResource(Res.string.community_bitis_saati) else stringResource(Res.string.community_baslangic_saati)) },
             text = { TimePicker(state = timeState) },
             confirmButton = {
                 TextButton(onClick = {
                     val picked = "${timeState.hour.toString().padStart(2, '0')}:${timeState.minute.toString().padStart(2, '0')}"
                     onChange(if (target == ScheduleField.END) draft.copy(endTime = picked) else draft.withStart(draft.date, picked))
                     onCloseTime()
-                }) { Text("Seç") }
+                }) { Text(stringResource(Res.string.community_sec)) }
             },
-            dismissButton = { TextButton(onClick = onCloseTime) { Text("Vazgeç") } }
+            dismissButton = { TextButton(onClick = onCloseTime) { Text(stringResource(Res.string.campus_closet_cancel)) } }
         )
     }
 }
@@ -1089,3 +1092,19 @@ private fun managerFieldColors() = OutlinedTextFieldDefaults.colors(
     disabledContainerColor = SurfaceMuted,
     cursorColor = MaterialTheme.colorScheme.primary
 )
+
+
+@Preview
+@Composable
+private fun ManagerEventEditorPreview() {
+    val initial = CommunityEntryDto()
+    ManagerEventEditor(
+        target = EventEditorState(null, initial, initial),
+        saving = false,
+        error = null,
+        onClose = {},
+        onDraftChange = {},
+        onImageChange = {},
+        onSubmit = {}
+    )
+}

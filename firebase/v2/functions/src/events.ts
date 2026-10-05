@@ -156,7 +156,8 @@ export async function saveEventService(
     const currentStartsAt = current?.get("startsAt");
     const currentEndsAt = current?.get("endsAt");
     const startChanged = !(currentStartsAt instanceof Timestamp) || !currentStartsAt.isEqual(startsAt);
-    if (startChanged && startsAt.toMillis() < Date.now() - EVENT_START_GRACE_MS) {
+    const publishingDraft = status === "published" && current?.get("status") === "draft";
+    if ((startChanged || publishingDraft) && startsAt.toMillis() < Date.now() - EVENT_START_GRACE_MS) {
       throw new HttpsError("invalid-argument", "EVENT_START_IN_PAST");
     }
     const keptDuration = currentStartsAt instanceof Timestamp && currentEndsAt instanceof Timestamp

@@ -23,7 +23,7 @@ Following is managed by the authenticated `setCommunityFollowing` callable. Its 
 | `events/{eventId}/registrations/{registrationId}` | Server-generated UUID | `eventId:string`, `organizationId:string`, `userId:uid`, `displayName:string`, `status:string`, `registeredAt:Timestamp`, `updatedAt:Timestamp` | status currently `registered` | event, organization, user |
 | `events/{eventId}/checkins/{registrationId}` | Same ID as registration | `eventId:string`, `organizationId:string`, `registrationId:string`, `userId:uid`, `checkedInBy:uid`, `checkedInAt:Timestamp`, `method:string` | method `qr`, `manual` | registration, event, user, gatekeeper |
 
-`events/{eventId}` is the sole V2 event model. `communities/{id}/entries/{id}` remains legacy-only and receives no new V2 event copy. Registration capacity and both QR/manual check-in are enforced by trusted transactions. The V2 QR payload is `good4:event:v2/{eventId}/{registrationId}`; the backend re-loads the event, registration, membership, and existing check-in instead of trusting client claims.
+`events/{eventId}` is the sole V2 event model. `communities/{id}/entries/{id}` remains legacy-only and receives no new V2 event copy. Registration capacity and QR-only check-in are enforced by trusted transactions. New V2 attendance requires a scanned registration ID; manual check-in and undo are rejected. Historical `manual` records remain readable. The V2 QR payload is `good4:event:v2/{eventId}/{registrationId}`; the backend re-loads the event, registration, membership, and existing check-in instead of trusting client claims.
 
 ### Event categories
 
@@ -84,3 +84,12 @@ Before enabling uploads, a trusted service must create immutable metadata contai
 `marketUserState.listingQuotaRevision` aktivasyonların ortak kota kilididir. Aktif (`pending/published/reserved`) ilan sınırı 15'tir; oluşturma, yenileme ve tekrar yayımlama aynı kotayı uygular. `marketListings.photosCleanupQueuedAt` kuyruk tarihidir, Storage başarı tarihi değildir. `marketConversations.cleanupToken`, paralel temizlik çalışmaları sırasında yeni konuşma neslinin yanlışlıkla silinmesini önler.
 
 [İnceleme ve doğrulama kaydı](../../docs/code-review-2026-10-04.md).
+
+
+## Daily meal ratings
+
+`meal_ratings/{yyyy-MM-dd}_{meal}` stores `date`, `meal`, `good`, `okay`, `bad`, and `updatedAt:Timestamp`. Meal keys are `kyk_breakfast`, `cafeteria`, and `kyk_dinner`. The `votes/{uid}` subcollection stores `userId`, `rating` (`good`, `okay`, `bad`) and `updatedAt:Timestamp`; only that active account can read its vote. Signed-in accounts can read public counters; clients cannot list or write summaries/votes.
+
+`rateMeal` accepts any active account, opens at 06:00/11:00/16:00 Istanbul time, and checks the published menu inside its vote transaction. New clients send the displayed `date`; a date that differs from the server day is rejected. For older clients `date` is optional. Updating a vote adjusts both counters atomically. Account deletion closes the account write gate, scans summary pages using a cursor and deletes each UID vote with its counter adjustment in a transaction.
+
+Community covers are stored at `community-events/{organizationId}/{uuid}.{extension}`. The upload callable resolves the active manager's organization, validates type/size/signature, and writes via Admin SDK; direct client writes are denied and cover reads are public. Event saves accept owning-organization cover URLs, preserve unchanged legacy URLs, and clear the cover when an explicit empty `imageUrl` is sent. Event discovery uses `status == published` plus `endsAt >= now`, requiring the `status + endsAt` index.

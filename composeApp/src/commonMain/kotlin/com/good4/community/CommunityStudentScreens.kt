@@ -1,5 +1,10 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -31,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.good4.campuscloset.ClosetCard
 import com.good4.campuscloset.TiltedIcon
+import com.good4.core.presentation.CommunityAccent
+import com.good4.core.presentation.components.StandardButtonHeight
 import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorRed
@@ -44,14 +51,18 @@ import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
 import kotlinx.datetime.LocalDateTime
 
-internal enum class StudentEventFilter(val label: String, val emptyTitle: String, val emptySubtitle: String) {
-    UPCOMING("Yaklaşan", "Yaklaşan etkinlik yok", "Yeni etkinlikler yayınlandığında burada görünecek."),
-    REGISTERED("Kayıtlarım", "Henüz bir etkinliğe kayıt olmadın", "Yaklaşan etkinlikleri keşfedip katılmak istediklerine kayıt olabilirsin."),
-    PAST("Geçmiş", "Geçmiş etkinlik yok", "Tamamlanan etkinlikler burada görünecek.")
+internal enum class StudentEventFilter(val labelResource: StringResource, val emptyTitleResource: StringResource, val emptySubtitleResource: StringResource) {
+    UPCOMING(Res.string.community_yaklasan, Res.string.community_yaklasan_etkinlik_yok, Res.string.community_yeni_etkinlikler_yayinlandiginda_burada_gorunecek),
+    REGISTERED(Res.string.community_kayitlarim, Res.string.community_henuz_bir_etkinlige_kayit_olmadin, Res.string.community_yaklasan_etkinlikleri_kesfedip_katilmak_istediklerine_kayit_olabi),
+    PAST(Res.string.community_gecmis, Res.string.community_gecmis_etkinlik_yok, Res.string.community_tamamlanan_etkinlikler_burada_gorunecek) ;
+    val label: String @Composable get() = stringResource(labelResource)
+    val emptyTitle: String @Composable get() = stringResource(emptyTitleResource)
+    val emptySubtitle: String @Composable get() = stringResource(emptySubtitleResource)
 }
 
-internal enum class StudentEventStatus(val label: String) {
-    REGISTERED("Kayıtlısın"), ENDED("Tamamlandı"), FULL("Kontenjan doldu")
+internal enum class StudentEventStatus(val labelResource: StringResource) {
+    REGISTERED(Res.string.community_kayitlisin), ENDED(Res.string.reservation_status_completed), FULL(Res.string.community_kontenjan_doldu);
+    val label: String @Composable get() = stringResource(labelResource)
 }
 
 internal fun studentEventStatus(data: CommunityEntryDto, registered: Boolean, now: LocalDateTime): StudentEventStatus? = when {
@@ -150,20 +161,20 @@ internal fun CommunityStudentEventPage(
     Good4NestedScaffold(
         topBar = {
             Good4TopBar(
-                title = "Etkinlik",
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri") } },
+                title = stringResource(Res.string.community_etkinlik),
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) } },
                 actions = {
                     Box {
-                        RoundIconAction(Icons.Outlined.MoreVert, "Diğer işlemler") { menuOpen = true }
+                        RoundIconAction(Icons.Outlined.MoreVert, stringResource(Res.string.community_diger_islemler)) { menuOpen = true }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = SurfaceDefault) {
                             if (registered && !ended) DropdownMenuItem(
-                                text = { Text("Kaydımı iptal et", color = ErrorRed) },
+                                text = { Text(stringResource(Res.string.community_kaydimi_iptal_et), color = ErrorRed) },
                                 leadingIcon = { Icon(Icons.Outlined.EventBusy, contentDescription = null, tint = ErrorRed) },
                                 enabled = !registrationLoading,
                                 onClick = { menuOpen = false; confirmCancel = true }
                             )
                             DropdownMenuItem(
-                                text = { Text("Şikâyet et", color = ErrorRed) },
+                                text = { Text(stringResource(Res.string.community_sikayet_et), color = ErrorRed) },
                                 leadingIcon = { Icon(Icons.Outlined.Flag, contentDescription = null, tint = ErrorRed) },
                                 onClick = { menuOpen = false; onReport() }
                             )
@@ -176,12 +187,12 @@ internal fun CommunityStudentEventPage(
             StickyActionBar {
                 Text(
                     when {
-                        ended -> "Bu etkinlik tamamlandı."
-                        cancelling -> "Kaydın iptal ediliyor."
-                        registrationLoading -> "Kaydın işleniyor."
-                        registered -> "Girişte QR biletini göster"
-                        full -> "Bu etkinlik için yeni kayıt alınamıyor."
-                        else -> "Katılmak için etkinliğe kayıt ol."
+                        ended -> stringResource(Res.string.community_bu_etkinlik_tamamlandi)
+                        cancelling -> stringResource(Res.string.community_kaydin_iptal_ediliyor)
+                        registrationLoading -> stringResource(Res.string.community_kaydin_isleniyor)
+                        registered -> stringResource(Res.string.community_giriste_qr_biletini_goster)
+                        full -> stringResource(Res.string.community_bu_etkinlik_icin_yeni_kayit_alinamiyor)
+                        else -> stringResource(Res.string.community_katilmak_icin_etkinlige_kayit_ol)
                     },
                     color = TextSecondary, fontSize = 12.sp,
                     modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -189,16 +200,16 @@ internal fun CommunityStudentEventPage(
                 Button(
                     onClick = if (registered) onShowTicket else onToggleRegistration,
                     enabled = !registrationLoading && !ended && (registered || !full),
-                    modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp)
+                    modifier = Modifier.fillMaxWidth().height(StandardButtonHeight), shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
                         when {
-                            ended -> "Etkinlik sona erdi"
-                            cancelling -> "İptal ediliyor…"
+                            ended -> stringResource(Res.string.community_etkinlik_sona_erdi)
+                            cancelling -> stringResource(Res.string.community_iptal_ediliyor)
                             registrationLoading -> "Kaydediliyor…"
-                            registered -> "QR biletimi göster"
-                            full -> "Kontenjan doldu"
-                            else -> "Etkinliğe kayıt ol"
+                            registered -> stringResource(Res.string.community_qr_biletimi_goster)
+                            full -> stringResource(Res.string.community_kontenjan_doldu)
+                            else -> stringResource(Res.string.community_etkinlige_kayit_ol)
                         },
                         fontWeight = FontWeight.SemiBold
                     )
@@ -214,7 +225,7 @@ internal fun CommunityStudentEventPage(
             if (data.imageUrl.isNotBlank()) item(key = "poster") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     AsyncImage(
-                        model = data.imageUrl, contentDescription = "Kapak görseli", contentScale = ContentScale.Crop,
+                        model = data.imageUrl, contentDescription = stringResource(Res.string.community_kapak_gorseli), contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxWidth(0.68f).aspectRatio(CoverImageSpec.ASPECT_RATIO)
                             .clip(RoundedCornerShape(18.dp)).background(PistachioGreen).clickable { viewingPoster = true }
                     )
@@ -246,12 +257,12 @@ internal fun CommunityStudentEventPage(
                 }
             }
             if (state.justRegisteredEntryId == entry.id) item(key = "registered-feedback") {
-                NoticeCard("Kaydın tamamlandı. Girişte QR biletini gösterebilirsin.", MaterialTheme.colorScheme.primary,
-                    actionLabel = "Kapat", onAction = onDismissRegistrationFeedback)
+                NoticeCard(stringResource(Res.string.community_kaydin_tamamlandi_giriste_qr_biletini_gosterebilirsin), MaterialTheme.colorScheme.primary,
+                    actionLabel = stringResource(Res.string.notification_close), onAction = onDismissRegistrationFeedback)
             }
             if (data.description.isNotBlank()) item(key = "description") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Etkinlik hakkında", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(Res.string.community_etkinlik_hakkinda), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     CollapsibleDescription(data.description, key = entry.id, collapsedLines = 4)
                 }
             }
@@ -264,7 +275,7 @@ internal fun CommunityStudentEventPage(
                                 modifier = Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)))
                         } else TiltedIcon(Icons.Outlined.Groups, CommunityAccent, size = 32)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Düzenleyen", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(Res.string.community_duzenleyen), color = TextSecondary, fontSize = 12.sp)
                             Text(community.data.name, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
@@ -281,9 +292,9 @@ internal fun CommunityStudentEventPage(
     if (viewingPoster && data.imageUrl.isNotBlank()) PosterViewer(data.imageUrl) { viewingPoster = false }
     if (confirmCancel) {
         Good4ConfirmDialog(
-            title = "Kaydımı iptal et",
-            message = "${data.title} etkinliğine kaydın ve QR biletin iptal edilecek.",
-            confirmLabel = "İptal et", dismissLabel = "Vazgeç", icon = Icons.Outlined.EventBusy,
+            title = stringResource(Res.string.community_kaydimi_iptal_et),
+            message = stringResource(Res.string.community_cancel_my_registration, data.title),
+            confirmLabel = stringResource(Res.string.community_iptal_et), dismissLabel = stringResource(Res.string.campus_closet_cancel), icon = Icons.Outlined.EventBusy,
             enabled = !registrationLoading,
             onConfirm = { confirmCancel = false; onToggleRegistration() },
             onDismiss = { confirmCancel = false }

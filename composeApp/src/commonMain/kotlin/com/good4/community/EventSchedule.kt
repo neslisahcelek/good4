@@ -1,5 +1,12 @@
 package com.good4.community
 
+import androidx.compose.runtime.Composable
+import com.good4.core.presentation.UiText
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+
+
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -129,8 +136,9 @@ internal fun CommunityEntryDto.hasEnded(now: LocalDateTime): Boolean {
 }
 
 /** Quick end choices under the start; [CUSTOM] reveals the end date and time fields. */
-internal enum class EventDuration(val shortLabel: String, val minutes: Int?) {
-    ONE_HOUR("1 sa", 60), TWO_HOURS("2 sa", 120), THREE_HOURS("3 sa", 180), ALL_DAY("Tüm gün", null), CUSTOM("Özel", null)
+internal enum class EventDuration(val shortLabelResource: StringResource, val minutes: Int?) {
+    ONE_HOUR(Res.string.community_1_sa, 60), TWO_HOURS(Res.string.community_2_sa, 120), THREE_HOURS(Res.string.community_3_sa, 180), ALL_DAY(Res.string.community_tum_gun, null), CUSTOM(Res.string.community_ozel, null);
+    val shortLabel: String @Composable get() = stringResource(shortLabelResource)
 }
 
 /** Sets the end from a quick choice; "Tüm gün" runs until the end of the start day. */
@@ -155,35 +163,37 @@ internal fun CommunityEntryDto.matchingDuration(): EventDuration? {
     return EventDuration.entries.firstOrNull { it.minutes?.toLong() == minutes } ?: EventDuration.CUSTOM
 }
 
-internal enum class EventField(val label: String) {
-    TITLE("Başlık"), CATEGORY("Kategori"), DESCRIPTION("Açıklama"),
-    START("Başlangıç"), END("Bitiş"), LOCATION("Konum"), CAPACITY("Kontenjan")
+enum class EventField(val labelResource: StringResource) {
+    TITLE(Res.string.campus_closet_baslik), CATEGORY(Res.string.campus_closet_kategori), DESCRIPTION(Res.string.campus_closet_aciklama),
+    START(Res.string.community_baslangic), END(Res.string.community_bitis), LOCATION(Res.string.community_konum), CAPACITY(Res.string.community_kontenjan);
+    val label: String @Composable get() = stringResource(labelResource)
 }
 
 /** Per-field messages for the event form, in the order the fields appear. */
-internal fun validateEventFields(entry: CommunityEntryDto, initial: CommunityEntryDto?, now: LocalDateTime): Map<EventField, String> {
-    val errors = linkedMapOf<EventField, String>()
-    if (entry.title.isBlank()) errors[EventField.TITLE] = "Etkinliğe bir başlık ver."
-    else if (entry.title.length > 120) errors[EventField.TITLE] = "Başlık en fazla 120 karakter olabilir."
-    if (EventCategory.fromId(entry.categoryId) == null) errors[EventField.CATEGORY] = "Bir kategori seç."
-    if (entry.description.isBlank()) errors[EventField.DESCRIPTION] = "Etkinlikte neler olacağını kısaca yaz."
+internal fun validateEventFields(entry: CommunityEntryDto, initial: CommunityEntryDto?, now: LocalDateTime): Map<EventField, UiText> {
+    val errors = linkedMapOf<EventField, UiText>()
+    if (entry.title.isBlank()) errors[EventField.TITLE] = UiText.StringResourceId(Res.string.community_etkinlige_bir_baslik_ver)
+    else if (entry.title.length > 120) errors[EventField.TITLE] = UiText.StringResourceId(Res.string.community_baslik_en_fazla_120_karakter_olabilir)
+    if (EventCategory.fromId(entry.categoryId) == null) errors[EventField.CATEGORY] = UiText.StringResourceId(Res.string.community_bir_kategori_sec)
+    if (entry.description.isBlank()) errors[EventField.DESCRIPTION] = UiText.StringResourceId(Res.string.community_etkinlikte_neler_olacagini_kisaca_yaz)
     val start = eventDateTime(entry.date, entry.time)
     val startChanged = initial == null || initial.date != entry.date || initial.time != entry.time
     when {
-        start == null -> errors[EventField.START] = "Başlangıç tarihini ve saatini seç."
-        startChanged && start < now -> errors[EventField.START] = "Başlangıç geçmiş bir zaman olamaz."
+        start == null -> errors[EventField.START] = UiText.StringResourceId(Res.string.community_baslangic_tarihini_ve_saatini_sec)
+        (startChanged || (initial?.status == "draft" && entry.status == "published")) &&
+            start.toInstant(EventTimeZone) < now.toInstant(EventTimeZone) - 5.minutes -> errors[EventField.START] = UiText.StringResourceId(Res.string.community_baslangic_gecmis_bir_zaman_olamaz)
     }
     val end = eventDateTime(entry.endDate, entry.endTime)
     if (start != null) {
         val startInstant = start.toInstant(EventTimeZone)
         when {
-            end == null -> errors[EventField.END] = "Bitiş zamanını seç."
-            end.toInstant(EventTimeZone) <= startInstant -> errors[EventField.END] = "Bitiş, başlangıçtan sonra olmalı."
-            end.toInstant(EventTimeZone) - startInstant > MaxEventDuration -> errors[EventField.END] = "Etkinlik en fazla 14 gün sürebilir."
+            end == null -> errors[EventField.END] = UiText.StringResourceId(Res.string.community_bitis_zamanini_sec)
+            end.toInstant(EventTimeZone) <= startInstant -> errors[EventField.END] = UiText.StringResourceId(Res.string.community_bitis_baslangictan_sonra_olmali)
+            end.toInstant(EventTimeZone) - startInstant > MaxEventDuration -> errors[EventField.END] = UiText.StringResourceId(Res.string.community_etkinlik_en_fazla_14_gun_surebilir)
         }
     }
-    if (entry.location.isBlank()) errors[EventField.LOCATION] = "Etkinliğin yerini yaz."
-    if (entry.capacity > 100_000) errors[EventField.CAPACITY] = "En fazla 100.000."
+    if (entry.location.isBlank()) errors[EventField.LOCATION] = UiText.StringResourceId(Res.string.community_etkinligin_yerini_yaz)
+    if (entry.capacity > 100_000) errors[EventField.CAPACITY] = UiText.StringResourceId(Res.string.community_en_fazla_100_000)
     return errors
 }
 

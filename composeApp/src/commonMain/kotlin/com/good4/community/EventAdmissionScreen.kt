@@ -1,5 +1,8 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -54,30 +57,30 @@ fun EventTicketDialog(
             }
             Image(
                 painter = rememberQrCodePainter(eventTicketPayload(communityId, entry.id, ticket.ticketToken)),
-                contentDescription = "Etkinlik giriş QR kodu",
+                contentDescription = stringResource(Res.string.community_etkinlik_giris_qr_kodu),
                 modifier = Modifier.widthIn(max = 340.dp).fillMaxWidth().aspectRatio(1f)
                     .background(Color.White).padding(20.dp),
             )
             Text(ticket.displayName, color = TextPrimary, fontWeight = FontWeight.SemiBold)
-            Text("Girişte bu bileti görevliye göster. Bilet sana özeldir; başkalarıyla paylaşma.",
+            Text(stringResource(Res.string.community_giriste_bu_bileti_gorevliye_goster_bilet_sana_ozeldir_baskalariyl),
                 color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center)
-            error?.let { NoticeCard(it, ErrorRed, "Kapat", onDismiss) }
+            error?.let { NoticeCard(it, ErrorRed, stringResource(Res.string.notification_close), onDismiss) }
             Button(onClick = onDismiss, enabled = !registrationBusy, modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(16.dp)) {
-                Text("Kapat")
+                Text(stringResource(Res.string.notification_close))
             }
             if (onCancelRegistration != null) {
                 TextButton(onClick = { confirmCancel = true }, enabled = !registrationBusy) {
-                    Text(if (registrationBusy) "Kaydediliyor…" else "Kaydımı iptal et", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                    Text(if (registrationBusy) "Kaydediliyor…" else stringResource(Res.string.community_kaydimi_iptal_et), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
                 }
             }
         }
     }
     if (confirmCancel && onCancelRegistration != null) {
         Good4ConfirmDialog(
-            title = "Kaydımı iptal et",
-            message = "${entry.data.title} etkinliğine kaydın ve QR biletin iptal edilecek.",
-            confirmLabel = "İptal et", dismissLabel = "Vazgeç", enabled = !registrationBusy,
+            title = stringResource(Res.string.community_kaydimi_iptal_et),
+            message = stringResource(Res.string.community_cancel_my_registration, entry.data.title),
+            confirmLabel = stringResource(Res.string.community_iptal_et), dismissLabel = stringResource(Res.string.campus_closet_cancel), enabled = !registrationBusy,
             onConfirm = { confirmCancel = false; onCancelRegistration() },
             onDismiss = { confirmCancel = false }
         )
@@ -87,17 +90,17 @@ fun EventTicketDialog(
 @Composable
 internal fun LegacyEventTicketDialog(communityId: String, entry: CommunityEntry, ticket: CommunityEventRegistrationDto, onDismiss: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss,
-        title = { Text("QR giriş biletin") },
+        title = { Text(stringResource(Res.string.community_qr_giris_biletin)) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(entry.data.title)
                 Text(formatEventSchedule(entry.data))
                 Image(rememberQrCodePainter(eventTicketPayload(communityId, entry.id, ticket.ticketToken)),
-                    "Etkinlik giriş QR kodu", Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White).padding(20.dp))
+                    stringResource(Res.string.community_etkinlik_giris_qr_kodu), Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White).padding(20.dp))
                 Text(ticket.displayName)
-                Text("Girişte bu bileti görevliye göster. Bilet sana özeldir; başkalarıyla paylaşma.")
+                Text(stringResource(Res.string.community_giriste_bu_bileti_gorevliye_goster_bilet_sana_ozeldir_baskalariyl))
             }
-        }, confirmButton = { TextButton(onClick = onDismiss) { Text("Kapat") } })
+        }, confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.notification_close)) } })
 }
 
 @Composable

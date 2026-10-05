@@ -37,6 +37,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.resources.stringResource
+import com.good4.core.presentation.components.StandardButtonHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
@@ -95,25 +103,26 @@ private data class MealContent(
     val isToday: Boolean = true
 )
 
+@Composable
 private fun AkdenizDiningMenuState.meals(): List<MealContent> {
     val weekend = runCatching { LocalDate.parse(loadedDate).dayOfWeek }.getOrNull()
         ?.let { it == DayOfWeek.SATURDAY || it == DayOfWeek.SUNDAY } ?: false
-    val notPublished = if (isLoading) "Yükleniyor…" else "Bugün için yayınlanmadı"
+    val notPublished = if (isLoading) stringResource(Res.string.loading) else stringResource(Res.string.daily_menu_not_published)
     // When today's KYK list is missing, the next published day is shown and labelled, never passed off as today.
     val kykPlace = kykDayLabel?.let { "KYK · $it" } ?: "KYK"
     return listOf(
         MealContent(
-            DailyMeal.KYK_BREAKFAST, "Kahvaltı", kykPlace, Icons.Outlined.BakeryDining,
+            DailyMeal.KYK_BREAKFAST, stringResource(Res.string.daily_menu_breakfast), kykPlace, Icons.Outlined.BakeryDining,
             kykDay?.breakfast.orEmpty(), notPublished, isToday = kykDayLabel == null
         ),
         MealContent(
-            DailyMeal.CAFETERIA, "Öğle ve Akşam", "Merkezi Yemekhane", Icons.Outlined.Restaurant,
+            DailyMeal.CAFETERIA, stringResource(Res.string.daily_menu_cafeteria), stringResource(Res.string.campus_closet_merkezi_yemekhane), Icons.Outlined.Restaurant,
             cafeteriaToday?.meals.orEmpty(),
-            if (weekend && !isLoading) "Hafta sonu kapalı" else notPublished,
+            if (weekend && !isLoading) stringResource(Res.string.daily_menu_weekend_closed) else notPublished,
             cafeteriaToday?.calories
         ),
         MealContent(
-            DailyMeal.KYK_DINNER, "Akşam Yemeği", kykPlace, Icons.Outlined.DinnerDining,
+            DailyMeal.KYK_DINNER, stringResource(Res.string.daily_menu_dinner), kykPlace, Icons.Outlined.DinnerDining,
             kykDay?.dinner.orEmpty(), notPublished, isToday = kykDayLabel == null
         )
     )
@@ -207,13 +216,25 @@ fun DailyMenuScreen(
     onRefreshIfDayChanged: () -> Unit,
     onRate: (DailyMeal, MealVote) -> Unit,
     onDismissRatingError: () -> Unit,
+    onRetryRatings: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val hour = Clock.System.now().toLocalDateTime(IstanbulZone).hour
+    var now by remember { mutableStateOf(Clock.System.now().toLocalDateTime(IstanbulZone)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            now = Clock.System.now().toLocalDateTime(IstanbulZone)
+        }
+    }
+    val hour = now.hour
     val uriHandler = LocalUriHandler.current
     val meals = state.meals()
-    val current = mealForNow()
+    val current = when {
+        hour < 10 -> DailyMeal.KYK_BREAKFAST
+        hour < 15 -> DailyMeal.CAFETERIA
+        else -> DailyMeal.KYK_DINNER
+    }
     // The date header is item 0 and meal N is item N + 1; breakfast keeps the date in view.
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = if (initialMeal == DailyMeal.KYK_BREAKFAST) 0 else initialMeal.ordinal + 1
@@ -239,10 +260,10 @@ fun DailyMenuScreen(
         modifier = modifier,
         topBar = {
             Good4TopBar(
-                title = "Günün Menüsü",
+                title = stringResource(Res.string.product_list_section_today_menu),
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.back))
                     }
                 }
             )
@@ -256,7 +277,11 @@ fun DailyMenuScreen(
         ) {
             item { DayHeader(state.loadedDate) }
             state.ratingError?.let { message ->
-                item(key = "rating-error") { NoticeCard(message, ErrorRed, "Tamam", onDismissRatingError) }
+                item(key = "rating-error") {
+                    NoticeCard(message.asString(), ErrorRed,
+                        if (state.ratingLoadFailed) stringResource(Res.string.campus_closet_retry) else stringResource(Res.string.daily_menu_dismiss),
+                        if (state.ratingLoadFailed) onRetryRatings else onDismissRatingError)
+                }
             }
             meals.forEach { content ->
                 item(key = content.meal.name) {
@@ -265,7 +290,7 @@ fun DailyMenuScreen(
                         isNow = content.meal == current && content.items.isNotEmpty(),
                         isLoading = state.isLoading,
                         rating = state.ratings[content.meal],
-                        ratingOpen = content.isToday && content.meal.ratingOpensAt(hour),
+                        ratingOpen = !state.isLoading && state.loadedDate == now.date.toString() && content.isToday && content.meal.ratingOpensAt(hour),
                         ratingInFlight = content.meal in state.ratingInFlight,
                         onRate = { vote -> onRate(content.meal, vote) },
                         onBalanceClick = if (content.meal == DailyMeal.CAFETERIA) {
@@ -308,7 +333,7 @@ private fun DayHeader(date: String) {
         }
         Column {
             Text(parsed?.let { TurkishDays[it.dayOfWeek.ordinal] }.orEmpty(), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            Text("Bugün · Akdeniz Üniversitesi", color = TextSecondary, fontSize = 13.sp)
+            Text(stringResource(Res.string.daily_menu_campus_today), color = TextSecondary, fontSize = 13.sp)
         }
     }
 }
@@ -333,7 +358,7 @@ private fun MealSection(
                 Text(content.title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Text(content.place, color = TextSecondary, fontSize = 12.sp, lineHeight = 17.sp)
             }
-            if (isNow) StatusChip("Şimdi", MaterialTheme.colorScheme.primary)
+            if (isNow) StatusChip(stringResource(Res.string.daily_menu_now), MaterialTheme.colorScheme.primary)
         }
         ClosetCard(
             modifier = if (isNow) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(18.dp)) else Modifier
@@ -350,7 +375,7 @@ private fun MealSection(
                             }
                         }
                     }
-                    content.calories?.let { StatusChip("Toplam $it kcal", TextSecondary) }
+                    content.calories?.let { StatusChip(stringResource(Res.string.daily_menu_calories, it), TextSecondary) }
                     if (content.isToday) {
                         HorizontalDivider(color = BorderMuted.copy(alpha = .45f))
                         MealRatingRow(rating, ratingOpen, ratingInFlight, onRate)
@@ -362,12 +387,12 @@ private fun MealSection(
             if (onBalanceClick != null) {
                 OutlinedButton(
                     onClick = onBalanceClick,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(StandardButtonHeight),
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                 ) {
                     Icon(Icons.Outlined.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("Yemekhane bakiyesi yükle", modifier = Modifier.padding(start = 8.dp, end = 4.dp))
+                    Text(stringResource(Res.string.daily_menu_balance), modifier = Modifier.padding(start = 8.dp, end = 4.dp))
                     Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
                 }
             }
@@ -382,7 +407,7 @@ private fun MealRatingRow(rating: MealRating?, open: Boolean, inFlight: Boolean,
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (open) "Nasıldı?" else "Öğün başlayınca puanlayabilirsin",
+                if (open) stringResource(Res.string.meal_rating_question) else stringResource(Res.string.meal_rating_opens_later),
                 color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
@@ -390,13 +415,14 @@ private fun MealRatingRow(rating: MealRating?, open: Boolean, inFlight: Boolean,
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     MealVote.entries.forEach { vote ->
                         val selected = vote == myVote
+                        val label = vote.label
                         Surface(
                             onClick = { onRate(vote) },
                             enabled = !inFlight,
                             shape = CircleShape,
                             color = if (selected) PistachioGreen else SurfaceMuted,
                             border = if (selected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
-                            modifier = Modifier.size(44.dp).semantics { contentDescription = vote.label }
+                            modifier = Modifier.size(44.dp).semantics { contentDescription = label }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(vote.emoji, fontSize = if (selected) 24.sp else 21.sp)
@@ -406,11 +432,11 @@ private fun MealRatingRow(rating: MealRating?, open: Boolean, inFlight: Boolean,
                 }
             }
         }
-        if (myVote != null && rating != null && !inFlight) {
+        if (myVote != null && !inFlight) {
             val percentages = rating.percentages()
             Text(
-                if (percentages == null) "Teşekkürler! Sonuçlar $MEAL_RATING_MIN_VOTES oydan sonra görünür · ${rating.total} oy"
-                else MealVote.entries.joinToString("  ·  ") { "${it.emoji} %${percentages.getValue(it)}" } + "  ·  ${rating.total} oy",
+                if (percentages == null) stringResource(Res.string.meal_rating_thanks, MEAL_RATING_MIN_VOTES, rating.total)
+                else MealVote.entries.joinToString("  ·  ") { "${it.emoji} %${percentages.getValue(it)}" } + stringResource(Res.string.meal_rating_vote_count, rating.total),
                 color = TextSecondary, fontSize = 12.sp
             )
         }
@@ -418,10 +444,10 @@ private fun MealRatingRow(rating: MealRating?, open: Boolean, inFlight: Boolean,
 }
 
 private val MealVote.label: String
-    get() = when (this) {
-        MealVote.GOOD -> "Lezzetli"
-        MealVote.OKAY -> "İdare eder"
-        MealVote.BAD -> "Beğenmedim"
+    @Composable get() = when (this) {
+        MealVote.GOOD -> stringResource(Res.string.meal_rating_good)
+        MealVote.OKAY -> stringResource(Res.string.meal_rating_okay)
+        MealVote.BAD -> stringResource(Res.string.meal_rating_bad)
     }
 
 private val TurkishMonths = listOf(
@@ -434,3 +460,18 @@ private fun String.toTurkishLongDate(): String = runCatching {
     val date = LocalDate.parse(this)
     "${date.dayOfMonth} ${TurkishMonths[date.monthNumber - 1]}, ${TurkishDays[date.dayOfWeek.ordinal]}"
 }.getOrDefault("")
+
+
+@Preview
+@Composable
+private fun DailyMenuScreenPreview() {
+    DailyMenuScreen(
+        state = AkdenizDiningMenuState(loadedDate = todayInIstanbul(), isLoading = false),
+        initialMeal = DailyMeal.KYK_BREAKFAST,
+        onRefreshIfDayChanged = {},
+        onRate = { _, _ -> },
+        onDismissRatingError = {},
+        onRetryRatings = {},
+        onBackClick = {}
+    )
+}

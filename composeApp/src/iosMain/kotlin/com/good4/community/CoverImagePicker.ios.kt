@@ -1,5 +1,8 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +41,8 @@ import kotlin.math.roundToInt
 
 @Composable
 internal actual fun rememberCoverImagePicker(onPicked: (ByteArray) -> Unit, onError: (String) -> Unit): CoverImagePicker {
+    val galleryError = stringResource(Res.string.community_galeri_acilamadi_tekrar_deneyin)
+    val imagePreparationError = stringResource(Res.string.community_gorsel_hazirlanamadi_baska_bir_gorsel_deneyin)
     val scope = rememberCoroutineScope()
     val pickedCallback by rememberUpdatedState(onPicked)
     val errorCallback by rememberUpdatedState(onError)
@@ -49,7 +54,7 @@ internal actual fun rememberCoverImagePicker(onPicked: (ByteArray) -> Unit, onEr
         if (preparing || delegateHolder.value != null) return
         val presenter = topPresenter()
         if (presenter == null) {
-            errorCallback("Galeri açılamadı. Tekrar deneyin.")
+            errorCallback(galleryError)
             return
         }
         val picker = PHPickerViewController(configuration = PHPickerConfiguration().apply {
@@ -68,7 +73,7 @@ internal actual fun rememberCoverImagePicker(onPicked: (ByteArray) -> Unit, onEr
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (_: Exception) {
-                        errorCallback("Görsel hazırlanamadı. Başka bir görsel deneyin.")
+                        errorCallback(imagePreparationError)
                     } finally {
                         preparing = false
                     }

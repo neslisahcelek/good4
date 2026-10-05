@@ -1,5 +1,10 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.good4.campuscloset.TiltedIcon
+import com.good4.core.presentation.CommunityAccent
+import com.good4.core.presentation.DraftAccent
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.ErrorRed
 import com.good4.core.presentation.PistachioGreen
@@ -55,16 +62,15 @@ import com.good4.core.presentation.TextSecondary
 import kotlinx.datetime.LocalDate
 
 /** The home "Topluluklar" shortcut colour, so the manager area keeps the same identity. */
-internal val CommunityAccent = Color(0xFF75D9BE)
-internal val DraftAccent = Color(0xFFE08A1E)
+
 
 @Composable
 internal fun EventStatusChip(data: CommunityEntryDto, now: kotlinx.datetime.LocalDateTime) {
     val (label, color) = when {
-        data.status == "draft" -> "Taslak" to DraftAccent
-        data.status == "cancelled" -> "İptal edildi" to ErrorRed
-        data.hasEnded(now) -> "Tamamlandı" to TextSecondary
-        else -> "Yayında" to MaterialTheme.colorScheme.primary
+        data.status == "draft" -> stringResource(Res.string.community_taslak) to DraftAccent
+        data.status == "cancelled" -> stringResource(Res.string.community_iptal_edildi) to ErrorRed
+        data.hasEnded(now) -> stringResource(Res.string.reservation_status_completed) to TextSecondary
+        else -> stringResource(Res.string.campus_closet_yayinda) to MaterialTheme.colorScheme.primary
     }
     StatusChip(label, color)
 }
@@ -169,7 +175,7 @@ internal fun CollapsibleDescription(text: String, key: String, collapsedLines: I
         )
         if (overflows || expanded) {
             Text(
-                if (expanded) "Daha az göster" else "Devamını gör",
+                if (expanded) stringResource(Res.string.community_daha_az_goster) else stringResource(Res.string.community_devamini_gor),
                 fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { expanded = !expanded }.padding(vertical = 4.dp)
             )
@@ -189,13 +195,13 @@ internal fun PosterViewer(model: Any, onDismiss: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
-                model = model, contentDescription = "Kapak görseli", contentScale = ContentScale.Fit,
+                model = model, contentDescription = stringResource(Res.string.community_kapak_gorseli), contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             )
             Surface(
                 onClick = onDismiss, shape = CircleShape, color = Color.White.copy(alpha = 0.18f),
                 modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(40.dp)
-            ) { Icon(Icons.Outlined.Close, "Kapat", tint = Color.White, modifier = Modifier.padding(9.dp)) }
+            ) { Icon(Icons.Outlined.Close, stringResource(Res.string.notification_close), tint = Color.White, modifier = Modifier.padding(9.dp)) }
         }
     }
 }
@@ -239,7 +245,7 @@ internal fun FilterTile(
             TiltedIcon(icon, accent, size = 28, iconSize = 16)
             Spacer(Modifier.height(6.dp))
             Text(
-                "${label} · $count",
+                stringResource(Res.string.community_label_count, label, count),
                 fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (selected) MaterialTheme.colorScheme.primary else TextPrimary,
@@ -254,10 +260,10 @@ internal fun RegistrationProgress(registrations: Int, capacity: Int) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth()) {
             Text(
-                if (capacity > 0) "$registrations / $capacity kayıt" else "$registrations kayıt · kontenjan sınırsız",
+                if (capacity > 0) stringResource(Res.string.community_registration_progress, registrations, capacity) else stringResource(Res.string.community_registration_unlimited, registrations),
                 fontSize = 12.sp, color = TextSecondary, modifier = Modifier.weight(1f)
             )
-            if (capacity > 0) Text("%${(registrations * 100 / capacity).coerceAtMost(100)}", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+            if (capacity > 0) Text(stringResource(Res.string.community_percentage, (registrations * 100 / capacity).coerceAtMost(100)), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
         }
         if (capacity > 0) {
             LinearProgressIndicator(

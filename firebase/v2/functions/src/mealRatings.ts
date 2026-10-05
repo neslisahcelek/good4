@@ -17,17 +17,6 @@ function istanbulNow(nowMillis: number): { date: string; hour: number } {
   return { date: `${part("year")}-${part("month")}-${part("day")}`, hour: Number(part("hour")) };
 }
 
-async function mealIsPublished(database: Firestore, date: string, meal: Meal): Promise<boolean> {
-  if (meal === "cafeteria") {
-    const menu = await database.doc("app_config/akdeniz_dining_menu").get();
-    const days = (menu.get("days") ?? []) as Array<{ date?: unknown; meals?: unknown }>;
-    return days.some((day) => day.date === date && Array.isArray(day.meals) && day.meals.length > 0);
-  }
-  const day = await database.doc(`kyk_menu_days/${date}`).get();
-  const items = day.get(meal === "kyk_breakfast" ? "breakfast" : "dinner");
-  return Array.isArray(items) && items.length > 0;
-}
-
 /**
  * One anonymous 😋/😐/😕 vote per signed-in account, meal and day; voting again replaces the earlier vote.
  * Only the counters on meal_ratings/{date}_{meal} are readable by others.
@@ -35,7 +24,7 @@ async function mealIsPublished(database: Firestore, date: string, meal: Meal): P
 export async function rateMealService(
   database: Firestore,
   uid: string,
-  input: { meal?: unknown; rating?: unknown },
+  input: { meal?: unknown; rating?: unknown; date?: unknown },
   nowMillis = Date.now(),
 ): Promise<{ good: number; okay: number; bad: number; rating: Rating }> {
   const meal = input.meal as Meal;
@@ -44,19 +33,26 @@ export async function rateMealService(
   if (!RATINGS.includes(rating)) throw new HttpsError("invalid-argument", "RATING_INVALID");
 
   const { date, hour } = istanbulNow(nowMillis);
+  if (input.date !== undefined && input.date !== date) throw new HttpsError("failed-precondition", "MEAL_DATE_CHANGED");
   if (hour < OPENS_AT_HOUR[meal]) throw new HttpsError("failed-precondition", "MEAL_NOT_STARTED");
-  if (!(await mealIsPublished(database, date, meal))) throw new HttpsError("failed-precondition", "MEAL_NOT_PUBLISHED");
 
   const summaryRef = database.doc(`meal_ratings/${date}_${meal}`);
   const voteRef = summaryRef.collection("votes").doc(uid);
   return database.runTransaction(async (transaction) => {
-    const [user, vote, summary] = await Promise.all([
+    const [user, vote, summary, menu] = await Promise.all([
       transaction.get(database.doc(`users/${uid}`)),
       transaction.get(voteRef),
       transaction.get(summaryRef),
+      transaction.get(database.doc(meal === "cafeteria" ? "app_config/akdeniz_dining_menu" : `kyk_menu_days/${date}`)),
     ]);
     // For now any active account may vote; no student role or edu verification is required.
     if (!user.exists || user.get("status") !== "active") throw new HttpsError("permission-denied", "ACCOUNT_NOT_ACTIVE");
+
+    const items = meal === "cafeteria"
+      ? (Array.isArray(menu.get("days")) ? menu.get("days") : [])
+        .find((day: { date?: unknown }) => day?.date === date)?.meals
+      : menu.get(meal === "kyk_breakfast" ? "breakfast" : "dinner");
+    if (!Array.isArray(items) || items.length === 0) throw new HttpsError("failed-precondition", "MEAL_NOT_PUBLISHED");
 
     const counts = { good: 0, okay: 0, bad: 0 };
     for (const key of RATINGS) counts[key] = Math.max(0, Number(summary.get(key) ?? 0));
@@ -66,7 +62,7 @@ export async function rateMealService(
     counts[rating] += 1;
 
     transaction.set(summaryRef, { date, meal, ...counts, updatedAt: FieldValue.serverTimestamp() });
-    transaction.set(voteRef, { rating, updatedAt: FieldValue.serverTimestamp() });
+    transaction.set(voteRef, { userId: uid, rating, updatedAt: FieldValue.serverTimestamp() });
     return { ...counts, rating };
   });
 }

@@ -1,5 +1,6 @@
 package com.good4.dining.presentation
 
+import com.good4.core.presentation.UiText
 import com.good4.dining.domain.AkdenizDiningMenu
 import com.good4.dining.domain.AkdenizDiningMenuDay
 import com.good4.dining.domain.DailyMeal
@@ -17,7 +18,8 @@ data class AkdenizDiningMenuState(
     /** Today's 😋/😐/😕 counters and own vote per meal; missing until loaded. */
     val ratings: Map<DailyMeal, MealRating> = emptyMap(),
     val ratingInFlight: Set<DailyMeal> = emptySet(),
-    val ratingError: String? = null
+    val ratingLoadFailed: Boolean = false,
+    val ratingError: UiText? = null
 ) {
     val cafeteriaToday: AkdenizDiningMenuDay?
         get() = menu?.days?.firstOrNull { it.date == loadedDate }

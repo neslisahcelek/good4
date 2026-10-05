@@ -196,7 +196,7 @@ service cloud.firestore {
       allow get: if signedIn();
       allow list, create, update, delete: if false;
       match /votes/{voterUid} {
-        allow get: if signedIn() && request.auth.uid == voterUid;
+        allow get: if currentUserIsActive() && request.auth.uid == voterUid;
         allow list, create, update, delete: if false;
       }
     }

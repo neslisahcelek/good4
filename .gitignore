@@ -59,6 +59,10 @@ skills-lock.json
 !.agents/skills/good4-architecture/SKILL.md
 !.agents/skills/good4-code-review/
 !.agents/skills/good4-code-review/SKILL.md
+!.agents/skills/good4-media/
+!.agents/skills/good4-media/SKILL.md
+!.agents/skills/good4-firebase-release/
+!.agents/skills/good4-firebase-release/SKILL.md
 
 # CocoaPods
 iosApp/Pods/

@@ -63,6 +63,18 @@ git ls-files --others --exclude-standard
 - Route/UserRole/NavGraph/home ve logout akışları tutarlı mı? Tema paleti ve mevcut ortak form/profile/card/button bileşenleri kullanılıyor mu?
 - Hata olumsuz veya dayanıklılık sınırında ne olur? Örn. Storage/Firestore kısmi başarısızlık, hesap devre dışı, konuşma cleanup ile eşzamanlı yazı.
 
+## Bulgulardan türetilen senaryolar
+
+Değişen alana göre [tekrarlayan hata kalıplarının](../../../docs/REPEATED_REVIEW_PATTERNS.md) 5 Ekim bölümlerini oku ve somut tetikleyiciyi kaynak üzerinden izle:
+
+- Yeni UID bağlantılı koleksiyon: hesap silme taraması, transaction'da sayaç azaltma ve tekrar silme; özel okumada `disabled`/`deleting` hesabın reddi. Normal ve bounded kurallar kullanılıyorsa ikisini de kontrol et.
+- Asenkron okuma/yazma: ilk okuma yeni oy sonrası dönüyor; gün, kullanıcı veya seçilen topluluk değişiyor. İş iptali yanında sonucu uygulamadan önce nesil/sürüm doğrulamasını denetle.
+- Zaman: ekran açılış saatini ve gece yarısını açık halde geçiyor; geçmiş taslak başlangıcı değiştirilmeden yayına alınıyor; çok günlük etkinlik başladıktan sonra hâlâ bitmemiş durumda.
+- Form/liste: kapağın kaldırılması, görsel hazırlanırken submit, sistem geri tuşu ve öğrenci/yönetici devam sayfası. Kontrolün yeni UI yolunda erişilebilir olduğunu doğrula.
+- Hata/boş sonuç: ağ/izin/decode hatası boş liste veya sıfır sayaca çevrilmemeli. İlk sayfa ve devam sayfası için görünür hata ve yeniden deneme olmalı.
+
+Görsel değişikliğinde [good4-media](../good4-media/SKILL.md) içindeki dönüşüm ve hazırlama kontrollerini uygula. Sorgu/index değişikliğinde deploy sonucunu emülatör testinden çıkarma; yayın talebi varsa [good4-firebase-release](../good4-firebase-release/SKILL.md) üzerinden canlı hazır olma durumunu doğrula. Review tek başına deploy yetkisi vermez.
+
 ## Secret taraması için örnek
 
 ```bash

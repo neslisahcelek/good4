@@ -260,7 +260,7 @@ class CommunityRepository(
         val todayDate = runCatching { LocalDate.parse(today) }.getOrNull() ?: return emptyList()
         val communityById = communities.associateBy { it.id }
         val candidates = if (isV2) {
-            when (val result = store.queryPage("events", mapOf("status" to "published"), V2EventDto::class, pageSize = 20, minimumTimestamp = "startsAt" to Clock.System.now().epochSeconds)) {
+            when (val result = store.queryPage("events", mapOf("status" to "published"), V2EventDto::class, pageSize = 20, minimumTimestamp = "endsAt" to Clock.System.now().epochSeconds)) {
                 is Result.Success -> result.data.items.mapNotNull { document ->
                     val community = communityById[document.data.organizationId] ?: return@mapNotNull null
                     CommunityFeaturedEvent(community, mapV2Event(document))
@@ -342,7 +342,7 @@ class CommunityRepository(
                 put("location", entry.location); put("capacity", entry.capacity)
                 put("categoryId", entry.categoryId)
                 put("status", if (entry.status == "draft") "draft" else "published")
-                if (entry.imageUrl.isNotBlank()) put("imageUrl", entry.imageUrl)
+                put("imageUrl", entry.imageUrl)
             })
             return
         }

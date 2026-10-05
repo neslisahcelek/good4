@@ -1,5 +1,8 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -99,6 +102,10 @@ actual suspend fun recordEventAdmission(communityId: String, eventId: String, us
 @Composable
 actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onError: (String) -> Unit, modifier: Modifier) {
     val context = LocalContext.current
+    val scanError = stringResource(Res.string.community_qr_kod_okunamadi)
+    val cameraError = stringResource(Res.string.community_kamera_acilamadi_google_play_hizmetlerini_ve_baglantini_kontrol_e)
+    val cameraOpening = stringResource(Res.string.community_kamera_aciliyor)
+    val scanLabel = stringResource(Res.string.community_qr_ile_giris_al)
     var scanning by remember { mutableStateOf(false) }
     Button(modifier = modifier, enabled = enabled && !scanning, onClick = {
         scanning = true
@@ -106,8 +113,8 @@ actual fun EventScannerButton(enabled: Boolean, onScanned: (String) -> Unit, onE
         GmsBarcodeScanning.getClient(context, options).startScan()
             .addOnSuccessListener { barcode ->
                 scanning = false
-                barcode.rawValue?.let(onScanned) ?: onError("QR kod okunamadı.")
+                barcode.rawValue?.let(onScanned) ?: onError(scanError)
             }.addOnCanceledListener { scanning = false }
-            .addOnFailureListener { scanning = false; onError("Kamera açılamadı. Google Play hizmetlerini ve bağlantınızı kontrol edin; manuel giriş kullanabilirsiniz.") }
-    }) { Text(if (scanning) "Kamera açılıyor…" else "QR ile giriş al") }
+            .addOnFailureListener { scanning = false; onError(cameraError) }
+    }) { Text(if (scanning) cameraOpening else scanLabel) }
 }

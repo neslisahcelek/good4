@@ -1,5 +1,8 @@
 package com.good4.community
 
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.pager.PageSize
@@ -195,7 +198,7 @@ fun CommunitiesScreen(
                 Good4TopBar(
                     title = when {
                         community == null -> "Topluluklar"
-                        managerView -> "Topluluğumu Yönet"
+                        managerView -> stringResource(Res.string.community_toplulugumu_yonet)
                         studentView -> "Topluluk"
                         else -> community.data.name
                     },
@@ -213,21 +216,21 @@ fun CommunitiesScreen(
                                 }
                             }
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Geri")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back))
                         }
                     },
                     actions = {
                         if (community != null && !state.canManage && !previewAsStudent) {
                             var menuOpen by remember(community.id) { mutableStateOf(false) }
                             Box {
-                                RoundIconAction(Icons.Outlined.MoreVert, "Diğer işlemler") { menuOpen = true }
+                                RoundIconAction(Icons.Outlined.MoreVert, stringResource(Res.string.community_diger_islemler)) { menuOpen = true }
                                 DropdownMenu(
                                     expanded = menuOpen,
                                     onDismissRequest = { menuOpen = false },
                                     containerColor = SurfaceDefault
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Topluluğu engelle", color = ErrorRed) },
+                                        text = { Text(stringResource(Res.string.community_toplulugu_engelle), color = ErrorRed) },
                                         leadingIcon = { Icon(Icons.Outlined.Block, contentDescription = null, tint = ErrorRed) },
                                         onClick = {
                                             menuOpen = false
@@ -270,21 +273,24 @@ fun CommunitiesScreen(
                         }
                         if (query.isBlank() && !followingPending) {
                             item(key = "student-featured-heading") {
-                                Text("Yaklaşan etkinlikler", fontSize = 19.sp, fontWeight = FontWeight.SemiBold,
+                                Text(stringResource(Res.string.community_yaklasan_etkinlikler), fontSize = 19.sp, fontWeight = FontWeight.SemiBold,
                                     color = TextPrimary, modifier = Modifier.padding(top = 4.dp))
                             }
                             item(key = "student-featured-events") {
                                 when {
                                     featuredEvents.isNotEmpty() -> StudentPosterRow(featuredEvents.take(10)) { featured ->
                                         pendingFeaturedEvent = featured
-                                        viewModel.select(featured.community)
+                                        viewModel.select(featured.community, featured.entry.id)
                                     }
                                     state.featuredEventsError != null -> NoticeCard(
-                                        state.featuredEventsError.orEmpty(), ErrorRed, actionLabel = "Tekrar dene",
+                                        stringResource(Res.string.community_featured_events_load_error), ErrorRed, actionLabel = stringResource(Res.string.campus_closet_retry),
                                         onAction = { viewModel.refreshFeaturedEvents(today, force = true) })
                                     state.featuredEventsLoading || state.loading ->
-                                        Text("Etkinlikler yükleniyor…", fontSize = 13.sp, color = TextSecondary)
-                                    else -> Text("Yaklaşan etkinlik yok.", fontSize = 13.sp, color = TextSecondary)
+                                        Text(stringResource(Res.string.community_etkinlikler_yukleniyor), fontSize = 13.sp, color = TextSecondary)
+                                    else -> EmptyCommunityContent(
+                                        title = stringResource(Res.string.community_yaklasan_etkinlik_yok),
+                                        subtitle = stringResource(Res.string.community_yeni_etkinlikler_yayinlandiginda_burada_gorunecek),
+                                    )
                                 }
                             }
                         }
@@ -295,22 +301,22 @@ fun CommunitiesScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    if (state.followedOnly) "Takip ettiğin topluluklar" else "Toplulukları keşfet",
+                                    if (state.followedOnly) stringResource(Res.string.community_takip_ettigin_topluluklar) else stringResource(Res.string.community_topluluklari_kesfet),
                                     fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (!state.loading && !followingPending) {
-                                    Text("${filtered.size} topluluk", fontSize = 12.sp, color = TextSecondary)
+                                    Text(stringResource(Res.string.community_count, filtered.size), fontSize = 12.sp, color = TextSecondary)
                                 }
                             }
                         }
                         if (followingPending) {
                             item(key = "community-follow-status") {
                                 if (state.followingError != null) {
-                                    NoticeCard(state.followingError.orEmpty(), ErrorRed, actionLabel = "Tekrar dene",
+                                    NoticeCard(state.followingError.orEmpty(), ErrorRed, actionLabel = stringResource(Res.string.campus_closet_retry),
                                         onAction = { viewModel.refreshFollowing(force = true) })
                                 } else {
-                                    Text("Takip ettiğin topluluklar yükleniyor…", color = TextSecondary, fontSize = 13.sp)
+                                    Text(stringResource(Res.string.community_takip_ettigin_topluluklar_yukleniyor), color = TextSecondary, fontSize = 13.sp)
                                 }
                             }
                         } else {
@@ -324,14 +330,14 @@ fun CommunitiesScreen(
                                 item(key = "community-list-empty") {
                                     EmptyCommunityContent(
                                         title = when {
-                                            query.isNotBlank() -> "Aramana uygun topluluk bulunamadı"
-                                            state.followedOnly -> "Henüz bir topluluğu takip etmiyorsun"
-                                            else -> "Topluluklar yakında burada"
+                                            query.isNotBlank() -> stringResource(Res.string.community_aramana_uygun_topluluk_bulunamadi)
+                                            state.followedOnly -> stringResource(Res.string.community_henuz_bir_toplulugu_takip_etmiyorsun)
+                                            else -> stringResource(Res.string.community_topluluklar_yakinda_burada)
                                         },
                                         subtitle = when {
-                                            query.isNotBlank() -> "Farklı bir kelimeyle tekrar deneyebilirsin."
-                                            state.followedOnly -> "Tümü sekmesinden toplulukları keşfedip takip edebilirsin."
-                                            else -> "Yeni topluluklar eklendikçe burada keşfedebilirsin."
+                                            query.isNotBlank() -> stringResource(Res.string.community_farkli_bir_kelimeyle_tekrar_deneyebilirsin)
+                                            state.followedOnly -> stringResource(Res.string.community_tumu_sekmesinden_topluluklari_kesfedip_takip_edebilirsin)
+                                            else -> stringResource(Res.string.community_yeni_topluluklar_eklendikce_burada_kesfedebilirsin)
                                         }
                                     )
                                 }
@@ -339,7 +345,7 @@ fun CommunitiesScreen(
                         }
                         if (state.blockedCommunityIds.isNotEmpty()) item(key = "community-unblock") {
                             TextButton(onClick = viewModel::unblockAllCommunities, modifier = Modifier.fillMaxWidth()) {
-                                Text("Engellediğiniz ${state.blockedCommunityIds.size} topluluğu yeniden göster",
+                                Text(stringResource(Res.string.community_unblock_count, state.blockedCommunityIds.size),
                                     fontSize = 13.sp, color = TextSecondary)
                             }
                         }
@@ -359,7 +365,7 @@ fun CommunitiesScreen(
                                 CommunityEventsBannerPlaceholder(
                                     loading = state.followingLoading,
                                     hasError = state.followingError != null,
-                                    message = state.followingError ?: "Takip ettiğiniz topluluklar yükleniyor.",
+                                    message = state.followingError ?: stringResource(Res.string.community_takip_ettiginiz_topluluklar_yukleniyor),
                                     onRetry = { viewModel.refreshFollowing(force = true) },
                                 )
                             } else if (featuredEvents.isNotEmpty()) {
@@ -367,16 +373,16 @@ fun CommunitiesScreen(
                                     events = featuredEvents,
                                     onEventClick = { featured ->
                                         pendingFeaturedEvent = featured
-                                        viewModel.select(featured.community)
+                                        viewModel.select(featured.community, featured.entry.id)
                                     }
                                 )
                             } else if ((state.selectedCategoryId.isNotEmpty() || state.followedOnly)
                                 && !state.featuredEventsLoading && state.featuredEventsError == null && !state.loading) {
                                 EmptyCommunityContent(
-                                    title = "Filtrelere uygun etkinlik bulunamadı",
+                                    title = stringResource(Res.string.community_filtrelere_uygun_etkinlik_bulunamadi),
                                     subtitle = if (state.followedOnly && state.followedCommunityIds.isEmpty())
-                                        "Takip ettiğin bir topluluk yok. Toplulukları keşfedip takip edebilirsin."
-                                    else "Farklı bir kategori seçebilir veya filtreleri kaldırabilirsin.",
+                                        stringResource(Res.string.community_takip_ettigin_bir_topluluk_yok_topluluklari_kesfedip_takip_edebil)
+                                    else stringResource(Res.string.community_farkli_bir_kategori_secebilir_veya_filtreleri_kaldirabilirsin),
                                 )
                             } else if (AppEnvironment.isDebug && state.selectedCategoryId.isEmpty() && !state.followedOnly) {
                                 DemoCommunityEventsCarousel()
@@ -405,7 +411,7 @@ fun CommunitiesScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Keşfet",
+                                    text = stringResource(Res.string.community_kesfet),
                                     fontSize = 19.sp,
                                     lineHeight = 24.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -413,7 +419,7 @@ fun CommunitiesScreen(
                                 )
                                 if (!state.loading) {
                                     Text(
-                                        text = "${filtered.size} topluluk",
+                                        text = stringResource(Res.string.community_count, filtered.size),
                                         fontSize = 12.sp,
                                         color = TextSecondary
                                     )
@@ -437,7 +443,7 @@ fun CommunitiesScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        "Engellediğiniz ${state.blockedCommunityIds.size} topluluğu yeniden göster",
+                                        stringResource(Res.string.community_unblock_count, state.blockedCommunityIds.size),
                                         fontSize = 13.sp,
                                         color = TextSecondary
                                     )
@@ -447,8 +453,8 @@ fun CommunitiesScreen(
                         if (!state.loading && state.error == null && filtered.isEmpty()) {
                             item {
                                 EmptyCommunityContent(
-                                    title = if (query.isBlank()) "Topluluklar yakında burada" else "Aramana uygun topluluk bulunamadı",
-                                    subtitle = if (query.isBlank()) "Yeni topluluklar eklendikçe burada keşfedebilirsin." else "Farklı bir kelimeyle tekrar deneyebilirsin."
+                                    title = if (query.isBlank()) stringResource(Res.string.community_topluluklar_yakinda_burada) else stringResource(Res.string.community_aramana_uygun_topluluk_bulunamadi),
+                                    subtitle = if (query.isBlank()) stringResource(Res.string.community_yeni_topluluklar_eklendikce_burada_kesfedebilirsin) else stringResource(Res.string.community_farkli_bir_kelimeyle_tekrar_deneyebilirsin)
                                 )
                             }
                         }
@@ -522,8 +528,8 @@ fun CommunitiesScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (isV2) EventCategorySelector(state.selectedCategoryId, true, !state.loading, viewModel::selectCategory)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                CommunityEventFilterChip(!registeredOnly, true, "Tüm etkinlikler", onClick = { registeredOnly = false })
-                                CommunityEventFilterChip(registeredOnly, true, "Etkinlik kayıtlarım", onClick = { registeredOnly = true })
+                                CommunityEventFilterChip(!registeredOnly, true, stringResource(Res.string.community_tum_etkinlikler), onClick = { registeredOnly = false })
+                                CommunityEventFilterChip(registeredOnly, true, stringResource(Res.string.community_etkinlik_kayitlarim), onClick = { registeredOnly = true })
                             }
                         }
                     }
@@ -578,21 +584,26 @@ fun CommunitiesScreen(
                     if (!state.loading && state.error == null && entries.isEmpty()) {
                         item {
                             val managerEventTitle = when (eventFilter) {
-                                0 -> "Yaklaşan etkinlik yok"
-                                1 -> "Kaydedilmiş taslak yok"
-                                else -> "Geçmiş etkinlik yok"
+                                0 -> stringResource(Res.string.community_yaklasan_etkinlik_yok)
+                                1 -> stringResource(Res.string.community_kaydedilmis_taslak_yok)
+                                else -> stringResource(Res.string.community_gecmis_etkinlik_yok)
                             }
                             val managerEventSubtitle = when (eventFilter) {
-                                0 -> "Yeni bir etkinlik oluşturduğunda burada görünecek."
-                                1 -> "Hazırlamaya ara verdiğin etkinlikleri taslak olarak kaydedebilirsin."
-                                else -> "Tamamlanan ve yayından kaldırılan etkinlikler burada tutulur."
+                                0 -> stringResource(Res.string.community_yeni_bir_etkinlik_olusturdugunda_burada_gorunecek)
+                                1 -> stringResource(Res.string.community_hazirlamaya_ara_verdigin_etkinlikleri_taslak_olarak_kaydedebilirs)
+                                else -> stringResource(Res.string.community_tamamlanan_ve_yayindan_kaldirilan_etkinlikler_burada_tutulur)
                             }
                             EmptyCommunityContent(
-                                title = if (studentView) studentFilter.emptyTitle else if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Filtrelere uygun etkinlik bulunamadı" else if (tab == 0) "Henüz etkinlik yok" else "Henüz kupon yok",
-                                subtitle = if (studentView) studentFilter.emptySubtitle else if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) "Kategori veya kayıt filtresini değiştirerek tekrar deneyebilirsin." else if (tab == 0) "Yeni etkinlikler burada görünecek." else "Topluluğun fırsatları burada yer alacak.",
+                                title = if (studentView) studentFilter.emptyTitle else if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) stringResource(Res.string.community_filtrelere_uygun_etkinlik_bulunamadi) else if (tab == 0) stringResource(Res.string.community_henuz_etkinlik_yok) else stringResource(Res.string.community_henuz_kupon_yok),
+                                subtitle = if (studentView) studentFilter.emptySubtitle else if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) stringResource(Res.string.community_kategori_veya_kayit_filtresini_degistirerek_tekrar_deneyebilirsin) else if (tab == 0) stringResource(Res.string.community_yeni_etkinlikler_burada_gorunecek) else stringResource(Res.string.community_toplulugun_firsatlari_burada_yer_alacak),
                                 coupon = !studentView && tab == 1
                             )
                         }
+                    }
+                }
+                if (community != null && !state.loading && state.entriesCursor != null) item(key = "load-more") {
+                    TextButton(onClick = viewModel::loadMoreEntries, modifier = Modifier.fillMaxWidth()) {
+                        Text(org.jetbrains.compose.resources.stringResource(good4.composeapp.generated.resources.Res.string.community_load_more))
                     }
                 }
                 if (state.loading) {
@@ -611,7 +622,7 @@ fun CommunitiesScreen(
                     item {
                         Text(error, color = MaterialTheme.colorScheme.error)
                         TextButton(onClick = { if (community == null) viewModel.load() else viewModel.select(community) }) {
-                            Text("Tekrar dene")
+                            Text(stringResource(Res.string.campus_closet_retry))
                         }
                     }
                 }
@@ -684,18 +695,18 @@ fun CommunitiesScreen(
     pendingBlock?.let { target ->
         AlertDialog(
             onDismissRequest = { pendingBlock = null },
-            title = { Text("Topluluğu engelle") },
+            title = { Text(stringResource(Res.string.community_toplulugu_engelle)) },
             text = {
-                Text("${target.data.name} topluluğunun etkinliklerini ve kuponlarını artık görmeyeceksiniz. Engeli Topluluklar listesinin altından kaldırabilirsiniz.")
+                Text(stringResource(Res.string.community_block_message, target.data.name))
             },
             confirmButton = {
                 TextButton(onClick = {
                     pendingBlock = null
                     detail = null
                     viewModel.blockCommunity(target)
-                }) { Text("Engelle", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(Res.string.campus_closet_engelle), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { pendingBlock = null }) { Text("Vazgeç") } }
+            dismissButton = { TextButton(onClick = { pendingBlock = null }) { Text(stringResource(Res.string.campus_closet_cancel)) } }
         )
     }
     pendingRemoval?.let { entry ->
@@ -714,7 +725,7 @@ fun CommunitiesScreen(
 private fun CommunityDiscoveryTabs(followedOnly: Boolean, enabled: Boolean, onSelect: (Boolean) -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = SurfaceMuted) {
         Row(Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            listOf(false to "Tümü", true to "Takip ettiklerim").forEach { (followed, label) ->
+            listOf(false to stringResource(Res.string.campus_closet_all), true to stringResource(Res.string.community_takip_ettiklerim)).forEach { (followed, label) ->
                 val selected = followedOnly == followed
                 Surface(
                     onClick = { onSelect(followed) }, enabled = enabled,
@@ -918,22 +929,24 @@ private fun CommunityEventsBannerPlaceholder(
             )
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = "Etkinlikler",
+                    text = if (!loading && !hasError && message == null)
+                        stringResource(Res.string.community_yaklasan_etkinlik_yok)
+                    else stringResource(Res.string.community_yaklasan_etkinlikler),
                     color = TextPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = message ?: when {
-                        hasError -> "Etkinlikler yüklenemedi."
-                        loading -> "Yaklaşan etkinlikler yükleniyor."
-                        else -> "Yaklaşan etkinlik afişleri burada gösterilir."
+                        hasError -> stringResource(Res.string.community_featured_events_load_error)
+                        loading -> stringResource(Res.string.community_etkinlikler_yukleniyor)
+                        else -> stringResource(Res.string.community_yeni_etkinlikler_yayinlandiginda_burada_gorunecek)
                     },
                     color = TextSecondary,
                     fontSize = 12.sp
                 )
                 if (hasError) {
-                    TextButton(onClick = onRetry) { Text("Tekrar dene", color = MaterialTheme.colorScheme.primary) }
+                    TextButton(onClick = onRetry) { Text(stringResource(Res.string.campus_closet_retry), color = MaterialTheme.colorScheme.primary) }
                 }
             }
         }

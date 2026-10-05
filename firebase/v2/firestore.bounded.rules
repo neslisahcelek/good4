@@ -219,7 +219,7 @@ service cloud.firestore {
       allow create, update, delete: if false;
       allow list: if boundedList() && (false);
       match /votes/{voterUid} {
-        allow get: if signedIn() && request.auth.uid == voterUid;
+        allow get: if currentUserIsActive() && request.auth.uid == voterUid;
         allow create, update, delete: if false;
         allow list: if boundedList() && (false);
       }
