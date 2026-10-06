@@ -115,8 +115,8 @@ android {
         applicationId = "com.good4"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 13
-        versionName = "1.1.2"
+        versionCode = 16
+        versionName = "1.1.3"
     }
 
     flavorDimensions += "env"

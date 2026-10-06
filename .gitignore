@@ -67,6 +67,10 @@ skills-lock.json
 !.agents/skills/good4-firebase-guardrails/SKILL.md
 !.agents/skills/good4-firebase-guardrails/agents/
 !.agents/skills/good4-firebase-guardrails/agents/openai.yaml
+!.agents/skills/good4-pre-release/
+!.agents/skills/good4-pre-release/SKILL.md
+!.agents/skills/good4-pre-release/agents/
+!.agents/skills/good4-pre-release/agents/openai.yaml
 
 # CocoaPods
 iosApp/Pods/

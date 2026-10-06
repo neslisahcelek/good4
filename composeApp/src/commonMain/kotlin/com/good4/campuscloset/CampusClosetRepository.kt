@@ -2,6 +2,7 @@ package com.good4.campuscloset
 
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.core.network.callV2Function
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -54,28 +55,43 @@ class CampusClosetRepository(
 
     /** [query] is searched on the server across every listing, not just the loaded page. */
     override suspend fun feed(category: String?, before: String?, query: String?): MarketFeed {
+        val uid = currentUid ?: throw CancellationException("Campus Closet session ended")
         val firstPage = category == null && before == null && query.isNullOrBlank()
         if (firstPage) {
             // Opening Kampüs Dolabı right after the home screen joins the request already on its way;
             // if it fails or takes too long, the screen asks the server itself.
             val pending = prefetch
-            if (pending != null && prefetchUid == currentUid && now() - prefetchStartedAt < PREFETCH_REUSE_MS) {
-                withTimeoutOrNull(PREFETCH_JOIN_TIMEOUT_MS) { runCatching { pending.await() }.getOrNull() }?.let { return it }
+            if (pending?.isActive == true && prefetchUid == uid && now() - prefetchStartedAt < PREFETCH_REUSE_MS) {
+                // Share the running request once. Later resumes must see verification/favorite changes.
+                prefetch = null
+                val feed = withTimeoutOrNull(PREFETCH_JOIN_TIMEOUT_MS) {
+                    try {
+                        pending.await()
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                ensureCurrentAccount(uid)
+                if (feed != null) return feed
             }
         }
-        return fetchFeed(category, before, query)
+        return fetchFeed(category, before, query, uid)
     }
 
     /** Always a real server call; the prefetch uses this so it can never wait on itself. */
-    private suspend fun fetchFeed(category: String?, before: String?, query: String?): MarketFeed {
+    private suspend fun fetchFeed(category: String?, before: String?, query: String?, uid: String): MarketFeed {
+        ensureCurrentAccount(uid)
         val firstPage = category == null && before == null && query.isNullOrBlank()
         return call<MarketFeed>("getMarketFeed", buildJsonObject {
             category?.let { put("category", it) }
             before?.let { put("before", it) }
             query?.trim()?.takeIf { it.isNotEmpty() }?.let { put("query", it.take(60)) }
         }).also {
+            ensureCurrentAccount(uid)
             badge.update(it.me.unreadCount)
-            if (firstPage) saveFeedCache(it)
+            if (firstPage) saveFeedCache(it, uid)
         }
     }
 
@@ -89,7 +105,7 @@ class CampusClosetRepository(
             summary()
             return
         }
-        val request = prefetchScope.async { fetchFeed(null, null, null) }
+        val request = prefetchScope.async { fetchFeed(null, null, null, uid) }
         prefetch = request
         prefetchUid = uid
         prefetchStartedAt = now()
@@ -105,8 +121,12 @@ class CampusClosetRepository(
         return cached.feed
     }
 
-    private fun saveFeedCache(feed: MarketFeed) {
-        val uid = currentUid ?: return
+    private fun ensureCurrentAccount(uid: String) {
+        if (currentUid != uid) throw CancellationException("Campus Closet account changed")
+    }
+
+    private fun saveFeedCache(feed: MarketFeed, uid: String) {
+        ensureCurrentAccount(uid)
         runCatching { saveCampusClosetFeedCache(json.encodeToString(CachedCampusClosetFeed.serializer(), CachedCampusClosetFeed(uid, now(), feed))) }
     }
 
