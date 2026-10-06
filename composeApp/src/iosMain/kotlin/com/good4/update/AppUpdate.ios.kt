@@ -27,8 +27,11 @@ import platform.Foundation.NSUserDefaults
 import platform.UIKit.UIApplication
 import kotlin.coroutines.resume
 
+// The fake "update available" card is only for previewing the UI on the simulator; debug builds
+// installed on a phone check the App Store like the release build and stay quiet when up to date.
 @OptIn(ExperimentalNativeApi::class)
-private val isDebugUpdateBuild get() = Platform.isDebugBinary
+private val isDebugUpdateBuild get() = Platform.isDebugBinary &&
+    platform.Foundation.NSProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] != null
 
 private var debugUpdateReminderAt = 0L
 actual fun loadUpdateReminderAt(): Long = if (isDebugUpdateBuild) {

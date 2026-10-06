@@ -1,7 +1,6 @@
 import { cleanupTechnicalRecords } from "./maintenance.js";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
-import sharp from "sharp";
 import { recordBudgetNotification, optionalJobsAllowed, productionJobsEnabled, setCostControlService } from "./costControl.js";
 import { assertRateLimit } from "./rateLimit.js";
 import { getMessaging } from "firebase-admin/messaging";
@@ -343,6 +342,8 @@ export const uploadHomeBannerImage = onCall({
     throw new HttpsError("invalid-argument", "BANNER_IMAGE_CONTENT_INVALID");
   }
 
+  // Loaded here so the native image library does not slow down every other function's cold start.
+  const { default: sharp } = await import("sharp");
   let normalized: Buffer;
   try {
     normalized = await sharp(bytes, { limitInputPixels: 40_000_000 }).rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();

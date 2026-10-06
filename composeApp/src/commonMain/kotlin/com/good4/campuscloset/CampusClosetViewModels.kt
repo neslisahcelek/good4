@@ -55,6 +55,12 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetFeedDataSour
         loadJob?.cancel()
         paginationJob?.cancel()
         _state.update { it.copy(isLoadingMore = false) }
+        // Show the page saved on this device at once; the server's answer replaces it a moment later.
+        if (_state.value.listings.isEmpty() && category == null && query.isBlank()) {
+            repository.cachedFeed()?.let { cached ->
+                _state.update { it.copy(isLoading = false, me = cached.me, listings = cached.listings, nextBefore = cached.nextBefore) }
+            }
+        }
         loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = it.listings.isEmpty(), loadError = null) }
             attempt { repository.feed(category, null, query) }

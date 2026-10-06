@@ -2,6 +2,13 @@ package com.good4.campuscloset
 
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.core.network.callV2Function
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -16,7 +23,16 @@ interface CampusClosetFeedDataSource {
     suspend fun feed(category: String?, before: String?, query: String? = null): MarketFeed
     suspend fun setFavorite(listingId: String, saved: Boolean)
     suspend fun acceptTerms(version: Int)
+    /** The last default page saved on this device for the signed-in student, if any. */
+    fun cachedFeed(): MarketFeed? = null
 }
+
+/** A home-screen prefetch is reused by the feed if it started this recently. */
+private const val PREFETCH_REUSE_MS = 60_000L
+/** The home screen fetches the whole first page at most this often; in between it asks only for the badge. */
+private const val PREFETCH_INTERVAL_MS = 10 * 60_000L
+/** How long the screen waits for a running prefetch before calling the server itself. */
+private const val PREFETCH_JOIN_TIMEOUT_MS = 8_000L
 
 class CampusClosetRepository(
     private val auth: AuthRepository,
@@ -25,6 +41,11 @@ class CampusClosetRepository(
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true; explicitNulls = false }
 
     val currentUid: String? get() = auth.currentUser?.uid
+    private val prefetchScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var prefetch: Deferred<MarketFeed>? = null
+    private var prefetchUid: String? = null
+    private var prefetchStartedAt = 0L
+    private fun now() = Clock.System.now().toEpochMilliseconds()
 
     private suspend inline fun <reified T> call(name: String, data: JsonObject = JsonObject(emptyMap())): T =
         json.decodeFromJsonElement(callV2Function(name, data))
@@ -32,12 +53,62 @@ class CampusClosetRepository(
     suspend fun summary(): MarketMe = call<MarketSummary>("getMarketSummary").me.also { badge.update(it.unreadCount) }
 
     /** [query] is searched on the server across every listing, not just the loaded page. */
-    override suspend fun feed(category: String?, before: String?, query: String?): MarketFeed =
-        call<MarketFeed>("getMarketFeed", buildJsonObject {
+    override suspend fun feed(category: String?, before: String?, query: String?): MarketFeed {
+        val firstPage = category == null && before == null && query.isNullOrBlank()
+        if (firstPage) {
+            // Opening Kampüs Dolabı right after the home screen joins the request already on its way;
+            // if it fails or takes too long, the screen asks the server itself.
+            val pending = prefetch
+            if (pending != null && prefetchUid == currentUid && now() - prefetchStartedAt < PREFETCH_REUSE_MS) {
+                withTimeoutOrNull(PREFETCH_JOIN_TIMEOUT_MS) { runCatching { pending.await() }.getOrNull() }?.let { return it }
+            }
+        }
+        return fetchFeed(category, before, query)
+    }
+
+    /** Always a real server call; the prefetch uses this so it can never wait on itself. */
+    private suspend fun fetchFeed(category: String?, before: String?, query: String?): MarketFeed {
+        val firstPage = category == null && before == null && query.isNullOrBlank()
+        return call<MarketFeed>("getMarketFeed", buildJsonObject {
             category?.let { put("category", it) }
             before?.let { put("before", it) }
             query?.trim()?.takeIf { it.isNotEmpty() }?.let { put("query", it.take(60)) }
-        }).also { badge.update(it.me.unreadCount) }
+        }).also {
+            badge.update(it.me.unreadCount)
+            if (firstPage) saveFeedCache(it)
+        }
+    }
+
+    /**
+     * Called from the home screen instead of the badge-only summary: it warms the feed function and
+     * the on-device copy, so tapping Kampüs Dolabı shows listings without waiting.
+     */
+    suspend fun refreshFromHome() {
+        val uid = currentUid ?: return
+        if (now() - prefetchStartedAt < PREFETCH_INTERVAL_MS && prefetchUid == uid) {
+            summary()
+            return
+        }
+        val request = prefetchScope.async { fetchFeed(null, null, null) }
+        prefetch = request
+        prefetchUid = uid
+        prefetchStartedAt = now()
+        request.await()
+    }
+
+    override fun cachedFeed(): MarketFeed? {
+        val uid = currentUid ?: return null
+        val cached = runCatching {
+            loadCampusClosetFeedCache()?.let { json.decodeFromString(CachedCampusClosetFeed.serializer(), it) }
+        }.getOrNull() ?: return null
+        if (cached.uid != uid || now() - cached.savedAtMillis !in 0..CAMPUS_CLOSET_FEED_CACHE_MAX_AGE_MS) return null
+        return cached.feed
+    }
+
+    private fun saveFeedCache(feed: MarketFeed) {
+        val uid = currentUid ?: return
+        runCatching { saveCampusClosetFeedCache(json.encodeToString(CachedCampusClosetFeed.serializer(), CachedCampusClosetFeed(uid, now(), feed))) }
+    }
 
     suspend fun listing(listingId: String): MarketListingDetail =
         call("getMarketListing", buildJsonObject { put("listingId", listingId) })

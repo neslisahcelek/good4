@@ -120,7 +120,7 @@ class CampusEmailVerificationRepository(private val auth: AuthRepository) {
         savePendingCampusEmailVerification(pending)
         signOutCampusEmailAuth()
         sendCampusEmailLink(normalizedEmail, response["continueUrl"]?.jsonPrimitive?.content ?: error("CAMPUS_EMAIL_SEND_FAILED"))
-        return CampusEmailRequestResult.Ready(pending, response["resendAfterSeconds"]?.jsonPrimitive?.int ?: 60)
+        return CampusEmailRequestResult.Ready(pending, response["resendAfterSeconds"]?.jsonPrimitive?.int ?: 300)
     }
 
     suspend fun complete(link: CampusEmailLink): String {

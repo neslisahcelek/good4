@@ -179,12 +179,13 @@ test("another primary account cannot consume the link, and requests expire", asy
 
 test("a later request invalidates the old link and the send limit cannot be bypassed by changing addresses", async () => {
   const first = await request();
-  await rejected(begin(db, uid, { email: "other@ogr.akdeniz.edu.tr" }, NOW + 30_000), "CAMPUS_EMAIL_RESEND_TOO_SOON");
-  await begin(db, uid, { email }, NOW + 61_000);
+  // A new link can be requested only five minutes after the previous one.
+  await rejected(begin(db, uid, { email: "other@ogr.akdeniz.edu.tr" }, NOW + 4 * 60_000), "CAMPUS_EMAIL_RESEND_TOO_SOON");
+  await begin(db, uid, { email }, NOW + 301_000);
   await rejected(complete(db, uid, { requestId: first.requestId, universityIdToken: "signed-university-token" },
-    verifier(proof({ auth_time: NOW / 1000 + 70 })), NOW + 75_000), "CAMPUS_EMAIL_REQUEST_MISMATCH");
-  for (let count = 3; count <= 5; count++) await begin(db, uid, { email }, NOW + count * 61_000);
-  await rejected(begin(db, uid, { email: "other@ogr.akdeniz.edu.tr" }, NOW + 6 * 61_000), "CAMPUS_EMAIL_SEND_LIMIT");
+    verifier(proof({ auth_time: NOW / 1000 + 310 })), NOW + 315_000), "CAMPUS_EMAIL_REQUEST_MISMATCH");
+  for (let count = 3; count <= 5; count++) await begin(db, uid, { email }, NOW + count * 301_000);
+  await rejected(begin(db, uid, { email: "other@ogr.akdeniz.edu.tr" }, NOW + 6 * 301_000), "CAMPUS_EMAIL_SEND_LIMIT");
 });
 
 test("a university address claimed during verification cannot be stolen", async () => {
@@ -267,13 +268,13 @@ test("reopening is idempotent only for the exact request and successfully consum
 
 test("a later browser request invalidates the old link and existing claims remain protected", async () => {
   const first = await request();
-  const latest = await begin(db, uid, { email }, NOW + 61_000);
+  const latest = await begin(db, uid, { email }, NOW + 301_000);
   if (latest.outcome !== "ready") throw new Error("expected new request");
-  await rejected(completeBrowser(db, { requestId: first.requestId, oobCode: "mailbox-code" }, browserDeps(), NOW + 75_000),
+  await rejected(completeBrowser(db, { requestId: first.requestId, oobCode: "mailbox-code" }, browserDeps(), NOW + 315_000),
     "CAMPUS_EMAIL_REQUEST_MISMATCH");
   await db.doc(eduEmailClaimPath(email)).set({ uid: "already-owner" });
   await rejected(completeBrowser(db, { requestId: latest.requestId, oobCode: "mailbox-code" },
-    browserDeps(proof({ auth_time: NOW / 1000 + 70 })), NOW + 75_000), "EDU_EMAIL_IN_USE");
+    browserDeps(proof({ auth_time: NOW / 1000 + 310 })), NOW + 315_000), "EDU_EMAIL_IN_USE");
   assert.deepEqual(await status(db, uid), { verified: false });
 });
 

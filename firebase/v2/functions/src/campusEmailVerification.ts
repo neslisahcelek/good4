@@ -7,7 +7,7 @@ import { requireActiveActor } from "./shared.js";
 
 export const CAMPUS_EMAIL_DOMAIN = "ogr.akdeniz.edu.tr";
 const LINK_TTL_MS = 15 * 60 * 1000;
-const RESEND_COOLDOWN_MS = 60 * 1000;
+const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
 const SEND_WINDOW_MS = 60 * 60 * 1000;
 const MAX_SENDS = 5;
 const CONTINUE_URL = "https://good4tr-v2.firebaseapp.com/campus-email-verification";

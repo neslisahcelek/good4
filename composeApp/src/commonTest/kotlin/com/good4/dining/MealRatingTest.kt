@@ -12,8 +12,9 @@ import kotlin.test.assertTrue
 
 class MealRatingTest {
     @Test
-    fun percentagesAppearOnlyAfterTenVotesAndAreRounded() {
-        assertNull(MealRating(good = 5, okay = 2, bad = 2).percentages())
+    fun percentagesAppearFromTheFirstVoteAndAreRounded() {
+        assertNull(MealRating().percentages())
+        assertEquals(mapOf(MealVote.GOOD to 100, MealVote.OKAY to 0, MealVote.BAD to 0), MealRating(good = 1).percentages())
         assertEquals(
             mapOf(MealVote.GOOD to 64, MealVote.OKAY to 24, MealVote.BAD to 12),
             MealRating(good = 37, okay = 14, bad = 7).percentages()
