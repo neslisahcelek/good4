@@ -572,6 +572,16 @@
     <string name="campus_closet_mesaj_yaz" formatted="false">Mesaj yaz</string>
     <string name="campus_closet_gonder" formatted="false">Gönder</string>
     <string name="campus_closet_e_postan_onaylandi" formatted="false">E-postan onaylandı</string>
+    <string name="campus_email_title" formatted="false">Okul e-postanı doğrula</string>
+    <string name="campus_email_intro" formatted="false">İlan vermek, mesaj ve teklif göndermek için bir kez doğrulaman yeterli.</string>
+    <string name="campus_email_send_link" formatted="false">Doğrulama bağlantısı gönder</string>
+    <string name="campus_email_send_hint" formatted="false">Bağlantı okul e-postana Outlook'ta gelir ve 15 dakika geçerlidir.</string>
+    <string name="campus_email_check_title" formatted="false">E-postanı kontrol et</string>
+    <string name="campus_email_sent_to">%1$s adresine doğrulama bağlantısı gönderdik.</string>
+    <string name="campus_email_tip_delay" formatted="false">Okul e-postalarının gelmesi 1–2 dakika sürebilir.</string>
+    <string name="campus_email_tip_outlook" formatted="false">Maili Outlook'ta aç; bilgisayarından, tabletinden ya da telefonundan olabilir.</string>
+    <string name="campus_email_tip_junk" formatted="false">Gelmezse Gereksiz E-posta klasörüne bak.</string>
+    <string name="campus_email_waiting" formatted="false">Doğrulama bekleniyor. Bağlantıyı açınca burası kendiliğinden güncellenir.</string>
     <string name="campus_closet_ilan_vermek_icin_okul_e_postani_dogrula" formatted="false">İlan vermek için okul e-postanı doğrula</string>
     <string name="campus_closet_dogrulama_e_postana_outlook_uzerinden_ulasabilirsin_gereksiz_e_posta" formatted="false">Doğrulama e-postana Outlook üzerinden ulaşabilirsin. Gereksiz E-posta/Spam klasörünü kontrol etmeyi unutma.</string>
     <string name="campus_closet_ilan_verebilirsin" formatted="false">İlan verebilirsin.</string>

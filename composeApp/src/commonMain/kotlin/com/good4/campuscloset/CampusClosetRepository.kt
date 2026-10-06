@@ -7,6 +7,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -30,6 +31,8 @@ interface CampusClosetFeedDataSource {
 private const val PREFETCH_REUSE_MS = 60_000L
 /** The home screen fetches the whole first page at most this often; in between it asks only for the badge. */
 private const val PREFETCH_INTERVAL_MS = 10 * 60_000L
+/** How long the screen waits for a running prefetch before calling the server itself. */
+private const val PREFETCH_JOIN_TIMEOUT_MS = 8_000L
 
 class CampusClosetRepository(
     private val auth: AuthRepository,
@@ -53,12 +56,19 @@ class CampusClosetRepository(
     override suspend fun feed(category: String?, before: String?, query: String?): MarketFeed {
         val firstPage = category == null && before == null && query.isNullOrBlank()
         if (firstPage) {
-            // Opening Kampüs Dolabı right after the home screen joins the request already on its way.
+            // Opening Kampüs Dolabı right after the home screen joins the request already on its way;
+            // if it fails or takes too long, the screen asks the server itself.
             val pending = prefetch
             if (pending != null && prefetchUid == currentUid && now() - prefetchStartedAt < PREFETCH_REUSE_MS) {
-                runCatching { return pending.await() }
+                withTimeoutOrNull(PREFETCH_JOIN_TIMEOUT_MS) { runCatching { pending.await() }.getOrNull() }?.let { return it }
             }
         }
+        return fetchFeed(category, before, query)
+    }
+
+    /** Always a real server call; the prefetch uses this so it can never wait on itself. */
+    private suspend fun fetchFeed(category: String?, before: String?, query: String?): MarketFeed {
+        val firstPage = category == null && before == null && query.isNullOrBlank()
         return call<MarketFeed>("getMarketFeed", buildJsonObject {
             category?.let { put("category", it) }
             before?.let { put("before", it) }
@@ -79,10 +89,10 @@ class CampusClosetRepository(
             summary()
             return
         }
+        val request = prefetchScope.async { fetchFeed(null, null, null) }
+        prefetch = request
         prefetchUid = uid
         prefetchStartedAt = now()
-        val request = prefetchScope.async { feed(null, null, null) }
-        prefetch = request
         request.await()
     }
 
