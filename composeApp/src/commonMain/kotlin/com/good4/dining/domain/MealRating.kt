@@ -13,7 +13,7 @@ enum class MealVote(val key: String, val emoji: String) {
 data class MealRating(val good: Int = 0, val okay: Int = 0, val bad: Int = 0, val myVote: MealVote? = null) {
     val total: Int get() = good + okay + bad
 
-    /** Percentages are shown only once enough people voted, so a handful of votes cannot mislead. */
+    /** Percentages are shown as soon as someone has voted. */
     fun percentages(minimumVotes: Int = MEAL_RATING_MIN_VOTES): Map<MealVote, Int>? {
         if (total < minimumVotes) return null
         return mapOf(MealVote.GOOD to good, MealVote.OKAY to okay, MealVote.BAD to bad)
@@ -21,7 +21,7 @@ data class MealRating(val good: Int = 0, val okay: Int = 0, val bad: Int = 0, va
     }
 }
 
-const val MEAL_RATING_MIN_VOTES = 10
+const val MEAL_RATING_MIN_VOTES = 1
 
 val DailyMeal.ratingKey: String
     get() = when (this) {

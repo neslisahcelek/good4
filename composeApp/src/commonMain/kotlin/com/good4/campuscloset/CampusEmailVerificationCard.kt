@@ -79,7 +79,7 @@ fun CampusEmailVerificationCard(
                 Button(onClick = onSendLink, enabled = !busy && state.resendSeconds == 0 && state.email.isNotBlank(),
                     modifier = Modifier.fillMaxWidth().height(StandardButtonHeight)) {
                     Text(if (state.isSending) stringResource(Res.string.campus_closet_gonderiliyor) else if (state.resendSeconds > 0)
-                        stringResource(Res.string.campus_closet_tekrar_dene_sn, state.resendSeconds) else stringResource(Res.string.campus_closet_dogrulama_e_postasi_gonder))
+                        stringResource(Res.string.campus_closet_tekrar_dene_sn, minutesAndSeconds(state.resendSeconds)) else stringResource(Res.string.campus_closet_dogrulama_e_postasi_gonder))
                 }
             } else {
                 Text(stringResource(Res.string.campus_closet_dogrulamadan_sonra_ilan_verebilirsin))
@@ -90,7 +90,7 @@ fun CampusEmailVerificationCard(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TextButton(onClick = onChangeEmail, enabled = !busy) { Text(stringResource(Res.string.campus_closet_e_postayi_degistir)) }
                     TextButton(onClick = onSendLink, enabled = !busy && state.resendSeconds == 0) {
-                        Text(if (state.resendSeconds > 0) stringResource(Res.string.campus_closet_tekrar_gonder_sn, state.resendSeconds) else stringResource(Res.string.campus_closet_tekrar_gonder))
+                        Text(if (state.resendSeconds > 0) stringResource(Res.string.campus_closet_tekrar_gonder_sn, minutesAndSeconds(state.resendSeconds)) else stringResource(Res.string.campus_closet_tekrar_gonder))
                     }
                 }
             }
@@ -103,3 +103,7 @@ fun CampusEmailVerificationCard(
         }
     }
 }
+
+/** 300 → "5:00", 59 → "0:59". */
+internal fun minutesAndSeconds(seconds: Int): String =
+    "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"

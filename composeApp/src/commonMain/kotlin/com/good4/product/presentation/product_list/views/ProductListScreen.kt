@@ -161,7 +161,7 @@ fun ProductListScreenRoot(
         if (showsCloset && closetBadge.shouldRefresh()) {
             scope.launch {
                 try {
-                    closetRepository.summary()
+                    closetRepository.refreshFromHome()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {

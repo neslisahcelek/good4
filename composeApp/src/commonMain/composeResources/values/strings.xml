@@ -577,12 +577,12 @@
     <string name="campus_closet_ilan_verebilirsin" formatted="false">İlan verebilirsin.</string>
     <string name="campus_closet_ogrenci_numaran" formatted="false">Öğrenci numaran</string>
     <string name="campus_closet_numaran" formatted="false">Numaran</string>
-    <string name="campus_closet_tekrar_dene_sn">Tekrar dene (%1$s sn)</string>
+    <string name="campus_closet_tekrar_dene_sn">Tekrar dene (%1$s)</string>
     <string name="campus_closet_dogrulama_e_postasi_gonder" formatted="false">Doğrulama e-postası gönder</string>
     <string name="campus_closet_dogrulamadan_sonra_ilan_verebilirsin" formatted="false">Doğrulamadan sonra ilan verebilirsin.</string>
     <string name="campus_closet_e_postan_dogrulaniyor" formatted="false">E-postan doğrulanıyor…</string>
     <string name="campus_closet_e_postayi_degistir" formatted="false">E-postayı değiştir</string>
-    <string name="campus_closet_tekrar_gonder_sn">Tekrar gönder (%1$s sn)</string>
+    <string name="campus_closet_tekrar_gonder_sn">Tekrar gönder (%1$s)</string>
     <string name="campus_closet_tekrar_gonder" formatted="false">Tekrar gönder</string>
     <string name="campus_closet_yalnizca_ogr_akdeniz_edu_tr_uzantili_ogrenci_adresleri_kabul" formatted="false">Yalnızca @ogr.akdeniz.edu.tr uzantılı öğrenci adresleri kabul edilir.</string>
     <string name="campus_closet_ilan" formatted="false">İlan</string>
@@ -695,7 +695,7 @@
     <string name="campus_closet_kampus_dolabi_yalnizca_ogrenci_hesaplari_icin" formatted="false">Kampüs Dolabı yalnızca öğrenci hesapları için.</string>
     <string name="campus_closet_islem_tamamlanamadi_baglantini_kontrol_edip_tekrar_dene" formatted="false">İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.</string>
     <string name="campus_closet_bu_universite_adresi_baska_bir_good4_hesabiyla_dogrulanmis" formatted="false">Bu üniversite adresi başka bir Good4 hesabıyla doğrulanmış.</string>
-    <string name="campus_closet_yeni_baglanti_istemeden_once_bir_dakika_bekleyin" formatted="false">Yeni bağlantı istemeden önce bir dakika bekleyin.</string>
+    <string name="campus_closet_yeni_baglanti_istemeden_once_bir_dakika_bekleyin" formatted="false">Yeni bağlantı istemeden önce beş dakika bekleyin.</string>
     <string name="campus_closet_cok_fazla_baglanti_istendi_bir_saat_sonra_tekrar_deneyin" formatted="false">Çok fazla bağlantı istendi. Bir saat sonra tekrar deneyin.</string>
     <string name="campus_closet_baglantiyi_istediginiz_good4_hesabiyla_giris_yapin" formatted="false">Bağlantıyı istediğiniz Good4 hesabıyla giriş yapın.</string>
     <string name="campus_closet_bu_cihazda_bekleyen_dogrulama_istegi_yok_baglantiyi_baska_cihazda" formatted="false">Bu cihazda bekleyen doğrulama isteği yok. Bağlantıyı başka cihazda istediyseniz bu cihazdan yeni bağlantı isteyin.</string>
