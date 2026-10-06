@@ -12,6 +12,8 @@ interface AppUpdateService {
     val status: StateFlow<UpdateStatus>
     /** Store consent results may arrive after the original caller has been destroyed. */
     val declinedUpdates: Flow<Unit> get() = emptyFlow()
+    /** True when start() only opens the store and the app cannot tell whether the update was installed. */
+    val snoozeAfterStart: Boolean get() = false
     suspend fun check()
     /** False means the user declined or the update is no longer available. */
     suspend fun start(): Boolean
