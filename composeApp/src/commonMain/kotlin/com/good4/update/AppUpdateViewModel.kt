@@ -110,7 +110,7 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
         actionJob = viewModelScope.launch {
             try {
                 if (ready) current.complete()
-                else if (!current.start()) later()
+                else if (!current.start() || current.snoozeAfterStart) later()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {

@@ -89,6 +89,8 @@ private class IosAppUpdateService : AppUpdateService {
     private val client = HttpClient { install(HttpTimeout) { requestTimeoutMillis = 10_000 } }
     private val _status = MutableStateFlow(UpdateStatus.NONE)
     override val status = _status.asStateFlow()
+    // The store may not offer the build yet, so the card must not come straight back after "Güncelle".
+    override val snoozeAfterStart = true
     private var storeUrl: String? = null
 
     override suspend fun check() {
