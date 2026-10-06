@@ -72,3 +72,9 @@ val ClosetOtherAccent = Color(0xFFB8B08D)
 val CommunityAccent = Color(0xFF75D9BE)
 val DraftAccent = Color(0xFFE08A1E)
 val CommunityAttendanceAccent = Color(0xFFA58DEB)
+
+// Social activity posters keep these colours in both themes, like printed artwork.
+val SocialSportPoster = Color(0xFF0B5A3A)
+val SocialSportLine = Color(0xFFC8EE2E)
+val SocialPoster = Color(0xFFF4EFE4)
+val SocialPosterLine = Color(0xFF0B5A3A)

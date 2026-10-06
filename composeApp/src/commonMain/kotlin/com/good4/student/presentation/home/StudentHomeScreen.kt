@@ -72,6 +72,7 @@ fun StudentHomeScreenRoot(
     onNavigateToCalendar: () -> Unit = {},
     onNavigateToClassSchedule: () -> Unit = {},
     onNavigateToCampusCloset: () -> Unit = {},
+    onNavigateToSocial: () -> Unit = {},
     onNavigateToEditHome: (Boolean) -> Unit = {}
 ) {
     val navItems = listOf(
@@ -243,6 +244,7 @@ fun StudentHomeScreenRoot(
                         onCalendarClick = onNavigateToCalendar,
                         onClassScheduleClick = onNavigateToClassSchedule,
                         onCampusClosetClick = onNavigateToCampusCloset,
+                        onSocialClick = onNavigateToSocial,
                         onCampusMapClick = { selectedItemIndex = 3 },
                         onDailyMenuClick = { meal ->
                             dailyMenuMeal = meal

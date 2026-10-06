@@ -78,7 +78,8 @@ actual fun ProductImagePicker(
     pendingImageBytes: ByteArray?,
     isUploading: Boolean,
     onPendingImageChange: (ByteArray?) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
+    labels: ImagePickerLabels?
 ) {
     val scope = rememberCoroutineScope()
     val delegateHolder = remember { mutableStateOf<NSObject?>(null) }
@@ -94,16 +95,16 @@ actual fun ProductImagePicker(
     val hadUploadingPhase = remember { mutableStateOf(false) }
     val showSavedRemoteStatus = remember { mutableStateOf(false) }
 
-    val galleryLabel = stringResource(Res.string.image_picker_gallery)
-    val openingLabel = stringResource(Res.string.image_picker_opening)
-    val preparingLabel = stringResource(Res.string.image_preparing)
-    val cameraLabel = stringResource(Res.string.image_picker_camera)
-    val uploadingLabel = stringResource(Res.string.image_uploading)
-    val selectedPendingLabel = stringResource(Res.string.product_image_selected_pending)
-    val savedRemoteLabel = stringResource(Res.string.product_image_saved_remote)
-    val prepareFailedMessage = stringResource(Res.string.error_image_prepare_failed)
-    val pickerOpenFailedMessage = stringResource(Res.string.error_image_picker_open_failed)
-    val cameraOpenFailedMessage = stringResource(Res.string.error_camera_open_failed)
+    val galleryLabel = labels?.gallery ?: stringResource(Res.string.image_picker_gallery)
+    val openingLabel = labels?.opening ?: stringResource(Res.string.image_picker_opening)
+    val preparingLabel = labels?.preparing ?: stringResource(Res.string.image_preparing)
+    val cameraLabel = labels?.camera ?: stringResource(Res.string.image_picker_camera)
+    val uploadingLabel = labels?.uploading ?: stringResource(Res.string.image_uploading)
+    val selectedPendingLabel = labels?.selected ?: stringResource(Res.string.product_image_selected_pending)
+    val savedRemoteLabel = labels?.saved ?: stringResource(Res.string.product_image_saved_remote)
+    val prepareFailedMessage = labels?.prepareError ?: stringResource(Res.string.error_image_prepare_failed)
+    val pickerOpenFailedMessage = labels?.galleryError ?: stringResource(Res.string.error_image_picker_open_failed)
+    val cameraOpenFailedMessage = labels?.cameraError ?: stringResource(Res.string.error_camera_open_failed)
 
     LaunchedEffect(isUploading, pendingImageBytes, currentRemoteImageUrl) {
         if (isUploading) {

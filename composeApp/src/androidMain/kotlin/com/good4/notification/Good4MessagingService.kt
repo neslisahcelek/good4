@@ -36,7 +36,7 @@ class Good4MessagingService : FirebaseMessagingService() {
                 .setContentIntent(pending).setAutoCancel(true)
         } else {
             val destination = campusPushDestination(
-                message.data["recipientUid"], message.data["type"], message.data["conversationId"] ?: message.data["listingId"]
+                message.data["recipientUid"], message.data["type"], message.data["conversationId"] ?: message.data["listingId"] ?: message.data["activityId"]
             ) ?: return
             val id = (destination.type + destination.targetId).hashCode()
             val pending = PendingIntent.getActivity(this, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -46,7 +46,7 @@ class Good4MessagingService : FirebaseMessagingService() {
                 .setContentText(message.notification?.body ?: "Yeni bir bildirimin var.")
                 .setContentIntent(pending).setAutoCancel(true)
         }
-        val id = notificationId?.hashCode() ?: (message.data["type"] + message.data["conversationId"] + message.data["listingId"]).hashCode()
+        val id = notificationId?.hashCode() ?: (message.data["type"] + message.data["conversationId"] + message.data["listingId"] + message.data["activityId"]).hashCode()
         runCatching { manager.notify(id, builder.build()) }
     }
 }

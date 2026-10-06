@@ -17,8 +17,8 @@ class HomeLayoutTest {
         override fun write(uid: String, value: String) { values[uid] = value }
     }
 
-    @Test fun defaultOrderPreservesCurrentHomeAndHidesMenuItems() {
-        assertEquals(listOf("communities", "classSchedule", "campusMap", "academicCalendar", "suspendedMeals", "campusCloset"), defaults.visible)
+    @Test fun defaultOrderPlacesSocialThirdAndCampusClosetFourth() {
+        assertEquals(listOf("communities", "classSchedule", "socialActivities", "campusCloset", "campusMap", "academicCalendar", "suspendedMeals"), defaults.visible)
         assertEquals(listOf("topUp", "tennis", "phoneNumbers", "feedback"), defaults.hidden)
     }
 
@@ -96,7 +96,7 @@ class HomeLayoutTest {
 
     @Test fun movesWithinAndAcrossSectionsUseDestinationIndices() {
         val moved = defaults.move("communities", true, 3)!!
-        assertEquals(listOf("classSchedule", "campusMap", "academicCalendar", "communities", "suspendedMeals", "campusCloset"), moved.visible)
+        assertEquals(listOf("classSchedule", "socialActivities", "campusCloset", "communities", "campusMap", "academicCalendar", "suspendedMeals"), moved.visible)
         val hidden = moved.move("communities", false, 2)!!
         assertEquals(listOf("topUp", "tennis", "communities", "phoneNumbers", "feedback"), hidden.hidden)
         assertEquals("communities", hidden.move("communities", true, 0)!!.visible.first())

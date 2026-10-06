@@ -20,7 +20,7 @@ class CampusMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val data = message.data
         if (data["recipientUid"] != FirebaseAuth.getInstance().currentUser?.uid) return
-        val target = campusPushDestination(data["recipientUid"], data["type"], data["conversationId"] ?: data["listingId"]) ?: return
+        val target = campusPushDestination(data["recipientUid"], data["type"], data["conversationId"] ?: data["listingId"] ?: data["activityId"]) ?: return
         val manager = NotificationManagerCompat.from(this)
         if (!manager.areNotificationsEnabled()) return
         val intent = Intent(this, MainActivity::class.java).apply {

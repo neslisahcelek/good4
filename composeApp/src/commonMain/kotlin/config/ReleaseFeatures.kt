@@ -22,6 +22,9 @@ object ReleaseFeatures {
     /** Kampüs Dolabı uses V2 market callables and is available on V2 projects. */
     val campusCloset: Boolean get() = isV2
 
+    /** Sosyal etkinlikler use the V2 social callables; the server keeps them off until app_config enables them. */
+    val socialActivities: Boolean get() = isV2
+
     /** In-app staff panels still use legacy collections; V2 staff are sent to the web panel. */
     val inAppStaffPanels: Boolean get() = !isV2
 

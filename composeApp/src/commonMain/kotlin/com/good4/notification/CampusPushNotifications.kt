@@ -18,10 +18,15 @@ import kotlinx.serialization.json.put
 data class PushDeviceState(val token: String? = null, val permission: String = "unknown", val revision: Long = 0)
 data class CampusPushDestination(val recipientUid: String, val type: String, val targetId: String)
 
+private val CAMPUS_PUSH_TYPES = setOf(
+    "market_message", "market_listing",
+    "social_request", "social_activity", "social_conversation", "social_message"
+)
+
 /** Only the primary account may open a notification; IDs are never treated as URLs. */
 fun campusPushDestination(recipientUid: String?, type: String?, targetId: String?): CampusPushDestination? {
     if (recipientUid.isNullOrBlank() || recipientUid.length > 128) return null
-    if (type != "market_message" && type != "market_listing") return null
+    if (type == null || type !in CAMPUS_PUSH_TYPES) return null
     if (targetId.isNullOrBlank() || targetId.length > 300 || targetId.any { it == '/' || it.isWhitespace() || it.isISOControl() }) return null
     return CampusPushDestination(recipientUid, type, targetId)
 }

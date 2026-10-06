@@ -37,7 +37,7 @@ class HomeLayoutViewModel(
 
     private fun stateFor(uid: String?): HomeLayoutState {
         if (uid.isNullOrBlank()) return HomeLayoutState()
-        val shortcuts = availableHomeShortcuts(UserRole.STUDENT, ReleaseFeatures.suspendedMeals, ReleaseFeatures.campusCloset)
+        val shortcuts = availableHomeShortcuts(UserRole.STUDENT, ReleaseFeatures.suspendedMeals, ReleaseFeatures.campusCloset, ReleaseFeatures.socialActivities)
         return HomeLayoutState(uid, shortcuts, store.read(uid, shortcuts.map { it.definition }))
     }
 

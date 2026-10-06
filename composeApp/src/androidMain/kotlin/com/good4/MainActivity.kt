@@ -73,6 +73,6 @@ class MainActivity : ComponentActivity() {
     }
     private fun receivePush(intent: Intent?) {
         CampusPushNotifications.receive(intent?.getStringExtra("recipientUid"), intent?.getStringExtra("type"),
-            intent?.getStringExtra("conversationId") ?: intent?.getStringExtra("listingId"))
+            intent?.getStringExtra("conversationId") ?: intent?.getStringExtra("listingId") ?: intent?.getStringExtra("activityId"))
     }
 }

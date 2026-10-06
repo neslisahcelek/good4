@@ -215,6 +215,9 @@ service cloud.firestore {
     // Kampüs Dolabı (marketListings, marketConversations, marketUserState,
     // marketReports, marketViolations) is read and written only through the
     // market callables, so the default rule below keeps it closed to clients.
+    // Sosyal etkinlikler (socialActivities and their joinRequests,
+    // socialConversations, socialUserState, socialReports) work the same way
+    // through the social callables.
 
     match /auditLogs/{logId} {
       allow read: if isGood4Admin();
