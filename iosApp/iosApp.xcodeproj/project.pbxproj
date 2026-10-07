@@ -88,12 +88,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D09141522F30FC03007C3994 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
+				FIRE00012F30FC02007C3994 /* [Firebase] Archive Symbols Preflight */,
 				FD0000012F30FC02007C3994 /* [Kotlin] Embed and Sign Apple Framework */,
 				A1B2C3D4E5F60718293A4B5C /* [Firebase] Copy GoogleService-Info.plist */,
 				D09141432F30FC02007C3994 /* Sources */,
 				D09141442F30FC02007C3994 /* Frameworks */,
 				D09141452F30FC02007C3994 /* Resources */,
 				306ABF9653E24CFB1E3DD5C1 /* [MapLibre] Copy Archive dSYM */,
+				FIRE00022F30FC02007C3994 /* [Firebase] Verify Archive Symbols */,
 			);
 			buildRules = (
 			);
@@ -178,6 +180,32 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		FIRE00012F30FC02007C3994 /* [Firebase] Archive Symbols Preflight */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ();
+			name = "[Firebase] Archive Symbols Preflight";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"${SRCROOT}/scripts/firestore-archive-symbols.sh\" preflight\n";
+			showEnvVarsInLog = 0;
+		};
+		FIRE00022F30FC02007C3994 /* [Firebase] Verify Archive Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ();
+			name = "[Firebase] Verify Archive Symbols";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"${SRCROOT}/scripts/firestore-archive-symbols.sh\" verify\n";
+			showEnvVarsInLog = 0;
+		};
 		306ABF9653E24CFB1E3DD5C1 /* [MapLibre] Copy Archive dSYM */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -519,8 +547,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.9.0;
+				kind = exactVersion;
+				version = 12.19.2;
 			};
 		};
 		PKG000022F30FC02007C3994 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
