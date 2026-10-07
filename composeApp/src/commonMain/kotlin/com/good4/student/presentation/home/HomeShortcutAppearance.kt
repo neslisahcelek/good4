@@ -7,7 +7,7 @@ import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Map
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.SportsTennis
@@ -31,7 +31,7 @@ data class HomeShortcutAppearance(val title: String, val icon: ImageVector, val 
 @Composable
 fun HomeShortcut.appearance(communityManager: Boolean = false): HomeShortcutAppearance = when (this) {
     HomeShortcut.COMMUNITIES -> HomeShortcutAppearance(if (communityManager) "Topluluğu Yönet" else "Topluluklar", Icons.Outlined.Groups, Color(0xFF75D9BE))
-    HomeShortcut.CLASS_SCHEDULE -> HomeShortcutAppearance("Ders Programı", Icons.Outlined.MenuBook, Color(0xFF4B9FD1))
+    HomeShortcut.CLASS_SCHEDULE -> HomeShortcutAppearance("Ders Programı", Icons.AutoMirrored.Outlined.MenuBook, Color(0xFF4B9FD1))
     HomeShortcut.CAMPUS_MAP -> HomeShortcutAppearance("Kampüs Haritası", Icons.Outlined.Map, PrimaryGreen)
     HomeShortcut.ACADEMIC_CALENDAR -> HomeShortcutAppearance("Akademik Takvim", Icons.Outlined.CalendarMonth, Color(0xFFA58DEB))
     HomeShortcut.SUSPENDED_MEALS -> HomeShortcutAppearance("Askıda Yemek", Icons.Outlined.ShoppingCart, Color(0xFF8CB7ED))

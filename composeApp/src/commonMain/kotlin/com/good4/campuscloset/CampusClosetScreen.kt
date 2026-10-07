@@ -45,7 +45,7 @@ import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Inventory2
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Search
@@ -106,7 +106,7 @@ internal val CATEGORY_STYLES: Map<String?, CategoryStyle> = mapOf(
     "accessories" to CategoryStyle(Res.string.campus_closet_aksesuar, Icons.Outlined.ShoppingBag, ClosetAccessoriesAccent),
     "electronics" to CategoryStyle(Res.string.campus_closet_elektronik, Icons.Outlined.Devices, ClosetElectronicsAccent),
     "sports" to CategoryStyle(Res.string.campus_closet_spor, Icons.Outlined.SportsSoccer, ClosetSportsAccent),
-    "books" to CategoryStyle(Res.string.campus_closet_kitap, Icons.Outlined.MenuBook, ClosetBooksAccent),
+    "books" to CategoryStyle(Res.string.campus_closet_kitap, Icons.AutoMirrored.Outlined.MenuBook, ClosetBooksAccent),
     "dorm" to CategoryStyle(Res.string.campus_closet_yurt_ev, Icons.Outlined.Bed, ClosetDormAccent),
     "hobby" to CategoryStyle(Res.string.campus_closet_hobi, Icons.Outlined.MusicNote, ClosetHobbyAccent),
     "other" to CategoryStyle(Res.string.campus_closet_other, Icons.Outlined.Category, ClosetOtherAccent)
