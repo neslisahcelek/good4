@@ -90,7 +90,7 @@ Bilinen sorun: `npm run test:functions` içinde iki eski eşzamanlılık testi (
 - [x] **P1 — Özellik kapatma anahtarı:** tüm öğrenci okuma ve yönetim/yazma yolları yalnız literal true kabul eder. Eksik/false/metin/sayı değerleri reddedilir; summary kapalı durum ve sıfır sayaç döndürür. Admin işlemleri kapalıyken çalışır.
 - [x] **P2 — Sohbet imleci:** bütün metin ve sistem mesajları işlem içinde artan sequence alır. İstemci s: imlecini tutar ve 50 mesajı aşan sayfaları sırayla tüketir. Eski timestamp istemcileri için zaman damgaları kesin artar ve sayfalar eskiden yeniye verilir; numarasız eski geçmiş korunur.
 - [x] **P2 — Moderasyon tekrarı:** açık şikayet kontrolü karar/audit ile aynı transaction içindedir. İkinci/eşzamanlı karar SOCIAL_REPORT_RESOLVED ile reddedilir; yeni bir şikayet olarak yeniden açılan rapor çözülebilir.
-- [ ] Canlıya alma sırası (kullanıcı onayıyla): fonksiyonlar → indeksler → kurallar; özellik `app_config/social_activities.enabled=false` ile kapalı başlar.
+- [x] Canlıya alma: sonraki açık deploy izniyle fonksiyonlar → indeksler → kurallar ve admin paneli yayımlandı; özellik kapalı, demo verisi aktarılmadı. Sonuçlar son bölümde.
 - [ ] Android'de simülatör/emülatörde ekranlar denenmedi (yalnızca derleme).
 - [ ] Badminton ve bazı türlerin ikonları Material setindeki en yakın ikonlar (örn. badminton için raket); özel ikon istenirse değiştirilebilir.
 
@@ -204,3 +204,15 @@ Düzeltme, güncel main üzerine hazırlanan teslim commit'i `34e0fc8` üzerinde
 Kalıcı tam çıktılar Codex Security artifact koleksiyonunda: `artifacts/verification/server.log`, `rules.log`, `gradle.log`, `web.log`, `photo-proof.log`. Simülatör ve deploy sonucu aşağıya tamamlandıktan sonra yazılır.
 
 Simülatör tekrar kontrolü: iPhone 17 Pro / iOS 26.5, iosApp Test, demo emülatörü. Deniz profil penceresindeki private JPEG fotoğrafı ve Elif hesabındaki mesaj listesi/Okey sohbet başlığındaki aynı fotoğraf görsel olarak doğrulandı. Maskeli ad korunuyor; kaldırılmış gri uyarı dönmedi. Xcode BUILD SUCCEEDED. Canlı migration uygulama ve tekrar envanter sonucu: enabled=false, objects=0, changed=0, remainingChanges=0. Önceki yayın izni geçerlidir; yayın sırasında demo verisi aktarılmayacak.
+
+### Canlı yayın ve teslim sonucu — 7 Ekim 2026
+
+Kullanıcının sonraki açık commit/push/deploy talimatlarıyla düzeltme teslim edildi. Uzak düzeltme commit'i `f529626`, yerel geliştirme dalına taşınan eşdeğeri `8f8b9eb`. Neslişah deposundaki PR #10 güncellendi; main birleştirilmedi.
+
+`good4tr-v2` yayını: 25 Sosyal fonksiyonu oluşturuldu, `deleteMyAccount` güncellendi (26 başarılı işlem). İndeksler, Firestore ve Storage kuralları yayımlandı; ilgili 12 indeks READY. Mevcut bildirim ayarı korundu. Admin web sürümü `9a59a86233a273ea`: önceki 30 dosyanın içeriği/hash'i ve bütün Hosting ayarları korundu; HTML, yalnız admin adreslerinde yeni modülü yükleyen küçük bir yönlendiriciye geçti. Genel site eski modülü kullanır. Yerel landing değişiklikleri yayına alınmadı.
+
+Son canlı kontrol: Social enabled=false; socialActivities/socialConversations/socialUserState/socialReports her biri 0 kayıt; denizdemo/yenidemo/selif canlıda yok; kimliksiz feed HTTP 401 UNAUTHENTICATED. Fotoğraf migration son envanteri 0 nesne/0 değişiklik. Panel HTTPS 200 ve giriş ekranı açıldı; yeni modülde sosyal şikayet/fotoğraf kaldırma çağrıları doğrulandı. Canlı admin hesabıyla oturum açılmadı. Yerel admin panelinde private JPEG fotoğrafı img öğesinde görsel olarak tekrar doğrulandı.
+
+Değişen kaynaklar: SocialComponents.kt, SocialModels.kt, SocialViewModels.kt, index.ts, social.ts, socialProfile.ts, social.test.ts, privatize-social-photos.mjs, CANONICAL_DATA_MODEL.md ve bu HANDOFF. Ana çalışma ağacındaki sosyal dışı 9 değiştirilmiş dosyanın SHA256 değerleri teslim öncesiyle aynı.
+
+Tam yayın çıktıları kalıcı artifact koleksiyonunda `artifacts/verification/deploy-functions.log`, `deploy-indexes.log`, `deploy-rules.log`, `deploy-hosting.log`, `live-verification.log`, `live-migration.log`. Görsel kanıt: `profile.png`, `chat.png`, `admin-photo.png`, `live-panel.png`.
