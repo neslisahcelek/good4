@@ -91,7 +91,9 @@ Bilinen sorun: `npm run test:functions` içinde iki eski eşzamanlılık testi (
 - [x] **P2 — Sohbet imleci:** bütün metin ve sistem mesajları işlem içinde artan sequence alır. İstemci s: imlecini tutar ve 50 mesajı aşan sayfaları sırayla tüketir. Eski timestamp istemcileri için zaman damgaları kesin artar ve sayfalar eskiden yeniye verilir; numarasız eski geçmiş korunur.
 - [x] **P2 — Moderasyon tekrarı:** açık şikayet kontrolü karar/audit ile aynı transaction içindedir. İkinci/eşzamanlı karar SOCIAL_REPORT_RESOLVED ile reddedilir; yeni bir şikayet olarak yeniden açılan rapor çözülebilir.
 - [x] Canlıya alma: sonraki açık deploy izniyle fonksiyonlar → indeksler → kurallar ve admin paneli yayımlandı; özellik kapalı, demo verisi aktarılmadı. Sonuçlar son bölümde.
-- [ ] Android'de simülatör/emülatörde ekranlar denenmedi (yalnızca derleme).
+- [x] Android emülatöründe ana sayfa sırası/simge, Sosyal iki sütun akışı, mesaj listesi ve Okey birebir sohbeti açıldı (Pixel 10 Pro / Android 17, 7 Ekim). Maskeli ad/private fotoğraf ve alt giriş alanı kontrol edildi; taşma görülmedi. Eski demo oturumu emülatör sıfırlaması sonrası geçersizdi; yalnız test uygulaması verisi temizlenip Elif örnek hesabıyla yeniden giriş yapıldı.
+- [ ] Android oluşturma/profil/ilk kullanım formlarının tüm ayrıntıları ve klavyeli durumlar ayrıca denenmeli; bu turdaki Android kontrolü mağaza çekimleri için akış/mesajlarla sınırlıydı.
+- [x] Sosyal için önceki mağaza setinin formatında 2 iOS + 2 Android görseli hazırlandı. Tam boyutlu PNG, düzenlenebilir SVG, ham çekimler ve önizlemeler `docs/store-assets/2026-10-07-social/` altında. Boyut/RGB/alpha/metadata kontrolü ve görsel kontrol tamamlandı; mağazalara yüklenmedi.
 - [ ] Badminton ve bazı türlerin ikonları Material setindeki en yakın ikonlar (örn. badminton için raket); özel ikon istenirse değiştirilebilir.
 
 ## 6 Ekim 2026 doğrulama kanıtları

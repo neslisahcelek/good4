@@ -1294,4 +1294,12 @@
     <string name="social_admin_photo_removed">Profil fotoğrafı kaldırıldı. Şikayeti incelemeye devam edebilirsin.</string>
     <string name="social_admin_profile_photo">Şikayet edilen kullanıcının profil fotoğrafı</string>
     <string name="social_admin_remove_photo">Profil fotoğrafını kaldır</string>
+
+    <!-- Sosyal mağaza görselleri: uygulama içi metinlerle aynı Türkçe kaynak. -->
+    <string name="social_store_feed_title_first">Kampüste plan yap,</string>
+    <string name="social_store_feed_title_second">birlikte katıl</string>
+    <string name="social_store_feed_subtitle">Spor, masa oyunları ve kahve buluşmaları</string>
+    <string name="social_store_chat_title_first">Birlikte planla,</string>
+    <string name="social_store_chat_title_second">birebir konuş</string>
+    <string name="social_store_chat_subtitle">İsteğin kabul edilince sohbet başlar</string>
 </resources>
