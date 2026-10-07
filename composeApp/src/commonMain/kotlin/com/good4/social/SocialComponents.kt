@@ -1,5 +1,8 @@
 package com.good4.social
 
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -134,12 +137,17 @@ internal fun SocialActivityRow(
 }
 
 /** The student's photo, or their initials until they add one. */
+@OptIn(ExperimentalEncodingApi::class)
 @Composable
 internal fun SocialAvatar(name: String, photoUrl: String?, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+    val photo = remember(photoUrl) {
+        photoUrl?.takeIf { it.startsWith("data:image/jpeg;base64,") && it.length <= 90_000 }
+            ?.substringAfter(',')?.let { runCatching { Base64.decode(it) }.getOrNull() }
+    }
     Box(modifier.size(size).clip(CircleShape)) {
         ClosetAvatar(name, Modifier.fillMaxSize())
-        if (!photoUrl.isNullOrBlank()) {
-            AsyncImage(model = photoUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        if (photo != null) {
+            AsyncImage(model = photo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
     }
 }

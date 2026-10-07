@@ -38,6 +38,7 @@ import {
   SOCIAL_PROFILE_LIMITS,
   type SocialNameMode,
   type SocialProfile,
+  type SocialPhotoStore,
 } from "./socialProfile.js";
 import { randomUUID } from "node:crypto";
 
@@ -108,10 +109,11 @@ const CLEANUP_MAX_PAGES = 10;
 export interface SocialDeps {
   notify(uid: string, payload: PushPayload): Promise<unknown>;
   now?: () => number;
+  photos?: SocialPhotoStore;
 }
 
 /** Profile photos go to Storage, like Kampüs Dolabı photos. */
-export type SocialProfileDeps = Pick<SocialDeps, "now"> & { photos: MarketPhotoStore };
+export type SocialProfileDeps = Pick<SocialDeps, "now"> & { photos: SocialPhotoStore };
 
 function nowOf(deps: Pick<SocialDeps, "now">): number {
   return deps.now?.() ?? Date.now();
@@ -205,8 +207,14 @@ async function requireSocialMember(
   return { user, state, moderation, eduDomain: eduDomainOf(String(user.get("eduEmail"))) };
 }
 
+async function requireEnabledReader(database: Firestore, transaction: Transaction, uid: string): Promise<void> {
+  await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+  const config = await transaction.get(database.doc("app_config/social_activities"));
+  if (config.get("enabled") !== true) throw new HttpsError("unavailable", "SOCIAL_DISABLED");
+}
+
 async function requireSocialReader(database: Firestore, uid: string): Promise<void> {
-  await database.runTransaction((transaction) => requireActiveActor(database, transaction, uid, SOCIAL_ROLES));
+  await database.runTransaction((transaction) => requireEnabledReader(database, transaction, uid));
 }
 
 function dailyCount(state: DocumentSnapshot, field: string, now: number): number {
@@ -224,7 +232,7 @@ export async function acceptSocialTermsService(
   database: Firestore,
   uid: string,
   input: { version?: unknown; nameMode?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ): Promise<{ termsVersion: number }> {
   if (input.version !== SOCIAL_TERMS_VERSION) {
     throw new HttpsError("failed-precondition", "SOCIAL_TERMS_VERSION_OUTDATED");
@@ -234,7 +242,7 @@ export async function acceptSocialTermsService(
     ? null
     : requireOneOf(input.nameMode, SOCIAL_NAME_MODES, "SOCIAL_NAME_MODE_INVALID");
   await database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     transaction.set(database.doc(`socialUserState/${uid}`), {
       termsVersion: SOCIAL_TERMS_VERSION,
       termsAcceptedAt: Timestamp.fromMillis(nowOf(deps)),
@@ -321,8 +329,8 @@ export async function setSocialProfileService(
   if ((hasPhoto || removePhoto) && previousFolder && previousFolder !== folder) {
     await deps.photos.deletePrefix(previousFolder).catch((error) => console.error("social: old profile photo cleanup failed", error));
   }
-  const [user, state] = await Promise.all([database.doc(`users/${uid}`).get(), stateRef.get()]);
-  return { profile: profileFrom(user, state) };
+  await requireSocialReader(database, uid);
+  return { profile: (await loadSocialProfiles(database, [uid], uid, deps.photos)).get(uid)! };
 }
 
 // ---------------------------------------------------------------------------
@@ -394,7 +402,7 @@ export async function createSocialActivityService(
   database: Firestore,
   uid: string,
   input: Record<string, unknown>,
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ): Promise<{ activityId: string; status: "open" }> {
   const now = nowOf(deps);
   const activity = parseActivityInput(input, now);
@@ -453,7 +461,7 @@ export async function cancelSocialActivityService(
   const activityId = requireId(input.activityId, "ACTIVITY_ID");
   const activityRef = database.doc(`socialActivities/${activityId}`);
   const result = await database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     const activity = await transaction.get(activityRef);
     if (!activity.exists || activity.get("organizerUid") !== uid) {
       throw new HttpsError("not-found", "SOCIAL_ACTIVITY_NOT_FOUND");
@@ -474,7 +482,7 @@ export async function cancelSocialActivityService(
     conversations.filter((conversation) => conversation.exists && conversation.get("status") === "open")
       .forEach((conversation) => {
         const participantUid = String(conversation.get("participantUid"));
-        addSystemMessage(transaction, conversation.ref, "Etkinlik iptal edildi.", participantUid, at, { status: "closed" });
+        addSystemMessage(transaction, conversation, "Etkinlik iptal edildi.", participantUid, at, { status: "closed" });
         transaction.set(database.doc(`socialUserState/${participantUid}`), { unreadCount: FieldValue.increment(1) }, { merge: true });
       });
     return { accepted, title: String(activity.get("title") ?? "") };
@@ -490,13 +498,16 @@ export async function cancelSocialActivityService(
 /** A note from Good4 inside a chat ("İsteğin kabul edildi", "Etkinlik iptal edildi"). */
 function addSystemMessage(
   transaction: Transaction,
-  conversationRef: DocumentReference,
+  conversation: DocumentSnapshot,
   text: string,
   unreadFor: string,
   at: Timestamp,
   extra: Record<string, unknown> = {},
 ) {
-  transaction.create(conversationRef.collection("messages").doc(), { senderUid: null, type: "system", text, createdAt: at });
+  const conversationRef = conversation.ref;
+  at = Timestamp.fromMillis(Math.max(at.toMillis(), millisOf(conversation.get("lastMessageAt")) + 1));
+  const sequence = Number(conversation.get("messageCount") ?? 0) + 1;
+  transaction.create(conversationRef.collection("messages").doc(), { senderUid: null, type: "system", text, createdAt: at, sequence });
   transaction.update(conversationRef, {
     ...extra,
     lastMessageText: text,
@@ -618,7 +629,7 @@ export async function withdrawSocialRequestService(
   const requestRef = activityRef.collection("joinRequests").doc(uid);
   const conversationRef = database.doc(`socialConversations/${conversationIdOf(activityId, uid)}`);
   const left = await database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     const [activity, request, conversation] = await Promise.all([
       transaction.get(activityRef), transaction.get(requestRef), transaction.get(conversationRef),
     ]);
@@ -640,7 +651,7 @@ export async function withdrawSocialRequestService(
     const name = String(request.get("requesterName") ?? "Öğrenci");
     // A blocked chat keeps its block; only an open one gets the note and closes.
     if (conversation.exists && conversation.get("status") === "open") {
-      addSystemMessage(transaction, conversationRef, `${name} katılımdan vazgeçti.`, organizerUid, at, { status: "closed" });
+      addSystemMessage(transaction, conversation, `${name} katılımdan vazgeçti.`, organizerUid, at, { status: "closed" });
       transaction.set(database.doc(`socialUserState/${organizerUid}`), { unreadCount: FieldValue.increment(1) }, { merge: true });
     }
     return { organizerUid, name, title: String(activity.get("title") ?? "") };
@@ -739,7 +750,7 @@ export async function respondToSocialRequestService(
       createdAt: at,
       updatedAt: at,
     });
-    transaction.create(conversationRef.collection("messages").doc(), { senderUid: null, type: "system", text, createdAt: at });
+    transaction.create(conversationRef.collection("messages").doc(), { senderUid: null, type: "system", text, createdAt: at, sequence: 1 });
     transaction.set(database.doc(`socialUserState/${requesterUid}`), { unreadCount: FieldValue.increment(1) }, { merge: true });
     return { title: String(activity.get("title") ?? "") };
   });
@@ -782,7 +793,7 @@ function activityForStudent(activity: DocumentSnapshot, viewerUid: string, now: 
   };
 }
 
-async function viewerContext(database: Firestore, uid: string, now: number) {
+async function viewerContext(database: Firestore, uid: string, now: number, photos?: SocialPhotoStore) {
   const [user, state, moderation, config] = await Promise.all([
     database.doc(`users/${uid}`).get(),
     database.doc(`socialUserState/${uid}`).get(),
@@ -790,7 +801,10 @@ async function viewerContext(database: Firestore, uid: string, now: number) {
     database.doc("app_config/social_activities").get(),
   ]);
   if (!user.exists || user.get("status") !== "active") throw new HttpsError("permission-denied", "ACCOUNT_NOT_ACTIVE");
+  if (!SOCIAL_ROLES.includes(user.get("role"))) throw new HttpsError("permission-denied", "ROLE_NOT_ALLOWED");
   const verified = hasVerifiedCampusEmail(user);
+  const ownProfile = config.get("enabled") === true
+    ? (await loadSocialProfiles(database, [uid], uid, photos)).get(uid) : null;
   const eduDomain = verified ? eduDomainOf(String(user.get("eduEmail"))) : null;
   const suspendedUntil = moderation.get("suspendedUntil");
   return {
@@ -806,7 +820,7 @@ async function viewerContext(database: Firestore, uid: string, now: number) {
       nameMode: profileFrom(user, state).nameMode,
       shownName: openName(user.get("displayName")),
       maskedName: publicName(user.get("displayName")),
-      photoUrl: profileFrom(user, state).photoThumbUrl,
+      photoUrl: ownProfile?.photoThumbUrl ?? null,
       suspendedUntil: suspendedUntil instanceof Timestamp && suspendedUntil.toMillis() > now ? iso(suspendedUntil) : null,
       unreadCount: Number(state.get("unreadCount") ?? 0),
     },
@@ -817,10 +831,11 @@ async function viewerContext(database: Firestore, uid: string, now: number) {
 export async function getSocialSummaryService(
   database: Firestore,
   uid: string,
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
-  const viewer = await viewerContext(database, uid, now);
+  const viewer = await viewerContext(database, uid, now, deps.photos);
+  if (!viewer.me.enabled) return { me: { ...viewer.me, unreadCount: 0, pendingRequestCount: 0 } };
   const mine = await database.collection("socialActivities")
     .where("organizerUid", "==", uid).where("status", "==", "open").limit(20).get();
   const pendingRequestCount = mine.docs
@@ -837,10 +852,11 @@ export async function getSocialFeedService(
   database: Firestore,
   uid: string,
   input: { kind?: unknown; after?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
-  const viewer = await viewerContext(database, uid, now);
+  const viewer = await viewerContext(database, uid, now, deps.photos);
+  if (!viewer.me.enabled) throw new HttpsError("unavailable", "SOCIAL_DISABLED");
   const kind = input.kind === undefined || input.kind === null || input.kind === ""
     ? null
     : requireOneOf(input.kind, SOCIAL_KINDS, "SOCIAL_KIND_INVALID");
@@ -870,23 +886,24 @@ export async function getSocialActivityService(
   database: Firestore,
   uid: string,
   input: { activityId?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
   const activityId = requireId(input.activityId, "ACTIVITY_ID");
   const activityRef = database.doc(`socialActivities/${activityId}`);
   const [viewer, activity, request] = await Promise.all([
-    viewerContext(database, uid, now),
+    viewerContext(database, uid, now, deps.photos),
     activityRef.get(),
     activityRef.collection("joinRequests").doc(uid).get(),
   ]);
+  if (!viewer.me.enabled) throw new HttpsError("unavailable", "SOCIAL_DISABLED");
   const isMine = activity.get("organizerUid") === uid;
   const visible = activity.exists && activity.get("status") !== "removed" && (isMine || request.exists
     || (LIVE_STATUSES.includes(String(activity.get("status")))
       && !viewer.blocked.has(String(activity.get("organizerUid")))));
   if (!visible) throw new HttpsError("not-found", "SOCIAL_ACTIVITY_NOT_FOUND");
   const status = request.exists ? requestStatusForRequester(request.get("status")) : null;
-  const organizer = (await loadSocialProfiles(database, [String(activity.get("organizerUid"))])).get(String(activity.get("organizerUid")));
+  const organizer = (await loadSocialProfiles(database, [String(activity.get("organizerUid"))], uid, deps.photos)).get(String(activity.get("organizerUid")));
   // A photo is shown to verified students of the same university only.
   const sameCampus = viewer.eduDomain !== null && viewer.eduDomain === activity.get("eduDomain");
   return {
@@ -909,7 +926,7 @@ export async function listSocialActivityRequestsService(
   database: Firestore,
   uid: string,
   input: { activityId?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
   const activityId = requireId(input.activityId, "ACTIVITY_ID");
@@ -922,7 +939,7 @@ export async function listSocialActivityRequestsService(
   const requests = await activityRef.collection("joinRequests")
     .where("status", "in", ACTIVE_REQUEST_STATUSES).orderBy("createdAt", "asc")
     .limit(SOCIAL_LIMITS.maxPendingRequestsPerActivity + SOCIAL_LIMITS.maxCapacity).get();
-  const profiles = await loadSocialProfiles(database, requests.docs.map((request) => request.id));
+  const profiles = await loadSocialProfiles(database, requests.docs.map((request) => request.id), uid, deps.photos);
   return {
     activity: activityForStudent(activity, uid, now, true),
     requests: requests.docs.map((request) => ({
@@ -941,7 +958,7 @@ export async function listSocialActivityRequestsService(
 export async function listMySocialActivitiesService(
   database: Firestore,
   uid: string,
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
   await requireSocialReader(database, uid);
@@ -1046,9 +1063,10 @@ export async function sendSocialMessageService(
     if (isBlockedBetween(member.moderation, uid, otherModeration, otherUid)) {
       throw new HttpsError("permission-denied", "SOCIAL_BLOCKED");
     }
-    const at = Timestamp.fromMillis(now);
+    const at = Timestamp.fromMillis(Math.max(now, millisOf(conversation.get("lastMessageAt")) + 1));
     const senderName = publicName(member.user.get("displayName"));
-    transaction.create(messageRef, { senderUid: uid, type: "text", text, createdAt: at });
+    transaction.create(messageRef, { senderUid: uid, type: "text", text, createdAt: at,
+      sequence: Number(conversation.get("messageCount") ?? 0) + 1 });
     transaction.update(conversationRef, {
       lastMessageText: text.slice(0, 120),
       lastMessageAt: at,
@@ -1080,7 +1098,7 @@ export async function markSocialConversationReadService(
   const conversationRef = database.doc(`socialConversations/${conversationId}`);
   const stateRef = database.doc(`socialUserState/${uid}`);
   return database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     const [conversation, state] = await Promise.all([transaction.get(conversationRef), transaction.get(stateRef)]);
     requireParticipant(conversation, uid);
     const unread = Number(conversation.get(`unread.${uid}`) ?? 0);
@@ -1096,7 +1114,7 @@ export async function markSocialConversationReadService(
 export async function listSocialConversationsService(
   database: Firestore,
   uid: string,
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
   await requireSocialReader(database, uid);
@@ -1106,7 +1124,7 @@ export async function listSocialConversationsService(
     database.doc(`socialUserState/${uid}`).get(),
   ]);
   const shown = page.docs.filter((conversation) => conversation.get("status") !== "deleting");
-  const others = await loadSocialProfiles(database, shown.map((conversation) => otherUidOf(conversation, uid)));
+  const others = await loadSocialProfiles(database, shown.map((conversation) => otherUidOf(conversation, uid)), uid, deps.photos);
   return {
     unreadCount: Number(state.get("unreadCount") ?? 0),
     conversations: shown.map((conversation) => conversationForStudent(conversation, uid, now, others)),
@@ -1121,7 +1139,7 @@ export async function getSocialMessagesService(
   database: Firestore,
   uid: string,
   input: { conversationId?: unknown; after?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ) {
   const now = nowOf(deps);
   await requireSocialReader(database, uid);
@@ -1129,22 +1147,50 @@ export async function getSocialMessagesService(
   const conversationRef = database.doc(`socialConversations/${conversationId}`);
   const conversation = await conversationRef.get();
   requireParticipant(conversation, uid);
-  let query = conversationRef.collection("messages").orderBy("createdAt", "desc");
-  if (input.after !== undefined && input.after !== null) {
-    const after = Date.parse(String(input.after));
-    if (Number.isNaN(after)) throw new HttpsError("invalid-argument", "SOCIAL_CURSOR_INVALID");
-    query = query.endBefore(Timestamp.fromMillis(after));
+  const sequenceCursor = typeof input.after === "string" && /^s:\d+$/.test(input.after)
+    ? Number(input.after.slice(2)) : null;
+  let query: Query; let incremental = false;
+  if (sequenceCursor !== null) {
+    if (!Number.isSafeInteger(sequenceCursor)) throw new HttpsError("invalid-argument", "SOCIAL_CURSOR_INVALID");
+    query = conversationRef.collection("messages").where("sequence", ">", sequenceCursor).orderBy("sequence", "asc");
+    incremental = true;
+  } else {
+    query = conversationRef.collection("messages").orderBy("createdAt", "desc");
+    if (input.after !== undefined && input.after !== null) {
+      const after = typeof input.after === "string" ? Date.parse(input.after) : Number.NaN;
+      if (Number.isNaN(after)) throw new HttpsError("invalid-argument", "SOCIAL_CURSOR_INVALID");
+      // Older clients deduplicate overlap. Oldest-first pages never skip the start of a burst.
+      query = conversationRef.collection("messages").orderBy("createdAt", "asc").startAt(Timestamp.fromMillis(after));
+      incremental = true;
+    }
   }
   const page = await query.limit(POLL_PAGE_SIZE).get();
+  // Preserve unnumbered legacy history while selecting the actual newest numbered messages.
+  const numbered = input.after === undefined || input.after === null
+    ? await conversationRef.collection("messages").orderBy("sequence", "desc").limit(POLL_PAGE_SIZE).get() : null;
+  const messages = incremental ? page.docs : [...new Map([...page.docs, ...(numbered?.docs ?? [])]
+    .map((message) => [message.id, message])).values()]
+    .sort((left, right) => {
+      const a = left.get("sequence"); const b = right.get("sequence");
+      if (typeof a === "number" && typeof b === "number") return a - b;
+      if (typeof a === "number") return 1;
+      if (typeof b === "number") return -1;
+      return millisOf(left.get("createdAt")) - millisOf(right.get("createdAt")) || left.id.localeCompare(right.id);
+    }).slice(-POLL_PAGE_SIZE);
+  const nextSequence = incremental
+    ? Math.max(sequenceCursor ?? 0, ...messages.map((message) => Number(message.get("sequence") ?? 0)))
+    : Math.max(Number(conversation.get("messageCount") ?? 0), ...messages.map((message) => Number(message.get("sequence") ?? 0)));
   if (Number(conversation.get(`unread.${uid}`) ?? 0) > 0) {
     await markSocialConversationReadService(database, uid, { conversationId });
   }
   return {
     conversation: {
-      ...conversationForStudent(conversation, uid, now, await loadSocialProfiles(database, [otherUidOf(conversation, uid)])),
+      ...conversationForStudent(conversation, uid, now, await loadSocialProfiles(database, [otherUidOf(conversation, uid)], uid, deps.photos)),
       unread: 0,
     },
-    messages: page.docs.reverse().map((message) => ({
+    nextAfter: `s:${nextSequence}`,
+    hasMore: incremental && page.size === POLL_PAGE_SIZE,
+    messages: messages.map((message) => ({
       id: message.id,
       mine: message.get("senderUid") === uid,
       type: String(message.get("type") ?? "text"),
@@ -1167,7 +1213,7 @@ export async function blockSocialUserService(
   database: Firestore,
   uid: string,
   input: { conversationId?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ): Promise<{ blocked: true }> {
   const now = nowOf(deps);
   const { conversationId, activityId, participantUid } = parseConversationId(input.conversationId);
@@ -1176,7 +1222,7 @@ export async function blockSocialUserService(
   const activityRef = database.doc(`socialActivities/${activityId}`);
   const requestRef = activityRef.collection("joinRequests").doc(participantUid);
   await database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     const [conversation, moderation, activity, request] = await Promise.all([
       transaction.get(conversationRef), transaction.get(moderationRef), transaction.get(activityRef), transaction.get(requestRef),
     ]);
@@ -1205,13 +1251,13 @@ export async function unblockSocialUserService(
   database: Firestore,
   uid: string,
   input: { conversationId?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ): Promise<{ unblocked: true; status: string }> {
   const { conversationId, activityId, participantUid } = parseConversationId(input.conversationId);
   const conversationRef = database.doc(`socialConversations/${conversationId}`);
   const requestRef = database.doc(`socialActivities/${activityId}/joinRequests/${participantUid}`);
   const status = await database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     const [conversation, request] = await Promise.all([transaction.get(conversationRef), transaction.get(requestRef)]);
     const otherUid = requireParticipant(conversation, uid);
     const otherModeration = await transaction.get(database.doc(`marketUserState/${otherUid}`));
@@ -1269,7 +1315,7 @@ export async function reportSocialContentService(
 
   const reportRef = database.doc(`socialReports/${targetType}_${targetId}_${uid}`);
   const created = await database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, SOCIAL_ROLES);
+    await requireEnabledReader(database, transaction, uid);
     let activityId: string;
     let reportedUid: string;
     if (targetType === "activity") {
@@ -1319,7 +1365,7 @@ function audit(transaction: Transaction, database: Firestore, actorUid: string, 
   });
 }
 
-export async function listSocialModerationQueueService(database: Firestore, uid: string) {
+export async function listSocialModerationQueueService(database: Firestore, uid: string, deps: Pick<SocialDeps, "photos"> = {}) {
   await requireAdmin(database, uid);
   const [reports, violations] = await Promise.all([
     database.collection("socialReports").where("status", "==", "open").orderBy("createdAt", "asc").limit(100).get(),
@@ -1331,7 +1377,7 @@ export async function listSocialModerationQueueService(database: Firestore, uid:
     ? await database.getAll(...activityIds.map((id) => database.doc(`socialActivities/${id}`)))
     : [];
   const byId = new Map(activities.filter((activity) => activity.exists).map((activity) => [activity.id, activity]));
-  const profiles = await loadSocialProfiles(database, reports.docs.map((report) => String(report.get("reportedUid"))));
+  const profiles = await loadSocialProfiles(database, reports.docs.map((report) => String(report.get("reportedUid"))), uid, deps.photos, true);
   return {
     reports: reports.docs.map((report) => {
       const activity = byId.get(String(report.get("activityId")));
@@ -1373,7 +1419,7 @@ export async function resolveSocialReportService(
   database: Firestore,
   uid: string,
   input: { reportId?: unknown; action?: unknown; suspendDays?: unknown },
-  deps: Pick<SocialDeps, "now"> = {},
+  deps: Pick<SocialDeps, "now" | "photos"> = {},
 ): Promise<{ resolved: true }> {
   const now = nowOf(deps);
   if (typeof input.reportId !== "string" || !/^[A-Za-z]+_[A-Za-z0-9_]{1,300}$/.test(input.reportId)) {
@@ -1391,6 +1437,7 @@ export async function resolveSocialReportService(
     await requireActiveActor(database, transaction, uid, ["good4Admin"]);
     const report = await transaction.get(reportRef);
     if (!report.exists) throw new HttpsError("not-found", "SOCIAL_REPORT_NOT_FOUND");
+    if (report.get("status") !== "open") throw new HttpsError("failed-precondition", "SOCIAL_REPORT_RESOLVED");
     const activityId = String(report.get("activityId"));
     const reportedUid = String(report.get("reportedUid"));
     const at = Timestamp.fromMillis(now);

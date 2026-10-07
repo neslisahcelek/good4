@@ -123,7 +123,7 @@ import {
   unblockSocialUserService,
   withdrawSocialRequestService,
 } from "./social.js";
-import { socialPhotoDownloadUrl } from "./socialProfile.js";
+import { privateSocialPhotoStore } from "./socialProfile.js";
 import { registerPushDeviceService as registerCampusPushDeviceService, unregisterPushDeviceService as unregisterCampusPushDeviceService, sendPushToUser } from "./push.js";
 
 setGlobalOptions({ minInstances: 0, maxInstances: 5 });
@@ -160,7 +160,10 @@ const marketDeps: MarketDeps = {
   notify: (uid, payload) => sendPushToUser(db, uid, payload),
 };
 
+const socialPhotos = privateSocialPhotoStore(storageBucket);
+
 const socialDeps: SocialDeps = {
+  photos: socialPhotos,
   notify: (uid, payload) => sendPushToUser(db, uid, payload),
 };
 
@@ -704,11 +707,7 @@ export const setSocialProfile = onCall({
   timeoutSeconds: 60,
 }, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return setSocialProfileService(db, uid, request.data ?? {}, { photos: {
-    ...marketDeps.photos,
-    save: async (objectName, bytes) => socialPhotoDownloadUrl(await marketDeps.photos.save(objectName, bytes),
-      process.env.FUNCTIONS_EMULATOR === "true" ? process.env.FIREBASE_STORAGE_EMULATOR_HOST : undefined),
-  } });
+  return setSocialProfileService(db, uid, request.data ?? {}, { photos: socialPhotos });
 });
 
 export const createSocialActivity = onCall(callableOptions, async (request) => {
@@ -768,22 +767,22 @@ export const reportSocialContent = onCall(callableOptions, async (request) => {
 
 export const getSocialSummary = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getSocialSummaryService(db, uid);
+  return getSocialSummaryService(db, uid, socialDeps);
 });
 
 export const getSocialFeed = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getSocialFeedService(db, uid, request.data ?? {});
+  return getSocialFeedService(db, uid, request.data ?? {}, socialDeps);
 });
 
 export const getSocialActivity = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getSocialActivityService(db, uid, request.data ?? {});
+  return getSocialActivityService(db, uid, request.data ?? {}, socialDeps);
 });
 
 export const listSocialActivityRequests = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return listSocialActivityRequestsService(db, uid, request.data ?? {});
+  return listSocialActivityRequestsService(db, uid, request.data ?? {}, socialDeps);
 });
 
 export const listMySocialActivities = onCall(callableOptions, async (request) => {
@@ -793,17 +792,17 @@ export const listMySocialActivities = onCall(callableOptions, async (request) =>
 
 export const listSocialConversations = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return listSocialConversationsService(db, uid);
+  return listSocialConversationsService(db, uid, socialDeps);
 });
 
 export const getSocialMessages = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getSocialMessagesService(db, uid, request.data ?? {});
+  return getSocialMessagesService(db, uid, request.data ?? {}, socialDeps);
 });
 
 export const listSocialModerationQueue = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return listSocialModerationQueueService(db, uid);
+  return listSocialModerationQueueService(db, uid, socialDeps);
 });
 
 export const resolveSocialReport = onCall(callableOptions, async (request) => {

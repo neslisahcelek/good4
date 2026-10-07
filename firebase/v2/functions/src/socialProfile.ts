@@ -1,6 +1,8 @@
+import type { Bucket } from "@google-cloud/storage";
 import { type DocumentSnapshot, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { publicName } from "./market.js";
+import { eduDomainOf, publicName } from "./market.js";
+import { hasVerifiedCampusEmail } from "./campusEmailVerification.js";
 
 // How a student appears in Sosyal Etkinlikler: a name (masked by default) and an
 // optional photo. Names are resolved when read, so a later change of the setting
@@ -40,29 +42,60 @@ export interface SocialProfile {
 export function profileFrom(user: DocumentSnapshot | undefined, state: DocumentSnapshot | undefined): SocialProfile {
   const nameMode: SocialNameMode = state?.get("nameMode") === "shown" ? "shown" : "masked";
   const displayName = user?.get("displayName");
-  const photoUrl = state?.get("photoUrl");
-  const photoThumbUrl = state?.get("photoThumbUrl");
+
   return {
     nameMode,
     name: nameMode === "shown" ? openName(displayName) : publicName(displayName),
-    photoUrl: typeof photoUrl === "string" && photoUrl ? photoUrl : null,
-    photoThumbUrl: typeof photoThumbUrl === "string" && photoThumbUrl ? photoThumbUrl : null,
+    photoUrl: null,
+    photoThumbUrl: null,
   };
 }
 
-/** One batched read for every student a screen shows. */
-export async function loadSocialProfiles(database: Firestore, uids: readonly string[]): Promise<Map<string, SocialProfile>> {
+/** Objects are private; image bytes are delivered by authenticated callables only. */
+export interface SocialPhotoStore {
+  save(objectName: string, bytes: Buffer): Promise<string>;
+  read(objectName: string): Promise<Buffer>;
+  deletePrefix(prefix: string): Promise<void>;
+}
+
+export function validProfilePhotoFolder(uid: string, value: unknown): value is string {
+  return typeof value === "string" && value.startsWith(`social-profiles/${uid}/`)
+    && /^[A-Za-z0-9_-]{1,80}\/$/.test(value.slice(`social-profiles/${uid}/`.length));
+}
+
+function verifiedStudent(user: DocumentSnapshot | undefined): boolean {
+  return user?.exists === true && user.get("status") === "active" && user.get("role") === "student"
+    && hasVerifiedCampusEmail(user);
+}
+
+/** Never return state-supplied URLs. Evaluate both current accounts, not historical activity data. */
+export async function loadSocialProfiles(database: Firestore, uids: readonly string[], viewerUid: string,
+  photos?: Pick<SocialPhotoStore, "read">, admin = false): Promise<Map<string, SocialProfile>> {
   const unique = [...new Set(uids.filter(Boolean))];
   const profiles = new Map<string, SocialProfile>();
   if (unique.length === 0) return profiles;
-  const snapshots = await database.getAll(
-    ...unique.flatMap((uid) => [database.doc(`users/${uid}`), database.doc(`socialUserState/${uid}`)]),
-  );
-  unique.forEach((uid, index) => {
-    const user = snapshots[index * 2];
-    const state = snapshots[index * 2 + 1];
-    profiles.set(uid, profileFrom(user?.exists ? user : undefined, state?.exists ? state : undefined));
-  });
+  const [viewer, config, ...snapshots] = await database.getAll(
+    database.doc(`users/${viewerUid}`), database.doc("app_config/social_activities"),
+    ...unique.flatMap((uid) => [database.doc(`users/${uid}`), database.doc(`socialUserState/${uid}`)]));
+  const moderator = admin && viewer?.get("role") === "good4Admin" && viewer.get("status") === "active";
+  await Promise.all(unique.map(async (uid, index) => {
+    const user = snapshots[index * 2]; const state = snapshots[index * 2 + 1];
+    const profile = profileFrom(user, state);
+    const eligible = moderator || (config?.get("enabled") === true && verifiedStudent(viewer) && verifiedStudent(user)
+      && eduDomainOf(String(viewer!.get("eduEmail"))) === eduDomainOf(String(user!.get("eduEmail"))));
+    const folder = state?.get("photoFolder");
+    if (eligible && photos && validProfilePhotoFolder(uid, folder)) {
+      try {
+        const bytes = await photos.read(`${folder}thumb.jpg`);
+        if (bytes.length <= 64 * 1024 && bytes.subarray(0, 3).equals(JPEG)) {
+          profile.photoUrl = profile.photoThumbUrl = `data:image/jpeg;base64,${bytes.toString("base64")}`;
+        }
+      } catch (error) {
+        if ((error as { code?: unknown }).code !== 404) throw error;
+      }
+    }
+    profiles.set(uid, profile);
+  }));
   return profiles;
 }
 
@@ -101,8 +134,48 @@ export async function processProfilePhoto(bytes: Buffer): Promise<{ full: Buffer
   }
 }
 
-/** Local previews must fetch emulator files rather than the production Storage host. */
-export function socialPhotoDownloadUrl(url: string, emulatorHost?: string): string {
-  if (!emulatorHost || !/^(127\.0\.0\.1|localhost):\d+$/.test(emulatorHost)) return url;
-  return url.replace("https://firebasestorage.googleapis.com", `http://${emulatorHost}`);
+/** Separate from market images: no transferable download token or public cache. */
+export function privateSocialPhotoStore(bucket: Bucket): SocialPhotoStore {
+  return {
+    async save(objectName, bytes) {
+      await bucket.file(objectName).save(bytes, { resumable: false,
+        metadata: { contentType: "image/jpeg", cacheControl: "private,no-store,max-age=0" } });
+      return `gs://${bucket.name}/${objectName}`;
+    },
+    async read(objectName) { const [bytes] = await bucket.file(objectName).download(); return bytes; },
+    async deletePrefix(prefix) { await bucket.deleteFiles({ prefix, force: true }); },
+  };
+}
+
+/** Revoke tokens on every version under the social prefix, including orphaned files. */
+export async function privatizeLegacySocialPhotos(bucket: Bucket, apply = false): Promise<{ objects: number; changed: number }> {
+  let pageToken: string | undefined; let objects = 0; let changed = 0;
+  do {
+    const [files, next] = await bucket.getFiles({ prefix: "social-profiles/", versions: true,
+      autoPaginate: false, maxResults: 100, pageToken });
+    for (const file of files) {
+      if (!file.name.startsWith("social-profiles/")) throw new Error("SOCIAL_PHOTO_MIGRATION_PREFIX_INVALID");
+      const [metadata] = await file.getMetadata(); objects++;
+      if (metadata.metadata?.firebaseStorageDownloadTokens || metadata.cacheControl !== "private,no-store,max-age=0") {
+        if (apply) {
+          await file.setMetadata({ cacheControl: "private,no-store,max-age=0",
+            metadata: { firebaseStorageDownloadTokens: null } });
+          // Storage emulator 15.x retains its separate token list on a metadata-null update.
+          // Re-upload identical bytes privately in the demo bucket only; production revokes metadata.
+          if (process.env.FIREBASE_STORAGE_EMULATOR_HOST && bucket.name === "demo-good4-v2.appspot.com") {
+            const [updated] = await file.getMetadata();
+            if (updated.metadata?.firebaseStorageDownloadTokens) {
+              const [bytes] = await file.download();
+              const custom = { ...metadata.metadata }; delete custom.firebaseStorageDownloadTokens;
+              await file.save(bytes, { resumable: false, metadata: { contentType: metadata.contentType,
+                cacheControl: "private,no-store,max-age=0", metadata: custom } });
+            }
+          }
+        }
+        changed++;
+      }
+    }
+    pageToken = next?.pageToken;
+  } while (pageToken);
+  return { objects, changed };
 }

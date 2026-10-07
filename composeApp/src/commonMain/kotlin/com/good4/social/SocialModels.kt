@@ -130,7 +130,10 @@ data class SocialMessage(
 )
 
 @Serializable
-data class SocialThread(val conversation: SocialConversation, val messages: List<SocialMessage> = emptyList())
+data class SocialThread(
+    val conversation: SocialConversation, val messages: List<SocialMessage> = emptyList(),
+    val nextAfter: String? = null, val hasMore: Boolean = false
+)
 
 data class SocialActivityDraft(
     val kind: String,

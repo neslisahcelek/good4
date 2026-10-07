@@ -1,7 +1,7 @@
 # Sosyal Etkinlikler — devir notu (çalışma dosyası)
 
 > Dal: `feature/social-activities`. 7 Ekim 2026 kullanıcı talimatıyla sosyal özellik kapsamı
-> yerel bir geliştirme commit'ine alınmıştır; aşağıdaki beş inceleme bulgusu hâlâ açıktır.
+> 7 Ekim güvenlik düzeltmeleri aşağıda kayıtlıdır; canlı yayın kanıtı son doğrulama bölümünde ayrıca belirtilir.
 > (`daily-menu-ratings` e9d1965'ten açıldı). Çalışma ağacında bu özellikle ilgisi olmayan başka
 > commit edilmemiş değişiklikler de var (web landing, `firebase.json`, Xcode dosyaları, `AppCheck.swift`
 > vb.); commit'e **eklenmemeli**. Canlı projeye (`good4tr-v2`) hiçbir şey deploy edilmedi.
@@ -84,12 +84,12 @@ Bilinen sorun: `npm run test:functions` içinde iki eski eşzamanlılık testi (
 - [x] **7 Ekim arayüz istekleri:** başlık “Sosyal”; varsayılan ana sayfa sırası Topluluklar → Ders Programı → Sosyal → Kampüs Dolabı. Futbol topu yerine iki kişi ve konuşma balonu vektör simgesi eklendi. Sohbetteki gri “Buluşmayı kalabalık...” kutusu kullanıcı isteğiyle kaldırıldı; mesaj listesi kaydırma indeksi buna göre düzeltildi. denizdemo ile iPhone 17 Pro / iOS 26.5 simülatöründe ana sayfa, Sosyal akış, mesaj listesi ve Okey sohbeti açılarak doğrulandı. Önceden kaydedilmiş özel sıralamalar korunur.
 - [ ] Fotoğraf silme dayanıklılığı: eski/silinen fotoğraf dosyaları en iyi çaba ile siliniyor; başarısız olursa kalır (hesap silme tüm `social-profiles/{uid}/` klasörünü siler ve Storage hatasında yeniden denenir). İstenirse Kampüs Dolabı'ndaki gibi kalıcı silme kuyruğuna alınabilir.
 - [ ] KVKK/gizlilik metnine sosyal etkinlik verisi (etkinlik, istek, sohbet, profil fotoğrafı, saklama süreleri) eklenmeli; metni kullanıcı onaylamalı.
-- [x] **7 Ekim commit öncesi inceleme yapıldı.** Aşağıdaki beş bulgu raporlandı; mevcut testlerin geçmesi bu eksikleri kapsamıyordu. Kullanıcının sonraki açık “commit et” talimatıyla mevcut çalışma yerel geliştirme commit'ine alındı; bulgular düzeltilmiş değildir.
-- [ ] **P1 — Fotoğraf erişimi:** sohbet/istek okumalarında güncel okul doğrulaması ve aynı üniversite koşulu uygulanmalı. Doğrulaması kaldırılan katılımcı/organizatör hâlâ diğer kişinin fotoğraf URL'sini alıyor (iki emülatör regresyon senaryosu).
-- [ ] **P1 — Fotoğraf indirme bağlantısı:** sosyal fotoğraflar `marketDeps.photos.save` üzerinden kalıcı indirme token'ı ve `public,max-age=86400` ile kaydediliyor. Bağlantıyı bilen anonim istemci, Storage kurallarına rağmen dosyayı indirebiliyor. Yerel yapay dosyada token ile HTTP 200, tokensız HTTP 403 doğrulandı. Fotoğraf sunumunda her okumada yetki kontrolü sağlanmalı.
-- [ ] **P1 — Özellik kapatma anahtarı:** `enabled=false` olduğunda akış/sohbet okuma çağrıları veri döndürmeye devam ediyor. Yazma doğrulamasındaki kapatma koşulu okuma yollarında da uygulanmalı.
-- [ ] **P2 — Sohbet imleci:** yalnız `createdAt` ile `endBefore` kullanılması aynı milisaniyedeki yeni mesajı atlıyor. İmleç eşit zaman damgalarını kaybetmeyecek şekilde düzeltilmeli.
-- [ ] **P2 — Moderasyon tekrarı:** `resolveSocialReportService` açık şikayet koşulunu kontrol etmiyor. Çözülmüş şikayete ikinci karar uygulanabiliyor ve önceki kararın üzerine yazılıyor; eski panel/yeniden deneme senaryosu korunmalı.
+- [x] **7 Ekim commit öncesi inceleme ve beş bulgunun düzeltmesi:** ilk incelemede bulunan beş açık sonraki düzeltmede kapatıldı. Geçmiş başarısız inceleme çıktıları tarihsel kanıt olarak korunur; güncel sonuçlar son bölümde yer alır.
+- [x] **P1 — Fotoğraf erişimi:** bütün fotoğraflı yanıtlar görüntüleyen ve fotoğraf sahibi için güncel aktif öğrenci/okul doğrulaması/aynı üniversite kontrolü yapar. Doğrulaması kalkınca metin geçmişi korunur, fotoğraf gizlenir; admin moderasyonu açık istisnadır.
+- [x] **P1 — Fotoğraf indirme bağlantısı:** sosyal fotoğraflar ayrı private/no-store Storage deposuna tokensız yazılır. Kimlik doğrulamalı callable yanıtı JPEG data URI döndürür; Compose byte dizisini, panel mevcut img öğesini kullanır. Eski ve yetim nesne sürümleri için `scripts/privatize-social-photos.mjs` eklendi. Yerelde anonim yeni dosya HTTP 403, eski token 200→403 doğrulandı.
+- [x] **P1 — Özellik kapatma anahtarı:** tüm öğrenci okuma ve yönetim/yazma yolları yalnız literal true kabul eder. Eksik/false/metin/sayı değerleri reddedilir; summary kapalı durum ve sıfır sayaç döndürür. Admin işlemleri kapalıyken çalışır.
+- [x] **P2 — Sohbet imleci:** bütün metin ve sistem mesajları işlem içinde artan sequence alır. İstemci s: imlecini tutar ve 50 mesajı aşan sayfaları sırayla tüketir. Eski timestamp istemcileri için zaman damgaları kesin artar ve sayfalar eskiden yeniye verilir; numarasız eski geçmiş korunur.
+- [x] **P2 — Moderasyon tekrarı:** açık şikayet kontrolü karar/audit ile aynı transaction içindedir. İkinci/eşzamanlı karar SOCIAL_REPORT_RESOLVED ile reddedilir; yeni bir şikayet olarak yeniden açılan rapor çözülebilir.
 - [ ] Canlıya alma sırası (kullanıcı onayıyla): fonksiyonlar → indeksler → kurallar; özellik `app_config/social_activities.enabled=false` ile kapalı başlar.
 - [ ] Android'de simülatör/emülatörde ekranlar denenmedi (yalnızca derleme).
 - [ ] Badminton ve bazı türlerin ikonları Material setindeki en yakın ikonlar (örn. badminton için raket); özel ikon istenirse değiştirilebilir.
@@ -189,3 +189,18 @@ Tam çalışma ağacı durum çıktısı: `/tmp/good4-social-review-status.txt` 
 Teslim kopyası `neslisahcelek/good4` deposunun güncel `main` commit'i `b93b176` üzerine yalnızca sosyal commit'i `d53f0ae` taşınarak hazırlandı. Metin kaynakları, tema renkleri, veri modeli ve indeks eklemeleri main'deki mevcut içerikle birlikte korundu. Okul e-postası doğrulama kartında main'in iki adımlı tasarımı korundu; sosyal ekranın opsiyonel metin parametreleri eklendi. Üç eski dal commit'i ve mağaza görselleri teslim değişikliğine dahil edilmedi. Asıl çalışma klasöründeki commit edilmemiş dosyalar değiştirilmedi.
 
 Bu teslim kopyasında Android ve iOS Kotlin derlemeleri ile uygulama testleri geçti: tests 83 / failures 0 / errors 0 / skipped 0. Gradle: BUILD SUCCESSFUL in 1m 11s, 34 actionable tasks: 34 executed. Sunucu TypeScript ve web derlemeleri de geçti. Önceki emülatör test sonuçları yukarıdadır; bu turda çalışan emülatör üzerinde sunucu testleri çalıştırılmadı. Beş açık inceleme bulgusu korunuyor; GitHub teslimi taslak PR olarak hazırlanmıştır. Canlı projeye deploy veya veri aktarımı yapılmadı; demo örnekleri yalnızca yerel emülatör içindir.
+
+## 7 Ekim 2026 — güvenlik düzeltmeleri ve tekrar doğrulama
+
+Düzeltme, güncel main üzerine hazırlanan teslim commit'i `34e0fc8` üzerinden, kalıcı `social-security-fixes` çalışma ağacında geliştirildi. Ana çalışma ağacındaki sosyal dışı değişiklikler korunur. Güvenlik sınırı için bağımsız salt-okunur inceleme ve bir aday yama incelemesi yapıldı; ikinci incelemenin timestamp uyumluluğu bulgusu giderildi.
+
+- Sosyal 37 + push 14: **51 test / 51 geçti / 0 hata / 0 atlandı**. Çalışan emülatör yokken `firebase emulators:exec --project demo-good4-v2 --only firestore` kullanıldı.
+- `npm run test:rules`: **23 / 23 geçti, 0 hata**; ayrı emulators:exec oturumu.
+- Android/iOS Kotlin derlemeleri + `testStagingDebugUnitTest`: **83 / 83 geçti, 0 failure/error/skipped**. Debug iOS framework dahil Gradle BUILD SUCCESSFUL, 1m 57s, 35 görev.
+- Production modunda `npm run test:web`: başarılı.
+- Sonrasında yalnız demo emülatörler açıldı ve base/social seed yeniden yüklendi. Kimlik doğrulamalı profil yükleme/summary JPEG yanıtı, yeni tokensız dosyada anonim HTTP 403, eski yapay token'ın 200→403 geçişi ve tekrar envanterde sıfır değişiklik doğrulandı. Firebase Storage emülatörü null token metadata güncellemesinde ayrı token listesini koruduğundan yalnız demo bucket'ta aynı byte'ların private yeniden yazılması kullanılır; canlıda metadata iptali uygulanır.
+- Canlı salt-okunur hazırlık: Sosyal enabled=false, mevcut Social fonksiyonu ve `social-profiles/` nesnesi yok. Yayın öncesi aynı envanter/migration tekrar doğrulanmalı; daha önce indirilmiş byte veya önceden public önbelleğe alınmış yanıtlar uzaktan geri alınamaz.
+
+Kalıcı tam çıktılar Codex Security artifact koleksiyonunda: `artifacts/verification/server.log`, `rules.log`, `gradle.log`, `web.log`, `photo-proof.log`. Simülatör ve deploy sonucu aşağıya tamamlandıktan sonra yazılır.
+
+Simülatör tekrar kontrolü: iPhone 17 Pro / iOS 26.5, iosApp Test, demo emülatörü. Deniz profil penceresindeki private JPEG fotoğrafı ve Elif hesabındaki mesaj listesi/Okey sohbet başlığındaki aynı fotoğraf görsel olarak doğrulandı. Maskeli ad korunuyor; kaldırılmış gri uyarı dönmedi. Xcode BUILD SUCCEEDED. Canlı migration uygulama ve tekrar envanter sonucu: enabled=false, objects=0, changed=0, remainingChanges=0. Önceki yayın izni geçerlidir; yayın sırasında demo verisi aktarılmayacak.

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 import sharp from "sharp";
+import type { Bucket } from "@google-cloud/storage";
 import { Timestamp } from "firebase-admin/firestore";
 import { db, legacyTestDb } from "./firebase.js";
 import { MARKET_LIMITS, sendMarketMessageService } from "./market.js";
-import { openName, socialPhotoDownloadUrl } from "./socialProfile.js";
+import { openName, validProfilePhotoFolder, privateSocialPhotoStore, privatizeLegacySocialPhotos } from "./socialProfile.js";
 import {
   acceptSocialTermsService,
   blockSocialUserService,
@@ -18,6 +19,8 @@ import {
   getSocialReportConversationService,
   getSocialSummaryService,
   listMySocialActivitiesService,
+  listSocialBlockedService,
+  markSocialConversationReadService,
   listSocialActivityRequestsService,
   listSocialConversationsService,
   listSocialModerationQueueService,
@@ -477,6 +480,7 @@ async function photoBase64(): Promise<string> {
 function photoDeps() {
   const saved: string[] = [];
   const deleted: string[] = [];
+  const objects = new Map<string, Buffer>();
   return {
     saved, deleted,
     deps: {
@@ -486,10 +490,11 @@ function photoDeps() {
           const metadata = await sharp(bytes).metadata();
           assert.equal(metadata.exif, undefined, "photos must be stored without EXIF");
           assert.equal(metadata.width, metadata.height, "profile photos are square");
-          saved.push(objectName);
-          return `https://example.test/${objectName}`;
+          saved.push(objectName); objects.set(objectName, bytes);
+          return `gs://demo-good4-v2/${objectName}`;
         },
-        async deletePrefix(prefix: string) { deleted.push(prefix); },
+        async read(objectName: string) { return objects.get(objectName)!; },
+        async deletePrefix(prefix: string) { deleted.push(prefix); for (const key of objects.keys()) if (key.startsWith(prefix)) objects.delete(key); },
       },
     },
   };
@@ -526,6 +531,7 @@ test("names are masked until the student shows theirs, and the choice applies to
 
 test("a profile photo is re-encoded, shown to verified students of the same university only, and replaced or removed cleanly", async () => {
   const { saved, deleted, deps: profileDeps } = photoDeps();
+  deps.photos = profileDeps.photos;
   const activityId = await openActivity({ capacity: 2 });
 
   await setSocialProfileService(db, organizer, { photo: await photoBase64() }, profileDeps);
@@ -534,7 +540,7 @@ test("a profile photo is re-encoded, shown to verified students of the same univ
   const first = (await db.doc(`socialUserState/${organizer}`).get()).get("photoFolder") as string;
 
   const seen = await getSocialActivityService(db, ali, { activityId }, deps);
-  assert.match(String(seen.activity.organizerPhotoUrl), /thumb\.jpg$/);
+  assert.match(String(seen.activity.organizerPhotoUrl), /^data:image\/jpeg;base64,/);
   // Someone who has not verified a school address sees the activity read-only, without the photo.
   assert.equal((await getSocialActivityService(db, unverified, { activityId }, deps)).activity.organizerPhotoUrl, null);
   await db.doc(`users/${zeynep}`).update({ eduEmail: "zeynep@ege.edu.tr" });
@@ -544,10 +550,10 @@ test("a profile photo is re-encoded, shown to verified students of the same univ
   await requestToJoinSocialActivityService(db, ali, { activityId }, deps);
   await setSocialProfileService(db, ali, { photo: await photoBase64() }, profileDeps);
   const list = await listSocialActivityRequestsService(db, organizer, { activityId }, deps);
-  assert.match(String(list.requests[0]!.photoUrl), /thumb\.jpg$/);
+  assert.match(String(list.requests[0]!.photoUrl), /^data:image\/jpeg;base64,/);
   const { conversationId } = await respondToSocialRequestService(db, organizer, { activityId, requesterUid: ali, accept: true }, deps);
   const inbox = await listSocialConversationsService(db, ali, deps);
-  assert.match(String(inbox.conversations.find((c) => c.id === conversationId!)?.otherPhotoUrl), /thumb\.jpg$/);
+  assert.match(String(inbox.conversations.find((c) => c.id === conversationId!)?.otherPhotoUrl), /^data:image\/jpeg;base64,/);
 
   // A new photo replaces the old one and the old files are removed.
   await setSocialProfileService(db, organizer, { photo: await photoBase64() }, profileDeps);
@@ -578,11 +584,12 @@ test("profile photos are validated, limited per day, and need a verified student
   assert.equal(saved.length, 10);
 });
 
-test("social profile download URLs use only the local Storage emulator when configured", () => {
-  const url = "https://firebasestorage.googleapis.com/v0/b/demo-good4-v2/o/social-profiles%2Fuser1%2Fphoto.jpg?alt=media&token=test";
-  assert.equal(socialPhotoDownloadUrl(url), url);
-  assert.equal(socialPhotoDownloadUrl(url, "127.0.0.1:9295"), url.replace("https://firebasestorage.googleapis.com", "http://127.0.0.1:9295"));
-  assert.equal(socialPhotoDownloadUrl(url, "example.com:9295"), url);
+test("private photo paths reject other owners, remote URLs and path traversal", () => {
+  assert.equal(validProfilePhotoFolder(organizer, `social-profiles/${organizer}/version/`), true);
+  for (const folder of [`social-profiles/${ali}/version/`, `social-profiles/${organizer}/../`,
+    `social-profiles/${organizer}/version/other/`, "https://example.test/photo.jpg"]) {
+    assert.equal(validProfilePhotoFolder(organizer, folder), false);
+  }
 });
 
 async function reportedPhoto() {
@@ -598,9 +605,9 @@ test("an admin removes the reported user's profile photo and files, preserves th
   const { reportId, photo, folder } = await reportedPhoto();
   await setSocialProfileService(db, organizer, { nameMode: "shown" }, photo.deps);
   assert.deepEqual(photo.deleted, [], "changing name visibility preserves the photo files");
-  const queue = await listSocialModerationQueueService(db, admin);
+  const queue = await listSocialModerationQueueService(db, admin, photo.deps);
   assert.equal(queue.reports[0]!.reportedProfile?.name, "Ayşe Y.");
-  assert.match(queue.reports[0]!.reportedProfile!.photoThumbUrl!, /thumb.jpg$/);
+  assert.match(queue.reports[0]!.reportedProfile!.photoThumbUrl!, /^data:image\/jpeg;base64,/);
   await removeSocialReportedProfilePhotoService(db, admin, { reportId }, photo.deps);
   const state = await db.doc(`socialUserState/${organizer}`).get();
   for (const key of ["photoUrl", "photoThumbUrl", "photoFolder"]) assert.equal(state.get(key), undefined);
@@ -654,4 +661,166 @@ test("a photo replaced during admin removal is preserved and the admin is asked 
   assert.equal(state.get("photoUrl"), "new-photo");
   const audit = await db.collection("auditLogs").where("action", "==", "social.profile.photoRemoved").get();
   assert.equal(audit.docs[0]!.get("metadata.replacedDuringRemoval"), true);
+});
+
+
+test("revoked viewers and owners lose photos on every surface while text history remains readable", async () => {
+  const photo = photoDeps(); deps.photos = photo.deps.photos;
+  const { activityId, conversationId } = await acceptedChat();
+  for (const uid of [organizer, ali]) await setSocialProfileService(db, uid, { photo: await photoBase64() }, photo.deps);
+  assert.match((await getSocialMessagesService(db, ali, { conversationId }, deps)).conversation.otherPhotoUrl!, /^data:image\/jpeg;base64,/);
+  for (const uid of [organizer, ali]) {
+    await db.doc(`users/${uid}`).update({ eduVerified: false });
+    const peer = uid === organizer ? ali : organizer;
+    assert.equal((await getSocialSummaryService(db, uid, deps)).me.photoUrl, null);
+    assert.equal((await listSocialConversationsService(db, uid, deps)).conversations[0]!.otherPhotoUrl, null);
+    const thread = await getSocialMessagesService(db, uid, { conversationId }, deps);
+    assert.equal(thread.conversation.otherPhotoUrl, null); assert.ok(thread.messages.length);
+    assert.equal((await getSocialMessagesService(db, peer, { conversationId }, deps)).conversation.otherPhotoUrl, null);
+    assert.equal((await getSocialActivityService(db, uid, { activityId }, deps)).activity.organizerPhotoUrl, null);
+    assert.equal((await listSocialActivityRequestsService(db, organizer, { activityId }, deps)).requests[0]!.photoUrl, null);
+    await db.doc(`users/${uid}`).update({ eduVerified: true });
+  }
+});
+
+test("photo authorization uses current campus, role and status and never trusts legacy URLs", async () => {
+  const photo = photoDeps(); deps.photos = photo.deps.photos;
+  const { activityId, conversationId } = await acceptedChat();
+  await setSocialProfileService(db, organizer, { photo: await photoBase64() }, photo.deps);
+  const saved = (await db.doc(`users/${organizer}`).get()).data()!;
+  for (const change of [{ eduEmail: "ayse@ege.edu.tr" }, { status: "inactive" }, { role: "good4Admin" }]) {
+    await db.doc(`users/${organizer}`).set({ ...saved, ...change });
+    assert.equal((await getSocialActivityService(db, ali, { activityId }, deps)).activity.organizerPhotoUrl, null);
+    assert.equal((await getSocialMessagesService(db, ali, { conversationId }, deps)).conversation.otherPhotoUrl, null);
+  }
+  await db.doc(`users/${organizer}`).set(saved);
+  for (const folder of [null, `social-profiles/${ali}/other/`, `social-profiles/${organizer}/../`]) {
+    await db.doc(`socialUserState/${organizer}`).update({ photoFolder: folder,
+      photoUrl: "https://example.test/photo?token=secret", photoThumbUrl: "https://example.test/photo?token=secret" });
+    assert.equal((await getSocialMessagesService(db, ali, { conversationId }, deps)).conversation.otherPhotoUrl, null);
+  }
+  await db.doc(`users/${ali}`).update({ role: "business" });
+  await rejectsWith(getSocialFeedService(db, ali, {}, deps), "ROLE_NOT_ALLOWED");
+});
+
+test("missing, false and non-boolean flags block all student content and management, but preserve moderation", async () => {
+  const { activityId, conversationId } = await acceptedChat();
+  const { reportId } = await reportSocialContentService(db, ali, { targetType: "activity", targetId: activityId, reason: "spam" }, deps);
+  for (const enabled of [undefined, false, "true", 1]) {
+    if (enabled === undefined) await db.doc("app_config/social_activities").delete();
+    else await db.doc("app_config/social_activities").set({ enabled });
+    const summary = await getSocialSummaryService(db, organizer, deps);
+    assert.equal(summary.me.enabled, false); assert.equal(summary.me.photoUrl, null);
+    assert.equal(summary.me.unreadCount, 0); assert.equal(summary.me.pendingRequestCount, 0);
+    for (const action of [
+      () => getSocialFeedService(db, ali, {}, deps),
+      () => getSocialActivityService(db, ali, { activityId }, deps),
+      () => listSocialActivityRequestsService(db, organizer, { activityId }, deps),
+      () => listMySocialActivitiesService(db, ali, deps),
+      () => listSocialConversationsService(db, ali, deps),
+      () => getSocialMessagesService(db, ali, { conversationId }, deps),
+      () => listSocialBlockedService(db, ali),
+      () => acceptSocialTermsService(db, ali, { version: SOCIAL_TERMS_VERSION }, deps),
+      () => cancelSocialActivityService(db, organizer, { activityId }, deps),
+      () => withdrawSocialRequestService(db, ali, { activityId }, deps),
+      () => markSocialConversationReadService(db, ali, { conversationId }),
+      () => blockSocialUserService(db, ali, { conversationId }, deps),
+      () => unblockSocialUserService(db, ali, { conversationId }, deps),
+      () => reportSocialContentService(db, ali, { targetType: "activity", targetId: activityId, reason: "spam" }, deps),
+    ]) await rejectsWith(action(), "SOCIAL_DISABLED");
+    assert.equal((await listSocialModerationQueueService(db, admin)).reports.length, 1);
+  }
+  await resolveSocialReportService(db, admin, { reportId, action: "dismiss" }, deps);
+  await db.doc("app_config/social_activities").set({ enabled: true });
+  assert.equal((await getSocialMessagesService(db, ali, { conversationId }, deps)).messages.length, 1);
+});
+
+test("sequence polling drains more than50 equal-clock messages and system notes without gaps", async () => {
+  const { activityId, conversationId } = await acceptedChat();
+  const initial = await getSocialMessagesService(db, organizer, { conversationId }, deps);
+  for (let i=0; i<55; i++) await sendSocialMessageService(db, ali, { conversationId, text: `Mesaj ${i}` }, deps);
+  await cancelSocialActivityService(db, organizer, { activityId }, deps);
+  const first = await getSocialMessagesService(db, organizer, { conversationId, after: initial.nextAfter }, deps);
+  assert.equal(first.messages.length, 50); assert.equal(first.hasMore, true);
+  assert.deepEqual(first.messages.map((m) => m.text), Array.from({length:50}, (_,i) => `Mesaj ${i}`));
+  const second = await getSocialMessagesService(db, organizer, { conversationId, after: first.nextAfter }, deps);
+  assert.equal(second.messages.length, 6); assert.equal(second.messages.at(-1)!.type, "system");
+  assert.equal(second.hasMore, false);
+  assert.equal((await getSocialMessagesService(db, organizer, { conversationId, after: second.nextAfter }, deps)).messages.length, 0);
+});
+
+test("concurrent message transactions allocate unique sequences", async () => {
+  const { conversationId } = await acceptedChat();
+  const initial = await getSocialMessagesService(db, ali, { conversationId }, deps);
+  await Promise.all([ali, organizer].map((uid) => sendSocialMessageService(db, uid, {conversationId, text:uid}, deps)));
+  const page = await getSocialMessagesService(db, ali, { conversationId, after: initial.nextAfter }, deps);
+  assert.equal(page.messages.length, 2); assert.equal(page.nextAfter, "s:3");
+  const docs = await db.doc(`socialConversations/${conversationId}`).collection("messages").get();
+  assert.deepEqual(docs.docs.map((d) => d.get("sequence")).sort(), [1,2,3]);
+});
+
+test("timestamp clients receive earliest unread pages and newly written timestamps strictly advance", async () => {
+  const { conversationId } = await acceptedChat();
+  const initial = await getSocialMessagesService(db, ali, { conversationId }, deps);
+  let cursor = initial.messages.at(-1)!.createdAt;
+  for (let i=0; i<55; i++) await sendSocialMessageService(db, organizer, {conversationId, text:`Uyum ${i}`}, deps);
+  const seen = new Map<string,string>();
+  for (let page=0; page<3; page++) {
+    const result = await getSocialMessagesService(db, ali, { conversationId, after:cursor }, deps);
+    for (const m of result.messages) if (m.type === "text") seen.set(m.id,m.text);
+    cursor = result.messages.at(-1)?.createdAt ?? cursor;
+    if (!result.hasMore) break;
+  }
+  assert.deepEqual([...seen.values()], Array.from({length:55}, (_,i) => `Uyum ${i}`));
+  const first = await getSocialMessagesService(db, ali, {conversationId, after:initial.messages.at(-1)!.createdAt}, deps);
+  const rest = await getSocialMessagesService(db, ali, {conversationId, after:first.nextAfter}, deps);
+  assert.equal(new Set([...first.messages,...rest.messages].filter((m) => m.type === "text").map((m) => m.id)).size,55);
+});
+
+test("legacy unnumbered history survives a later numbered write", async () => {
+  const { conversationId } = await acceptedChat(); const ref = db.doc(`socialConversations/${conversationId}`);
+  const docs = await ref.collection("messages").get();
+  await docs.docs[0]!.ref.update({sequence:(await import("firebase-admin/firestore")).FieldValue.delete()});
+  const old = await getSocialMessagesService(db, ali, {conversationId}, deps); assert.equal(old.messages.length,1);
+  await sendSocialMessageService(db, organizer, {conversationId,text:"Yeni mesaj"}, deps);
+  assert.deepEqual((await getSocialMessagesService(db, ali, {conversationId,after:old.nextAfter}, deps)).messages.map((m)=>m.text),["Yeni mesaj"]);
+  assert.equal((await getSocialMessagesService(db, ali, {conversationId}, deps)).messages.length,2);
+});
+
+test("duplicate and concurrent admin resolutions preserve the first decision and single audit", async () => {
+  const activityId = await openActivity();
+  const { reportId } = await reportSocialContentService(db, ali, {targetType:"activity",targetId:activityId,reason:"spam"}, deps);
+  await db.doc("users/admin2").set({role:"good4Admin",status:"active"});
+  const results = await Promise.allSettled([
+    resolveSocialReportService(db, admin, {reportId,action:"dismiss"}, deps),
+    resolveSocialReportService(db,"admin2",{reportId,action:"suspendUser",suspendDays:3},deps),
+  ]);
+  assert.equal(results.filter((r)=>r.status==="fulfilled").length,1);
+  assert.equal(results.filter((r)=>r.status==="rejected" && r.reason.message==="SOCIAL_REPORT_RESOLVED").length,1);
+  const first=(await db.doc(`socialReports/${reportId}`).get()).data();
+  await rejectsWith(resolveSocialReportService(db,admin,{reportId,action:"removeActivity"},deps),"SOCIAL_REPORT_RESOLVED");
+  assert.deepEqual((await db.doc(`socialReports/${reportId}`).get()).data(),first);
+  assert.notEqual((await db.doc(`socialActivities/${activityId}`).get()).get("status"),"removed");
+  assert.equal((await db.collection("auditLogs").where("targetId","==",reportId).get()).size,1);
+  await reportSocialContentService(db,ali,{targetType:"activity",targetId:activityId,reason:"spam"},deps);
+  await resolveSocialReportService(db,admin,{reportId,action:"removeActivity"},deps);
+  assert.equal((await db.doc(`socialActivities/${activityId}`).get()).get("status"),"removed");
+});
+
+test("private storage uses no token or public cache; migration covers all historical and orphaned versions", async () => {
+  const writes: {name:string;options:any}[]=[]; const changes: any[]=[];
+  const bucket = {name:"demo-good4-v2.appspot.com",
+    file:(name:string)=>({save:async(_bytes:Buffer,options:unknown)=>{writes.push({name,options});}}),
+    getFiles:async(options:{prefix:string;versions:boolean;pageToken?:string})=>{
+      assert.equal(options.prefix,"social-profiles/"); assert.equal(options.versions,true);
+      return [[{name:options.pageToken ? "social-profiles/deleted/orphan/thumb.jpg":"social-profiles/ali/current/photo.jpg",
+        getMetadata:async()=>[{cacheControl:"public,max-age=86400",metadata:{firebaseStorageDownloadTokens:"old-token"}}],
+        setMetadata:async(options:unknown)=>{changes.push(options);}}],options.pageToken?null:{pageToken:"next"}];
+    }} as unknown as Bucket;
+  assert.match(await privateSocialPhotoStore(bucket).save("social-profiles/ali/current/photo.jpg",Buffer.from("test")),/^gs:\/\//);
+  assert.equal(writes[0]!.options.metadata.metadata,undefined);
+  assert.equal(writes[0]!.options.metadata.cacheControl,"private,no-store,max-age=0");
+  assert.deepEqual(await privatizeLegacySocialPhotos(bucket),{objects:2,changed:2}); assert.equal(changes.length,0);
+  assert.deepEqual(await privatizeLegacySocialPhotos(bucket,true),{objects:2,changed:2});
+  assert.ok(changes.every((o)=>o.metadata.firebaseStorageDownloadTokens===null));
 });

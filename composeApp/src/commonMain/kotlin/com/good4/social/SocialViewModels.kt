@@ -1,5 +1,8 @@
 package com.good4.social
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.core.presentation.UiText
@@ -410,6 +413,8 @@ class SocialChatViewModel(private val repository: SocialRepository) : ViewModel(
     private var conversationId = ""
     private var pollJob: Job? = null
     private var lastActivityAt = 0L
+    private var messageCursor: String? = null
+    private val refreshMutex = Mutex()
 
     fun load(id: String) {
         conversationId = id
@@ -438,19 +443,26 @@ class SocialChatViewModel(private val repository: SocialRepository) : ViewModel(
         lastActivityAt = Clock.System.now().toEpochMilliseconds()
     }
 
-    private suspend fun refresh(full: Boolean) {
-        val after = if (full) null else _state.value.messages.lastOrNull()?.createdAt
-        attempt { repository.messages(conversationId, after) }
-            .onSuccess { thread ->
-                if (thread.messages.isNotEmpty() && !full) markActivity()
-                _state.update {
-                    it.copy(
-                        isLoading = false, loadError = null, conversation = thread.conversation,
-                        messages = if (full) thread.messages else (it.messages + thread.messages).distinctBy(SocialMessage::id)
-                    )
-                }
+    private suspend fun refresh(full: Boolean) = refreshMutex.withLock {
+        var firstPage = true
+        do {
+            val after = if (full && firstPage) null else (messageCursor
+                ?: _state.value.messages.lastOrNull()?.createdAt)
+            val result = attempt { repository.messages(conversationId, after) }
+            val thread = result.getOrNull()
+            if (thread == null) {
+                if (full) _state.update { it.copy(isLoading = false, loadError = socialErrorMessage(result.exceptionOrNull()!!)) }
+                break
             }
-            .onFailure { error -> if (full) _state.update { it.copy(isLoading = false, loadError = socialErrorMessage(error)) } }
+            if (thread.messages.isNotEmpty() && !full) markActivity()
+            messageCursor = thread.nextAfter
+            _state.update {
+                it.copy(isLoading = false, loadError = null, conversation = thread.conversation,
+                    messages = if (full && firstPage) thread.messages
+                        else (it.messages + thread.messages).distinctBy(SocialMessage::id))
+            }
+            firstPage = false
+        } while (thread.hasMore)
     }
 
     fun setDraft(value: String) = _state.update { it.copy(draft = value.take(SocialLimits.MAX_MESSAGE), error = null) }
