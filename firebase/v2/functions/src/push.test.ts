@@ -73,6 +73,18 @@ test("send targets only the recipient's devices with private text and primary-ac
   assert.deepEqual(result, { sent: 2, failed: 0 });
 });
 
+test("social activity alerts carry their own title and never show chat text", async () => {
+  await registerPushDeviceService(db, "a", { token: tokenA, platform: "ios" }, NOW);
+  const seen: { title?: string; body?: string }[] = [];
+  const capture = sender(async (message) => { seen.push(message.notification ?? {}); return success(1); });
+  await sendPushToUser(db, "a", { title: "Ayşe · Akşam tenisi", body: "Private chat", data: { type: "social_message", conversationId: "a1_b" } }, capture, NOW);
+  await sendPushToUser(db, "a", { title: "Yeni katılım isteği", body: "x", data: { type: "social_request", activityId: "a1" } }, capture, NOW);
+  assert.deepEqual(seen, [
+    { title: "Etkinlikler", body: "Yeni bir mesajın var." },
+    { title: "Etkinlikler", body: "Yeni katılım isteği" },
+  ]);
+});
+
 test("inactive and erased accounts receive no notification", async () => {
   await registerPushDeviceService(db, "a", { token: tokenA, platform: "ios" }, NOW);
   await db.doc("users/a").update({ status: "deleting" });

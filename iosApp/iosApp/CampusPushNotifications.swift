@@ -36,7 +36,7 @@ final class CampusPushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         CampusPushNotifications.shared.receive(
             recipientUid: data["recipientUid"] as? String,
             type: data["type"] as? String,
-            targetId: (data["conversationId"] ?? data["listingId"]) as? String
+            targetId: (data["conversationId"] ?? data["listingId"] ?? data["activityId"]) as? String
         )
         completionHandler()
     }

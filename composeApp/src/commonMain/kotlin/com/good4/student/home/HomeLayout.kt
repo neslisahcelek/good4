@@ -10,10 +10,11 @@ import kotlinx.serialization.json.Json
 enum class HomeShortcut(val id: String, val defaultVisible: Boolean) {
     COMMUNITIES("communities", true),
     CLASS_SCHEDULE("classSchedule", true),
+    SOCIAL_ACTIVITIES("socialActivities", true),
+    CAMPUS_CLOSET("campusCloset", true),
     CAMPUS_MAP("campusMap", true),
     ACADEMIC_CALENDAR("academicCalendar", true),
     SUSPENDED_MEALS("suspendedMeals", true),
-    CAMPUS_CLOSET("campusCloset", true),
     TOP_UP("topUp", false),
     TENNIS("tennis", false),
     PHONE_NUMBERS("phoneNumbers", false),
@@ -27,12 +28,14 @@ data class HomeShortcutDefinition(val id: String, val defaultVisible: Boolean)
 fun availableHomeShortcuts(
     role: UserRole,
     suspendedMealsEnabled: Boolean,
-    campusClosetEnabled: Boolean = false
+    campusClosetEnabled: Boolean = false,
+    socialActivitiesEnabled: Boolean = false
 ): List<HomeShortcut> =
     if (role != UserRole.STUDENT) emptyList()
     else HomeShortcut.entries.filter {
         (it != HomeShortcut.SUSPENDED_MEALS || suspendedMealsEnabled)
             && (it != HomeShortcut.CAMPUS_CLOSET || campusClosetEnabled)
+            && (it != HomeShortcut.SOCIAL_ACTIVITIES || socialActivitiesEnabled)
     }
 
 @Serializable

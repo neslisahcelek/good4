@@ -75,6 +75,8 @@ val commonModule = module {
     single { com.good4.campuscloset.CampusClosetBadge() }
     single { com.good4.campuscloset.CampusEmailVerificationRepository(get<AuthRepository>()) }
     single { com.good4.campuscloset.CampusClosetRepository(get<AuthRepository>(), get()) }
+    single { com.good4.social.SocialBadge() }
+    single { com.good4.social.SocialRepository(get()) }
     single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
     single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
 
@@ -179,6 +181,12 @@ val commonModule = module {
     viewModel { com.good4.campuscloset.CampusClosetChatViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetFavoritesViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetBlockedViewModel(get()) }
+    viewModel { com.good4.social.SocialHomeViewModel(get()) }
+    viewModel { com.good4.social.SocialCreateViewModel(get()) }
+    viewModel { com.good4.social.SocialActivityViewModel(get()) }
+    viewModel { com.good4.social.SocialRequestsViewModel(get()) }
+    viewModel { com.good4.social.SocialInboxViewModel(get()) }
+    viewModel { com.good4.social.SocialChatViewModel(get()) }
     viewModel {
         AccountSettingsViewModel(
             get<AuthRepository>(),

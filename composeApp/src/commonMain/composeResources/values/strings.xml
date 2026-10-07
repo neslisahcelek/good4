@@ -1007,4 +1007,299 @@
     <string name="community_kamera_acilamadi_kamera_iznini_ve_baglantini_kontrol_edip_tekrar_">Kamera açılamadı. Kamera iznini ve bağlantını kontrol edip tekrar dene.</string>
     <string name="campus_closet_inactive">Pasif</string>
     <string name="campus_closet_inactive_notice">İlan şu anda pasif. Pazar listesinde görünmez.</string>
+    <string name="social_title">Sosyal</string>
+    <string name="social_create">Etkinlik oluştur</string>
+    <string name="social_details">Detaylar</string>
+    <string name="social_step">%1$d / 2</string>
+    <string name="social_tab_discover">Keşfet</string>
+    <string name="social_tab_mine">Etkinliklerim</string>
+    <string name="social_kind_social">Sosyal</string>
+    <string name="social_kind_sport">Spor</string>
+    <string name="social_today">Bugün</string>
+    <string name="social_tomorrow">Yarın</string>
+    <string name="social_day_monday">Pazartesi</string>
+    <string name="social_day_tuesday">Salı</string>
+    <string name="social_day_wednesday">Çarşamba</string>
+    <string name="social_day_thursday">Perşembe</string>
+    <string name="social_day_friday">Cuma</string>
+    <string name="social_day_saturday">Cumartesi</string>
+    <string name="social_day_sunday">Pazar</string>
+    <string name="social_full">Yer kalmadı</string>
+    <string name="social_last_spot">Son 1 yer</string>
+    <string name="social_spots_left">%1$d yer var</string>
+    <string name="social_empty_title">Yakında bir etkinlik yok</string>
+    <string name="social_empty_text">İlk etkinliği sen aç: bir maç, bir kahve ya da birlikte ders çalışmak.</string>
+    <string name="social_load_more">Daha fazla göster</string>
+    <string name="social_mine_empty_title">Henüz bir etkinliğin yok</string>
+    <string name="social_mine_empty_text">Açtığın etkinlikler ve katılmak istediklerin burada görünür.</string>
+    <string name="social_mine_opened">Açtıkların</string>
+    <string name="social_mine_going">Katılacakların</string>
+    <string name="social_mine_requests">İsteklerin</string>
+    <string name="social_new_requests">%1$d yeni istek</string>
+    <string name="social_joined_count">%1$d / %2$d kişi katılıyor</string>
+    <string name="social_write_message">Mesaj yaz</string>
+    <string name="social_show_past">Geçmiş etkinlikleri göster</string>
+    <string name="social_hide_past">Geçmiş etkinlikleri gizle</string>
+    <string name="social_waiting_answer">Yanıt bekleniyor</string>
+    <string name="social_accepted">Kabul edildi</string>
+    <string name="social_withdrawn">Geri çektin</string>
+    <string name="social_no_spot">Yer kalmadı</string>
+    <string name="social_status_cancelled">Etkinlik iptal edildi</string>
+    <string name="social_status_removed">Etkinlik kaldırıldı</string>
+    <string name="social_status_ended">Etkinlik sona erdi</string>
+    <string name="social_what_to_do">Ne yapmak istiyorsun?</string>
+    <string name="social_change">Değiştir</string>
+    <string name="social_edit_title">Başlığı düzenle</string>
+    <string name="social_activity_title">Etkinlik başlığı</string>
+    <string name="social_title_edit_hint">Başlığa dokunarak kendi başlığını yazabilirsin.</string>
+    <string name="social_change_type">Etkinlik türünü değiştir</string>
+    <string name="social_date">Tarih</string>
+    <string name="social_time">Saat</string>
+    <string name="social_pick_time">Başlangıç saatini seç</string>
+    <string name="social_time_hint">24 saat biçimi · Örneğin 18:30</string>
+    <string name="social_time_keyboard">Rakam girerek seç</string>
+    <string name="social_time_dial">Kadrandan seç</string>
+    <string name="social_minute">Dakika</string>
+    <string name="social_hour_range">00–23</string>
+    <string name="social_minute_range">00–59</string>
+    <string name="social_cancel">Vazgeç</string>
+    <string name="social_game_fifa">FIFA</string>
+    <string name="social_game_pes">PES</string>
+    <string name="social_when">Ne zaman?</string>
+    <string name="social_level">Seviye</string>
+    <string name="social_capacity">Kaç kişi arıyorsun?</string>
+    <string name="social_note_optional">Not (isteğe bağlı)</string>
+    <string name="social_note_hint">Ne yapacağınızı ve kimleri aradığını kısaca yaz.</string>
+    <string name="social_no_phone">telefon numarası yazma</string>
+    <string name="social_place_in_chat">Buluşma yerini, isteğini kabul ettiğin kişilerle sohbette belirlersin.</string>
+    <string name="social_auto_close">Etkinlik saati geçince akıştan kendiliğinden kalkar.</string>
+    <string name="social_publish">Yayınla</string>
+    <string name="social_pick_date">Başka bir gün seç</string>
+    <string name="social_ok">Tamam</string>
+    <string name="social_level_any">Fark etmez</string>
+    <string name="social_level_beginner">Başlangıç</string>
+    <string name="social_level_intermediate">Orta</string>
+    <string name="social_level_advanced">İleri</string>
+    <string name="social_level_value">Seviye: %1$s</string>
+            <string name="social_title_day">%1$s %2$s %3$s</string>
+    <string name="social_title_noun_other">buluşma</string>
+    <string name="social_part_morning_of">sabahı</string>
+    <string name="social_part_noon">öğlen</string>
+    <string name="social_part_afternoon">öğleden sonra</string>
+    <string name="social_part_evening_of">akşamı</string>
+    <string name="social_part_night_of">gecesi</string>
+    <string name="social_type_football">Futbol</string>
+    <string name="social_type_basketball">Basketbol</string>
+    <string name="social_type_volleyball">Voleybol</string>
+    <string name="social_type_tennis">Tenis</string>
+    <string name="social_type_table_tennis">Masa tenisi</string>
+    <string name="social_type_badminton">Badminton</string>
+    <string name="social_type_running">Koşu</string>
+    <string name="social_type_hiking">Yürüyüş/Doğa</string>
+    <string name="social_type_cycling">Bisiklet</string>
+    <string name="social_type_swimming">Yüzme</string>
+    <string name="social_type_sup_kayak">SUP/Kano</string>
+    <string name="social_type_skating">Kaykay/Paten</string>
+    <string name="social_type_fitness">Fitness</string>
+    <string name="social_type_yoga_pilates">Yoga/Pilates</string>
+    <string name="social_type_other">Diğer</string>
+    <string name="social_type_coffee">Kahve</string>
+    <string name="social_type_food">Yemek</string>
+    <string name="social_type_meetup">Tanışma</string>
+    <string name="social_type_picnic">Piknik</string>
+    <string name="social_type_movie">Film</string>
+    <string name="social_type_concert">Konser/Festival</string>
+    <string name="social_type_board_games">Masa oyunları</string>
+    <string name="social_type_video_games">Dijital oyun</string>
+    <string name="social_type_music">Müzik</string>
+    <string name="social_type_trip">Gezi</string>
+    <string name="social_type_language_exchange">Dil pratiği</string>
+    <string name="social_type_study">Birlikte çalışma</string>
+    <string name="social_type_volunteering">Gönüllülük</string>
+    <string name="social_looking_for">%1$d kişi daha aranıyor</string>
+    <string name="social_verified_student">%1$s · doğrulanmış öğrenci</string>
+    <string name="social_safety_note">Kalabalık, herkese açık bir yerde buluşun. Rahatsız edildiğinizi düşünüyorsanız lütfen şikayet edin.</string>
+    <string name="social_cancel_activity">Etkinliği iptal et</string>
+    <string name="social_cancel_confirm_title">Etkinlik iptal edilsin mi?</string>
+    <string name="social_cancel_confirm_text">Bekleyen istekler kapanır, katılacaklara iptal bildirimi gider.</string>
+    <string name="social_keep">Vazgeç</string>
+    <string name="social_cancelled_info">Etkinlik iptal edildi.</string>
+    <string name="social_report_activity">Etkinliği şikayet et</string>
+    <string name="social_report_sent">Şikayetin alındı. Good4 ekibi inceleyecek.</string>
+    <string name="social_report_harassment">Taciz veya hakaret</string>
+    <string name="social_report_safety">Güvenliğimi tehdit ediyor</string>
+    <string name="social_report_inappropriate">Uygunsuz içerik</string>
+    <string name="social_report_spam">Reklam veya spam</string>
+    <string name="social_report_other">Diğer</string>
+    <string name="social_see_requests">İstekleri gör</string>
+    <string name="social_see_requests_count">İstekleri gör (%1$d)</string>
+    <string name="social_leave">Katılımdan vazgeç</string>
+    <string name="social_withdraw_request">İsteği geri çek</string>
+    <string name="social_request_note_hint">Kendini kısaca tanıt (isteğe bağlı)</string>
+    <string name="social_join">Katılmak istiyorum</string>
+    <string name="social_verify_title">Katılmak için okul e-postanı doğrula</string>
+    <string name="social_verify_ready">Artık etkinliklere katılabilirsin.</string>
+    <string name="social_verify_after">Bağlantıyı açınca buraya dön, isteğin gönderilir. Bir kez doğrulaman yeter, Kampüs Dolabı'nda da geçerli olur.</string>
+    <string name="social_rules_title">Sosyal Etkinlik kuralları</string>
+    <string name="social_rules_intro">Etkinlikler yalnızca okul e-postasını doğrulayan öğrencilere açıktır. Buluşmadan önce bunları oku:</string>
+    <string name="social_rule_public_places">Kampüste ya da kalabalık, herkese açık bir yerde buluş.</string>
+    <string name="social_rule_personal_info">Adresini ve kişisel bilgilerini erken paylaşma.</string>
+    <string name="social_rule_respect">Katılımcılara saygılı ol; ayrımcılık, taciz ve hakaret yasaktır.</string>
+    <string name="social_rule_report">Rahatsız eden birini engelle ve şikayet et.</string>
+    <string name="social_rules_moderation">Yasak içerik otomatik engellenir. Tekrarlanan ihlaller Kampüs Dolabı ile birlikte erişimini geçici olarak kapatır.</string>
+    <string name="social_rules_checkbox">Kuralları okudum ve kabul ediyorum.</string>
+    <string name="social_requests_title">İstekler</string>
+    <string name="social_requests_waiting">Bekleyen istekler · %1$d</string>
+    <string name="social_requests_none">Şu an bekleyen istek yok.</string>
+    <string name="social_requests_accepted">Katılanlar</string>
+    <string name="social_requests_hint">Kabul edince sohbet açılır. Yer dolunca diğer istekler “Yer kalmadı” olarak kapanır.</string>
+    <string name="social_no_note">Not eklemedi</string>
+    <string name="social_inbox_empty_title">Henüz mesajın yok</string>
+    <string name="social_inbox_empty_text">Bir isteği kabul ettiğinde ya da isteğin kabul edildiğinde sohbet burada açılır.</string>
+    <string name="social_see_activity">Etkinliği görüntüle</string>
+    <string name="social_chat_safety">Buluşmayı kalabalık, herkese açık bir yerde yapın. Rahatsız edildiğinizi düşünüyorsanız lütfen şikayet edin.</string>
+    <string name="social_chat_closed">Bu sohbete artık mesaj gönderilemiyor.</string>
+    <string name="social_block_text">Bu kişi sana artık mesaj gönderemez ve etkinliklerine istek atamaz. Kampüs Dolabı'nda da engellenir.</string>
+    <string name="social_blocked_info">Kullanıcı engellendi.</string>
+    <string name="social_error_disabled">Sosyal etkinlikler şu an kapalı. Daha sonra tekrar dene.</string>
+    <string name="social_error_edu_required">Bu işlem için okul e-postanı doğrulaman gerekiyor.</string>
+    <string name="social_error_terms_required">Devam etmek için sosyal etkinlik kurallarını kabul et.</string>
+    <string name="social_error_suspended">Erişimin geçici olarak kapatıldı.</string>
+    <string name="social_error_content_blocked">Bu metinde izin verilmeyen bir ifade var.</string>
+    <string name="social_error_content_blocked_suspended">Tekrarlanan ihlaller nedeniyle erişimin 24 saatliğine kapatıldı.</string>
+    <string name="social_error_phone_in_activity">Etkinlik metnine telefon numarası yazılamaz. Numaranı kabul ettiğin kişiyle sohbette paylaşabilirsin.</string>
+    <string name="social_error_daily_activity_limit">Bugün en fazla 3 etkinlik açabilirsin.</string>
+    <string name="social_error_active_activity_limit">Aynı anda en fazla 5 yaklaşan etkinliğin olabilir.</string>
+    <string name="social_error_title">Başlık 3–60 karakter olmalı.</string>
+    <string name="social_error_note">Not en fazla 300 karakter olabilir.</string>
+    <string name="social_error_starts_at">Etkinlik en erken 15 dakika, en geç 30 gün sonrası için açılabilir.</string>
+    <string name="social_error_not_found">Bu etkinlik artık görünmüyor.</string>
+    <string name="social_error_unavailable">Bu etkinliğe artık katılınamıyor.</string>
+    <string name="social_error_status">Bu etkinliğin durumu bu işleme izin vermiyor.</string>
+    <string name="social_error_own_activity">Kendi etkinliğine istek gönderemezsin.</string>
+    <string name="social_error_already_requested">Bu etkinliğe zaten istek gönderdin.</string>
+    <string name="social_error_other_campus">Bu etkinlik başka bir kampüse ait.</string>
+    <string name="social_error_daily_request_limit">Bugün en fazla 20 istek gönderebilirsin.</string>
+    <string name="social_error_request_note">Not en fazla 200 karakter olabilir.</string>
+    <string name="social_error_request_changed">Bu istek değişmiş. Sayfa yenilendi.</string>
+    <string name="social_error_blocked">Bu kişiyle etkileşim kurulamıyor.</string>
+    <string name="social_error_conversation_closed">Bu sohbete artık mesaj gönderilemiyor.</string>
+    <string name="social_error_daily_message_limit">Bugünkü 200 mesaj hakkın doldu. Yarın tekrar dene.</string>
+    <string name="social_error_message">Mesaj en fazla 500 karakter olabilir.</string>
+    <string name="social_error_not_participant">Bu sohbete erişimin yok.</string>
+    <string name="social_error_block_limit">Engelleme listen dolu.</string>
+    <string name="social_error_report_self">Kendi etkinliğini şikayet edemezsin.</string>
+    <string name="social_error_students_only">Sosyal etkinlikler yalnızca öğrenci hesapları için.</string>
+    <string name="social_which_game">Hangi oyun? (isteğe bağlı)</string>
+    <string name="social_game_okey">Okey</string>
+    <string name="social_game_backgammon">Tavla</string>
+    <string name="social_game_chess">Satranç</string>
+    <string name="social_game_uno">Uno</string>
+    <string name="social_game_taboo">Tabu</string>
+    <string name="social_game_cards">Kart oyunları</string>
+    <string name="social_game_other">Diğer</string>
+    <string name="social_error_game">Seçtiğin oyun geçerli değil.</string>
+    <string name="social_profile_title">Sosyal profilin</string>
+    <string name="social_profile_subtitle">Diğer öğrencilerin seni nasıl gördüğünü sen belirlersin.</string>
+    <string name="social_profile_open">Profilim</string>
+    <string name="social_photo_choose">Fotoğraf seç</string>
+    <string name="social_photo_change">Fotoğrafı değiştir</string>
+    <string name="social_photo_remove">Fotoğrafı kaldır</string>
+    <string name="social_photo_note">Fotoğrafın yalnızca okul e-postasını doğrulamış, aynı üniversitenin öğrencilerine görünür.</string>
+    <string name="social_show_name">Adımı göster</string>
+    <string name="social_name_preview_shown">Diğer öğrenciler seni “%1$s” olarak görür.</string>
+    <string name="social_name_preview_masked">Adın gizli: diğer öğrenciler seni “%1$s” olarak görür.</string>
+    <string name="social_error_photo">Fotoğraf okunamadı. Başka bir fotoğraf dene.</string>
+    <string name="social_error_photo_limit">Bugün en fazla 5 kez fotoğraf değiştirebilirsin.</string>
+    <string name="social_photo_gallery">Galeriden seç</string>
+    <string name="social_photo_camera">Fotoğraf çek</string>
+    <string name="social_photo_opening">Galeri açılıyor…</string>
+    <string name="social_photo_preparing">Fotoğraf hazırlanıyor…</string>
+    <string name="social_photo_uploading">Fotoğraf kaydediliyor…</string>
+    <string name="social_photo_selected">Fotoğraf seçildi</string>
+    <string name="social_photo_saved">Fotoğraf kaydedildi</string>
+    <string name="social_photo_prepare_error">Fotoğraf hazırlanamadı. Başka bir fotoğraf seçebilirsin.</string>
+    <string name="social_photo_gallery_error">Galeri açılamadı. Tekrar deneyebilirsin.</string>
+    <string name="social_photo_camera_error">Kamera açılamadı. Galeriden fotoğraf seçebilirsin.</string>
+    <string name="social_agu" formatted="false">Ağu</string>
+    <string name="social_all" formatted="false">Tümü</string>
+    <string name="social_ara" formatted="false">Ara</string>
+    <string name="social_back" formatted="false">Geri</string>
+    <string name="social_bu_kullaniciyi_engelledin" formatted="false">Bu kullanıcıyı engelledin.</string>
+    <string name="social_eki" formatted="false">Eki</string>
+    <string name="social_engel_kaldirildi" formatted="false">Engel kaldırıldı.</string>
+    <string name="social_engeli_kaldir" formatted="false">Engeli kaldır</string>
+    <string name="social_engelle" formatted="false">Engelle</string>
+    <string name="social_eyl" formatted="false">Eyl</string>
+    <string name="social_geri_don" formatted="false">Geri dön</string>
+    <string name="social_gonder" formatted="false">Gönder</string>
+    <string name="social_haz" formatted="false">Haz</string>
+    <string name="social_hesabin_henuz_aktif_degil" formatted="false">Hesabın henüz aktif değil.</string>
+    <string name="social_islem_tamamlanamadi_baglantini_kontrol_edip_tekrar_dene" formatted="false">İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="social_kabul_ediyorum_devam_et" formatted="false">Kabul ediyorum, devam et</string>
+    <string name="social_kabul_et" formatted="false">Kabul et</string>
+    <string name="social_kas" formatted="false">Kas</string>
+    <string name="social_konusmayi_sikayet_et" formatted="false">Konuşmayı şikayet et</string>
+    <string name="social_kullanici_engellensin_mi" formatted="false">Kullanıcı engellensin mi?</string>
+    <string name="social_kullaniciyi_engelle" formatted="false">Kullanıcıyı engelle</string>
+    <string name="social_mar" formatted="false">Mar</string>
+    <string name="social_may" formatted="false">May</string>
+    <string name="social_mesaj_yaz" formatted="false">Mesaj yaz</string>
+    <string name="social_mesajlar" formatted="false">Mesajlar</string>
+    <string name="social_nis" formatted="false">Nis</string>
+    <string name="social_oca" formatted="false">Oca</string>
+    <string name="social_other" formatted="false">Diğer</string>
+    <string name="social_reddet" formatted="false">Reddet</string>
+    <string name="social_report" formatted="false">Şikayet et</string>
+    <string name="social_retry" formatted="false">Tekrar dene</string>
+    <string name="social_sohbet" formatted="false">Sohbet</string>
+    <string name="social_sub" formatted="false">Şub</string>
+    <string name="social_tem" formatted="false">Tem</string>
+    <string name="social_yuklenemedi" formatted="false">Yüklenemedi.</string>
+    <string name="social_admin_reports_title">Sosyal etkinlik şikayetleri</string>
+    <string name="social_admin_reports_hint">Konuşmalar yalnızca şikayet edildiğinde okunabilir. Her görüntüleme işlem geçmişine kaydedilir.</string>
+    <string name="social_admin_refresh">Yenile</string>
+    <string name="social_admin_loading">Yükleniyor…</string>
+    <string name="social_admin_no_reports">Açık şikayet yok</string>
+    <string name="social_admin_no_reports_hint">Yeni etkinlik ve sohbet şikayetleri burada görünecek.</string>
+    <string name="social_admin_activity_report">Etkinlik şikayeti</string>
+    <string name="social_admin_conversation_report">Konuşma şikayeti</string>
+    <string name="social_admin_activity_missing">Etkinlik artık bulunamıyor.</string>
+    <string name="social_admin_reported_user">Şikayet edilen kullanıcı</string>
+    <string name="social_admin_show_conversation">Konuşmayı göster</string>
+    <string name="social_admin_no_messages">Bu konuşmada mesaj bulunamadı.</string>
+    <string name="social_admin_system">Sistem</string>
+    <string name="social_admin_organizer">organizatör</string>
+    <string name="social_admin_participant">katılımcı</string>
+    <string name="social_admin_suspend_days">Askıya alma süresi (gün)</string>
+    <string name="social_admin_suspend_hint">Bu süre boyunca Sosyal ve Kampüs Dolabı erişimi birlikte kapanır. 1–3650 gün seçebilirsin.</string>
+    <string name="social_admin_suspend_invalid">1–3650 arasında tam bir gün sayısı gir.</string>
+    <string name="social_admin_suspend_confirm">Askıya almayı onayla</string>
+    <string name="social_admin_dismiss">Yok say</string>
+    <string name="social_admin_remove_activity">Etkinliği kaldır</string>
+    <string name="social_admin_suspend_user">Kullanıcıyı askıya al</string>
+    <string name="social_admin_violations_title">Engellenen denemeler</string>
+    <string name="social_admin_violations_hint">Yasak kelime filtresine takılan son 50 etkinlik, istek ve mesaj. 24 saatte 3 ihlal erişimi 24 saat kapatır.</string>
+    <string name="social_admin_no_records">Kayıt yok</string>
+    <string name="social_admin_context_activity">etkinlik</string>
+    <string name="social_admin_context_request">katılma isteği</string>
+    <string name="social_admin_context_message">mesaj</string>
+    <string name="social_admin_suspended">askıya alındı</string>
+    <string name="social_admin_load_error">Şikayetler yüklenemedi. Bağlantını kontrol edip yeniden dene.</string>
+    <string name="social_admin_action_error">İşlem tamamlanamadı. Şikayetleri yenileyip yeniden dene.</string>
+    <string name="social_admin_conversation_error">Konuşma yüklenemedi. Yeniden deneyebilirsin.</string>
+    <string name="social_admin_success_dismiss">Şikayet kapatıldı.</string>
+    <string name="social_admin_success_removeActivity">Etkinlik kaldırıldı.</string>
+    <string name="social_admin_success_suspendUser">Kullanıcı askıya alındı.</string>
+    <string name="social_admin_photo_removed">Profil fotoğrafı kaldırıldı. Şikayeti incelemeye devam edebilirsin.</string>
+    <string name="social_admin_profile_photo">Şikayet edilen kullanıcının profil fotoğrafı</string>
+    <string name="social_admin_remove_photo">Profil fotoğrafını kaldır</string>
+
+    <!-- Sosyal mağaza görselleri: uygulama içi metinlerle aynı Türkçe kaynak. -->
+    <string name="social_store_feed_title_first">Kampüste plan yap,</string>
+    <string name="social_store_feed_title_second">birlikte katıl</string>
+    <string name="social_store_feed_subtitle">Spor, masa oyunları ve kahve buluşmaları</string>
+    <string name="social_store_chat_title_first">Birlikte planla,</string>
+    <string name="social_store_chat_title_second">birebir konuş</string>
+    <string name="social_store_chat_subtitle">İsteğin kabul edilince sohbet başlar</string>
 </resources>

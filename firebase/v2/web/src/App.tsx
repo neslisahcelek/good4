@@ -12,6 +12,8 @@ import { httpsCallable } from "firebase/functions";
 import { NotificationAdmin } from "./NotificationAdmin";
 import { auth, functions, getFirestoreDb } from "./firebase";
 import { CampusClosetAdmin } from "./components/CampusClosetAdmin";
+import { SocialActivitiesAdmin } from "./components/SocialActivitiesAdmin";
+import { socialText } from "./socialStrings";
 import { EVENT_CATEGORIES } from "../../functions/src/eventCategories";
 import { parseKykMenuText, type KykMenuDay } from "../../functions/src/kykMenuParser";
 
@@ -1471,7 +1473,7 @@ function CommunityEntryCard({ entry, onEdit, onCancel, busy }: {
   );
 }
 
-type AdminTab = "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "audit";
+type AdminTab = "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
 type DiningMenuDayForm = { date: string; dayName: string; meals: string; calories: string };
 
 const diningDayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"];
@@ -1587,6 +1589,7 @@ function formatAdminDate(value: string | null): string {
 function AdminPanel({ user, context }: { user: User; context: Extract<PortalContext, { portalRole: "admin" }> }) {
   const [tab, setTab] = useState<AdminTab>("coupons");
   const [marketPendingCount, setMarketPendingCount] = useState(0);
+  const [socialPendingCount, setSocialPendingCount] = useState(0);
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -2205,6 +2208,9 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           <button className={tab === "market" ? "active" : ""} aria-current={tab === "market" ? "page" : undefined} onClick={() => setTab("market")}>
             Kampüs Dolabı {marketPendingCount > 0 && <span>{marketPendingCount}</span>}
           </button>
+          <button className={tab === "social" ? "active" : ""} aria-current={tab === "social" ? "page" : undefined} onClick={() => setTab("social")}>
+            {socialText("title")} {socialPendingCount > 0 && <span>{socialPendingCount}</span>}
+          </button>
           <button className={tab === "audit" ? "active" : ""} aria-current={tab === "audit" ? "page" : undefined} onClick={() => setTab("audit")}>İşlem geçmişi</button>
           <button className={tab === "notifications" ? "active" : ""} onClick={() => setTab("notifications")}>Bildirimler</button>
           <button className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>İşlem geçmişi</button>
@@ -2702,6 +2708,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
         )}
 
         {!loading && data && tab === "market" && <CampusClosetAdmin onPendingCountChange={setMarketPendingCount} />}
+        {!loading && data && tab === "social" && <SocialActivitiesAdmin onPendingCountChange={setSocialPendingCount} />}
 
         {!loading && data && tab === "audit" && (
           <section className="admin-section" aria-labelledby="audit-title">

@@ -66,7 +66,11 @@ fun CampusEmailVerificationCard(
     onSendLink: () -> Unit,
     onChangeEmail: () -> Unit,
     onRetryLink: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Feature wording; Kampüs Dolabı keeps its existing wording by default. */
+    title: String? = null,
+    readyText: String? = null,
+    afterVerifyText: String? = null
 ) {
     val busy = state.isSending || state.isConfirming
     val numberFocus = remember { FocusRequester() }
@@ -77,11 +81,11 @@ fun CampusEmailVerificationCard(
             when {
                 state.verifiedEmail != null -> {
                     ClosetSectionHeading(stringResource(Res.string.campus_closet_e_postan_onaylandi), Icons.Outlined.School)
-                    Text(stringResource(Res.string.campus_closet_ilan_verebilirsin), color = MaterialTheme.colorScheme.primary)
+                    Text(readyText ?: stringResource(Res.string.campus_closet_ilan_verebilirsin), color = MaterialTheme.colorScheme.primary)
                 }
                 state.sentTo == null -> {
                     ClosetSectionHeading(
-                        stringResource(Res.string.campus_email_title), Icons.Outlined.School,
+                        title ?: stringResource(Res.string.campus_email_title), Icons.Outlined.School,
                         stringResource(Res.string.campus_email_intro)
                     )
                     OutlinedTextField(
@@ -121,6 +125,7 @@ fun CampusEmailVerificationCard(
                         stringResource(Res.string.campus_email_check_title), Icons.Outlined.MarkEmailUnread,
                         stringResource(Res.string.campus_email_sent_to, state.sentTo)
                     )
+                    afterVerifyText?.let { Text(it) }
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         VerificationTip(Icons.Outlined.Schedule, stringResource(Res.string.campus_email_tip_delay))
                         VerificationTip(Icons.Outlined.Devices, emphasizeOutlook(stringResource(Res.string.campus_email_tip_outlook)))

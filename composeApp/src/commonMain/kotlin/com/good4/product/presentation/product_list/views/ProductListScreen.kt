@@ -121,6 +121,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.good4.campuscloset.CampusClosetBadge
+import com.good4.social.SocialBadge
+import com.good4.social.SocialRepository
 import com.good4.campuscloset.CampusClosetRepository
 import kotlinx.coroutines.CancellationException
 import androidx.compose.runtime.rememberCoroutineScope
@@ -131,6 +133,7 @@ private fun defaultHomeShortcuts(): List<HomeShortcut> = HomeShortcut.entries.fi
     it.defaultVisible
         && (it != HomeShortcut.SUSPENDED_MEALS || config.ReleaseFeatures.suspendedMeals)
         && (it != HomeShortcut.CAMPUS_CLOSET || config.ReleaseFeatures.campusCloset)
+        && (it != HomeShortcut.SOCIAL_ACTIVITIES || config.ReleaseFeatures.socialActivities)
 }
 
 @Composable
@@ -146,6 +149,7 @@ fun ProductListScreenRoot(
     onCampusMapClick: () -> Unit = {},
     onClassScheduleClick: () -> Unit = {},
     onCampusClosetClick: () -> Unit = {},
+    onSocialClick: () -> Unit = {},
     onDailyMenuClick: (DailyMeal) -> Unit = {},
     homeShortcuts: List<HomeShortcut> = defaultHomeShortcuts(),
     onMenuShortcutClick: (HomeShortcut) -> Unit = {},
@@ -157,6 +161,24 @@ fun ProductListScreenRoot(
     val closetRepository: CampusClosetRepository = koinInject()
     val closetUnread by closetBadge.unread.collectAsStateWithLifecycle()
     val showsCloset = HomeShortcut.CAMPUS_CLOSET in homeShortcuts
+    val socialBadge: SocialBadge = koinInject()
+    val socialRepository: SocialRepository = koinInject()
+    val socialCount by socialBadge.count.collectAsStateWithLifecycle()
+    val showsSocial = HomeShortcut.SOCIAL_ACTIVITIES in homeShortcuts
+    LifecycleResumeEffect(showsSocial) {
+        if (showsSocial && socialBadge.shouldRefresh()) {
+            scope.launch {
+                try {
+                    socialRepository.summary()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // The badge is a hint; the social screens show load errors.
+                }
+            }
+        }
+        onPauseOrDispose { }
+    }
     LifecycleResumeEffect(showsCloset) {
         if (showsCloset && closetBadge.shouldRefresh()) {
             scope.launch {
@@ -200,6 +222,8 @@ fun ProductListScreenRoot(
         onClassScheduleClick = onClassScheduleClick,
         onCampusClosetClick = onCampusClosetClick,
         campusClosetUnread = closetUnread,
+        onSocialClick = onSocialClick,
+        socialCount = socialCount,
         onDailyMenuClick = onDailyMenuClick,
         homeShortcuts = homeShortcuts,
         onMenuShortcutClick = onMenuShortcutClick,
@@ -226,6 +250,8 @@ fun ProductListScreen(
     onClassScheduleClick: () -> Unit = {},
     onCampusClosetClick: () -> Unit = {},
     campusClosetUnread: Int = 0,
+    onSocialClick: () -> Unit = {},
+    socialCount: Int = 0,
     onDailyMenuClick: (DailyMeal) -> Unit = {},
     homeShortcuts: List<HomeShortcut> = defaultHomeShortcuts(),
     onMenuShortcutClick: (HomeShortcut) -> Unit = {},
@@ -305,6 +331,8 @@ fun ProductListScreen(
                                 onClassScheduleClick = onClassScheduleClick,
                                 onCampusClosetClick = onCampusClosetClick,
                                 campusClosetUnread = campusClosetUnread,
+                                onSocialClick = onSocialClick,
+                                socialCount = socialCount,
                                 shortcuts = homeShortcuts,
                                 onMenuShortcutClick = onMenuShortcutClick,
                                 onEditHomeClick = onEditHomeClick
@@ -736,6 +764,8 @@ private fun HomeQuickActions(
     onClassScheduleClick: () -> Unit,
     onCampusClosetClick: () -> Unit,
     campusClosetUnread: Int,
+    onSocialClick: () -> Unit,
+    socialCount: Int,
     shortcuts: List<HomeShortcut>,
     onMenuShortcutClick: (HomeShortcut) -> Unit,
     onEditHomeClick: () -> Unit
@@ -755,6 +785,7 @@ private fun HomeQuickActions(
                 HomeShortcut.ACADEMIC_CALENDAR -> onCalendarClick
                 HomeShortcut.SUSPENDED_MEALS -> onReservationsClick
                 HomeShortcut.CAMPUS_CLOSET -> onCampusClosetClick
+                HomeShortcut.SOCIAL_ACTIVITIES -> onSocialClick
                 else -> ({ onMenuShortcutClick(shortcut) })
             }
             HomeQuickActionCard(
@@ -763,7 +794,11 @@ private fun HomeQuickActions(
                 icon = appearance.icon,
                 accent = appearance.accent,
                 tag = appearance.tag,
-                badgeCount = if (shortcut == HomeShortcut.CAMPUS_CLOSET) campusClosetUnread else 0,
+                badgeCount = when (shortcut) {
+                    HomeShortcut.CAMPUS_CLOSET -> campusClosetUnread
+                    HomeShortcut.SOCIAL_ACTIVITIES -> 0
+                    else -> 0
+                },
                 onClick = onClick
             )
         }

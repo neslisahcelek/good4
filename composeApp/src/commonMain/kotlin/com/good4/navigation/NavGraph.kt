@@ -87,6 +87,8 @@ fun Good4NavGraph(
             when (notification.type) {
                 "market_message" -> navController.navigate(Route.CampusClosetChat(notification.targetId)) { launchSingleTop = true }
                 "market_listing" -> navController.navigate(Route.CampusClosetMyListings) { launchSingleTop = true }
+                "social_request", "social_activity" -> navController.navigate(Route.SocialRequests(notification.targetId)) { launchSingleTop = true }
+                "social_conversation", "social_message" -> navController.navigate(Route.SocialChat(notification.targetId)) { launchSingleTop = true }
             }
         }
     }
@@ -95,7 +97,9 @@ fun Good4NavGraph(
         if (campusLink != null && primaryUser != null && destination != null
             && !destination.hasRoute<Route.Splash>() && !destination.hasRoute<Route.SessionRestore>()
             && !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.EmailVerification>()
-            && !destination.hasRoute<Route.CampusCloset>()) {
+            && !destination.hasRoute<Route.CampusCloset>()
+            // A student verifying from a social activity stays there; that screen finishes the link.
+            && !destination.hasRoute<Route.SocialActivity>()) {
             navController.navigate(Route.CampusCloset) { launchSingleTop = true }
         }
     }
@@ -262,6 +266,9 @@ fun Good4NavGraph(
                 onNavigateToCampusCloset = {
                     navController.navigate(Route.CampusCloset)
                 },
+                onNavigateToSocial = {
+                    navController.navigate(Route.Social)
+                },
                 onNavigateToClassSchedule = {
                     navController.navigate(Route.ClassSchedule)
                 },
@@ -355,6 +362,62 @@ fun Good4NavGraph(
                 conversationId = route.conversationId,
                 onBack = { navController.popBackStack() },
                 onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) }
+            )
+        }
+
+        composable<Route.Social> {
+            com.good4.social.SocialScreen(
+                onBack = { navController.popBackStack() },
+                onOpenActivity = { navController.navigate(Route.SocialActivity(it)) },
+                onCreate = { navController.navigate(Route.SocialCreate) },
+                onOpenInbox = { navController.navigate(Route.SocialInbox) },
+                onOpenChat = { navController.navigate(Route.SocialChat(it)) }
+            )
+        }
+
+        composable<Route.SocialCreate> {
+            com.good4.social.SocialCreateScreen(
+                onBack = { navController.popBackStack() },
+                onCreated = { activityId ->
+                    navController.navigate(Route.SocialActivity(activityId)) {
+                        popUpTo<Route.SocialCreate> { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable<Route.SocialActivity> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.SocialActivity>()
+            com.good4.social.SocialActivityScreen(
+                activityId = route.activityId,
+                onBack = { navController.popBackStack() },
+                onOpenRequests = { navController.navigate(Route.SocialRequests(it)) },
+                onOpenChat = { navController.navigate(Route.SocialChat(it)) }
+            )
+        }
+
+        composable<Route.SocialRequests> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.SocialRequests>()
+            com.good4.social.SocialRequestsScreen(
+                activityId = route.activityId,
+                onBack = { navController.popBackStack() },
+                onOpenChat = { navController.navigate(Route.SocialChat(it)) }
+            )
+        }
+
+        composable<Route.SocialInbox> {
+            com.good4.social.SocialInboxScreen(
+                onBack = { navController.popBackStack() },
+                onOpenChat = { navController.navigate(Route.SocialChat(it)) }
+            )
+        }
+
+        composable<Route.SocialChat> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.SocialChat>()
+            com.good4.social.SocialChatScreen(
+                conversationId = route.conversationId,
+                onBack = { navController.popBackStack() },
+                onOpenActivity = { navController.navigate(Route.SocialActivity(it)) { launchSingleTop = true } }
             )
         }
 

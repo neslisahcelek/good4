@@ -22,6 +22,10 @@ class CampusPushNotificationsTest {
     @Test fun onlyKnownCampusRoutesWithSafeIdsAreAccepted() {
         assertNotNull(campusPushDestination("uid", "market_message", "listing_buyer"))
         assertNotNull(campusPushDestination("uid", "market_listing", "listing"))
+        assertNotNull(campusPushDestination("uid", "social_request", "activity"))
+        assertNotNull(campusPushDestination("uid", "social_message", "activity_participant"))
+        assertNull(campusPushDestination("uid", "social_message", "https://evil.example"))
+        assertNull(campusPushDestination("uid", null, "activity"))
         assertNull(campusPushDestination(null, "market_message", "listing_buyer"))
         assertNull(campusPushDestination("uid", "admin", "listing"))
         assertNull(campusPushDestination("uid", "market_message", "https://evil.example"))

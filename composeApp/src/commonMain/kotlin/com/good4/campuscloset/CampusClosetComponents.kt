@@ -4,6 +4,7 @@ import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.StandardButtonHeight
 import com.good4.core.presentation.*
 import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -266,7 +267,8 @@ internal fun CenteredState(message: String, actionLabel: String? = null, onActio
 internal fun ReportDialog(
     title: String,
     onDismiss: () -> Unit,
-    onSubmit: (reason: String, note: String) -> Unit
+    onSubmit: (reason: String, note: String) -> Unit,
+    reasons: List<Pair<String, StringResource>> = MARKET_REPORT_REASONS
 ) {
     var reason by remember { mutableStateOf<String?>(null) }
     var note by remember { mutableStateOf("") }
@@ -275,7 +277,7 @@ internal fun ReportDialog(
         title = { Text(title) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                MARKET_REPORT_REASONS.forEach { (id, label) ->
+                reasons.forEach { (id, label) ->
                     Row(
                         Modifier.fillMaxWidth()
                             .selectable(selected = reason == id, role = Role.RadioButton) { reason = id }

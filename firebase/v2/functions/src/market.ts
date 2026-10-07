@@ -79,7 +79,7 @@ const ACTIVE_LISTING_STATUSES = ["pending", "published", "reserved"];
 const MESSAGEABLE_LISTING_STATUSES = ["published", "reserved", "sold", "expired"];
 const MARKET_ROLES = ["student", "good4Admin"] as const;
 
-const UNIVERSITY_NAMES: Record<string, string> = {
+export const UNIVERSITY_NAMES: Record<string, string> = {
   "akdeniz.edu.tr": "Akdeniz Üniversitesi",
 };
 
@@ -144,25 +144,25 @@ export function searchTokensFor(title: string): string[] {
   return [...tokens].slice(0, 200);
 }
 
-function iso(value: unknown): string | null {
+export function iso(value: unknown): string | null {
   return value instanceof Timestamp ? value.toDate().toISOString() : null;
 }
 
-function requireId(value: unknown, field: string): string {
+export function requireId(value: unknown, field: string): string {
   if (typeof value !== "string" || !/^[A-Za-z0-9]{1,128}$/.test(value)) {
     throw new HttpsError("invalid-argument", `${field}_INVALID`);
   }
   return value;
 }
 
-function requireText(value: unknown, field: string, min: number, max: number): string {
+export function requireText(value: unknown, field: string, min: number, max: number): string {
   if (typeof value !== "string") throw new HttpsError("invalid-argument", `${field}_REQUIRED`);
   const text = value.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   if (text.length < min || text.length > max) throw new HttpsError("invalid-argument", `${field}_INVALID`);
   return text;
 }
 
-function requireOneOf<T extends string | number>(value: unknown, allowed: readonly T[], code: string): T {
+export function requireOneOf<T extends string | number>(value: unknown, allowed: readonly T[], code: string): T {
   if (!allowed.includes(value as T)) throw new HttpsError("invalid-argument", code);
   return value as T;
 }
@@ -225,11 +225,11 @@ function listingMessageCount(state: DocumentSnapshot, listingId: string, now: nu
  * Records a blocked attempt outside the rejected request so it is kept, and
  * suspends the account after repeated attempts. Always throws.
  */
-async function rejectBlockedContent(
+export async function rejectBlockedContent(
   database: Firestore,
   uid: string,
   term: string,
-  context: "listing" | "message",
+  context: "listing" | "message" | "socialActivity" | "socialRequest" | "socialMessage",
   excerpt: string,
   now: number,
 ): Promise<never> {
@@ -637,7 +637,7 @@ function parseConversationId(value: unknown): { conversationId: string; listingI
   return { conversationId: match[0], listingId: match[1]!, buyerUid: match[2]! };
 }
 
-function isBlockedBetween(a: DocumentSnapshot, aUid: string, b: DocumentSnapshot, bUid: string): boolean {
+export function isBlockedBetween(a: DocumentSnapshot, aUid: string, b: DocumentSnapshot, bUid: string): boolean {
   const blocks = (state: DocumentSnapshot, other: string) =>
     Array.isArray(state.get("blockedUids")) && (state.get("blockedUids") as unknown[]).includes(other);
   return blocks(a, bUid) || blocks(b, aUid);

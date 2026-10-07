@@ -423,6 +423,32 @@ test('Kampüs Dolabı collections are closed to clients; the callables own every
   await assertFails(getDoc(doc(buyerDb, 'marketViolations/v1')));
 });
 
+test('social activity collections are closed to clients; the callables own every read and write', async () => {
+  await seed('socialActivities/a1', { organizerUid: 'organizer-1', status: 'open', startsAt: 1 });
+  await seed('socialActivities/a1/joinRequests/student-1', { requesterUid: 'student-1', status: 'pending' });
+  await seed('socialConversations/a1_student-1', { participants: ['organizer-1', 'student-1'], lastMessageAt: 1 });
+  await seed('socialConversations/a1_student-1/messages/m1', { senderUid: 'student-1', text: 'Merhaba', createdAt: 1 });
+  await seed('socialUserState/student-1', { termsVersion: 1, unreadCount: 1 });
+  await seed('socialReports/activity_a1_student-1', { reporterUid: 'student-1', status: 'open' });
+  const studentDb = testEnv.authenticatedContext('student-1').firestore();
+  const organizerDb = testEnv.authenticatedContext('organizer-1').firestore();
+
+  await assertFails(getDoc(doc(studentDb, 'socialActivities/a1')));
+  await assertFails(getDocs(query(collection(studentDb, 'socialActivities'), where('status', '==', 'open'))));
+  await assertFails(setDoc(doc(organizerDb, 'socialActivities/a2'), { organizerUid: 'organizer-1', status: 'open' }));
+  await assertFails(updateDoc(doc(organizerDb, 'socialActivities/a1'), { capacity: 99 }));
+  await assertFails(getDoc(doc(organizerDb, 'socialActivities/a1/joinRequests/student-1')));
+  await assertFails(updateDoc(doc(organizerDb, 'socialActivities/a1/joinRequests/student-1'), { status: 'accepted' }));
+  await assertFails(setDoc(doc(studentDb, 'socialActivities/a1/joinRequests/student-1'), { status: 'accepted' }));
+  await assertFails(getDoc(doc(studentDb, 'socialConversations/a1_student-1')));
+  await assertFails(getDocs(collection(studentDb, 'socialConversations/a1_student-1/messages')));
+  await assertFails(setDoc(doc(studentDb, 'socialConversations/a1_student-1/messages/m2'),
+    { senderUid: 'student-1', text: 'Selam', createdAt: 2 }));
+  await assertFails(getDoc(doc(studentDb, 'socialUserState/student-1')));
+  await assertFails(updateDoc(doc(studentDb, 'socialUserState/student-1'), { termsVersion: 2 }));
+  await assertFails(getDoc(doc(studentDb, 'socialReports/activity_a1_student-1')));
+});
+
 test('notification inbox is self-readable and every mutation and endpoint is server-only', async () => {
   await seed('users/student-1', { role: 'student', status: 'active' });
   await seed('users/student-2', { role: 'student', status: 'active' });

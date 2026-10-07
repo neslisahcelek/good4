@@ -99,6 +99,14 @@ export async function erasePushDevices(database: Firestore, uid: string): Promis
   await Promise.all(page.docs.map((device) => removeUnchangedDevice(database, device)));
 }
 
+/** The feature name and a generic line; chat text never reaches the lock screen. */
+function lockScreenText(payload: PushPayload): { title: string; body: string } {
+  const type = payload.data?.type ?? "";
+  if (type === "market_message") return { title: "Kampüs Dolabı", body: "Yeni bir mesajın veya teklifin var." };
+  if (type === "social_message") return { title: "Etkinlikler", body: "Yeni bir mesajın var." };
+  return { title: type.startsWith("social_") ? "Etkinlikler" : "Kampüs Dolabı", body: payload.title.slice(0, 100) };
+}
+
 /** Failure to notify must not turn a committed message/listing into a failed request. */
 export async function sendPushToUser(
   database: Firestore,
@@ -133,12 +141,7 @@ export async function sendPushToUser(
         tokens: batch.map((device) => String(device.get("token"))),
         // Keep lock-screen text free of private message content, including if
         // an offline logout has not yet removed its server registration.
-        notification: {
-          title: "Kampüs Dolabı",
-          body: payload.data?.type === "market_message"
-            ? "Yeni bir mesajın veya teklifin var."
-            : payload.title.slice(0, 100),
-        },
+        notification: lockScreenText(payload),
         data: { ...payload.data, recipientUid: uid },
         android: {
           priority: "high", ttl: 60 * 60 * 1000,

@@ -94,6 +94,36 @@ import {
   sendMarketMessageService,
   updateMarketListingStatusService,
 } from "./market.js";
+import {
+  acceptSocialTermsService,
+  blockSocialUserService,
+  cancelSocialActivityService,
+  cleanupSocialDataService,
+  createSocialActivityService,
+  eraseSocialData,
+  getSocialActivityService,
+  getSocialFeedService,
+  getSocialMessagesService,
+  getSocialReportConversationService,
+  getSocialSummaryService,
+  setSocialProfileService,
+  listMySocialActivitiesService,
+  listSocialActivityRequestsService,
+  listSocialBlockedService,
+  listSocialConversationsService,
+  listSocialModerationQueueService,
+  markSocialConversationReadService,
+  reportSocialContentService,
+  requestToJoinSocialActivityService,
+  resolveSocialReportService,
+  removeSocialReportedProfilePhotoService,
+  respondToSocialRequestService,
+  sendSocialMessageService,
+  type SocialDeps,
+  unblockSocialUserService,
+  withdrawSocialRequestService,
+} from "./social.js";
+import { privateSocialPhotoStore } from "./socialProfile.js";
 import { registerPushDeviceService as registerCampusPushDeviceService, unregisterPushDeviceService as unregisterCampusPushDeviceService, sendPushToUser } from "./push.js";
 
 setGlobalOptions({ minInstances: 0, maxInstances: 5 });
@@ -127,6 +157,13 @@ const marketDeps: MarketDeps = {
     },
     deletePrefix: deleteStoragePrefix,
   },
+  notify: (uid, payload) => sendPushToUser(db, uid, payload),
+};
+
+const socialPhotos = privateSocialPhotoStore(storageBucket);
+
+const socialDeps: SocialDeps = {
+  photos: socialPhotos,
   notify: (uid, payload) => sendPushToUser(db, uid, payload),
 };
 
@@ -505,6 +542,7 @@ export const deleteMyAccount = onCall({
     if ((error as { code?: string }).code !== "auth/user-not-found") throw error;
   }
   await eraseMarketData(db, uid, deleteStoragePrefix);
+  await eraseSocialData(db, uid, deleteStoragePrefix);
   await eraseAccountData(db, legacyTestDb, uid, email);
 
   try {
@@ -654,6 +692,146 @@ export const resolveMarketReport = onCall(callableOptions, async (request) => {
 export const getMarketReportConversation = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return getMarketReportConversationService(db, uid, request.data ?? {});
+});
+
+// Sosyal etkinlikler: student social and sport activities. Every read and write
+// goes through these callables; app_config/social_activities.enabled switches it on.
+export const acceptSocialTerms = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return acceptSocialTermsService(db, uid, request.data ?? {});
+});
+
+export const setSocialProfile = onCall({
+  ...callableOptions,
+  memory: "1GiB",
+  timeoutSeconds: 60,
+}, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return setSocialProfileService(db, uid, request.data ?? {}, { photos: socialPhotos });
+});
+
+export const createSocialActivity = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return createSocialActivityService(db, uid, request.data ?? {});
+});
+
+export const cancelSocialActivity = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return cancelSocialActivityService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const requestToJoinSocialActivity = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return requestToJoinSocialActivityService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const withdrawSocialRequest = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return withdrawSocialRequestService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const respondToSocialRequest = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return respondToSocialRequestService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const sendSocialMessage = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return sendSocialMessageService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const markSocialConversationRead = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return markSocialConversationReadService(db, uid, request.data ?? {});
+});
+
+export const blockSocialUser = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return blockSocialUserService(db, uid, request.data ?? {});
+});
+
+export const unblockSocialUser = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return unblockSocialUserService(db, uid, request.data ?? {});
+});
+
+export const listSocialBlocked = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listSocialBlockedService(db, uid);
+});
+
+export const reportSocialContent = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return reportSocialContentService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const getSocialSummary = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getSocialSummaryService(db, uid, socialDeps);
+});
+
+export const getSocialFeed = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getSocialFeedService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const getSocialActivity = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getSocialActivityService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const listSocialActivityRequests = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listSocialActivityRequestsService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const listMySocialActivities = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listMySocialActivitiesService(db, uid);
+});
+
+export const listSocialConversations = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listSocialConversationsService(db, uid, socialDeps);
+});
+
+export const getSocialMessages = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getSocialMessagesService(db, uid, request.data ?? {}, socialDeps);
+});
+
+export const listSocialModerationQueue = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return listSocialModerationQueueService(db, uid, socialDeps);
+});
+
+export const resolveSocialReport = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return resolveSocialReportService(db, uid, request.data ?? {});
+});
+
+export const removeSocialReportedProfilePhoto = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return removeSocialReportedProfilePhotoService(db, uid, request.data ?? {}, { photos: marketDeps.photos });
+});
+
+export const getSocialReportConversation = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getSocialReportConversationService(db, uid, request.data ?? {});
+});
+
+// Sosyal etkinlik retention (KVKK): ends started activities, then deletes activities,
+// their requests and chats 30 days after the start, and old resolved reports.
+export const cleanupSocialActivities = onSchedule({
+  schedule: "every day 04:45",
+  timeZone: "Europe/Istanbul",
+  region: "europe-west1",
+  memory: "512MiB",
+  timeoutSeconds: 540,
+  retryCount: 1,
+}, async () => {
+  const counts = await cleanupSocialDataService(db, Date.now());
+  console.log("socialActivities cleanup", counts);
 });
 
 // One request per half hour for the whole app keeps us well inside MET Norway's
