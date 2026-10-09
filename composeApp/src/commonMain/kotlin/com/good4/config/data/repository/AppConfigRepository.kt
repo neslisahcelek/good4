@@ -47,7 +47,7 @@ class AppConfigRepository(
     private val updateNoticeCache = com.good4.core.data.repository.ReadCache<UpdateNotice?>(60)
 
     /** Missing or unreadable configuration keeps the update prompt disabled. */
-    suspend fun getUpdateNotice(): UpdateNotice? = updateNoticeCache.load {
+    suspend fun getUpdateNotice(forceRefresh: Boolean = false): UpdateNotice? = updateNoticeCache.load(forceRefresh = forceRefresh) {
         when (val result = firestoreRepository.getDocument(
             collectionPath = "app_config",
             documentId = "update_notice",
