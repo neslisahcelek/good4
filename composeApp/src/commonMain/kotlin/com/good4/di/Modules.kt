@@ -47,6 +47,7 @@ expect val platformModule: org.koin.core.module.Module
 
 val commonModule = module {
     viewModel { com.good4.update.AppUpdateViewModel(get<AppConfigRepository>()) }
+    viewModel { com.good4.update.ForceUpdateViewModel(get<AppConfigRepository>()) }
     single { com.good4.notification.NotificationRepository(get(), get()) }
     viewModel { com.good4.notification.NotificationsViewModel(get<com.good4.notification.NotificationRepository>()) }
     single { com.good4.review.StoreReviewCoordinator(com.good4.review.DeviceReviewStorage()) }

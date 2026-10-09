@@ -18,7 +18,8 @@ fun SplashScreenRoot(
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: (UserRole) -> Unit,
     onNavigateToEmailVerification: () -> Unit,
-    onNavigateToSessionRestore: () -> Unit
+    onNavigateToSessionRestore: () -> Unit,
+    onNavigateToForceUpdate: () -> Unit
 ) {
     val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
     val userRole by viewModel.userRole.collectAsStateWithLifecycle()
@@ -26,6 +27,7 @@ fun SplashScreenRoot(
     LaunchedEffect(startDestination, userRole) {
         startDestination?.let { destination ->
             when (destination) {
+                Route.ForceUpdate -> onNavigateToForceUpdate()
                 Route.Login -> onNavigateToLogin()
                 Route.AdminHome, Route.BusinessHome, Route.StudentHome, Route.WebPanelNotice -> {
                     userRole?.let { role ->

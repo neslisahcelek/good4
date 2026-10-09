@@ -6,5 +6,8 @@ import kotlinx.serialization.Serializable
 data class UpdateNoticeDto(
     val title: String? = null,
     val message: String? = null,
-    val enabled: Boolean? = null
+    val enabled: Boolean? = null,
+    val minVersionCodeAndroid: Int? = null,
+    val minVersionIos: String? = null,
+    val forceUpdate: Boolean? = null
 )

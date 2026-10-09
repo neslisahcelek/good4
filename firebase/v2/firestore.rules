@@ -202,8 +202,9 @@ service cloud.firestore {
     }
 
     match /app_config/{documentId} {
-      allow get: if signedIn() && documentId in ['akdeniz_dining_menu', 'home_banner', 'home_banner_2',
-        'home_banner_3', 'home_banner_4', 'campus_weather', 'update_notice'];
+      allow get: if documentId == 'update_notice'
+        || (signedIn() && documentId in ['akdeniz_dining_menu', 'home_banner', 'home_banner_2',
+            'home_banner_3', 'home_banner_4', 'campus_weather']);
       allow list, create, update, delete: if false;
     }
 

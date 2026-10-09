@@ -6,9 +6,11 @@ import com.good4.auth.data.repository.AuthRepository
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.data.local.StartupSessionCache
 import com.good4.core.util.Logger
+import com.good4.core.util.getAppVersionInfo
 import com.good4.navigation.Route
 import com.good4.user.data.repository.UserRepository
 import com.good4.user.domain.UserRole
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -50,12 +52,30 @@ class SplashViewModel(
             val startupStartedAt = Clock.System.now().toEpochMilliseconds()
             Logger.d(TAG, "startup.started_at=$startupStartedAt")
 
-            val resolution = withTimeoutOrNull(ROUTE_DECISION_TIMEOUT_MS) {
-                startupResolver.resolve(
-                    userFetchTimeoutMs = USER_FETCH_TIMEOUT_MS,
-                    authReloadTimeoutMs = AUTH_RELOAD_TIMEOUT_MS
-                )
-            } ?: run {
+            val forceUpdateDeferred = async {
+                withTimeoutOrNull(ROUTE_DECISION_TIMEOUT_MS) {
+                    runCatching { configRepository.getUpdateNotice() }.getOrNull()
+                }
+            }
+
+            val resolutionDeferred = async {
+                withTimeoutOrNull(ROUTE_DECISION_TIMEOUT_MS) {
+                    startupResolver.resolve(
+                        userFetchTimeoutMs = USER_FETCH_TIMEOUT_MS,
+                        authReloadTimeoutMs = AUTH_RELOAD_TIMEOUT_MS
+                    )
+                }
+            }
+
+            val notice = forceUpdateDeferred.await()
+            val currentVersion = getAppVersionInfo()
+            if (notice != null && notice.isForceUpdateRequired(currentVersion)) {
+                Logger.e(TAG, "Force update required for version=$currentVersion, notice=$notice")
+                _startDestination.value = Route.ForceUpdate
+                return@launch
+            }
+
+            val resolution = resolutionDeferred.await() ?: run {
                 val fallbackRoute = if (authRepository.currentUser != null) {
                     Route.SessionRestore
                 } else {

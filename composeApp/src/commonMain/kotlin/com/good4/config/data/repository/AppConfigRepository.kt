@@ -56,7 +56,10 @@ class AppConfigRepository(
             is Result.Success -> UpdateNotice(
                 title = result.data.title ?: "",
                 message = result.data.message ?: "",
-                enabled = result.data.enabled == true
+                enabled = result.data.enabled == true,
+                minVersionCodeAndroid = result.data.minVersionCodeAndroid,
+                minVersionIos = result.data.minVersionIos?.trim()?.takeIf { it.isNotBlank() },
+                forceUpdate = result.data.forceUpdate ?: false
             )
             is Result.Error -> null
         }
