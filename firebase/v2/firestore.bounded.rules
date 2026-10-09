@@ -227,7 +227,7 @@ service cloud.firestore {
 
     match /app_config/{documentId} {
       allow get: if signedIn() && documentId in ['akdeniz_dining_menu', 'home_banner', 'home_banner_2',
-        'home_banner_3', 'home_banner_4', 'campus_weather'];
+        'home_banner_3', 'home_banner_4', 'campus_weather', 'update_notice'];
       allow create, update, delete: if false;
       allow list: if boundedList() && (false);
     }

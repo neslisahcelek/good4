@@ -50,11 +50,8 @@ fun UpdateHomeContent(
         if (enabled) viewModel.refresh()
         onPauseOrDispose { }
     }
-    val updateAvailable = state.status == UpdateStatus.AVAILABLE ||
-        state.status == UpdateStatus.DOWNLOADING ||
-        state.status == UpdateStatus.READY
-    ReviewModalBlocker(enabled && !state.snoozed && updateAvailable)
-    val visible = enabled && !state.snoozed && updateAvailable
+    val visible = enabled && state.showCard
+    ReviewModalBlocker(visible)
     val banner: (@Composable () -> Unit)? = if (visible) {
         { AppUpdateCard(state, viewModel::update, viewModel::later) }
     } else null

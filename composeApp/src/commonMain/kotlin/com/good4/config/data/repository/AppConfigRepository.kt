@@ -46,7 +46,7 @@ class AppConfigRepository(
 
     private val updateNoticeCache = com.good4.core.data.repository.ReadCache<UpdateNotice?>(60)
 
-    /** Missing or unreadable optional copy leaves presentation defaults in place. */
+    /** Missing or unreadable configuration keeps the update prompt disabled. */
     suspend fun getUpdateNotice(): UpdateNotice? = updateNoticeCache.load {
         when (val result = firestoreRepository.getDocument(
             collectionPath = "app_config",
@@ -55,7 +55,8 @@ class AppConfigRepository(
         )) {
             is Result.Success -> UpdateNotice(
                 title = result.data.title ?: "",
-                message = result.data.message ?: ""
+                message = result.data.message ?: "",
+                enabled = result.data.enabled == true
             )
             is Result.Error -> null
         }

@@ -19,12 +19,17 @@ private const val REMINDER_GAP_MS = 7 * 24 * 60 * 60 * 1000L
 
 data class AppUpdateState(
     val status: UpdateStatus = UpdateStatus.NONE,
+    val softUpdateEnabled: Boolean = false,
     val snoozed: Boolean = false,
     val busy: Boolean = false,
     val error: Boolean = false,
     val title: UiText = UiText.StringResourceId(Res.string.app_update_title),
     val message: UiText = UiText.StringResourceId(Res.string.app_update_body)
-)
+) {
+    val showCard: Boolean
+        get() = softUpdateEnabled && !snoozed &&
+            (status == UpdateStatus.AVAILABLE || status == UpdateStatus.DOWNLOADING || status == UpdateStatus.READY)
+}
 
 class AppUpdateViewModel(private val configRepository: AppConfigRepository) : ViewModel() {
     private val _state = MutableStateFlow(AppUpdateState())
@@ -57,7 +62,7 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
         checkJob?.cancel()
         actionJob?.cancel()
         service = null
-        _state.update { it.copy(busy = false) }
+        _state.update { it.copy(busy = false, softUpdateEnabled = false) }
     }
 
     fun refresh() {
@@ -71,11 +76,13 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
         lastCheckedAt = now
         checkJob = viewModelScope.launch {
             try {
+                val notice = configRepository.getUpdateNotice()
+                _state.update { it.copy(softUpdateEnabled = notice?.enabled == true) }
+                if (notice?.enabled != true) return@launch
                 current.check()
                 if (current.status.value == UpdateStatus.AVAILABLE ||
                     current.status.value == UpdateStatus.DOWNLOADING ||
                     current.status.value == UpdateStatus.READY) {
-                    val notice = configRepository.getUpdateNotice()
                     // Each optional field falls back independently; remote copy cannot inflate the card indefinitely.
                     val title = notice?.title?.trim()?.takeIf { it.isNotBlank() && it.length <= 120 }
                     val message = notice?.message?.trim()?.takeIf { it.isNotBlank() && it.length <= 400 }
@@ -91,6 +98,7 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
+                _state.update { it.copy(softUpdateEnabled = false) }
                 // A background store lookup must never interrupt normal app use.
             }
         }
@@ -103,6 +111,7 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
 
     fun update() {
         val current = service ?: return
+        if (!_state.value.showCard) return
         if (actionJob?.isActive == true) return
         checkJob?.cancel()
         val ready = _state.value.status == UpdateStatus.READY
