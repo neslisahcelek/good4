@@ -17,6 +17,7 @@ import com.good4.core.presentation.AppBackground
 import com.good4.core.presentation.Good4Theme
 import com.good4.core.presentation.LocalThemeController
 import com.good4.core.presentation.ThemeController
+import com.good4.core.presentation.components.dismissKeyboardOnTap
 import com.good4.core.presentation.loadDarkModePreference
 import com.good4.core.presentation.saveDarkModePreference
 import com.good4.navigation.Good4NavGraph
@@ -47,6 +48,7 @@ fun App(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(AppBackground)
+                    .dismissKeyboardOnTap()
             ) {
                 Good4NavGraph(
                     startDestination = startDestination,

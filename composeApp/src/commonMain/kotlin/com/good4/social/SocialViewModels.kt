@@ -64,6 +64,8 @@ class SocialHomeViewModel(private val repository: SocialRepository) : ViewModel(
     val state = _state.asStateFlow()
     private var loadJob: Job? = null
     private var requestVersion = 0L
+    /** Last first page per tab, so switching tabs shows a list at once while it refreshes. */
+    private val firstPages = mutableMapOf<String?, SocialFeed>()
 
     fun load() {
         val kind = _state.value.kind
@@ -74,6 +76,7 @@ class SocialHomeViewModel(private val repository: SocialRepository) : ViewModel(
             attempt { repository.feed(kind, null) }
                 .onSuccess { feed ->
                     if (version != requestVersion) return@onSuccess
+                    firstPages[kind] = feed
                     _state.update { it.copy(isLoading = false, me = feed.me, activities = feed.activities, nextAfter = feed.nextAfter) }
                 }
                 .onFailure { error ->
@@ -85,8 +88,13 @@ class SocialHomeViewModel(private val repository: SocialRepository) : ViewModel(
     }
 
     fun selectKind(kind: String?) {
-        if (kind == _state.value.kind) return
-        _state.update { it.copy(kind = kind, activities = emptyList(), nextAfter = null) }
+        val current = _state.value
+        if (kind == current.kind) return
+        // Social and sport are subsets of Tümü, so an unvisited tab can start from that list.
+        val cached = firstPages[kind]
+        val known = cached?.activities
+            ?: if (current.kind == null) current.activities.filter { it.kind == kind } else emptyList()
+        _state.update { it.copy(kind = kind, activities = known, nextAfter = cached?.nextAfter, loadError = null) }
         load()
     }
 

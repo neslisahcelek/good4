@@ -71,6 +71,7 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
+import com.good4.core.presentation.components.dismissKeyboardOnTap
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -136,7 +137,8 @@ fun SocialActivityScreen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = AppBackground
         ) {
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp).navigationBarsPadding()) {
+            // Sheets sit above the app root, so they need their own tap-to-dismiss.
+            Column(Modifier.fillMaxWidth().dismissKeyboardOnTap().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp).navigationBarsPadding()) {
                 CampusEmailVerificationCard(
                     state = eduState,
                     onEmailChange = eduViewModel::setEmail,

@@ -159,12 +159,7 @@ private class PosterPainter(scope: DrawScope, val line: Color, val accent: Color
                 line(12f, 62.5f, 30f, 62.5f, NET, 2.5f)
             }
             "hiking" -> {
-                listOf(
-                    "M50 8 C82 8 96 40 92 64 C88 92 66 106 42 102 C14 98 4 70 10 46 C14 26 30 8 50 8Z",
-                    "M50 20 C70 20 82 40 78 58 C74 78 58 88 44 84 C28 80 20 62 26 46 C30 32 38 20 50 20Z",
-                    "M50 32 C64 32 70 46 66 58 C62 70 52 74 44 72 C34 68 32 56 35 48 C38 40 42 32 50 32Z",
-                    "M50 44 C58 44 60 52 58 58 C56 63 50 64 46 62 C42 60 42 54 44 50 C45 47 47 44 50 44Z"
-                ).forEach { outline(svgPath(it)) }
+                hikingContours.forEach { outline(it) }
                 drawPath(Path().apply { moveTo(51f, 48f); lineTo(56f, 57f); lineTo(46f, 57f); close() }, accent)
             }
             "cycling" -> {
@@ -339,6 +334,16 @@ private class PosterPainter(scope: DrawScope, val line: Color, val accent: Color
             }
         }
     }
+}
+
+/** Parsed once; the poster is redrawn for every card that scrolls into view. */
+private val hikingContours: List<Path> by lazy {
+    listOf(
+        "M50 8 C82 8 96 40 92 64 C88 92 66 106 42 102 C14 98 4 70 10 46 C14 26 30 8 50 8Z",
+        "M50 20 C70 20 82 40 78 58 C74 78 58 88 44 84 C28 80 20 62 26 46 C30 32 38 20 50 20Z",
+        "M50 32 C64 32 70 46 66 58 C62 70 52 74 44 72 C34 68 32 56 35 48 C38 40 42 32 50 32Z",
+        "M50 44 C58 44 60 52 58 58 C56 63 50 64 46 62 C42 60 42 54 44 50 C45 47 47 44 50 44Z"
+    ).map(::svgPath)
 }
 
 /** Absolute M/C/Z path data only, as used by the contour lines above. */
