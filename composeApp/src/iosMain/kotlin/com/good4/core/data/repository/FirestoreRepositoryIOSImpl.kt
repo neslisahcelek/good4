@@ -309,7 +309,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             detail = "type=${clazz.simpleName}"
         )
         return try {
-            val querySnapshot = firestore.collection(collectionPath).get()
+            val querySnapshot = firestore.collection(collectionPath).limit(100).get()
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     decodeDocumentSnapshot(document, clazz)
@@ -351,7 +351,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             detail = "type=${clazz.simpleName}"
         )
         return try {
-            val querySnapshot = firestore.collection(collectionPath).get()
+            val querySnapshot = firestore.collection(collectionPath).limit(100).get()
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val decoded = decodeDocumentSnapshot(document, clazz)
@@ -398,6 +398,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         return try {
             val querySnapshot = firestore.collection(collectionPath)
                 .where { field equalTo value }
+                .limit(100)
                 .get()
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
@@ -446,7 +447,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             conditions.forEach { (field, value) ->
                 query = query.where { field equalTo value }
             }
-            val querySnapshot = query.get()
+            val querySnapshot = query.limit(100).get()
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val decoded = decodeDocumentSnapshot(document, clazz)

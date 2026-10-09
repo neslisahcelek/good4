@@ -31,6 +31,7 @@ actual fun newEventTicketToken(): String = UUID.randomUUID().toString()
 actual fun observeCommunityFollowerCount(communityId: String) = callbackFlow {
     val root = if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) "organizations" else "communities"
     val listener = FirebaseFirestore.getInstance().collection("$root/$communityId/followers")
+        .limit(100)
         .addSnapshotListener { snapshot, error ->
             if (error != null) close(error) else if (snapshot != null) trySend(snapshot.size())
         }
@@ -43,6 +44,7 @@ actual fun observeEventAdmission(communityId: String, eventId: String): kotlinx.
     return combine(
     callbackFlow<List<CommunityEventRegistrationDto>> {
         val listener = FirebaseFirestore.getInstance().collection("$root/registrations")
+            .limit(100)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error) else if (snapshot != null) trySend(snapshot.documents.map {
                     CommunityEventRegistrationDto(if (v2) it.getString("userId").orEmpty() else it.id, it.getString("displayName").orEmpty(),
@@ -55,6 +57,7 @@ actual fun observeEventAdmission(communityId: String, eventId: String): kotlinx.
     callbackFlow<List<EventAttendanceDto>> {
         val attendanceCollection = if (v2) "checkins" else "attendance"
         val listener = FirebaseFirestore.getInstance().collection("$root/$attendanceCollection")
+            .limit(100)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error) else if (snapshot != null) trySend(snapshot.documents.map {
                     EventAttendanceDto(it.getString("userId") ?: it.id, it.getString("checkedInBy").orEmpty(),

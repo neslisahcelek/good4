@@ -431,7 +431,7 @@ class FirestoreRepositoryAndroidImpl(
             detail = "type=${clazz.simpleName}"
         )
         return try {
-            val querySnapshot = firestore.collection(collectionPath).get().await()
+            val querySnapshot = firestore.collection(collectionPath).limit(100L).get().await()
 
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
@@ -477,7 +477,7 @@ class FirestoreRepositoryAndroidImpl(
             detail = "type=${clazz.simpleName}"
         )
         return try {
-            val querySnapshot = firestore.collection(collectionPath).get().await()
+            val querySnapshot = firestore.collection(collectionPath).limit(100L).get().await()
 
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {
@@ -528,6 +528,7 @@ class FirestoreRepositoryAndroidImpl(
         return try {
             val querySnapshot = firestore.collection(collectionPath)
                 .whereEqualTo(field, value)
+                .limit(100L)
                 .get()
                 .await()
 
@@ -583,7 +584,7 @@ class FirestoreRepositoryAndroidImpl(
                 query = query.whereEqualTo(field, value)
             }
 
-            val querySnapshot = query.get().await()
+            val querySnapshot = query.limit(100L).get().await()
 
             val results = querySnapshot.documents.mapNotNull { document ->
                 try {

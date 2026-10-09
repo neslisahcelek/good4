@@ -1917,11 +1917,11 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   }
 
   async function loadCampaigns() {
-    const [{ collection, getDocs }, database] = await Promise.all([
+    const [{ collection, getDocs, limit, query }, database] = await Promise.all([
       import("firebase/firestore/lite"),
       getFirestoreDb(),
     ]);
-    const snapshot = await getDocs(collection(database, "campaigns"));
+    const snapshot = await getDocs(query(collection(database, "campaigns"), limit(100)));
     const millis = (value: unknown) => (value as { toMillis?: () => number } | null)?.toMillis?.() ?? 0;
     setCampaigns(snapshot.docs.map((document) => {
       const item = document.data();

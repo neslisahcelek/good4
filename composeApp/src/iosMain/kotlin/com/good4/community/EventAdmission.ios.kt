@@ -28,14 +28,15 @@ actual fun newEventTicketToken(): String = NSUUID().UUIDString.lowercase()
 
 actual fun observeCommunityFollowerCount(communityId: String) = Firebase.firestore
     .collection("${if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) "organizations" else "communities"}/$communityId/followers")
+    .limit(100)
     .snapshots.map { it.documents.size }
 
 actual fun observeEventAdmission(communityId: String, eventId: String): Flow<EventAdmissionSnapshot> {
     val v2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
     val root = if (v2) "events/$eventId" else "communities/$communityId/entries/$eventId"
     return combine(
-        Firebase.firestore.collection("$root/registrations").snapshots,
-        Firebase.firestore.collection("$root/${if (v2) "checkins" else "attendance"}").snapshots
+        Firebase.firestore.collection("$root/registrations").limit(100).snapshots,
+        Firebase.firestore.collection("$root/${if (v2) "checkins" else "attendance"}").limit(100).snapshots
     ) { registrations, attendance ->
         if (!v2) EventAdmissionSnapshot(
             registrations.documents.map { it.data<CommunityEventRegistrationDto>() },
