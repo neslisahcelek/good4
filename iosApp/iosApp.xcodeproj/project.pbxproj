@@ -180,32 +180,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		FIRE00012F30FC02007C3994 /* [Firebase] Archive Symbols Preflight */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = ();
-			inputPaths = ();
-			name = "[Firebase] Archive Symbols Preflight";
-			outputPaths = ();
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/bin/bash \"${SRCROOT}/scripts/firestore-archive-symbols.sh\" preflight\n";
-			showEnvVarsInLog = 0;
-		};
-		FIRE00022F30FC02007C3994 /* [Firebase] Verify Archive Symbols */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = ();
-			inputPaths = ();
-			name = "[Firebase] Verify Archive Symbols";
-			outputPaths = ();
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/bin/bash \"${SRCROOT}/scripts/firestore-archive-symbols.sh\" verify\n";
-			showEnvVarsInLog = 0;
-		};
 		306ABF9653E24CFB1E3DD5C1 /* [MapLibre] Copy Archive dSYM */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -264,6 +238,38 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
+			showEnvVarsInLog = 0;
+		};
+		FIRE00012F30FC02007C3994 /* [Firebase] Archive Symbols Preflight */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[Firebase] Archive Symbols Preflight";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"${SRCROOT}/scripts/firestore-archive-symbols.sh\" preflight\n";
+			showEnvVarsInLog = 0;
+		};
+		FIRE00022F30FC02007C3994 /* [Firebase] Verify Archive Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[Firebase] Verify Archive Symbols";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"${SRCROOT}/scripts/firestore-archive-symbols.sh\" verify\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -407,7 +413,7 @@
 				CADisableMinimumFrameDurationOnPhone = YES;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Test.plist";
@@ -416,9 +422,9 @@
 					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				GOOD4_APP_DISPLAY_NAME = Good4Test;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.449563145023-ir6daksk0m7idh0tk83bfgf4m4hmde20";
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Good4Test;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.";
@@ -467,7 +473,7 @@
 				CADisableMinimumFrameDurationOnPhone = YES;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = NM79R577GW;
 				ENABLE_PREVIEWS = YES;
 				FIREBASE_CONFIG_FILE = "GoogleService-Info-Prod.plist";
@@ -476,9 +482,9 @@
 					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				GOOD4_APP_DISPLAY_NAME = Good4;
 				GOOGLE_REVERSED_CLIENT_ID = "com.googleusercontent.apps.654697131931-11unm894ckuk8nl23vmrtb9d0iq5t7bs";
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Good4;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Etkinlik girişinde QR bilet okutmak ve görsel çekmek için kamera erişimi gereklidir.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kampüs haritasında konumunuzu göstermek ve yakınınızdaki noktaları bulmanıza yardımcı olmak için konumunuza erişmemiz gerekmektedir.";
