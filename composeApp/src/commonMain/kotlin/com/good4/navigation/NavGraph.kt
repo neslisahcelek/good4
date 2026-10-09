@@ -58,6 +58,7 @@ import com.good4.user.presentation.accountsettings.AccountSettingsScreen
 import com.good4.config.data.repository.AppConfigRepository
 import com.good4.core.util.getAppVersionInfo
 import com.good4.update.ForceUpdateScreenRoot
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -80,16 +81,19 @@ fun Good4NavGraph(
     LifecycleResumeEffect(currentEntry?.destination) {
         val dest = currentEntry?.destination
         if (dest != null && !dest.hasRoute<Route.Splash>() && !dest.hasRoute<Route.ForceUpdate>()) {
-            resumeScope.launch {
+            val checkJob = resumeScope.launch {
                 val notice = runCatching { configRepo.getUpdateNotice() }.getOrNull()
+                coroutineContext.ensureActive()
                 if (notice?.isForceUpdateRequired(getAppVersionInfo()) == true) {
                     navController.navigate(Route.ForceUpdate) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
             }
+            onPauseOrDispose { checkJob.cancel() }
+        } else {
+            onPauseOrDispose { }
         }
-        onPauseOrDispose { }
     }
     if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
         LaunchedEffect(pushManager) { pushManager.observe() }
@@ -101,7 +105,7 @@ fun Good4NavGraph(
             val notification = pushDestination ?: return@LaunchedEffect
             val uid = primaryUser?.uid ?: return@LaunchedEffect
             val destination = currentEntry?.destination ?: return@LaunchedEffect
-            if (destination.hasRoute<Route.Splash>() || destination.hasRoute<Route.SessionRestore>()
+            if (destination.hasRoute<Route.ForceUpdate>() || destination.hasRoute<Route.Splash>() || destination.hasRoute<Route.SessionRestore>()
                 || destination.hasRoute<Route.Login>() || destination.hasRoute<Route.EmailVerification>()) return@LaunchedEffect
             com.good4.notification.CampusPushNotifications.consume(notification)
             if (notification.recipientUid != uid) return@LaunchedEffect
@@ -116,6 +120,7 @@ fun Good4NavGraph(
     LaunchedEffect(campusLink, primaryUser?.uid, currentEntry?.destination) {
         val destination = currentEntry?.destination
         if (campusLink != null && primaryUser != null && destination != null
+            && !destination.hasRoute<Route.ForceUpdate>()
             && !destination.hasRoute<Route.Splash>() && !destination.hasRoute<Route.SessionRestore>()
             && !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.EmailVerification>()
             && !destination.hasRoute<Route.CampusCloset>()
@@ -134,12 +139,14 @@ fun Good4NavGraph(
     val pendingOpen by PushSignals.pendingOpen.collectAsStateWithLifecycle()
     val destination = entry?.destination
     val ready = destination != null && !destination.hasRoute<Route.Splash>() &&
+        !destination.hasRoute<Route.ForceUpdate>() &&
         !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.SessionRestore>() &&
         !destination.hasRoute<Route.EmailVerification>() && !destination.hasRoute<Route.RegisterOptions>() &&
         !destination.hasRoute<Route.StudentRegister>() && !destination.hasRoute<Route.BusinessRegister>()
     LaunchedEffect(pendingOpen, ready) {
         val intent = pendingOpen
         if (ready && intent != null) notificationsViewModel.openPending(intent) { notification ->
+            if (navController.currentDestination?.hasRoute<Route.ForceUpdate>() == true) return@openPending
             navController.navigate(Route.Notifications) { launchSingleTop = true }
             if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
                 navController.navigate(Route.NotificationEvent(notification.data.organizationId, notification.data.eventId,
@@ -187,7 +194,13 @@ fun Good4NavGraph(
         }
 
         composable<Route.ForceUpdate> {
-            ForceUpdateScreenRoot()
+            ForceUpdateScreenRoot(
+                onUpdateNoLongerRequired = {
+                    navController.navigate(Route.Splash) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable<Route.SessionRestore> {

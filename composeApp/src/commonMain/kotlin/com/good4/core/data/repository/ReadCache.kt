@@ -14,10 +14,10 @@ class ReadCache<T>(private val lifetimeSeconds: Long) {
     private var fetchedAt = 0L
     private var value: T? = null
     private var hasValue = false
-    suspend fun load(suffix: String = "", cacheable: (T) -> Boolean = { true }, fetch: suspend () -> T): T = mutex.withLock {
+    suspend fun load(suffix: String = "", cacheable: (T) -> Boolean = { true }, forceRefresh: Boolean = false, fetch: suspend () -> T): T = mutex.withLock {
         val sessionKey = "${AppEnvironment.firebaseProjectId}:${firebaseCacheUserId()}:$generation:$suffix"
         val now = Clock.System.now().epochSeconds
-        if (hasValue && key == sessionKey && now - fetchedAt in 0 until lifetimeSeconds) {
+        if (!forceRefresh && hasValue && key == sessionKey && now - fetchedAt in 0 until lifetimeSeconds) {
             @Suppress("UNCHECKED_CAST")
             return@withLock value as T
         }

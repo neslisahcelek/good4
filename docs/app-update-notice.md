@@ -29,6 +29,8 @@ Belge alanları:
 - Eski sürüm tespit edildiğinde kullanıcı doğrudan `Route.ForceUpdate` ekranına yönlendirilir ve geri yığın temizlenir.
 - Android geri tuşu/hareketi etkisizdir; vazgeç veya kapat butonu bulunmaz.
 - Tek buton olan "Uygulamayı Güncelle", platforma göre Google Play Store veya Apple App Store sayfasını açar.
+- Kilit açıkken bildirim ve kampüs e-posta doğrulama bağlantıları başka ekranlara yönlendirmez; bekleyen bağlantılar kilit kalkınca normal akışta işlenir.
+- Kilit ekranı açıldığında ve uygulama ön plana döndüğünde güncelleme ayarı önbellek kullanılmadan yeniden okunur. `forceUpdate` kapatılmış veya minimum sürüm düşürülmüşse Splash üzerinden normal açılış akışına dönülür. Okuma hatası veya zaman aşımı mevcut kilidi kaldırmaz.
 - Oturumu açık olmayan kullanıcıların da kontrol edilebilmesi için `firestore.rules` içinde `update_notice` belgesinin `get` izni herkese açıktır.
 
 ### İsteğe Bağlı Güncelleme (Soft Update Card) Davranışı

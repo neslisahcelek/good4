@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.good4.core.presentation.BorderMuted
 import com.good4.core.presentation.PistachioGreen
 import com.good4.core.presentation.PrimaryGreen
@@ -53,9 +55,17 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ForceUpdateScreenRoot(
+    onUpdateNoLongerRequired: () -> Unit,
     viewModel: ForceUpdateViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onResume()
+        onPauseOrDispose { viewModel.onPause() }
+    }
+    LaunchedEffect(state.isUpdateRequired) {
+        if (!state.isUpdateRequired) onUpdateNoLongerRequired()
+    }
     ForceUpdateScreen(
         state = state,
         onUpdate = viewModel::onUpdateClicked
