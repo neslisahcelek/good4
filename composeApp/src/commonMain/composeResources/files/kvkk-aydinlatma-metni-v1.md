@@ -2,7 +2,8 @@
 
 # KİŞİSEL VERİLERİN İŞLENMESİNE İLİŞKİN AYDINLATMA METNİ
 
-**Son Güncelleme: 25 Eylül 2026**
+**Sürüm:** 1.1
+**Son Güncelleme: 9 Ekim 2026**
 
 Bu Aydınlatma Metni, Good4 mobil uygulaması ve Good4 ile bağlantılı hizmetler kapsamında işlenen kişisel veriler hakkında, 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca ilgili kişilerin bilgilendirilmesi amacıyla hazırlanmıştır.
 
@@ -157,7 +158,50 @@ Topluluk veya işletme hesabına bağlı yetkilendirilmiş kişiler bakımından
 
 işlenebilir.
 
-### 3.10. Özel Nitelikli Kişisel Veriler
+### 3.10. Kampüs Dolabı Bilgileri
+
+Öğrenciler arası ikinci el alışveriş özelliği olan Kampüs Dolabı'nın kullanılması halinde;
+
+* doğrulanan @ogr.akdeniz.edu.tr uzantılı okul e-posta adresi, doğrulama durumu ve zamanı,
+* ilan başlığı, açıklaması, fiyatı, kategorisi, ürün durumu, yayın durumu ve en fazla 3 ürün fotoğrafı,
+* alıcı ile satıcı arasındaki mesajlar ve teklifler (mesajda kullanıcının kendi isteğiyle paylaştığı telefon numarası gibi bilgiler dahil) ve okunma durumu,
+* kaydedilen ilanlar ve engellenen kullanıcılar,
+* yasaklı ürün filtresine takılan denemeler (eşleşen kelime ve en fazla 200 karakterlik alıntı), şikayetler, sonuçları ve erişim kısıtlamaları
+
+işlenebilir.
+
+Fotoğraflar sunucuda yeniden kodlanır ve konum (GPS) dahil EXIF bilgileri silinir. Öğrenciler ilan ve mesajlarda birbirini yalnızca ad ve soyadının baş harfleriyle (örneğin "A.. Y..") görür.
+
+### 3.11. Sosyal Etkinlik Bilgileri
+
+Aynı üniversitedeki öğrencilerin birlikte sosyal ve spor etkinlikleri düzenleyip katılabildiği Sosyal özelliğinin kullanılması halinde;
+
+* doğrulanan okul e-posta adresi (Kampüs Dolabı'nda yapılan doğrulama Sosyal'de de geçerlidir),
+* Sosyal kurallarının onaylanma zamanı,
+* oluşturulan etkinliğin türü, başlığı, isteğe bağlı notu, tarihi, saati, kontenjanı ve durumu,
+* katılım istekleri ve bu isteklerin durumu,
+* organizatör ile kabul edilen katılımcı arasındaki birebir mesajlar ve okunma durumu,
+* adın nasıl gösterileceğine ilişkin tercih (yalnızca baş harfler veya ad ile soyadın baş harfi),
+* isteğe bağlı olarak eklenen profil fotoğrafı,
+* yasaklı kelime filtresine takılan denemeler, şikayetler, sonuçları ve Kampüs Dolabı ile ortak tutulan erişim kısıtlamaları
+
+işlenebilir.
+
+Profil fotoğrafı sunucuda yeniden kodlanır, konum (GPS) dahil EXIF bilgileri silinir ve herkese açık bir bağlantıyla paylaşılmaz.
+
+### 3.12. Bildirim Bilgileri
+
+Kullanıcının telefon bildirimlerine izin vermesi halinde;
+
+* cihaza ait bildirim adresi (Firebase Cloud Messaging belirteci),
+* platform bilgisi ve kaydın güncellenme zamanı,
+* bildirim tercihleri ve uygulama içi bildirim geçmişi
+
+işlenebilir.
+
+Kilit ekranında mesaj içeriği gösterilmez; yalnızca "Yeni bir mesajın var" gibi genel bir bildirim metni gösterilir.
+
+### 3.13. Özel Nitelikli Kişisel Veriler
 
 Good4, hizmetin olağan kullanımı kapsamında sağlık bilgileri, biyometrik veya genetik veriler, siyasi düşünce, dini veya felsefi inanç gibi özel nitelikli kişisel verileri kullanıcıdan talep etmez.
 
@@ -251,6 +295,24 @@ Kanunen yetkili kamu kurum ve kuruluşlarının usulüne uygun taleplerinin kar�
 
 Hukuki uyuşmazlıklarda hakların kullanılması veya korunması amacıyla gerekli kayıtlar KVKK m.5/2-e kapsamında işlenir.
 
+## 4.8. Kampüs Dolabı ve Sosyal İşlemleri
+
+Kampüs Dolabı ve Sosyal kapsamında işlenen bilgiler;
+
+* bu özelliklerin yalnızca okul e-postasını doğrulamış öğrencilere açılması,
+* ilanların ve etkinliklerin diğer öğrencilere gösterilmesi,
+* mesajlaşma, teklif ve katılım isteği özelliklerinin sunulması,
+* kontenjan, günlük mesaj, ilan, etkinlik ve istek sınırlarının uygulanması,
+* engelleme, kaydetme ve isim gösterimi tercihlerinin uygulanması
+
+amaçlarıyla KVKK m.5/2-c kapsamında **bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması kaydıyla, sözleşmenin taraflarına ait kişisel verilerin işlenmesinin gerekli olması** hukuki sebebiyle işlenir.
+
+Kampüs Dolabı ilanlarının yayından önce incelenmesi, yasaklı ürün ve kelime filtrelerinin uygulanması, şikayet edilen ilan, etkinlik, konuşma ve profil fotoğraflarının incelenmesi ile tekrarlayan ihlallerde erişimin sınırlandırılması; ilgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla KVKK m.5/2-f kapsamında veri sorumlusunun meşru menfaati hukuki sebebiyle, gerektiğinde KVKK m.5/2-e kapsamında bir hakkın tesisi, kullanılması veya korunması amacıyla işlenir. Konuşma incelemeleri kayıt altına alınır.
+
+## 4.9. Bildirimler
+
+Bildirim adresi ve bildirim tercihleri; kullanıcının izin verdiği yeni mesaj, teklif, ilan durumu, katılım isteği, istek kabulü ve etkinlik iptali gibi bildirimlerin cihazına iletilmesi amacıyla KVKK m.5/2-c kapsamında işlenir. Bildirim izni cihaz ayarlarından istenildiği zaman kapatılabilir.
+
 ---
 
 # 5. Kişisel Verilerin Toplanma Yöntemi
@@ -265,6 +327,9 @@ Kişisel veriler;
 * QR doğrulama işlemleri,
 * kupon ve kampanya işlemleri,
 * varsa rezervasyon işlemleri,
+* okul e-postası doğrulama işlemleri,
+* Kampüs Dolabı ve Sosyal ekranları,
+* kullanıcının izin vermesi halinde bildirim kaydı,
 * kullanıcı destek kanalları,
 * uygulamanın ve teknik altyapının çalışması sırasında oluşturulan sistem ve güvenlik kayıtları
 
@@ -302,7 +367,17 @@ Good4'ün çalışmasını sağlamak amacıyla kişisel veriler; bulut altyapıs
 
 Bu hizmet sağlayıcılarla yalnızca ilgili teknik hizmetin sunulması için gerekli kişisel veriler paylaşılır.
 
-## 6.4. Yetkili Kamu Kurumları
+Telefon bildirimlerinin iletilmesi için bildirim adresi Firebase Cloud Messaging'e, iOS cihazlarda ayrıca Apple Push Notification hizmetine iletilir.
+
+## 6.4. Diğer Öğrenciler
+
+Kampüs Dolabı'nda yayındaki ilanlar (fotoğraflar, açıklama, fiyat ve ad-soyadın yalnızca baş harfleri) Kampüs Dolabı'nı kullanan diğer öğrencilere görünür.
+
+Sosyal'de etkinlikler ve ad (varsayılan olarak yalnızca baş harfler) aynı üniversitenin okul e-postasını doğrulamış öğrencilerine görünür. Okul e-postasını henüz doğrulamamış öğrenci hesapları, yaklaşan açık etkinlikleri (başlık, not, tarih, saat, üniversite ve organizatörün baş harfli adı) tüm üniversiteler için yalnızca görüntüleyebilir; katılım isteği gönderemez. Profil fotoğrafını yalnızca aynı üniversitenin doğrulanmış öğrencileri görür. Katılım isteğini etkinliğin organizatörü görür.
+
+Kampüs Dolabı ve Sosyal mesajlarını yalnızca konuşmanın iki tarafı görür. Good4, alıcı ile satıcı arasındaki satışın veya öğrenciler arasında düzenlenen etkinliğin tarafı değildir.
+
+## 6.5. Yetkili Kamu Kurumları
 
 Kişisel veriler, yetkili kamu kurumları, mahkemeler, savcılıklar veya diğer yetkili makamların hukuka uygun talepleri bulunması halinde, talebin kapsamıyla sınırlı olarak ilgili mercilere aktarılabilir.
 
@@ -343,6 +418,26 @@ Kişisel verinin işlenmesini gerektiren sebeplerin tamamının ortadan kalkmas�
 Kişisel veri saklama ve imha politikası hazırlama yükümlülüğü bulunmadığı durumda, silme, yok etme veya anonim hale getirme yükümlülüğünün doğduğu tarihi takip eden mevzuatta öngörülen süre içerisinde gerekli işlem gerçekleştirilir.
 
 Silme, yok etme ve anonim hale getirme işlemlerine ilişkin kayıtlar, diğer hukuki yükümlülükler saklı kalmak üzere mevzuatta öngörülen süre boyunca saklanır.
+
+Kampüs Dolabı verileri için aşağıdaki süreler uygulanır ve günlük otomatik bir temizlik işlemiyle silinir:
+
+* yayındaki ilanlar: 30 gün sonra yayından kalkar; satıcı en fazla 3 kez 30 gün uzatabilir,
+* kaldırılan, yayınlanmayan veya süresi dolan ilanlar: 30 gün (kaldırılan ilanların fotoğrafları hemen silinir),
+* satılan ilanlar: fotoğraflar satıştan 30 gün sonra, ilan kaydı 180 gün sonra,
+* konuşmalar ve mesajlar: son mesajdan 12 ay sonra,
+* yasaklı ürün denemesi kayıtları: 1 yıl,
+* sonuçlanan şikayetler: sonuçlandıktan 1 yıl sonra,
+* okul e-postası doğrulama istekleri: 30 gün,
+* bildirim cihaz kaydı: çıkış yapıldığında veya 30 gün kullanılmadığında.
+
+Sosyal verileri için aşağıdaki süreler uygulanır ve günlük otomatik bir temizlik işlemiyle silinir:
+
+* etkinlikler, katılım istekleri ve mesajlar: etkinlik başlangıcından 30 gün sonra (sohbete başlangıçtan sonraki 7 gün boyunca yazılabilir, sonrasında yalnızca okunabilir),
+* sonuçlanan şikayetler: sonuçlandıktan 1 yıl sonra,
+* yasaklı kelime denemesi kayıtları: 1 yıl,
+* profil fotoğrafı: kullanıcı kaldırana, değiştirene veya hesabını silene kadar.
+
+Hesap silindiğinde Kampüs Dolabı ve Sosyal verilerinin tamamı ile bildirim cihaz kayıtları bu sürelerin dolması beklenmeden silinir.
 
 Kullanıcı hesabının kapatılması, Good4 sistemlerindeki tüm kayıtların aynı anda ve koşulsuz biçimde silineceği anlamına gelmez. Bir hukuki yükümlülüğün yerine getirilmesi veya bir hakkın tesisi, kullanılması ya da korunması için saklanması zorunlu olan kayıtlar yalnızca ilgili amaç ve süreyle sınırlı olarak muhafaza edilebilir.
 

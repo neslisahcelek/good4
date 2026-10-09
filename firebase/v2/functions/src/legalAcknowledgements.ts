@@ -1,9 +1,9 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 
-export const KVKK_NOTICE_VERSION = "1.0";
+export const KVKK_NOTICE_VERSION = "1.1";
 export const USER_AGREEMENT_VERSION = "1.0";
-export const PRIVACY_POLICY_VERSION = "1.3";
+export const PRIVACY_POLICY_VERSION = "1.5";
 
 export type LegalAcknowledgementInput = {
   userAgreementAccepted?: unknown;

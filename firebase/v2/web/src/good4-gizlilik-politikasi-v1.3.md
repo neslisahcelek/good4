@@ -1,7 +1,7 @@
 # GOOD4 GİZLİLİK POLİTİKASI
 
-**Sürüm:** 1.4
-**Son Güncelleme:** 4 Ekim 2026
+**Sürüm:** 1.5
+**Son Güncelleme:** 9 Ekim 2026
 
 Good4, kullanıcıların gizliliğine ve kişisel verilerinin korunmasına önem verir.
 
@@ -33,6 +33,8 @@ Good4'te kullanılan özelliklere bağlı olarak aşağıdaki bilgiler işlenebi
 * kampanya, kupon ve kullanım kayıtları,
 * varsa rezervasyon veya benzeri talep bilgileri,
 * kullanıcı tarafından gönderilen destek ve geri bildirim kayıtları,
+* Kampüs Dolabı ve Sosyal özelliklerinde paylaşılan ilan, etkinlik ve mesaj içerikleri ile isteğe bağlı profil fotoğrafı,
+* bildirim izni verilmesi halinde cihazın bildirim adresi ve bildirim tercihleri,
 * güvenlik, işlem ve denetim kayıtları,
 * hizmetin sunulması sırasında teknik hizmet sağlayıcılar tarafından işlenebilen bağlantı ve güvenlik verileri.
 
@@ -58,6 +60,8 @@ Kişisel veriler ve diğer kullanıcı bilgileri;
 * QR ile etkinlik girişlerinin doğrulanması,
 * kampanya ve kuponların sunulması ve kullanımının doğrulanması,
 * varsa rezervasyon veya benzeri taleplerin yürütülmesi,
+* öğrenciler arası ikinci el alışverişin (Kampüs Dolabı) ve sosyal/spor etkinliklerinin (Sosyal) sunulması,
+* kullanıcının izin verdiği telefon bildirimlerinin gönderilmesi,
 * teknik sorunların tespit edilmesi,
 * yetkisiz erişim ve kötüye kullanımın önlenmesi,
 * kullanıcı destek ve geri bildirim taleplerinin değerlendirilmesi,
@@ -82,7 +86,7 @@ işlenebilir.
 
 Doğrulama amacıyla kullanıcıya süreli bir doğrulama kodu gönderilebilir. Kullanılan doğrulama kodları belirli bir süre sonunda geçerliliğini kaybeder.
 
-Kampüs Dolabı'nda yalnızca **@ogr.akdeniz.edu.tr** uzantılı öğrenci adresleri kabul edilir. Doğrulama bağlantısı Firebase Authentication tarafından e-posta adresinize gönderilir; bağlantı süreli ve tek kullanımlıktır ve ancak açılan sayfadaki **Onayla** düğmesine basıldığında doğrulama tamamlanır. Doğrulama sırasında oluşan geçici kimlik doğrulama kaydı doğrulamadan sonra silinir; Google veya Apple ile giriş yaptığınız ana hesabınız değişmez.
+Kampüs Dolabı ve Sosyal'de yalnızca **@ogr.akdeniz.edu.tr** uzantılı öğrenci adresleri kabul edilir. Doğrulama bağlantısı Firebase Authentication tarafından e-posta adresinize gönderilir; bağlantı süreli ve tek kullanımlıktır ve ancak açılan sayfadaki **Onayla** düğmesine basıldığında doğrulama tamamlanır. Doğrulama sırasında oluşan geçici kimlik doğrulama kaydı doğrulamadan sonra silinir; Google veya Apple ile giriş yaptığınız ana hesabınız değişmez.
 
 Doğrulama e-postasının iletilebilmesi amacıyla e-posta adresi ve gönderim için gerekli mesaj bilgileri kullanılan e-posta hizmeti altyapısı tarafından işlenebilir.
 
@@ -135,7 +139,33 @@ Fotoğraflar sunucuda yeniden kodlanır ve konum (GPS) dahil EXIF bilgileri sili
 
 Bildirimlerde kilit ekranına mesaj içeriği gönderilmez; yalnızca genel bir bildirim metni gösterilir.
 
-## 7. Teknik Hizmetler ve Üçüncü Taraf Sağlayıcılar
+## 7. Sosyal Etkinlikler
+
+Sosyal, aynı üniversitedeki öğrencilerin birlikte kahve, yemek, masa oyunu, spor ve benzeri etkinlikler düzenleyip katılabilmesi içindir. Etkinlikler öğrenciler arasında düzenlenir; Good4 etkinliğin tarafı veya organizatörü değildir.
+
+Bu özelliği kullanmak için okul e-postanızı doğrulamanız ve Sosyal kurallarını onaylamanız gerekir. Kampüs Dolabı'nda okul e-postanızı doğruladıysanız tekrar doğrulamanız gerekmez.
+
+Bu özellik kapsamında;
+
+* oluşturduğunuz etkinliğin türü, başlığı, isteğe bağlı notu, tarihi, saati ve kontenjanı,
+* katılım istekleriniz ve bu isteklerin durumu (bekliyor, kabul edildi, yer kalmadı, ayrıldı),
+* organizatör ile katılımcı arasındaki birebir mesajlar,
+* adınızın nasıl gösterileceğine ilişkin tercihiniz (yalnızca baş harfler veya ad ile soyadın baş harfi),
+* isteğe bağlı olarak eklediğiniz profil fotoğrafı,
+* yasaklı kelime filtresine takılan denemeler, şikayetler ve erişim kısıtlamaları,
+* bildirim izni verdiyseniz cihazınızın bildirim adresi
+
+işlenir.
+
+Okul e-postasını doğrulamış öğrenciler kendi üniversitelerindeki etkinlikleri görür ve bunlara katılabilir. Okul e-postasını henüz doğrulamamış öğrenci hesapları, yaklaşan açık etkinlikleri (başlık, not, tarih, saat, üniversite ve organizatörün baş harfli adı) tüm üniversiteler için yalnızca görüntüleyebilir; katılım isteği gönderemez ve profil fotoğraflarını göremez. Adınız varsayılan olarak yalnızca baş harfleriyle (örneğin "A.. Y..") gösterilir; isterseniz Sosyal profilinizden ad ve soyadınızın baş harfini ("Ayşe Y.") göstermeyi seçebilir, bu tercihi istediğiniz zaman değiştirebilirsiniz. Profil fotoğrafınızı da yalnızca aynı üniversitenin doğrulanmış öğrencileri görür; fotoğraf sunucuda yeniden kodlanır, konum (GPS) dahil EXIF bilgileri silinir ve herkese açık bir bağlantıyla paylaşılmaz.
+
+Katılım isteğinizi etkinliğin organizatörü görür. Mesajları yalnızca konuşmanın iki tarafı görür. Etkinlik başlığı ve notuna telefon numarası yazılamaz; buluşma yeri ve iletişim bilgileri sohbette kendi isteğinizle paylaşılır.
+
+Etkinlikler yayına alınmadan önce Good4 ekibi tarafından incelenmez; yasaklı kelime filtresi ve şikayet sistemi uygulanır. Bir etkinlik veya konuşma şikayet edilirse Good4 ekibi şikayeti değerlendirmek için ilgili içeriği ve profil fotoğrafını inceleyebilir, gerekirse içeriği veya fotoğrafı kaldırabilir; konuşma incelemeleri kayıt altına alınır. Kural ihlalleri ve erişim kısıtlamaları Kampüs Dolabı ile ortaktır.
+
+Bildirimlerde kilit ekranına mesaj içeriği gönderilmez; yalnızca genel bir bildirim metni gösterilir.
+
+## 8. Teknik Hizmetler ve Üçüncü Taraf Sağlayıcılar
 
 Good4'ün çalıştırılması amacıyla üçüncü taraf teknik hizmetlerden yararlanılır.
 
@@ -147,19 +177,20 @@ Good4'ün mevcut teknik altyapısında kullanılan başlıca hizmetler arasında
 * **Firebase Storage:** uygulamada kullanılan uygun içerik ve görsellerin saklanması,
 * **Firebase Hosting:** web hizmetleri ve hukuki sayfaların sunulması,
 * **Google Sign-In:** Google hesabıyla oturum açılması,
-* **Firebase App Check / Google Play Integrity:** Android uygulamasının ve isteklerin bütünlüğünün doğrulanması
+* **Firebase App Check / Google Play Integrity:** Android uygulamasının ve isteklerin bütünlüğünün doğrulanması,
+* **Firebase Cloud Messaging:** izin verilmesi halinde telefon bildirimlerinin iletilmesi (Apple cihazlarda Apple Push Notification service üzerinden)
 
 yer alabilir.
 
 Firebase ve Google altyapıları hizmetin sunulması sırasında IP adresi, user-agent ve benzeri teknik bağlantı veya güvenlik bilgilerini işleyebilir. Good4 uygulama kodu bu IP adreslerini kullanıcı profiline veya Firestore kullanıcı kayıtlarına ayrıca kaydetmemektedir.
 
-Mevcut Good4 sürümünde Firebase Analytics, Firebase Crashlytics, Firebase Cloud Messaging, reklam SDK'ları veya reklam kimliğine dayalı takip kullanıldığı tespit edilmemiştir. Bu durum değişirse ilgili gizlilik metinleri ve mağaza beyanları güncellenir.
+Mevcut Good4 sürümünde Firebase Analytics, Firebase Crashlytics, reklam SDK'ları veya reklam kimliğine dayalı takip kullanıldığı tespit edilmemiştir. Bu durum değişirse ilgili gizlilik metinleri ve mağaza beyanları güncellenir.
 
 Good4 ayrıca özelliklerin çalıştırılması amacıyla harita, hava durumu veya kullanıcının seçimiyle açılan dış hizmetlerden yararlanabilir. Bu hizmetlere yapılan bağlantılar sırasında ilgili sağlayıcı bağlantının teknik bilgilerini işleyebilir.
 
 Good4 bu hizmetlerin kullanımı kapsamında gerekli olmayan kullanıcı kimlik veya profil bilgilerini söz konusu sağlayıcılara göndermemeyi esas alır.
 
-## 8. Kişisel Verilerin Yurt Dışında İşlenmesi ve Aktarılması
+## 9. Kişisel Verilerin Yurt Dışında İşlenmesi ve Aktarılması
 
 Good4'ün kullandığı bazı teknik hizmet sağlayıcıların altyapıları Türkiye dışında bulunmaktadır.
 
@@ -173,7 +204,7 @@ Yurt dışına yalnızca ilgili hizmetin sunulması için gerekli verilerin akta
 
 Good4 tarafından kullanılan hizmet sağlayıcılar, veri konumları veya aktarım yapısı değiştiğinde yurt dışı aktarım süreçleri ve ilgili hukuki metinler yeniden değerlendirilir.
 
-## 9. Harita, Hava Durumu ve Dış Bağlantılar
+## 10. Harita, Hava Durumu ve Dış Bağlantılar
 
 Good4'ün kampüs haritası özelliğinde kullanıcının GPS konumu yerine sabit kampüs veya hedef koordinatları kullanılabilir.
 
@@ -181,7 +212,7 @@ Hava durumu özelliğinde de kullanıcının cihaz konumu yerine önceden belirl
 
 Kullanıcı Good4 üzerinden Apple Maps, Google Maps, üniversite web siteleri veya başka bir üçüncü taraf hizmeti açmayı seçerse, ilgili hizmetin kendi gizlilik politikaları ve veri işleme uygulamaları geçerli olabilir.
 
-## 10. Veri Güvenliği
+## 11. Veri Güvenliği
 
 Good4;
 
@@ -195,7 +226,7 @@ Kullanıcı, topluluk, işletme ve yönetim verilerine erişim ilgili kişinin g
 
 Hesap ve uygulama işlemlerine ilişkin belirli güvenlik ve denetim kayıtları, yetkisiz kullanımın tespit edilmesi ve sistem güvenliğinin sağlanması amacıyla tutulabilir.
 
-## 11. Verilerin Saklanması
+## 12. Verilerin Saklanması
 
 Kişisel veriler süresiz olarak saklanmaz.
 
@@ -218,9 +249,18 @@ Kampüs Dolabı verileri için aşağıdaki süreler uygulanır ve günlük otom
 
 Hesap silindiğinde Kampüs Dolabı verilerinin tamamı bu sürelerin dolması beklenmeden silinir.
 
+Sosyal verileri için aşağıdaki süreler uygulanır ve günlük otomatik bir temizlik işlemiyle silinir:
+
+* etkinlikler, katılım istekleri ve mesajlar: etkinlik başlangıcından 30 gün sonra (sohbete etkinlik başlangıcından sonraki 7 gün boyunca yazılabilir, sonrasında yalnızca okunabilir),
+* sonuçlanan şikayetler: sonuçlandıktan 1 yıl sonra,
+* yasaklı kelime denemesi kayıtları: 1 yıl,
+* profil fotoğrafı: siz kaldırana, değiştirene veya hesabınızı silene kadar.
+
+Hesap silindiğinde Sosyal verilerinin tamamı (düzenlediğiniz etkinlikler, katılım istekleriniz, mesajlarınız, size ait şikayet kayıtları ve profil fotoğrafınız) bu sürelerin dolması beklenmeden silinir.
+
 Kişisel verilerin işlenmesini gerektiren sebepler ortadan kalktığında ve verilerin saklanmasını gerektiren başka bir hukuki sebep bulunmadığında ilgili veriler KVKK ve ilgili mevzuata uygun şekilde silinir, yok edilir veya anonim hale getirilir.
 
-## 12. Hesabın ve Verilerin Silinmesi
+## 13. Hesabın ve Verilerin Silinmesi
 
 Good4 hesabı bulunan kullanıcılar uygulama içerisindeki **Hesabımı Sil** özelliğini kullanarak hesaplarının silinmesini başlatabilir.
 
@@ -232,7 +272,10 @@ Hesap silme işlemi kapsamında mevcut sistemde kullanıcı hesabı ve hesapla d
 * topluluk takip ve üyelik kayıtları,
 * geri bildirim kayıtları,
 * `.edu.tr` doğrulama kayıtları,
-* kullanıcıya ait bekleyen doğrulama e-posta kayıtları
+* kullanıcıya ait bekleyen doğrulama e-posta kayıtları,
+* Kampüs Dolabı ilanları, mesajları ve fotoğrafları,
+* Sosyal etkinlikleri, katılım istekleri, mesajları ve profil fotoğrafı,
+* bildirim cihaz kayıtları ve uygulama içi bildirim geçmişi
 
 gibi bilgileri kapsayabilir.
 
@@ -244,7 +287,7 @@ Hukuki yükümlülüklerin yerine getirilmesi, güvenlik olaylarının araştır
 
 Hesabın yalnızca devre dışı bırakılması veya dondurulması, Good4 bakımından hesap silme işlemi olarak kabul edilmez.
 
-## 13. 18 Yaşından Küçük Kullanıcılar
+## 14. 18 Yaşından Küçük Kullanıcılar
 
 Good4 hizmetleri **18 yaş ve üzerindeki kullanıcılar** için tasarlanmıştır.
 
@@ -252,7 +295,7 @@ Good4 hizmetleri **18 yaş ve üzerindeki kullanıcılar** için tasarlanmışt�
 
 Good4, kullanım koşullarına aykırı olarak 18 yaşından küçük bir kişiye ait hesap veya kişisel veri işlendiğini tespit ederse, saklanmasını gerektiren başka bir hukuki sebep bulunmadığı ölçüde hesabın kapatılması ve ilişkili kişisel verilerin silinmesi için gerekli işlemleri gerçekleştirir.
 
-## 14. Pazarlama ve Ticari İletişim
+## 15. Pazarlama ve Ticari İletişim
 
 Good4 Kullanıcı Sözleşmesinin kabul edilmesi veya KVKK Aydınlatma Metninin kullanıcıya sunulması, reklam veya pazarlama amacıyla ileti gönderilmesine izin verildiği anlamına gelmez.
 
@@ -260,7 +303,7 @@ Ayrı izin gerektiren pazarlama veya ticari elektronik ileti faaliyetlerinin ger
 
 Aydınlatma Metninin okunması veya bilgi edinildiğinin kaydedilmesi açık rıza veya ticari ileti izni olarak değerlendirilmez.
 
-## 15. KVKK Kapsamındaki Haklar
+## 16. KVKK Kapsamındaki Haklar
 
 Kullanıcılar KVKK'nın 11 inci maddesi kapsamında;
 
@@ -276,7 +319,7 @@ hakkına sahiptir.
 
 KVKK kapsamındaki hakların tamamı, veri işleme faaliyetlerinin hukuki sebepleri ve başvuru yöntemleri **Good4 Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metninde** ayrıntılı olarak açıklanmaktadır.
 
-## 16. Politikanın Güncellenmesi
+## 17. Politikanın Güncellenmesi
 
 Good4'ün sunduğu özellikler, kullandığı teknik hizmetler veya kişisel veri işleme faaliyetleri değişirse bu Gizlilik Politikası güncellenebilir.
 
@@ -284,7 +327,7 @@ Kullanıcıların gizlilik haklarını önemli ölçüde etkileyen değişiklikl
 
 Politikanın güncel sürümü Good4 uygulaması veya Good4 tarafından sunulan ilgili dijital kanallar üzerinden erişilebilir halde tutulur.
 
-## 17. İletişim
+## 18. İletişim
 
 Gizlilik ve kişisel verilerle ilgili sorular Good4 tarafından uygulama içerisinde sunulan destek kanalları üzerinden iletilebilir.
 
@@ -297,4 +340,4 @@ Kepez / Antalya
 
 KVKK kapsamındaki resmî başvurular için **Good4 Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metninde** belirtilen başvuru usulleri uygulanır.
 
-**Gizlilik Politikası Sürümü: 1.4**
+**Gizlilik Politikası Sürümü: 1.5**

@@ -24,9 +24,9 @@ test("records agreement, notice, and privacy policy versions with server timesta
   }), { recorded: true });
 
   const stored = await db.doc("users/legal-student").get();
-  assert.equal(stored.get("legalAcknowledgements.kvkkNotice.version"), "1.0");
+  assert.equal(stored.get("legalAcknowledgements.kvkkNotice.version"), "1.1");
   assert.equal(stored.get("legalAcknowledgements.userAgreement.version"), "1.0");
-  assert.equal(stored.get("legalAcknowledgements.privacyPolicy.version"), "1.3");
+  assert.equal(stored.get("legalAcknowledgements.privacyPolicy.version"), "1.5");
   assert.ok(stored.get("legalAcknowledgements.kvkkNotice.acknowledgedAt") instanceof Timestamp);
   assert.ok(stored.get("legalAcknowledgements.userAgreement.acceptedAt") instanceof Timestamp);
   assert.ok(stored.get("legalAcknowledgements.privacyPolicy.presentedAt") instanceof Timestamp);
