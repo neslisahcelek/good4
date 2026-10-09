@@ -115,12 +115,13 @@ android {
         applicationId = "com.good4"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 17
+        versionCode = 18
         versionName = "1.1.4"
     }
 
     flavorDimensions += "env"
     productFlavors {
+    productFlavors
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".test"
