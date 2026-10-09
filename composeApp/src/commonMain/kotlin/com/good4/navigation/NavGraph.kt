@@ -55,6 +55,10 @@ import com.good4.schedule.presentation.ClassScheduleScreen
 import com.good4.user.domain.UserRole
 import com.good4.user.presentation.accountsettings.AccountSettingsMode
 import com.good4.user.presentation.accountsettings.AccountSettingsScreen
+import com.good4.config.data.repository.AppConfigRepository
+import com.good4.core.util.getAppVersionInfo
+import com.good4.update.ForceUpdateScreenRoot
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -70,6 +74,23 @@ fun Good4NavGraph(
     val currentEntry by navController.currentBackStackEntryAsState()
     val pushManager = androidx.compose.runtime.remember(primaryAuth) { com.good4.notification.PushRegistrationManager(primaryAuth) }
     val pushDestination by com.good4.notification.CampusPushNotifications.pending.collectAsStateWithLifecycle()
+    val configRepo: AppConfigRepository = koinInject()
+    val resumeScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    LifecycleResumeEffect(currentEntry?.destination) {
+        val dest = currentEntry?.destination
+        if (dest != null && !dest.hasRoute<Route.Splash>() && !dest.hasRoute<Route.ForceUpdate>()) {
+            resumeScope.launch {
+                val notice = runCatching { configRepo.getUpdateNotice() }.getOrNull()
+                if (notice?.isForceUpdateRequired(getAppVersionInfo()) == true) {
+                    navController.navigate(Route.ForceUpdate) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+        onPauseOrDispose { }
+    }
     if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
         LaunchedEffect(pushManager) { pushManager.observe() }
         androidx.lifecycle.compose.LifecycleResumeEffect(primaryUser?.uid) {
@@ -155,8 +176,18 @@ fun Good4NavGraph(
                     navController.navigate(Route.SessionRestore) {
                         popUpTo(Route.Splash) { inclusive = true }
                     }
+                },
+                onNavigateToForceUpdate = {
+                    onSplashReady?.invoke()
+                    navController.navigate(Route.ForceUpdate) {
+                        popUpTo(Route.Splash) { inclusive = true }
+                    }
                 }
             )
+        }
+
+        composable<Route.ForceUpdate> {
+            ForceUpdateScreenRoot()
         }
 
         composable<Route.SessionRestore> {

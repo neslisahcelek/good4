@@ -774,6 +774,11 @@
     <string name="app_update_ready_body">Uygun olduğunda yeniden başlatarak yeni sürüme geçebilirsin.</string>
     <string name="app_update_restart">Yeniden başlat</string>
     <string name="app_update_error">Güncelleme tamamlanamadı. Tekrar deneyebilir veya daha sonra devam edebilirsin.</string>
+    <string name="force_update_title">Güncelleme Gerekli</string>
+    <string name="force_update_body">Good4’u güvenle ve kesintisiz kullanmaya devam edebilmek için lütfen uygulamayı en son sürüme güncelleyin.</string>
+    <string name="force_update_action">Uygulamayı Güncelle</string>
+    <string name="force_update_current_version">Mevcut Sürüm: %1$s</string>
+    <string name="force_update_min_version">Gereken Sürüm: %1$s</string>
 
     <!-- Daily menu and meal ratings -->
     <string name="daily_menu_not_published">Bugün için yayınlanmadı</string>
