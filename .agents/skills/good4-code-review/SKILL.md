@@ -5,7 +5,13 @@ description: Good4 V2 değişikliklerini güvenlik, doğruluk, KMP uyumu ve mima
 
 # Good4 code review
 
-Review yaparken önce `AGENTS.md`, `.agents/skills/good4-architecture/SKILL.md` ve gerekiyorsa `docs/REPEATED_REVIEW_PATTERNS.md` oku. Güncel kod ve diff kanıttır; varsayımla bulgu yazma. İnceleme istenmişse kodu kendiliğinden değiştirme. Review tamamlanıp bulgular gösterilmeden commit/push yapma.
+Review yaparken önce `AGENTS.md`, `.agents/skills/good4-architecture/SKILL.md` ve gerekiyorsa `docs/REPEATED_REVIEW_PATTERNS.md` oku. Güncel kod ve diff kanıttır; varsayımla bulgu yazma. Review tamamlanıp bulgular gösterilmeden commit/push yapma.
+
+## İnceleme ve düzeltme niyeti
+
+- Yalnız review talebinde kodu değiştirme; davranış/güvenlik bulgularını ve uygulanabilir mimari/refactor önerilerini raporla.
+- Kullanıcı düzeltme veya refactor da istediyse, önce bulguları kısa bir ara mesajla göster, ardından yetkilendirilmiş kapsamda düzelt ve son diff'i yeniden incele. Daha önce verilen düzeltme yetkisi için tekrar onay isteme.
+- Commit/push öncesi kontrol, mevcut geliştirme veya düzeltme talebinin parçasıysa kapsam içindeki gerekli düzeltmeleri tamamla; bu yetkiyi ilgisiz refactor, deploy veya canlı veri değişikliğine genişletme.
 
 ## Kapsam ve kullanıcı değişiklikleri
 
@@ -17,7 +23,9 @@ git diff --cached
 git ls-files --others --exclude-standard
 ```
 
-- Base/head ve değişen dosyaları belirle; gerekirse diff'in bağlamını kaynak dosyadan oku.
+- İncelemeye başlarken gerçek base/head SHA'larını ve commit listesini kaydet. Commit incelemesinde temiz çalışma ağacı, boş unstaged diff veya yalnız son commit yeterli kanıt değildir: hedef aralığın `git log --oneline BASE..HEAD`, `git diff --stat BASE HEAD` ve `git diff BASE HEAD` çıktısını incele. Tek commit için `git show COMMIT`; merge commit için ilgili ebeveynlere göre diff ve birleşmiş son davranışı kontrol et.
+- “Remote'tan son gelen” kapsamını remote ref, log ve reflog ile belirle; yerel commitleri, merge'i ve son pull ile gelen commitleri ayır. Kullanıcının kastı daha genişse onu esas al; doğrulanamayan kapsam varsayımını açıkça belirt.
+- Değişen dosyaları tüketicileriyle birlikte oku. Repository/DTO/domain → ViewModel/state → UI/navigation → platform actual zincirinde yalnız değişen satırlara bakarak katman sınırlarının korunduğunu varsayma.
 - Kullanıcının önceden var olan değişikliklerini ayır. Geri alma, izinsiz stage etme veya `git add -A` kullanma.
 - `* 2.*` biçimli Finder kopyalarını ve gizli/yerel yapılandırmaları commit kapsamına alma.
 - Her bulgu için değiştirilmiş satıra yakın dosya ve satır belirt; etki ve somut tetiklenme/istismar koşulunu açıkla.
@@ -63,6 +71,16 @@ git ls-files --others --exclude-standard
 - Route/UserRole/NavGraph/home ve logout akışları tutarlı mı? Tema paleti ve mevcut ortak form/profile/card/button bileşenleri kullanılıyor mu?
 - Hata olumsuz veya dayanıklılık sınırında ne olur? Örn. Storage/Firestore kısmi başarısızlık, hesap devre dışı, konuşma cleanup ile eşzamanlı yazı.
 
+## Mimari ve refactor geçişi
+
+Davranış/güvenlik incelemesinden sonra değişen kodda bakım ve proje kuralları açısından ayrı bir geçiş yap. Derlemenin geçmesi veya kritik bulgu olmaması bu geçişin yerine geçmez.
+
+- UI'daki platform/minimum sürüm seçimi, kullanıcı metni fallback'i ve iş doğrulaması gibi kararların state/ViewModel'de hazırlanıp hazırlanmadığını denetle. Dinamik metin + lokalize fallback gerektiğinde mevcut `UiText` pattern'ini kullan; UI yalnız hazır state'i göstermeli.
+- ViewModel'de mevcut state'e bağlı `value = value.copy(...)` atamalarını `update { current -> ... }` kuralıyla karşılaştır. Gerçek bir yarış kanıtı yoksa bunu davranış hatası diye sunma; proje kuralı ve bakım gerekçesini belirt.
+- Ortak bileşen fırsatlarını, anlamlı bağımsız UI bölümlerini ve Preview'ın gerçek tema/state ile çalışmasını incele. Sırf fonksiyon uzun diye bölme veya tek kullanım için gereksiz soyutlama önerme.
+- Build/flavor dosyalarında etkisiz ifadeleri, yanlışlıkla yinelenmiş DSL satırlarını ve etkilenen kodun derleme uyarılarını incele. Derlemeyi bozmayan artık satırları da uygun düşük önemle raporla. Null kontrolünden sonra gereksiz safe-call gibi temizlikleri yalnız değişen kapsam ve somut bakım faydası varsa belirt.
+- Proje kuralı ihlali veya somut bakım maliyeti varsa dosya/satır, gerekçe ve küçük bir düzeltme önerisi ver. Kişisel stil tercihlerini bulguya dönüştürme; mimari borcu güvenlik hatası gibi derecelendirme.
+
 ## Bulgulardan türetilen senaryolar
 
 Değişen alana göre [tekrarlayan hata kalıplarının](../../../docs/REPEATED_REVIEW_PATTERNS.md) 5 Ekim bölümlerini oku ve somut tetikleyiciyi kaynak üzerinden izle:
@@ -71,6 +89,7 @@ Değişen alana göre [tekrarlayan hata kalıplarının](../../../docs/REPEATED_
 - Asenkron okuma/yazma: ilk okuma yeni oy sonrası dönüyor; gün, kullanıcı veya seçilen topluluk değişiyor. İş iptali yanında sonucu uygulamadan önce nesil/sürüm doğrulamasını denetle.
 - Zaman: ekran açılış saatini ve gece yarısını açık halde geçiyor; geçmiş taslak başlangıcı değiştirilmeden yayına alınıyor; çok günlük etkinlik başladıktan sonra hâlâ bitmemiş durumda.
 - Form/liste: kapağın kaldırılması, görsel hazırlanırken submit, sistem geri tuşu ve öğrenci/yönetici devam sayfası. Kontrolün yeni UI yolunda erişilebilir olduğunu doğrula.
+- Zorunlu güncelleme/navigasyon kilidi: Android geri tuşu, iOS geri hareketi, push/deep link, mağazadan dönüş ve lifecycle resume yollarını izle. Flag/minimum sürüm değişince yeniden değerlendirme, timeout/okuma hatası, iptal ve cache davranışını hem ilk açılışta hem kilit ekranında kontrol et; soft ve force update politikalarını birbirine karıştırma.
 - Hata/boş sonuç: ağ/izin/decode hatası boş liste veya sıfır sayaca çevrilmemeli. İlk sayfa ve devam sayfası için görünür hata ve yeniden deneme olmalı.
 
 Görsel değişikliğinde [good4-media](../good4-media/SKILL.md) içindeki dönüşüm ve hazırlama kontrollerini uygula. Sorgu/index değişikliğinde deploy sonucunu emülatör testinden çıkarma; yayın talebi varsa [good4-firebase-release](../good4-firebase-release/SKILL.md) üzerinden canlı hazır olma durumunu doğrula. Review tek başına deploy yetkisi vermez.
@@ -98,4 +117,6 @@ Stage edilmiş diff yoksa aynı kontrolü incelemenin diff kapsamına göre stag
 
 `[Kritik|Yüksek|Orta|Düşük] dosya:satır — Sorun, gerçekleşme koşulu/etkisi ve uygulanabilir düzeltme.`
 
-Sonra kapsamı, kontrolleri ve sınırlamaları özetle. Bulgu yoksa açıkça “Bulgu yok” de ve hangi ana alanları kontrol ettiğini belirt. Commit öncesi review ise kullanıcı değişikliklerini, güvenlik bulgularını, diğer bulguları, çalıştırılan kontrolleri ve “commit'e hazır / önce düzelt” kararını ayrı başlıklarla raporla. Kritik/Yüksek bulgu varken commit atma.
+Davranış/güvenlik bulgularından sonra varsa “Mimari/refactor” önerilerini aynı dosya/satır kanıtıyla ayrı raporla; commit'i engellememeleri bunları atlamak için gerekçe değildir. Öneri varsa genel “Bulgu yok” yerine “Davranış/güvenlik bulgusu yok; mimari/refactor önerileri var” de.
+
+Sonra base/head, incelenen commitler, kontroller ve sınırlamaları özetle. Her iki geçişte de bulgu yoksa açıkça “Bulgu yok” de ve hangi ana alanları kontrol ettiğini belirt. Düzeltme yapıldıysa neyin düzeltildiğini, doğrulamayı ve kalan önerileri belirt; yalnız review yapıldıysa bulguların henüz uygulanmadığını açıkça yaz. Commit öncesi review ise kullanıcı değişikliklerini, güvenlik bulgularını, diğer bulguları, çalıştırılan kontrolleri ve “commit'e hazır / önce düzelt” kararını ayrı başlıklarla raporla. Kritik/Yüksek bulgu varken commit atma.

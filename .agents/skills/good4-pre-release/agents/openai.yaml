@@ -1,4 +1,4 @@
 interface:
   display_name: "Good4 Sürüm Öncesi Kontrol"
-  short_description: "Android ve iOS sürümünün yayın hazırlığını denetle"
-  default_prompt: "$good4-pre-release ile yeni Good4 sürümünün yayın öncesi kontrollerini yap ve engelleri kanıtlarıyla raporla."
+  short_description: "Android/iOS yayın ve mağaza incelemesi hazırlığını denetle"
+  default_prompt: "$good4-pre-release ile Good4 sürümünü mağaza incelemesine göndermeden önce kontrol et ve engelleri kanıtlarıyla raporla."

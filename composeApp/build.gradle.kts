@@ -121,7 +121,6 @@ android {
 
     flavorDimensions += "env"
     productFlavors {
-    productFlavors
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".test"

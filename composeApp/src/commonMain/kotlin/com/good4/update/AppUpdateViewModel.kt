@@ -84,8 +84,8 @@ class AppUpdateViewModel(private val configRepository: AppConfigRepository) : Vi
                     current.status.value == UpdateStatus.DOWNLOADING ||
                     current.status.value == UpdateStatus.READY) {
                     // Each optional field falls back independently; remote copy cannot inflate the card indefinitely.
-                    val title = notice?.title?.trim()?.takeIf { it.isNotBlank() && it.length <= 120 }
-                    val message = notice?.message?.trim()?.takeIf { it.isNotBlank() && it.length <= 400 }
+                    val title = notice.title.trim().takeIf { it.isNotBlank() && it.length <= 120 }
+                    val message = notice.message.trim().takeIf { it.isNotBlank() && it.length <= 400 }
                     _state.update {
                         it.copy(
                             title = title?.let { text -> UiText.DynamicString(text) }

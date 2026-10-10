@@ -42,13 +42,10 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.StandardButtonHeight
-import com.good4.core.util.PlatformType
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.force_update_action
-import good4.composeapp.generated.resources.force_update_body
 import good4.composeapp.generated.resources.force_update_current_version
 import good4.composeapp.generated.resources.force_update_min_version
-import good4.composeapp.generated.resources.force_update_title
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -117,7 +114,7 @@ fun ForceUpdateScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Text(
-                        text = state.title ?: stringResource(Res.string.force_update_title),
+                        text = state.title.asString(),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
@@ -127,7 +124,7 @@ fun ForceUpdateScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = state.message ?: stringResource(Res.string.force_update_body),
+                        text = state.message.asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary,
                         textAlign = TextAlign.Center,
@@ -136,38 +133,7 @@ fun ForceUpdateScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    val minVersionText = when (state.currentVersion.platform) {
-                        PlatformType.ANDROID -> state.minVersionCodeAndroid?.let { "v$it" }
-                        PlatformType.IOS -> state.minVersionIos
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = SurfaceMuted
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.force_update_current_version, state.currentVersion.versionName),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = TextSecondary
-                            )
-                            if (minVersionText != null) {
-                                Text(
-                                    text = "  •  ",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = TextSecondary
-                                )
-                                Text(
-                                    text = stringResource(Res.string.force_update_min_version, minVersionText),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = TextSecondary
-                                )
-                            }
-                        }
-                    }
+                    ForceUpdateVersionInfo(state)
 
                     Spacer(modifier = Modifier.height(28.dp))
 
@@ -194,11 +160,44 @@ fun ForceUpdateScreen(
     }
 }
 
+@Composable
+private fun ForceUpdateVersionInfo(state: ForceUpdateState) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = SurfaceMuted
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(Res.string.force_update_current_version, state.currentVersion.versionName),
+                style = MaterialTheme.typography.labelMedium,
+                color = TextSecondary
+            )
+            if (state.minimumVersion != null) {
+                Text(
+                    text = "  •  ",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextSecondary
+                )
+                Text(
+                    text = stringResource(Res.string.force_update_min_version, state.minimumVersion),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextSecondary
+                )
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun ForceUpdateScreenPreview() {
-    ForceUpdateScreen(
-        state = ForceUpdateState(),
-        onUpdate = {}
-    )
+    com.good4.core.presentation.Good4Theme {
+        ForceUpdateScreen(
+            state = ForceUpdateState(),
+            onUpdate = {}
+        )
+    }
 }

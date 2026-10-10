@@ -1,6 +1,6 @@
 ---
 name: good4-pre-release
-description: Good4 Android/iOS uygulamasının yeni sürümü çıkmadan önce sürüm, production yapılandırması, derleme, test, güvenlik, Firebase hazırlığı ve mağaza kontrollerini yap; kanıtlı yayın hazırlık raporu üret. Sürüm öncesi kontrol ve yayına hazır mı taleplerinde kullan.
+description: Good4 Android/iOS uygulamasının yeni sürümü çıkmadan önce sürüm, production yapılandırması, derleme, test, güvenlik, Firebase hazırlığı ve mağaza kontrollerini yap; kanıtlı yayın hazırlık raporu üret. Sürüm öncesi kontrol, yayına hazır mı ve App Store/Google Play review gönderimi öncesi denetim taleplerinde kullan.
 ---
 
 # Good4 sürüm öncesi kontrol
@@ -14,6 +14,12 @@ Amaç, yayın adayını gerçekten denetlemek ve eksikleri somut kanıtla göste
 - Kullanıcı tek platform belirtmediyse Android ve iOS'u kapsa. Raporun başına platform, ortam, Android versionName/versionCode, iOS MARKETING_VERSION/CURRENT_PROJECT_VERSION, commit ve çalışma ağacı değişikliklerini kaydet.
 - Kullanıcının değişikliklerini koru. Bu skill denetim içindir; sürüm artırma, kaynak düzeltme, commit/push, deploy, mağazaya yükleme, canlı config/enforcement değişikliği veya gerçek kullanıcı verisi üreten test için mevcut kullanıcı yetkisini esas al. Denetim talebini bu işlemlere izin sayma. Düzeltme ayrıca istenmişse ilgili kontrolleri düzeltmeden sonra yenile.
 - Mevcut kaynak/task/script adlarını çalıştırmadan önce doğrula. Bağımsız okumaları grupla; ortak Gradle, Xcode veya Firebase emulator kaynaklarını kullanan işleri çakıştırma. Logları ignored `output/` veya geçici dizinde tut; token, parola, özel kullanıcı verisi ve signing secret'larını rapora dökme.
+
+## Mağaza incelemesine gönderim
+
+- Kullanıcı “store review öncesi”, “App Store'a göndermeden önce” veya “Google Play incelemesi öncesi” kontrol isterse [mağaza incelemesi rehberini](references/store-review.md) de uygula. Diğer taleplerde bu ek rehberi yükleme.
+- Bu modda karar “incelemeye gönderime hazır / gönderim engelli / kontroller eksik” içindir; mağazanın kabul edeceğini garanti etmez. Console'da seçilen build ve gönderim beyanlarını kaynak/yerel paket kanıtından ayrı doğrula.
+- Temel paket/ortam kontrollerini ve değişen akışları kapsa; backend testlerini backend değişikliği veya kanıtlı risk olduğunda çalıştır. Aynı adaya ait geçerli build/test/review kanıtını yeniden kullan; kozmetik refactor önerilerini somut gönderim riskinden ayır.
 
 ## Sürüm ve ortam
 
