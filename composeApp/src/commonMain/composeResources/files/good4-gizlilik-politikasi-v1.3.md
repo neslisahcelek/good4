@@ -1,7 +1,7 @@
 # GOOD4 GİZLİLİK POLİTİKASI
 
-**Sürüm:** 1.5
-**Son Güncelleme:** 9 Ekim 2026
+**Sürüm:** 1.6
+**Son Güncelleme:** 10 Ekim 2026
 
 Good4, kullanıcıların gizliliğine ve kişisel verilerinin korunmasına önem verir.
 
@@ -86,9 +86,9 @@ işlenebilir.
 
 Doğrulama amacıyla kullanıcıya süreli bir doğrulama kodu gönderilebilir. Kullanılan doğrulama kodları belirli bir süre sonunda geçerliliğini kaybeder.
 
-Kampüs Dolabı ve Sosyal'de yalnızca **@ogr.akdeniz.edu.tr** uzantılı öğrenci adresleri kabul edilir. Doğrulama bağlantısı Firebase Authentication tarafından e-posta adresinize gönderilir; bağlantı süreli ve tek kullanımlıktır ve ancak açılan sayfadaki **Onayla** düğmesine basıldığında doğrulama tamamlanır. Doğrulama sırasında oluşan geçici kimlik doğrulama kaydı doğrulamadan sonra silinir; Google veya Apple ile giriş yaptığınız ana hesabınız değişmez.
+Kampüs Dolabı ve Sosyal'de yalnızca **@ogr.akdeniz.edu.tr** uzantılı öğrenci adresleri kabul edilir. Okul adresinize 6 haneli bir doğrulama kodu gönderilir; kodu uygulamaya girdiğinizde doğrulama tamamlanır. Kod 10 dakika geçerlidir ve en fazla 5 kez denenebilir. Kodun kendisi saklanmaz; yalnızca geri döndürülemez özeti tutulur. Kötüye kullanımı önlemek için kod gönderimleri hesap, okul adresi ve toplam gönderim sayısı üzerinden sınırlandırılır; bu sayaçlarda okul adresiniz açık haliyle değil, geri döndürülemez özetiyle tutulur. Daha önce e-postadaki bağlantıyla yapılan doğrulamalar geçerliliğini korur. Google veya Apple ile giriş yaptığınız ana hesabınız değişmez.
 
-Doğrulama e-postasının iletilebilmesi amacıyla e-posta adresi ve gönderim için gerekli mesaj bilgileri kullanılan e-posta hizmeti altyapısı tarafından işlenebilir.
+Doğrulama e-postası, Fransa merkezli e-posta hizmeti sağlayıcısı **Brevo** aracılığıyla `noreply@good4tr.com` adresinden gönderilir. Brevo bu kapsamda okul e-posta adresinizi ve doğrulama kodunu içeren e-postayı Good4 adına yalnızca gönderim amacıyla işler.
 
 ## 4. Topluluklar ve Etkinlikler
 
@@ -178,7 +178,8 @@ Good4'ün mevcut teknik altyapısında kullanılan başlıca hizmetler arasında
 * **Firebase Hosting:** web hizmetleri ve hukuki sayfaların sunulması,
 * **Google Sign-In:** Google hesabıyla oturum açılması,
 * **Firebase App Check / Google Play Integrity:** Android uygulamasının ve isteklerin bütünlüğünün doğrulanması,
-* **Firebase Cloud Messaging:** izin verilmesi halinde telefon bildirimlerinin iletilmesi (Apple cihazlarda Apple Push Notification service üzerinden)
+* **Firebase Cloud Messaging:** izin verilmesi halinde telefon bildirimlerinin iletilmesi (Apple cihazlarda Apple Push Notification service üzerinden),
+* **Brevo:** okul e-postası doğrulama kodlarının e-postayla gönderilmesi
 
 yer alabilir.
 
@@ -197,6 +198,8 @@ Good4'ün kullandığı bazı teknik hizmet sağlayıcıların altyapıları Tü
 Özellikle Firebase Authentication ve diğer bazı Google/Firebase hizmetlerinin kullanılması nedeniyle, hizmetin sunulması için gerekli belirli kişisel veriler ve teknik bağlantı bilgileri yurt dışında bulunan sistemlerde işlenebilir veya yurt dışından erişilebilir hale gelebilir.
 
 Diğer Firebase hizmetlerinin veri konumu kullanılan ürünün ve Good4 Firebase projesinde seçilmiş altyapı ayarlarının niteliğine göre değişebilir.
+
+Okul e-postası doğrulama kodları Brevo aracılığıyla gönderildiği için okul e-posta adresiniz ve doğrulama e-postasının içeriği Avrupa Birliği'nde (Fransa) işlenir.
 
 Yurt dışına kişisel veri aktarımı bakımından 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun 9 uncu maddesinde yer alan hükümler uygulanır.
 
@@ -244,7 +247,7 @@ Kampüs Dolabı verileri için aşağıdaki süreler uygulanır ve günlük otom
 * konuşmalar ve mesajlar: son mesajdan 12 ay sonra,
 * yasaklı ürün denemesi kayıtları: 1 yıl,
 * sonuçlanan şikayetler: sonuçlandıktan 1 yıl sonra,
-* okul e-postası doğrulama istekleri: 30 gün,
+* okul e-postası doğrulama istekleri: bağlantı yöntemiyle oluşturulanlar 30 gün; kod yöntemiyle oluşturulan ve doğrulanmamış istekler (okul adresi ve kodun geri döndürülemez özeti) yeni kod istenene, doğrulama tamamlanana veya hesap silinene kadar,
 * bildirim cihaz kaydı: çıkış yapıldığında veya 30 gün kullanılmadığında.
 
 Hesap silindiğinde Kampüs Dolabı verilerinin tamamı bu sürelerin dolması beklenmeden silinir.
@@ -340,4 +343,4 @@ Kepez / Antalya
 
 KVKK kapsamındaki resmî başvurular için **Good4 Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metninde** belirtilen başvuru usulleri uygulanır.
 
-**Gizlilik Politikası Sürümü: 1.5**
+**Gizlilik Politikası Sürümü: 1.6**

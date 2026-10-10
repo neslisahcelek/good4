@@ -2,8 +2,8 @@
 
 # KİŞİSEL VERİLERİN İŞLENMESİNE İLİŞKİN AYDINLATMA METNİ
 
-**Sürüm:** 1.1
-**Son Güncelleme: 9 Ekim 2026**
+**Sürüm:** 1.2
+**Son Güncelleme: 10 Ekim 2026**
 
 Bu Aydınlatma Metni, Good4 mobil uygulaması ve Good4 ile bağlantılı hizmetler kapsamında işlenen kişisel veriler hakkında, 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca ilgili kişilerin bilgilendirilmesi amacıyla hazırlanmıştır.
 
@@ -163,6 +163,7 @@ işlenebilir.
 Öğrenciler arası ikinci el alışveriş özelliği olan Kampüs Dolabı'nın kullanılması halinde;
 
 * doğrulanan @ogr.akdeniz.edu.tr uzantılı okul e-posta adresi, doğrulama durumu ve zamanı,
+* doğrulama kodu istekleri (kodun kendisi değil, geri döndürülemez özeti) ile kötüye kullanımı önlemek için hesap kimliği ve okul adresinin geri döndürülemez özetiyle tutulan gönderim sayaçları,
 * ilan başlığı, açıklaması, fiyatı, kategorisi, ürün durumu, yayın durumu ve en fazla 3 ürün fotoğrafı,
 * alıcı ile satıcı arasındaki mesajlar ve teklifler (mesajda kullanıcının kendi isteğiyle paylaştığı telefon numarası gibi bilgiler dahil) ve okunma durumu,
 * kaydedilen ilanlar ve engellenen kullanıcılar,
@@ -369,6 +370,8 @@ Bu hizmet sağlayıcılarla yalnızca ilgili teknik hizmetin sunulması için ge
 
 Telefon bildirimlerinin iletilmesi için bildirim adresi Firebase Cloud Messaging'e, iOS cihazlarda ayrıca Apple Push Notification hizmetine iletilir.
 
+Okul e-postası doğrulama kodu, Fransa merkezli e-posta hizmeti sağlayıcısı Brevo aracılığıyla gönderilir. Brevo okul e-posta adresini ve kodu içeren e-postayı Good4 adına yalnızca gönderim amacıyla işler.
+
 ## 6.4. Diğer Öğrenciler
 
 Kampüs Dolabı'nda yayındaki ilanlar (fotoğraflar, açıklama, fiyat ve ad-soyadın yalnızca baş harfleri) Kampüs Dolabı'nı kullanan diğer öğrencilere görünür.
@@ -388,6 +391,8 @@ Kişisel veriler, yetkili kamu kurumları, mahkemeler, savcılıklar veya diğer
 Good4 tarafından kullanılan bazı teknik altyapı veya hizmet sağlayıcıların sistemlerinin yurt dışında bulunması ya da verilerin yurt dışındaki sistemlere erişilebilir hale gelmesi durumunda kişisel verilerin yurt dışına aktarılması söz konusu olabilir.
 
 Bu tür bir aktarım ancak KVKK'nın 9 uncu maddesinde öngörülen yurt dışına veri aktarımı şartlarından birinin sağlanması halinde gerçekleştirilir.
+
+Güncel durumda Google Firebase/Google Cloud hizmetleri kapsamında veriler Avrupa ve ABD'deki altyapılarda; okul e-postası doğrulama e-postaları kapsamında okul e-posta adresi ve e-posta içeriği Brevo aracılığıyla Avrupa Birliği'nde (Fransa) işlenir.
 
 Yurt dışına düzenli veri aktarımının söz konusu olduğu durumlarda;
 
@@ -427,7 +432,7 @@ Kampüs Dolabı verileri için aşağıdaki süreler uygulanır ve günlük otom
 * konuşmalar ve mesajlar: son mesajdan 12 ay sonra,
 * yasaklı ürün denemesi kayıtları: 1 yıl,
 * sonuçlanan şikayetler: sonuçlandıktan 1 yıl sonra,
-* okul e-postası doğrulama istekleri: 30 gün,
+* okul e-postası doğrulama istekleri: bağlantı yöntemiyle oluşturulanlar 30 gün; kod yöntemiyle oluşturulan ve doğrulanmamış istekler (okul adresi ve kodun geri döndürülemez özeti) yeni kod istenene, doğrulama tamamlanana veya hesap silinene kadar,
 * bildirim cihaz kaydı: çıkış yapıldığında veya 30 gün kullanılmadığında.
 
 Sosyal verileri için aşağıdaki süreler uygulanır ve günlük otomatik bir temizlik işlemiyle silinir:
