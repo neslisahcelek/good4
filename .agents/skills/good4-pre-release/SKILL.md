@@ -1,6 +1,6 @@
 ---
 name: good4-pre-release
-description: Good4 Android/iOS uygulamasının yeni sürümü çıkmadan önce sürüm, production yapılandırması, derleme, test, güvenlik, Firebase hazırlığı ve mağaza kontrollerini yap; kanıtlı yayın hazırlık raporu üret. Sürüm öncesi kontrol, yayına hazır mı ve App Store/Google Play review gönderimi öncesi denetim taleplerinde kullan.
+description: Good4 Android/iOS uygulamasının yeni sürümü çıkmadan önce sürüm, production yapılandırması, derleme, test, güvenlik, Firebase hazırlığı ve mağaza kontrollerini yap; kanıtlı yayın hazırlık raporu üret. Genel sürüm öncesi denetim taleplerinde kullan; store review öncesi taleplerde yalnız değişen kaynak kodunun inceleme risklerini kontrol et.
 ---
 
 # Good4 sürüm öncesi kontrol
@@ -15,11 +15,15 @@ Amaç, yayın adayını gerçekten denetlemek ve eksikleri somut kanıtla göste
 - Kullanıcının değişikliklerini koru. Bu skill denetim içindir; sürüm artırma, kaynak düzeltme, commit/push, deploy, mağazaya yükleme, canlı config/enforcement değişikliği veya gerçek kullanıcı verisi üreten test için mevcut kullanıcı yetkisini esas al. Denetim talebini bu işlemlere izin sayma. Düzeltme ayrıca istenmişse ilgili kontrolleri düzeltmeden sonra yenile.
 - Mevcut kaynak/task/script adlarını çalıştırmadan önce doğrula. Bağımsız okumaları grupla; ortak Gradle, Xcode veya Firebase emulator kaynaklarını kullanan işleri çakıştırma. Logları ignored `output/` veya geçici dizinde tut; token, parola, özel kullanıcı verisi ve signing secret'larını rapora dökme.
 
-## Mağaza incelemesine gönderim
+## Store review öncesi: dar kapsam
 
-- Kullanıcı “store review öncesi”, “App Store'a göndermeden önce” veya “Google Play incelemesi öncesi” kontrol isterse [mağaza incelemesi rehberini](references/store-review.md) de uygula. Diğer taleplerde bu ek rehberi yükleme.
-- Bu modda karar “incelemeye gönderime hazır / gönderim engelli / kontroller eksik” içindir; mağazanın kabul edeceğini garanti etmez. Console'da seçilen build ve gönderim beyanlarını kaynak/yerel paket kanıtından ayrı doğrula.
-- Temel paket/ortam kontrollerini ve değişen akışları kapsa; backend testlerini backend değişikliği veya kanıtlı risk olduğunda çalıştır. Aynı adaya ait geçerli build/test/review kanıtını yeniden kullan; kozmetik refactor önerilerini somut gönderim riskinden ayır.
+Bu modu diğer kontrollerden önce seç. Kullanıcı “store review öncesi”, “App Store'a göndermeden önce” veya “Google Play incelemesi öncesi” kontrol isterse yalnız [kaynak kodu inceleme rehberini](references/store-review.md) uygula ve o rehberin kısa raporuyla bitir.
+
+- Bu modda aşağıdaki sürüm/ortam, derleme/paket, backend, cihaz, mağaza bilgileri ve kapsamlı yayın kararı bölümlerini çalıştırma. Build, archive, imza, test komutu, gizlilik politikası/beyan denetimi, canlı Firebase sorgusu, mağaza Console erişimi veya dış URL kontrolü yapma.
+- Başlangıç okumalarını repo talimatları, hedef diff, ilgili kaynaklar ve `good4-code-review` ile sınırla. Diğer skill'leri yalnız değişen kodu anlamak için gerektiğinde yükle; genel yayın denetimini başlatma.
+- Kullanıcı ayrıca build, test veya daha geniş yayın denetimi isterse yalnız o ek kapsamı uygula. Store review talebini bu ek işlere yetki sayma.
+
+Aşağıdaki bölümler genel “sürüm öncesi / yayına hazır mı” denetimleri içindir.
 
 ## Sürüm ve ortam
 
