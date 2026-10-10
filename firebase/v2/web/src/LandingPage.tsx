@@ -21,7 +21,7 @@ const FEATURES: Feature[] = [
     id: "ders-programi",
     eyebrow: "DERS PROGRAMI",
     title: "Bölümünü seç, haftan hazır.",
-    body: "Resmî ders programın bölüm ve sınıfına göre Good4'ta. Hangi ders, hangi saatte, hangi derslikte; tek bakışta.",
+    body: "Resmî ders programın bölüm ve sınıfına göre Good4'da. Hangi ders, hangi saatte, hangi derslikte; tek bakışta.",
     points: ["Hafta hafta gezin", "Derslik ve öğretim üyesi bilgisi", "Resmî programa tek dokunuşla ulaş"],
     device: "iphone",
     screen: "ios-schedule",
