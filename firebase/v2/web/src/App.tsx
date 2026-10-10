@@ -345,7 +345,7 @@ export type PortalEntrance = "staff" | "community";
 export const STAFF_PANEL_URL = "https://panel.good4tr.com";
 export const COMMUNITY_PANEL_URL = "https://good4tr.com/topluluk-paneli";
 
-/** Communities apply and sign in with Google at /topluluk-basvuru and /topluluk-paneli; the staff panel only takes defined e-mail accounts. */
+/** Google sign-in for both entrances: communities apply and sign in at /topluluk-basvuru and /topluluk-paneli, businesses at the staff panel. */
 export async function signInWithGoogle(): Promise<void> {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -581,14 +581,10 @@ function LoginScreen({ portal }: { portal: PortalEntrance }) {
               {submitting ? <><span className="spinner" /> Giriş yapılıyor</> : "Giriş yap"}
             </button>
           </form>
-          {community && (
-            <>
-              <div className="auth-divider"><span>veya</span></div>
-              <button className="secondary-button google-button" type="button" onClick={() => void handleGoogle()} disabled={googleSubmitting}>
-                {googleSubmitting ? "Google açılıyor…" : "Google ile giriş yap"}
-              </button>
-            </>
-          )}
+          <div className="auth-divider"><span>veya</span></div>
+          <button className="secondary-button google-button" type="button" onClick={() => void handleGoogle()} disabled={googleSubmitting}>
+            {googleSubmitting ? "Google açılıyor…" : "Google ile giriş yap"}
+          </button>
           <p className="support-copy">
             {community ? (
               <>Topluluğunuz henüz Good4'da değilse <a href="/topluluk-basvuru">başvuru yapın</a>.<br />
