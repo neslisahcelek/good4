@@ -884,3 +884,4 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); box-shad
 .notification-history { overflow-x: auto; }
 .notification-history table { width: 100%; border-collapse: collapse; }
 .notification-history th, .notification-history td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+.access-card .primary-button + .secondary-button { margin-top: 10px; }

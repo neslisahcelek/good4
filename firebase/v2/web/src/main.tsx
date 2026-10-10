@@ -19,15 +19,18 @@ const isStandalonePrivacyPolicy = normalizedPath === "/gizlilik-politikasi";
 const isCommunityApplicationPage = normalizedPath === "/topluluk-basvuru";
 const isDownloadPage = normalizedPath === "/indir";
 const isCampusEmailLinkPage = normalizedPath === "/campus-email-verification";
+// Community managers have their own entrance at /topluluk-paneli, on any host.
+const isCommunityPortalPage = normalizedPath === "/topluluk-paneli" || normalizedPath.startsWith("/topluluk-paneli/");
 // The staff panel lives on panel.good4tr.com, under /admin, and on admin.* hosts;
 // every other unknown address, including the bare domain, shows the landing page.
-const isAdminPage = normalizedPath === "/admin" || normalizedPath.startsWith("/admin/")
+const isAdminPage = !isCommunityPortalPage && (normalizedPath === "/admin" || normalizedPath.startsWith("/admin/")
   || window.location.hostname === "panel.good4tr.com"
-  || window.location.hostname.startsWith("admin.");
+  || window.location.hostname.startsWith("admin."));
 if (isAdminPage) document.title = "Good4 Yönetim Paneli";
+if (isCommunityPortalPage) document.title = "Good4 Topluluk Paneli";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {isCampusEmailLinkPage ? <CampusEmailLinkPage /> : isDownloadPage ? <DownloadPage /> : isCommunityApplicationPage ? <CommunityApplicationPage /> : isStandalonePrivacyPolicy ?<Good4PrivacyPolicy /> : isAccountDeletionPage ? <AccountDeletion /> : isAgreementPage ? <MembershipAgreement /> : isPrivacyPage ? <PrivacyPolicy /> : isAdminPage ? <App /> : <LandingPage />}
+    {isCampusEmailLinkPage ? <CampusEmailLinkPage /> : isDownloadPage ? <DownloadPage /> : isCommunityApplicationPage ? <CommunityApplicationPage /> : isStandalonePrivacyPolicy ?<Good4PrivacyPolicy /> : isAccountDeletionPage ? <AccountDeletion /> : isAgreementPage ? <MembershipAgreement /> : isPrivacyPage ? <PrivacyPolicy /> : isCommunityPortalPage ? <App portal="community" /> : isAdminPage ? <App /> : <LandingPage />}
   </StrictMode>,
 );

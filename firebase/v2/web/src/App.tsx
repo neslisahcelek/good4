@@ -340,7 +340,12 @@ const feedbackByOutcome: Record<RedeemOutcome, Feedback> = {
   },
 };
 
-/** Community managers who applied through /topluluk-basvuru sign in with their Google account. */
+/** Which entrance the panel was opened from: Good4 staff and businesses, or community managers. */
+export type PortalEntrance = "staff" | "community";
+export const STAFF_PANEL_URL = "https://panel.good4tr.com";
+export const COMMUNITY_PANEL_URL = "https://good4tr.com/topluluk-paneli";
+
+/** Communities apply and sign in with Google at /topluluk-basvuru and /topluluk-paneli; the staff panel only takes defined e-mail accounts. */
 export async function signInWithGoogle(): Promise<void> {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -450,19 +455,20 @@ function formatCode(value: string): string {
   return value.length > 4 ? `${value.slice(0, 4)} ${value.slice(4)}` : value;
 }
 
-export function BrandMark({ compact = false }: { compact?: boolean }) {
+export function BrandMark({ compact = false, label = "Yönetim Paneli" }: { compact?: boolean; label?: string }) {
   return (
     <div className={`brand-mark ${compact ? "brand-mark--compact" : ""}`}>
       <img src="/good4-logo.png" alt="Good4" />
       <div>
         <span>Good4</span>
-        {!compact && <small>Yönetim Paneli</small>}
+        {!compact && <small>{label}</small>}
       </div>
     </div>
   );
 }
 
-function LoginScreen() {
+function LoginScreen({ portal }: { portal: PortalEntrance }) {
+  const community = portal === "community";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -517,9 +523,13 @@ function LoginScreen() {
     <main className="login-shell">
       <section className="login-form-area">
         <div className="login-card">
-          <div className="login-card__brand"><BrandMark /></div>
-          <h1>Yönetim paneline giriş</h1>
-          <p className="card-intro">Good4 tarafından tanımlanan hesabınızla devam edin.</p>
+          <div className="login-card__brand"><BrandMark label={community ? "Topluluk Paneli" : "Yönetim Paneli"} /></div>
+          <h1>{community ? "Topluluk paneline giriş" : "Yönetim paneline giriş"}</h1>
+          <p className="card-intro">
+            {community
+              ? "Topluluğunuzun yönetici hesabıyla devam edin."
+              : "Good4 tarafından tanımlanan hesabınızla devam edin."}
+          </p>
 
           <form onSubmit={handleSubmit} noValidate>
             <label className="field-label" htmlFor="email">E-posta</label>
@@ -571,13 +581,22 @@ function LoginScreen() {
               {submitting ? <><span className="spinner" /> Giriş yapılıyor</> : "Giriş yap"}
             </button>
           </form>
-          <div className="auth-divider"><span>veya</span></div>
-          <button className="secondary-button google-button" type="button" onClick={() => void handleGoogle()} disabled={googleSubmitting}>
-            {googleSubmitting ? "Google açılıyor…" : "Google ile giriş yap"}
-          </button>
+          {community && (
+            <>
+              <div className="auth-divider"><span>veya</span></div>
+              <button className="secondary-button google-button" type="button" onClick={() => void handleGoogle()} disabled={googleSubmitting}>
+                {googleSubmitting ? "Google açılıyor…" : "Google ile giriş yap"}
+              </button>
+            </>
+          )}
           <p className="support-copy">
-            Hesap erişimi için Good4 yöneticinizle iletişime geçin.<br />
-            Topluluğunuzu Good4'a eklemek için <a href="/topluluk-basvuru">başvuru yapın</a>.
+            {community ? (
+              <>Topluluğunuz henüz Good4'da değilse <a href="/topluluk-basvuru">başvuru yapın</a>.<br />
+                Good4 ekibi misiniz? <a href={STAFF_PANEL_URL}>Yönetim paneline gidin</a>.</>
+            ) : (
+              <>Hesap erişimi için Good4 yöneticinizle iletişime geçin.<br />
+                Topluluk yöneticisi misiniz? <a href={COMMUNITY_PANEL_URL}>Topluluk paneline gidin</a>.</>
+            )}
           </p>
         </div>
       </section>
@@ -593,6 +612,28 @@ function AccessError({ message }: { message: string }) {
         <div className="result-icon result-icon--error" aria-hidden="true">!</div>
         <h1>Panele erişilemiyor</h1>
         <p>{message}</p>
+        <button className="secondary-button" onClick={() => void signOut(auth)}>Farklı hesapla giriş yap</button>
+      </div>
+    </main>
+  );
+}
+
+/** A signed-in account that belongs to the other entrance is sent there instead of being shown its panel here. */
+function WrongPortal({ portal }: { portal: PortalEntrance }) {
+  const toCommunity = portal === "staff";
+  return (
+    <main className="centered-page">
+      <div className="access-card">
+        <BrandMark compact />
+        <h1>{toCommunity ? "Topluluk paneline gidin" : "Bu panel topluluklar içindir"}</h1>
+        <p>
+          {toCommunity
+            ? "Bu hesap bir topluluk yöneticisi hesabı. Topluluğunuzu topluluk panelinden yönetebilirsiniz."
+            : "Bu hesap Good4 yönetim paneline aittir."}
+        </p>
+        <a className="primary-button" href={toCommunity ? COMMUNITY_PANEL_URL : STAFF_PANEL_URL}>
+          {toCommunity ? "Topluluk paneline git" : "Yönetim paneline git"}
+        </a>
         <button className="secondary-button" onClick={() => void signOut(auth)}>Farklı hesapla giriş yap</button>
       </div>
     </main>
@@ -2626,7 +2667,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
             <div className="section-title-row">
               <div>
                 <h2 id="community-applications-title">Topluluk başvuruları</h2>
-                <p>Topluluklar <a href="/topluluk-basvuru">good4tr.com/topluluk-basvuru</a> adresinden Google hesabıyla başvurur. Onay, topluluğu oluşturur ve başvuranı yönetici yapar.</p>
+                <p>Topluluklar <a href="/topluluk-basvuru">good4tr.com/topluluk-basvuru</a> adresinden Google hesabıyla başvurur. Onay, topluluğu oluşturur ve başvuranı yönetici yapar. Yöneticiler <a href={COMMUNITY_PANEL_URL}>good4tr.com/topluluk-paneli</a> adresinden giriş yapar.</p>
               </div>
               <button className="quiet-button" onClick={() => void loadCommunityApplications()}>Yenile</button>
             </div>
@@ -2735,7 +2776,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   );
 }
 
-export default function App() {
+export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [context, setContext] = useState<PortalContext | null>(null);
@@ -2771,11 +2812,15 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen />;
+    return <LoginScreen portal={portal} />;
   }
 
   if (accessError || !context) {
     return <AccessError message={accessError || "İşletme bilgisi bulunamadı."} />;
+  }
+
+  if ((portal === "community") !== (context.portalRole === "community")) {
+    return <WrongPortal portal={portal} />;
   }
 
   if (context.portalRole === "admin") {

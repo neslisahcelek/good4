@@ -59,7 +59,7 @@
         ]
       },
       {
-        "source": "/@(gizlilik|privacy|uyelik-sozlesmesi|terms|hesabimi-sil|gizlilik-politikasi|topluluk-basvuru|indir|campus-email-verification|admin|admin/**)",
+        "source": "/@(gizlilik|privacy|uyelik-sozlesmesi|terms|hesabimi-sil|gizlilik-politikasi|topluluk-basvuru|indir|campus-email-verification|admin|admin/**|topluluk-paneli|topluluk-paneli/**)",
         "headers": [
           {
             "key": "Cache-Control",

@@ -183,7 +183,7 @@ export default function CommunityApplicationPage() {
       <div className="application-status">
         <h2>{application?.status === "approved" ? "Başvurunuz onaylandı" : "Bu hesap zaten panele bağlı"}</h2>
         <p>Yönetim paneline bu Google hesabıyla giriş yapabilirsiniz.</p>
-        <a className="primary-button" href="/admin">Panele git</a>
+        <a className="primary-button" href="/topluluk-paneli">Panele git</a>
       </div>
     );
   } else if (application?.status === "pending" && !editing) {
@@ -215,7 +215,7 @@ export default function CommunityApplicationPage() {
     <main className="login-shell">
       <section className="login-form-area">
         <div className="login-card application-card">
-          <div className="login-card__brand"><BrandMark /></div>
+          <div className="login-card__brand"><BrandMark label="Topluluk Paneli" /></div>
           <h1>Topluluk başvurusu</h1>
           <p className="card-intro">
             Topluluğunuzu Good4'a ekleyin. Başvurunuz onaylandığında etkinliklerinizi yönetim panelinden yayınlayabilir,
@@ -229,7 +229,7 @@ export default function CommunityApplicationPage() {
           )}
           {body}
           {message && <div className="inline-message inline-message--error" role="alert">{message}</div>}
-          <p className="support-copy">Zaten onaylı bir hesabınız var mı? <a href="/admin">Panele giriş yapın</a>.</p>
+          <p className="support-copy">Zaten onaylı bir hesabınız var mı? <a href="/topluluk-paneli">Panele giriş yapın</a>.</p>
         </div>
       </section>
     </main>
