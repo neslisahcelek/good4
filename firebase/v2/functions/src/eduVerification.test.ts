@@ -42,7 +42,7 @@ test("a student verifies a .edu.tr address with the e-mailed code", async () => 
   const now = Date.now();
   const sent = await requestEduVerificationService(db, uid, { email: "  Can@OGR.Akdeniz.edu.tr " }, now);
   assert.equal(sent.outcome, "sent");
-  if (sent.outcome === "sent") assert.equal(sent.resendAfterSeconds, 60);
+  if (sent.outcome === "sent") assert.equal(sent.resendAfterSeconds, 180);
 
   const mail = await db.collection("mail").get();
   assert.equal(mail.size, 0);
@@ -101,7 +101,7 @@ test("resends are rate limited", async () => {
     (error: { message?: string }) => error.message === "EDU_CODE_RESEND_TOO_SOON",
   );
   await assert.rejects(
-    requestEduVerificationService(db, uid, { email: eduEmail }, now + 59_000),
+    requestEduVerificationService(db, uid, { email: eduEmail }, now + 179_000),
     (error: { message?: string }) => error.message === "EDU_CODE_RESEND_TOO_SOON",
   );
   // Different addresses, so only the account's hourly allowance applies.
@@ -344,9 +344,9 @@ for (const rollover of [false, true]) {
   });
 }
 
-test("campus resend becomes available at exactly sixty seconds", async () => {
+test("campus resend becomes available at exactly three minutes", async () => {
   const now = Date.now();
   await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, deps);
-  await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 59_999, deps), /EDU_CODE_RESEND_TOO_SOON/);
-  assert.equal((await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 60_000, deps)).outcome, "sent");
+  await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 179_999, deps), /EDU_CODE_RESEND_TOO_SOON/);
+  assert.equal((await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 180_000, deps)).outcome, "sent");
 });

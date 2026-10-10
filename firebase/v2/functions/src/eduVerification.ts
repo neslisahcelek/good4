@@ -11,7 +11,9 @@ import { assertRateLimits } from "./rateLimit.js";
 import { sendVerificationEmail, type VerificationEmailSender } from "./verificationEmail.js";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
-const RESEND_COOLDOWN_MS = 60 * 1000;
+// Mail usually lands in 1-2 minutes; a shorter wait invites a second code that voids the first.
+// Product decision (10.10.2026): keep 3 minutes.
+const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const SEND_WINDOW_MS = 60 * 60 * 1000;
 const MAX_SENDS_PER_WINDOW = 5;
 const MAX_ATTEMPTS = 5;

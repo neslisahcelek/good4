@@ -37,7 +37,7 @@ yayın adımında yapılmalıdır. Bu kurulumda deploy komutu çalıştırılmad
 
 Kod doğrulama uygulaması `dcf3def` commit'indedir. Kampüs/Sosyal kodları yalnız
 `@ogr.akdeniz.edu.tr` adresine gönderilir; 6 hane, 10 dakika geçerlilik, 5 deneme
-ve 60 saniye yeniden gönderme beklemesi kullanılır. Saatlik/günlük gönderim
+ve 3 dakika yeniden gönderme beklemesi kullanılır. Saatlik/günlük gönderim
 hakları teslimattan önce ayrılır; sağlayıcı hatası durumunda geri verilir.
 Eski Firebase Auth bağlantı uçları eski uygulamalar için korunur.
 
