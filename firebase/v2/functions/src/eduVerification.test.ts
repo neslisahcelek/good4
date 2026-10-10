@@ -42,6 +42,7 @@ test("a student verifies a .edu.tr address with the e-mailed code", async () => 
   const now = Date.now();
   const sent = await requestEduVerificationService(db, uid, { email: "  Can@OGR.Akdeniz.edu.tr " }, now);
   assert.equal(sent.outcome, "sent");
+  if (sent.outcome === "sent") assert.equal(sent.resendAfterSeconds, 60);
 
   const mail = await db.collection("mail").get();
   assert.equal(mail.size, 0);
@@ -100,7 +101,7 @@ test("resends are rate limited", async () => {
     (error: { message?: string }) => error.message === "EDU_CODE_RESEND_TOO_SOON",
   );
   await assert.rejects(
-    requestEduVerificationService(db, uid, { email: eduEmail }, now + 179_000),
+    requestEduVerificationService(db, uid, { email: eduEmail }, now + 59_000),
     (error: { message?: string }) => error.message === "EDU_CODE_RESEND_TOO_SOON",
   );
   // Different addresses, so only the account's hourly allowance applies.
@@ -298,4 +299,54 @@ test("all codes stop at the daily total that protects the mail quota", async () 
   await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, deps), /EDU_CODE_DAILY_LIMIT/);
   assert.equal(deliveries.length, 0);
   assert.equal((await db.doc(`eduVerifications/${uid}`).get()).exists, false);
+});
+
+test("failed sends refund every allowance even near quota exhaustion", async () => {
+  const now = Date.now();
+  const keys = [`eduMail:account:${uid}`, `eduMail:recipient:${createHash("sha256").update(eduEmail).digest("hex")}`, "eduMail:total"];
+  const counts = [9, 2, 249];
+  await Promise.all(keys.map((key, index) => db.doc(rateLimitPath(key)).set({
+    key, count: counts[index], resetAt: Timestamp.fromMillis(now + 3_600_000),
+  })));
+  const failed = { send: async () => { throw new Error("provider unavailable"); } };
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, failed), /EDU_EMAIL_SEND_FAILED/);
+    for (const [index, key] of keys.entries()) {
+      assert.equal((await db.doc(rateLimitPath(key)).get()).get("count"), counts[index]);
+    }
+  }
+  await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, deps);
+  for (const [index, key] of keys.entries()) {
+    assert.equal((await db.doc(rateLimitPath(key)).get()).get("count"), counts[index]! + 1);
+  }
+});
+
+for (const rollover of [false, true]) {
+  test(`failed send preserves another account's successful allowance${rollover ? " after window rollover" : " in the same window"}`, async () => {
+    const now = Date.now();
+    await db.doc("users/other").set({ role: "student", status: "active" });
+    let release!: () => void;
+    let entered!: () => void;
+    const started = new Promise<void>((resolve) => { entered = resolve; });
+    const wait = new Promise<void>((resolve) => { release = resolve; });
+    const failed = requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, {
+      send: async () => { entered(); await wait; throw new Error("provider unavailable"); },
+    });
+    const rejection = assert.rejects(failed, /EDU_EMAIL_SEND_FAILED/);
+    await started;
+    await requestCampusEmailCodeService(db, "other", { email: eduEmail }, now + (rollover ? 86_401_000 : 0), deps);
+    release(); await rejection;
+    for (const key of [`eduMail:recipient:${createHash("sha256").update(eduEmail).digest("hex")}`, "eduMail:total"]) {
+      assert.equal((await db.doc(rateLimitPath(key)).get()).get("count"), 1);
+    }
+    assert.equal((await db.doc(rateLimitPath(`eduMail:account:${uid}`)).get()).get("count"), 0);
+    assert.equal((await db.doc(rateLimitPath("eduMail:account:other")).get()).get("count"), 1);
+  });
+}
+
+test("campus resend becomes available at exactly sixty seconds", async () => {
+  const now = Date.now();
+  await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, deps);
+  await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 59_999, deps), /EDU_CODE_RESEND_TOO_SOON/);
+  assert.equal((await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 60_000, deps)).outcome, "sent");
 });

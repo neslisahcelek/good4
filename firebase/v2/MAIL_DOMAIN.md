@@ -1,5 +1,52 @@
 # Good4 Kampüs Dolabı e-posta gönderici alan adı
 
+## Brevo kod e-postaları — 10 Ekim 2026
+
+Brevo'da `good4tr.com` **Authenticated**, `Good4 <noreply@good4tr.com>` göndereni
+**Verified** olarak doğrulandı. Hesaba giriş adresi gönderici adresinden bağımsızdır.
+Kullanıcının üç kayıt için açık onayından sonra GoDaddy'de yalnız şu kayıtlar eklendi:
+
+| Ad | Tür | Değerin genel biçimi | TTL |
+| --- | --- | --- | --- |
+| @ | TXT | `brevo-code:[alan adı doğrulama değeri]` | 3600 saniye |
+| brevo1._domainkey | CNAME | `b1.good4tr-com.dkim.brevo.com.` | 3600 saniye |
+| brevo2._domainkey | CNAME | `b2.good4tr-com.dkim.brevo.com.` | 3600 saniye |
+
+Kaydetme sonrasında üç kayıt `dig @ns17.domaincontrol.com +noall +answer`
+ile doğrulandı; Brevo da kayıtları geçerli kabul etti. Yerel çözümleyici ilk
+sorgularda önbellekteki eski yanıtı döndürdü. Yeni kayıtlar tekrar eklenmemeli.
+
+Mevcut tek SPF `v=spf1 include:_spf.firebasemail.com include:secureserver.net ~all`,
+`_dmarc` kaydındaki `p=quarantine` ve rapor adresi, Firebase'in iki DKIM kaydı,
+Google/Firebase/Hosting sahiplik kayıtları korundu. Bu kurulumda Brevo için ikinci
+SPF veya DMARC kaydı eklenmedi; isteğe bağlı bağlantı markalaması yapılmadı.
+
+Kullanıcı API anahtarını kendi terminalinde Firebase Secret Manager'a kaydetti.
+`functions:secrets:get BREVO_API_KEY --project good4tr-v2` yalnız meta veri ile
+**1. sürüm / ENABLED** döndürdü. Anahtarın değeri okunmadı, bu belgeye veya repoya
+yazılmadı. Anahtar yenilenirken yine gizli giriş kullanan komut çalıştırılmalı:
+
+```sh
+cd firebase/v2 && ./node_modules/.bin/firebase functions:secrets:set BREVO_API_KEY --project good4tr-v2
+```
+
+Secret sürümü kaydetmek tek başına ilgili Functions sürümünü devreye almaz.
+Yenileme sırasında CLI, eski sürümü kullanan işlevleri yeniden deploy etmeyi ve
+eski secret sürümünü silmeyi önerebilir; bu ayrı işlemler kendi yetkilendirilmiş
+yayın adımında yapılmalıdır. Bu kurulumda deploy komutu çalıştırılmadı.
+
+Kod doğrulama uygulaması `dcf3def` commit'indedir. Kampüs/Sosyal kodları yalnız
+`@ogr.akdeniz.edu.tr` adresine gönderilir; 6 hane, 10 dakika geçerlilik, 5 deneme
+ve 60 saniye yeniden gönderme beklemesi kullanılır. Saatlik/günlük gönderim
+hakları teslimattan önce ayrılır; sağlayıcı hatası durumunda geri verilir.
+Eski Firebase Auth bağlantı uçları eski uygulamalar için korunur.
+
+Bu kurulumda deploy veya gerçek öğrenciye e-posta gönderimi yapılmadı. Firebase'de
+aktif bir secret sürümü olması, anahtarın Brevo tarafından kabul edildiğini veya
+okul/Outlook teslimatının test edildiğini göstermez. Gizlilik/KVKK dosyaları
+değiştirilmedi. Sır içermeyen DNS ve ekran kanıtları çalışma klasörü dışındaki
+`/Users/cankilinc/Desktop/Good4/brevo-kurulum-kanitlari/` dizinindedir.
+
 ## Durum — 6 Ekim 2026
 
 Canlı proje `good4tr-v2`. Kullanıcı `good4tr.com` için **Continue** adımını ve aşağıdaki üç yeni GoDaddy kaydının eklenmesini açıkça onayladı. DNS kayıtlarını kullanıcı kendisi girip kaydetti; üçü de sonradan doğrudan konsol ve genel DNS üzerinden doğrulandı. Kullanıcının ayrı açık onayıyla **Verify** işlemi 6 Ekim 2026 saat 14:59:52 (UTC+03:00) başlatıldı; Firebase API `pendingCustomDomain=good4tr.com`, `customDomainState=SUCCEEDED` döndürdü, konsolda **Verification complete** görüldü. Kullanıcı daha sonra "etkinleştiri" diyerek **Apply custom domain** işlemini açıkça onayladı; işlem yapıldı. Saat 15:16:20 kontrolünde etkin alan adı `good4tr.com`, `useCustomDomain=true`; konsolda `noreply@good4tr.com` görüldü. Yeni `EMAIL_SIGNIN` test mailleri bu göndericiden Gmail gelen kutusuna SPF/DKIM/DMARC **pass** ile ulaştı. Kullanıcının ayrıca açık onayıyla Email address verification şablonunun Sender name alanı `Good4` olarak kaydedildi; fakat sonraki `EMAIL_SIGNIN` mailinin From başlığında bu ad görünmedi. Kampüs Dolabı mailinin özel görünen adı/konu/gövde özelleştirmesi tamamlanmadı; okul/Microsoft 365 teslimat testi henüz yok.

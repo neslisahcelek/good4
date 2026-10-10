@@ -9,6 +9,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.getString
 
 /** Only the server-written eligibility fields of `users/{uid}`. */
 @Serializable
@@ -69,15 +71,15 @@ class EduVerificationRepository(
     }
 }
 
-internal fun eduVerificationErrorMessage(error: Throwable): String = when (error.message) {
+internal suspend fun eduVerificationErrorMessage(error: Throwable): String = when (error.message) {
     "EDU_EMAIL_REQUIRED", "EDU_EMAIL_INVALID" -> "Geçerli bir .edu.tr e-posta adresi girin."
     "EDU_EMAIL_IN_USE" -> "Bu .edu.tr adresi başka bir Good4 hesabıyla doğrulanmış."
     "EDU_CODE_RESEND_TOO_SOON" -> "Yeni kod istemeden önce biraz bekleyin."
     "EDU_CODE_SEND_LIMIT" -> "Çok fazla kod istendi. Bir saat sonra tekrar deneyin."
-    "EDU_CODE_RECIPIENT_LIMIT" -> "Bu adrese son bir saatte çok fazla kod istendi. Biraz sonra tekrar deneyin."
-    "EDU_CODE_ACCOUNT_DAILY_LIMIT" -> "Bugün en fazla 10 kod isteyebilirsiniz. Yarın tekrar deneyin."
-    "EDU_CODE_DAILY_LIMIT" -> "Bugün çok fazla doğrulama isteği geldi. Lütfen yarın tekrar deneyin."
-    "EDU_EMAIL_SEND_FAILED" -> "Kod gönderilemedi. Biraz sonra tekrar deneyin."
+    "EDU_CODE_RECIPIENT_LIMIT" -> getString(Res.string.campus_email_code_recipient_limit)
+    "EDU_CODE_ACCOUNT_DAILY_LIMIT" -> getString(Res.string.campus_email_code_account_daily_limit)
+    "EDU_CODE_DAILY_LIMIT" -> getString(Res.string.campus_email_code_daily_limit)
+    "EDU_EMAIL_SEND_FAILED" -> getString(Res.string.campus_email_code_send_failed)
     "EDU_CODE_FORMAT_INVALID" -> "Kod 6 haneli olmalı."
     "EDU_CODE_NOT_REQUESTED" -> "Önce doğrulama kodu isteyin."
     "ROLE_NOT_ALLOWED" -> "Bu doğrulama yalnızca öğrenci hesapları için."

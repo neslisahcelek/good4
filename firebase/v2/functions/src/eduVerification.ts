@@ -11,13 +11,12 @@ import { assertRateLimits } from "./rateLimit.js";
 import { sendVerificationEmail, type VerificationEmailSender } from "./verificationEmail.js";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
-// Mail usually lands in 1-2 minutes; a shorter wait invites a second code that voids the first.
-const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
+const RESEND_COOLDOWN_MS = 60 * 1000;
 const SEND_WINDOW_MS = 60 * 60 * 1000;
 const MAX_SENDS_PER_WINDOW = 5;
 const MAX_ATTEMPTS = 5;
 // Abuse limits on top of the per-account cooldown: new accounts are cheap, mail quota is not
-// (Brevo free plan: 300/day). They count when a send is reserved, so provider failures count too.
+// (Brevo free plan: 300/day). Reserve before delivery and refund provider failures.
 const MAX_SENDS_PER_ACCOUNT_DAY = 10;
 const MAX_SENDS_PER_RECIPIENT_HOUR = 3;
 const MAX_SENDS_TOTAL_DAY = 250;
@@ -84,6 +83,13 @@ export async function requestEduVerificationService(
   requireScope(email, campus);
   const verificationRef = database.doc(`eduVerifications/${actorUid}`);
   const sendId = randomUUID();
+  const sendLimits = [
+    { key: `eduMail:account:${actorUid}`, limit: MAX_SENDS_PER_ACCOUNT_DAY, windowSeconds: 86_400, errorMessage: "EDU_CODE_ACCOUNT_DAILY_LIMIT" },
+    { key: `eduMail:recipient:${createHash("sha256").update(email).digest("hex")}`, limit: MAX_SENDS_PER_RECIPIENT_HOUR,
+      windowSeconds: 3_600, errorMessage: "EDU_CODE_RECIPIENT_LIMIT" },
+    { key: "eduMail:total", limit: MAX_SENDS_TOTAL_DAY, windowSeconds: 86_400, errorMessage: "EDU_CODE_DAILY_LIMIT" },
+  ];
+  const limitRefs = sendLimits.map(({ key }) => database.doc(`rateLimits/${createHash("sha256").update(key).digest("hex")}`));
   const reservation = await database.runTransaction(async (transaction) => {
     await requireActiveActor(database, transaction, actorUid, ["student"]);
     const user = await transaction.get(database.doc(`users/${actorUid}`));
@@ -107,14 +113,10 @@ export async function requestEduVerificationService(
     const sendCount = windowOpen ? Number(verification.get("sendCount") ?? 0) : 0;
     if (sendCount >= MAX_SENDS_PER_WINDOW) throw new HttpsError("resource-exhausted", "EDU_CODE_SEND_LIMIT");
     // Keys are stored in clear text, so the recipient is hashed.
-    await assertRateLimits(database, transaction, [
-      { key: `eduMail:account:${actorUid}`, limit: MAX_SENDS_PER_ACCOUNT_DAY, windowSeconds: 86_400, errorMessage: "EDU_CODE_ACCOUNT_DAILY_LIMIT" },
-      { key: `eduMail:recipient:${createHash("sha256").update(email).digest("hex")}`, limit: MAX_SENDS_PER_RECIPIENT_HOUR,
-        windowSeconds: 3_600, errorMessage: "EDU_CODE_RECIPIENT_LIMIT" },
-      { key: "eduMail:total", limit: MAX_SENDS_TOTAL_DAY, windowSeconds: 86_400, errorMessage: "EDU_CODE_DAILY_LIMIT" },
-    ], now);
+    const reservedLimits = await assertRateLimits(database, transaction, sendLimits, now);
     transaction.set(verificationRef, { pendingSendId: sendId, pendingUntil: Timestamp.fromMillis(now + 30_000) }, { merge: true });
-    return { outcome: "reserved" as const, sendCount, windowStartedAt: windowOpen ? windowStartedAt : Timestamp.fromMillis(now) };
+    return { outcome: "reserved" as const, sendCount, reservedLimits,
+      windowStartedAt: windowOpen ? windowStartedAt : Timestamp.fromMillis(now) };
   });
   if (reservation.outcome === "already_verified") return reservation;
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -123,6 +125,15 @@ export async function requestEduVerificationService(
   } catch {
     await database.runTransaction(async (transaction) => {
       const current = await transaction.get(verificationRef);
+      const limits = await Promise.all(limitRefs.map((ref) => transaction.get(ref)));
+      limits.forEach((limit, index) => {
+        const resetAt = limit.get("resetAt");
+        // Refund only this reservation's window; never erase concurrent sends
+        // or subtract a failed old request from a newly opened window.
+        if (resetAt instanceof Timestamp && resetAt.toMillis() === reservation.reservedLimits[index]!.resetAtMillis) {
+          transaction.update(limit.ref, { count: Math.max(0, Number(limit.get("count") ?? 0) - 1) });
+        }
+      });
       if (current.get("pendingSendId") !== sendId) return;
       if (!current.get("lastSentAt")) transaction.delete(verificationRef);
       else transaction.update(verificationRef, { pendingSendId: FieldValue.delete(), pendingUntil: FieldValue.delete() });
