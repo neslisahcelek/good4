@@ -815,7 +815,12 @@ test("private storage uses no token or public cache; migration covers all histor
       assert.equal(options.prefix,"social-profiles/"); assert.equal(options.versions,true);
       return [[{name:options.pageToken ? "social-profiles/deleted/orphan/thumb.jpg":"social-profiles/ali/current/photo.jpg",
         getMetadata:async()=>[{cacheControl:"public,max-age=86400",metadata:{firebaseStorageDownloadTokens:"old-token"}}],
-        setMetadata:async(options:unknown)=>{changes.push(options);}}],options.pageToken?null:{pageToken:"next"}];
+        setMetadata:async(options:unknown)=>{changes.push(options);},
+        download:async()=>[Buffer.from("test")],
+        save:async(bytes:Buffer,options:unknown)=>{
+          assert.deepEqual(bytes,Buffer.from("test"));
+          writes.push({name:"social-profiles/mock/photo.jpg",options});
+        }}],options.pageToken?null:{pageToken:"next"}];
     }} as unknown as Bucket;
   assert.match(await privateSocialPhotoStore(bucket).save("social-profiles/ali/current/photo.jpg",Buffer.from("test")),/^gs:\/\//);
   assert.equal(writes[0]!.options.metadata.metadata,undefined);
@@ -823,4 +828,6 @@ test("private storage uses no token or public cache; migration covers all histor
   assert.deepEqual(await privatizeLegacySocialPhotos(bucket),{objects:2,changed:2}); assert.equal(changes.length,0);
   assert.deepEqual(await privatizeLegacySocialPhotos(bucket,true),{objects:2,changed:2});
   assert.ok(changes.every((o)=>o.metadata.firebaseStorageDownloadTokens===null));
+  assert.ok(writes.every((write)=>write.options.metadata.cacheControl==="private,no-store,max-age=0"));
+  assert.ok(writes.every((write)=>!write.options.metadata.metadata?.firebaseStorageDownloadTokens));
 });
