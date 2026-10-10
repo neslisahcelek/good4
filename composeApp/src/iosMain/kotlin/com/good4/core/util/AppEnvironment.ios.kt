@@ -15,7 +15,7 @@ actual object AppEnvironment {
     actual val firebaseEmulatorHost: String get() = "127.0.0.1"
     actual val firebaseProjectId: String
         get() = if (useFirebaseEmulators) "demo-good4-v2" else when (NSBundle.mainBundle.bundleIdentifier) {
-            "com.good4.iosApp" -> "good4tr-v2"
+            "com.good4.iosApp", "com.good4.iosApp.v2" -> "good4tr-v2"
             "com.good4.iosApp.test" -> "good4tr-test"
             else -> error("Unsupported application bundle: ${NSBundle.mainBundle.bundleIdentifier}")
         }
