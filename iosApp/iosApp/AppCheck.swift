@@ -17,14 +17,26 @@ enum Good4AppCheck {
             #endif
             #if DEBUG
             if Bundle.main.bundleIdentifier == "com.good4.iosApp.test" {
-                let options = FirebaseOptions(googleAppID: "1:123456789:ios:demo", gcmSenderID: "123456789")
-                options.apiKey = "demo-api-key"
+                let options = FirebaseOptions(googleAppID: "1:123456789:ios:0000000000000000", gcmSenderID: "123456789")
+                options.apiKey = "ADemoKeyForTheLocalFirebaseEmulatorOnly"
                 options.projectID = "demo-good4-v2"
                 options.storageBucket = "demo-good4-v2.appspot.com"
                 FirebaseApp.configure(options: options)
                 Auth.auth().useEmulator(withHost: "127.0.0.1", port: 9199)
-                Firestore.firestore().useEmulator(withHost: "127.0.0.1", port: 8285)
+                // Plain-HTTP local emulator: set host and SSL explicitly so no later settings write re-enables TLS.
+                let firestoreSettings = Firestore.firestore().settings
+                firestoreSettings.host = "127.0.0.1:8285"
+                firestoreSettings.isSSLEnabled = false
+                firestoreSettings.cacheSettings = MemoryCacheSettings()
+                Firestore.firestore().settings = firestoreSettings
                 Storage.storage().useEmulator(withHost: "127.0.0.1", port: 9295)
+                // Local emulator only: `-good4DemoLogin <email> <password>` signs a seeded demo account in at launch.
+                let args = ProcessInfo.processInfo.arguments
+                if let i = args.firstIndex(of: "-good4DemoLogin"), args.count > i + 2 {
+                    Auth.auth().signIn(withEmail: args[i + 1], password: args[i + 2]) { _, error in
+                        if let error { NSLog("[Demo login] failed: %@", error.localizedDescription) }
+                    }
+                }
             } else { FirebaseApp.configure() }
             #else
             FirebaseApp.configure()
