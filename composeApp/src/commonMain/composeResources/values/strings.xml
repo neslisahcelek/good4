@@ -1144,7 +1144,7 @@
     <string name="social_join">Katılmak istiyorum</string>
     <string name="social_verify_title">Katılmak için okul e-postanı doğrula</string>
     <string name="social_verify_ready">Artık etkinliklere katılabilirsin.</string>
-    <string name="social_verify_after">Bağlantıyı açınca buraya dön, isteğin gönderilir. Bir kez doğrulaman yeter, Kampüs Dolabı'nda da geçerli olur.</string>
+    <string name="social_verify_after">Kodu doğrulayınca katılma isteğin gönderilir. Bir kez doğrulaman yeter, Kampüs Dolabı'nda da geçerli olur.</string>
     <string name="social_rules_title">Sosyal Etkinlik kuralları</string>
     <string name="social_rules_intro">Etkinlikler yalnızca okul e-postasını doğrulayan öğrencilere açıktır. Buluşmadan önce bunları oku:</string>
     <string name="social_rule_public_places">Kampüste ya da kalabalık, herkese açık bir yerde buluş.</string>
@@ -1307,4 +1307,30 @@
     <string name="social_store_chat_title_first">Birlikte planla,</string>
     <string name="social_store_chat_title_second">birebir konuş</string>
     <string name="social_store_chat_subtitle">İsteğin kabul edilince sohbet başlar</string>
+    <string name="campus_email_address_label" formatted="false">Okul e-posta adresin</string>
+    <string name="campus_email_address_example" formatted="false">numaran@ogr.akdeniz.edu.tr</string>
+    <string name="campus_email_code_send" formatted="false">Kod gönder</string>
+    <string name="campus_email_code_hint" formatted="false">Yalnızca @ogr.akdeniz.edu.tr adresleri kabul edilir. Kod 10 dakika geçerli.</string>
+    <string name="campus_email_code_title" formatted="false">Doğrulama kodunu gir</string>
+    <string name="campus_email_code_sent_to">Kodu %1$s adresine gönderdik. Mail 1-2 dakika içinde Outlook'una ulaşacak. Adresini ve Gereksiz/Spam klasörünü kontrol et.</string>
+    <string name="campus_email_code_label" formatted="false">6 haneli kod</string>
+    <string name="campus_email_code_auto_confirm" formatted="false">6 haneyi girince kodun otomatik doğrulanır.</string>
+    <string name="campus_email_code_confirm" formatted="false">Kodu doğrula</string>
+    <string name="campus_email_open_outlook" formatted="false">Outlook'u aç</string>
+    <string name="campus_email_change_address" formatted="false">Adresi değiştir</string>
+    <string name="campus_email_code_resend_in">Yeniden gönder: %1$s</string>
+    <string name="campus_email_code_recipient_limit" formatted="false">Bu adrese son bir saatte çok fazla kod istendi. Biraz sonra tekrar dene.</string>
+    <string name="campus_email_code_account_daily_limit" formatted="false">Bugün en fazla 10 kod isteyebilirsin. Yarın tekrar dene.</string>
+    <string name="campus_email_code_daily_limit" formatted="false">Bugün çok fazla doğrulama isteği geldi. Lütfen yarın tekrar dene.</string>
+    <string name="campus_email_code_wrong">Kod yanlış. %1$d deneme hakkın kaldı.</string>
+    <string name="campus_email_code_expired" formatted="false">Kodun süresi doldu. Yeni kod iste.</string>
+    <string name="campus_email_code_limit" formatted="false">Deneme hakkın doldu. Yeni kod iste.</string>
+    <string name="campus_email_code_send_failed" formatted="false">Kod gönderilemedi. Bekleme süren veya gönderim hakkın kullanılmadı. Tekrar deneyebilirsin.</string>
+    <string name="campus_email_code_wait" formatted="false">Kod gönderimi sürüyor veya yeniden gönderme süresi dolmadı. Biraz bekleyip tekrar dene.</string>
+    <string name="campus_email_code_send_limit" formatted="false">Bir saat içinde en fazla 5 kod isteyebilirsin. Bir saat sonra tekrar dene.</string>
+    <string name="campus_email_code_request_first" formatted="false">Önce okul e-postana bir doğrulama kodu gönder.</string>
+    <string name="campus_email_code_delivery_title" formatted="false">Doğrulama kodun e-postana gönderildi</string>
+    <string name="campus_email_code_intro" formatted="false">Okul e-postanı bir kez doğrula; Kampüs Dolabı ve Sosyal’de geçerli olur.</string>
+    <string name="campus_email_code_account_mismatch" formatted="false">Kodu istediğin Good4 hesabıyla giriş yap.</string>
+    <string name="campus_email_code_unavailable" formatted="false">Kod doğrulanamadı. Bağlantını kontrol edip tekrar dene.</string>
 </resources>

@@ -1,6 +1,8 @@
 package com.good4.campuscloset
 
 import com.good4.auth.data.repository.AuthRepository
+import com.good4.eduverification.EduCodeRequestResult
+import com.good4.eduverification.EduCodeConfirmResult
 import com.good4.core.network.callV2Function
 import io.ktor.http.Url
 import io.ktor.http.URLBuilder
@@ -96,7 +98,39 @@ sealed interface CampusEmailRequestResult {
     data class AlreadyVerified(val email: String) : CampusEmailRequestResult
 }
 
-class CampusEmailVerificationRepository(private val auth: AuthRepository) {
+interface CampusEmailCodeSource {
+    suspend fun requestCode(email: String): EduCodeRequestResult
+    suspend fun confirmCode(code: String): EduCodeConfirmResult
+    suspend fun verifiedEmail(): String?
+}
+
+class CampusEmailVerificationRepository(private val auth: AuthRepository) : CampusEmailCodeSource {
+    override suspend fun requestCode(email: String): EduCodeRequestResult {
+        require(isCampusStudentEmail(email)) { "CAMPUS_EMAIL_INVALID" }
+        val uid = auth.currentUser?.uid ?: error("AUTHENTICATION_REQUIRED")
+        val response = callV2Function("requestCampusEmailCode", buildJsonObject { put("email", email.trim()) })
+        check(auth.currentUser?.uid == uid) { "CAMPUS_EMAIL_ACCOUNT_MISMATCH" }
+        val sentTo = response["email"]?.jsonPrimitive?.content ?: error("EDU_EMAIL_SEND_FAILED")
+        return when (response["outcome"]?.jsonPrimitive?.content) {
+            "already_verified" -> EduCodeRequestResult.AlreadyVerified(sentTo)
+            "sent" -> EduCodeRequestResult.Sent(sentTo, response["resendAfterSeconds"]?.jsonPrimitive?.int ?: 60)
+            else -> error("EDU_EMAIL_SEND_FAILED")
+        }
+    }
+
+    override suspend fun confirmCode(code: String): EduCodeConfirmResult {
+        val uid = auth.currentUser?.uid ?: error("AUTHENTICATION_REQUIRED")
+        val response = callV2Function("confirmCampusEmailCode", buildJsonObject { put("code", code) })
+        check(auth.currentUser?.uid == uid) { "CAMPUS_EMAIL_ACCOUNT_MISMATCH" }
+        return when (response["outcome"]?.jsonPrimitive?.content) {
+            "verified" -> EduCodeConfirmResult.Verified(response["email"]?.jsonPrimitive?.content ?: error("CAMPUS_EMAIL_PROOF_INVALID"))
+            "invalid_code" -> EduCodeConfirmResult.InvalidCode(response["attemptsLeft"]?.jsonPrimitive?.int ?: 0)
+            "expired" -> EduCodeConfirmResult.Expired
+            "too_many_attempts" -> EduCodeConfirmResult.TooManyAttempts
+            else -> error("CAMPUS_EMAIL_PROOF_INVALID")
+        }
+    }
+
     fun pending(): PendingCampusEmailVerification? {
         val value = loadPendingCampusEmailVerification() ?: return null
         return value.takeIf { it.uid == auth.currentUser?.uid && it.expiresAtMillis > Clock.System.now().toEpochMilliseconds() }
@@ -140,7 +174,7 @@ class CampusEmailVerificationRepository(private val auth: AuthRepository) {
         return response["email"]?.jsonPrimitive?.content ?: pending.email
     }
 
-    suspend fun verifiedEmail(): String? {
+    override suspend fun verifiedEmail(): String? {
         val uid = auth.currentUser?.uid ?: return null
         val response = callV2Function("getCampusEmailVerificationStatus", buildJsonObject { })
         check(auth.currentUser?.uid == uid) { "CAMPUS_EMAIL_ACCOUNT_MISMATCH" }

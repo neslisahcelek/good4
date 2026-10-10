@@ -1,3 +1,4 @@
+import { brevoApiKey, isDemoMailEmulator } from "./verificationEmail.js";
 import { cleanupTechnicalRecords } from "./maintenance.js";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
@@ -61,7 +62,7 @@ import { ensureStudentProfileService } from "./studentAuth.js";
 import { eraseAccountData } from "./accountDeletion.js";
 import { refreshCampusWeatherService } from "./weather.js";
 import { importSksDiningMenuService } from "./diningMenuImport.js";
-import { confirmEduVerificationService, requestEduVerificationService } from "./eduVerification.js";
+import { confirmCampusEmailCodeService, requestCampusEmailCodeService, confirmEduVerificationService, requestEduVerificationService } from "./eduVerification.js";
 import { beginCampusEmailVerificationService, completeCampusEmailVerificationService,
   completeCampusEmailVerificationFromBrowserService, getCampusEmailVerificationStatusService } from "./campusEmailVerification.js";
 import { recordLegalAcknowledgementsService } from "./legalAcknowledgements.js";
@@ -498,7 +499,7 @@ export const recordLegalAcknowledgements = onCall(callableOptions, async (reques
   return recordLegalAcknowledgementsService(db, uid, request.data ?? {});
 });
 
-export const requestEduVerification = onCall(callableOptions, async (request) => {
+export const requestEduVerification = onCall({ ...callableOptions, secrets: isDemoMailEmulator() ? [] : [brevoApiKey] }, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return requestEduVerificationService(db, uid, request.data ?? {});
 });
@@ -506,6 +507,14 @@ export const requestEduVerification = onCall(callableOptions, async (request) =>
 export const confirmEduVerification = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return confirmEduVerificationService(db, uid, request.data ?? {});
+});
+
+export const requestCampusEmailCode = onCall({ ...callableOptions, secrets: isDemoMailEmulator() ? [] : [brevoApiKey] }, async (request) => {
+  return requestCampusEmailCodeService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {});
+});
+
+export const confirmCampusEmailCode = onCall(callableOptions, async (request) => {
+  return confirmCampusEmailCodeService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {});
 });
 
 export const beginCampusEmailVerification = onCall(callableOptions, async (request) => {

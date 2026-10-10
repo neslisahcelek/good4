@@ -174,7 +174,7 @@ val commonModule = module {
     viewModel { com.good4.eduverification.EduVerificationViewModel(get()) }
     viewModel { com.good4.suspendedmeal.SuspendedMealsViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetFeedViewModel(get()) }
-    viewModel { com.good4.campuscloset.CampusEmailVerificationViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusEmailVerificationViewModel(get<com.good4.campuscloset.CampusEmailVerificationRepository>()) }
     viewModel { com.good4.campuscloset.CampusClosetListingViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetNewListingViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetMyListingsViewModel(get()) }

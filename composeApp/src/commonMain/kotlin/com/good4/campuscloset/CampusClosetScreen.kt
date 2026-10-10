@@ -65,6 +65,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.good4.core.presentation.components.dismissKeyboardOnTap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -141,10 +142,6 @@ fun CampusClosetScreen(
             viewModel.load()
         }
     }
-    // A link opened from the e-mail brings the student back here; show the progress in the sheet.
-    LaunchedEffect(eduState.hasReceivedLink, eduState.isConfirming) {
-        if (eduState.hasReceivedLink || eduState.isConfirming) showVerification = true
-    }
 
     val canUse = me != null && me.eduVerified && me.termsAccepted && me.suspendedUntil == null
     Good4Scaffold(
@@ -195,7 +192,7 @@ fun CampusClosetScreen(
                 else -> FeedGrid(
                     state = state,
                     me = me,
-                    linkSentTo = eduState.sentTo,
+                    codeSentTo = eduState.sentTo,
                     canSell = canUse,
                     onSelectCategory = viewModel::selectCategory,
                     onLoadMore = viewModel::loadMore,
@@ -217,15 +214,16 @@ fun CampusClosetScreen(
             containerColor = AppBackground
         ) {
             Column(
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                Modifier.fillMaxWidth().dismissKeyboardOnTap().verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp).padding(bottom = 24.dp).navigationBarsPadding()
             ) {
                 CampusEmailVerificationCard(
                     state = eduState,
                     onEmailChange = eduViewModel::setEmail,
-                    onSendLink = eduViewModel::sendLink,
+                    onSendCode = eduViewModel::sendCode,
                     onChangeEmail = eduViewModel::changeEmail,
-                    onRetryLink = eduViewModel::retryLink
+                    onCodeChange = eduViewModel::setCode,
+                    onConfirmCode = eduViewModel::confirmCode
                 )
             }
         }
@@ -275,7 +273,7 @@ private fun HeaderActions(
 private fun FeedGrid(
     state: CampusClosetFeedState,
     me: MarketMe,
-    linkSentTo: String?,
+    codeSentTo: String?,
     canSell: Boolean,
     onSelectCategory: (String?) -> Unit,
     onLoadMore: () -> Unit,
@@ -314,7 +312,7 @@ private fun FeedGrid(
         }
         if (!me.eduVerified) {
             item(span = { full }) {
-                VerifyCard(linkSentTo = linkSentTo, onClick = onVerify)
+                VerifyCard(codeSentTo = codeSentTo, onClick = onVerify)
             }
         }
         state.message?.let { message ->
@@ -407,7 +405,7 @@ internal fun TiltedIcon(icon: ImageVector, accent: Color, size: Int = 36, iconSi
 }
 
 @Composable
-private fun VerifyCard(linkSentTo: String?, onClick: () -> Unit) {
+private fun VerifyCard(codeSentTo: String?, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().heightIn(min = 68.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
@@ -418,11 +416,11 @@ private fun VerifyCard(linkSentTo: String?, onClick: () -> Unit) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (linkSentTo != null) stringResource(Res.string.campus_closet_baglanti_e_postana_gonderildi) else stringResource(Res.string.campus_closet_okul_e_postani_dogrula),
+                    if (codeSentTo != null) stringResource(Res.string.campus_email_code_delivery_title) else stringResource(Res.string.campus_closet_okul_e_postani_dogrula),
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary
                 )
                 Text(
-                    if (linkSentTo != null) stringResource(Res.string.campus_closet_outlook_u_ve_gereksiz_e_posta_spam_klasorunu_kontrol)
+                    if (codeSentTo != null) stringResource(Res.string.campus_closet_outlook_u_ve_gereksiz_e_posta_spam_klasorunu_kontrol)
                     else stringResource(Res.string.campus_closet_ilan_vermek_mesaj_ve_teklif_gondermek_icin_ogr_akdeniz),
                     fontSize = 12.sp, lineHeight = 16.sp, color = TextSecondary,
                     maxLines = 2, overflow = TextOverflow.Ellipsis

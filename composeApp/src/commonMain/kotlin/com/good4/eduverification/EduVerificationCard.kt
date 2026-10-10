@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.campuscloset.minutesAndSeconds
 
 /** Shown on Askıda Yemek and Kampüs Dolabı until the student proves a .edu.tr address. */
 @Composable
@@ -174,7 +175,7 @@ fun EduVerificationCard(
                     }
                     TextButton(onClick = onSendCode, enabled = state.resendSeconds == 0 && !state.isSending) {
                         Text(
-                            if (state.resendSeconds > 0) "Tekrar gönder (${state.resendSeconds} sn)" else "Kodu tekrar gönder",
+                            if (state.resendSeconds > 0) "Tekrar gönder (${minutesAndSeconds(state.resendSeconds)})" else "Kodu tekrar gönder",
                             color = if (state.resendSeconds > 0) TextSecondary else MaterialTheme.colorScheme.primary
                         )
                     }
