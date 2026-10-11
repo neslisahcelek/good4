@@ -9,6 +9,9 @@ import {
   type User,
 } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
+import { IllustratedEmpty } from "./components/PanelBlocks";
+import { BusinessApplicationForm, BusinessPendingPanel, type BusinessApplicationView } from "./components/BusinessOnboarding";
+import { AdminHome } from "./components/AdminHome";
 import { NotificationAdmin } from "./NotificationAdmin";
 import { auth, functions, getFirestoreDb } from "./firebase";
 import { CampusClosetAdmin } from "./components/CampusClosetAdmin";
@@ -32,8 +35,7 @@ import {
   StatusBadge,
   Table,
   type BusinessSection,
-  type CommunitySection,
-} from "./components/CommunityUi";
+  type CommunitySection, AdminAppShell } from "./components/CommunityUi";
 
 type BusinessContext = {
   organizationId: string;
@@ -42,6 +44,7 @@ type BusinessContext = {
 };
 
 type PortalContext =
+  | { portalRole: "applicant"; businessApplication: BusinessApplicationView | null }
   | ({ portalRole: "business" } & BusinessContext)
   | {
     portalRole: "community";
@@ -278,6 +281,21 @@ const reviewCommunityApplication = httpsCallable<
   { applicationId: string; decision: "approve" | "reject"; reason?: string },
   { status: "approved" | "rejected"; organizationId?: string }
 >(functions, "reviewCommunityApplication");
+export type BusinessApplication = {
+  id: string;
+  businessName: string;
+  contactName: string;
+  phone: string;
+  applicantEmail: string;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason: string;
+  createdAt: string | null;
+};
+const listBusinessApplications = httpsCallable<void, { applications: BusinessApplication[] }>(functions, "listBusinessApplications");
+const reviewBusinessApplication = httpsCallable<
+  { applicationId: string; decision: "approve" | "reject"; reason?: string },
+  { status: "approved" | "rejected"; organizationId?: string }
+>(functions, "reviewBusinessApplication");
 const getCommunityPortalDashboard = httpsCallable<Record<string, unknown>, CommunityDashboardData>(functions, "getCommunityPortalDashboard");
 const getCommunityEventParticipants = httpsCallable<{ eventId: string; cursor?: string }, { participants: CommunityEntry["participants"]; nextCursor: string | null }>(functions, "getCommunityEventParticipants");
 const saveCommunityPortalEntry = httpsCallable<{
@@ -438,8 +456,20 @@ export function functionErrorMessage(error: unknown): string {
   if (message.includes("SOCIAL_URL_INVALID")) {
     return "Bağlantı https:// ile başlayan geçerli bir adres olmalı.";
   }
+  if (message.includes("PHONE_INVALID")) {
+    return "Geçerli bir telefon numarası girin (örneğin 0532 123 45 67).";
+  }
+  if (message.includes("COMMUNITY_APPLICATION_PENDING")) {
+    return "Bu hesabın bekleyen bir topluluk başvurusu var. İşletme için farklı bir Google hesabı kullanın.";
+  }
+  if (message.includes("BUSINESS_APPLICATION_PENDING")) {
+    return "Bu hesabın bekleyen bir işletme başvurusu var. Topluluk için farklı bir Google hesabı kullanın.";
+  }
   if (message.includes("GOOGLE_SIGN_IN_REQUIRED") || message.includes("VERIFIED_EMAIL_REQUIRED")) {
     return "Başvuru için Google hesabıyla giriş yapın.";
+  }
+  if (code.includes("resource-exhausted") || message.includes("RATE_LIMIT_EXCEEDED")) {
+    return "Çok sık istek gönderildi. Bir dakika bekleyip sayfayı yenileyin.";
   }
   if (code.includes("failed-precondition") || code.includes("internal")) {
     return "İşlem tamamlanamadı. Lütfen tekrar deneyin.";
@@ -447,8 +477,9 @@ export function functionErrorMessage(error: unknown): string {
   return "Bağlantı kurulamadı. Sayfayı yenileyip tekrar deneyin.";
 }
 
+// Codes are digits only: 6 for Good4Test coupons, 8 for V2 campaign codes.
 function normalizeCode(value: string): string {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  return value.replace(/\D/g, "").slice(0, 8);
 }
 
 function formatCode(value: string): string {
@@ -848,16 +879,16 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
                     id="campaign-code"
                     name="campaign-code"
                     type="text"
-                    inputMode="text"
+                    inputMode="numeric"
                     autoComplete="off"
-                    autoCapitalize="characters"
+                    pattern="[0-9 ]*"
                     spellCheck={false}
                     value={formatCode(normalizedCode)}
                     onChange={(event) => {
                       setCode(event.target.value);
                       setFeedback(null);
                     }}
-                    placeholder="123456 veya ABCD 1234"
+                    placeholder="1234 5678"
                     aria-describedby="code-help"
                     autoFocus
                   />
@@ -1470,7 +1501,11 @@ function CommunityPanel({ user, context }: {
                   {editingId ? <button className="quiet-button full-button" type="button" onClick={resetForm}>Düzenlemeyi iptal et</button> : null}
                 </form>
               </div>
-              <div className="community-entry-grid">{coupons.map((entry) => <CommunityEntryCard key={entry.id} entry={entry} onEdit={editEntry} onCancel={cancelEntry} busy={busyId === entry.id} />)}</div>
+              {coupons.length === 0 ? (
+                <div className="admin-card"><IllustratedEmpty illustration="coupon" title="Henüz kupon yok">Soldaki formla ilk kuponunu oluştur; Good4 onayına gönderilir.</IllustratedEmpty></div>
+              ) : (
+                <div className="community-entry-grid">{coupons.map((entry) => <CommunityEntryCard key={entry.id} entry={entry} onEdit={editEntry} onCancel={cancelEntry} busy={busyId === entry.id} />)}</div>
+              )}
             </section>
           ) : null}
         </>
@@ -1510,7 +1545,7 @@ function CommunityEntryCard({ entry, onEdit, onCancel, busy }: {
   );
 }
 
-type AdminTab = "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
+type AdminTab = "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
 type DiningMenuDayForm = { date: string; dayName: string; meals: string; calories: string };
 
 const diningDayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"];
@@ -1624,7 +1659,7 @@ function formatAdminDate(value: string | null): string {
 }
 
 function AdminPanel({ user, context }: { user: User; context: Extract<PortalContext, { portalRole: "admin" }> }) {
-  const [tab, setTab] = useState<AdminTab>("coupons");
+  const [tab, setTab] = useState<AdminTab>("home");
   const [marketPendingCount, setMarketPendingCount] = useState(0);
   const [socialPendingCount, setSocialPendingCount] = useState(0);
   const [data, setData] = useState<AdminDashboardData | null>(null);
@@ -1650,6 +1685,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [communityTemporaryPassword, setCommunityTemporaryPassword] = useState("");
   const [assigningCommunityManager, setAssigningCommunityManager] = useState(false);
   const [communityApplications, setCommunityApplications] = useState<CommunityApplication[]>([]);
+  const [businessApplications, setBusinessApplications] = useState<BusinessApplication[]>([]);
   const [menuWeekStart, setMenuWeekStart] = useState("");
   const [menuWeekEnd, setMenuWeekEnd] = useState("");
   const [menuDays, setMenuDays] = useState<DiningMenuDayForm[]>(() => emptyDiningDays());
@@ -1719,7 +1755,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       setMenuWeekEnd(response.data.diningMenu?.weekEnd ?? "");
       setMenuDays(diningDaysForForm(response.data.diningMenu));
       fillBannerForm(bannerForSlot(response.data, bannerSlot));
-      await loadCommunityApplications(false);
+      await Promise.all([loadCommunityApplications(false), loadBusinessApplications(false)]);
     } catch (requestError) {
       setError(functionErrorMessage(requestError));
     } finally {
@@ -1733,6 +1769,40 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       setCommunityApplications((await listCommunityApplications()).data.applications);
     } catch (requestError) {
       setError(`Topluluk başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
+    }
+  }
+
+  async function loadBusinessApplications(clearExistingError = true) {
+    if (clearExistingError) setError("");
+    try {
+      setBusinessApplications((await listBusinessApplications()).data.applications);
+    } catch (requestError) {
+      setError(`İşletme başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
+    }
+  }
+
+  async function handleBusinessApplication(application: BusinessApplication, decision: "approve" | "reject") {
+    let reason = "";
+    if (decision === "reject") {
+      const answer = window.prompt(`“${application.businessName}” başvurusunu reddetme gerekçesi (işletmeye gösterilir):`);
+      if (answer === null) return;
+      reason = answer.trim();
+    } else if (!window.confirm(`“${application.businessName}” işletmesi oluşturulsun ve ${application.applicantEmail} işletme sahibi olsun mu?`)) {
+      return;
+    }
+    setReviewing(`business-application:${application.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await reviewBusinessApplication({ applicationId: application.id, decision, ...(reason ? { reason } : {}) });
+      setNotice(decision === "approve"
+        ? "İşletme onaylandı. Kupon doğrulama işletmenin panelinde açıldı."
+        : "Başvuru reddedildi. İşletme gerekçeyi panelinde görecek.");
+    } catch (requestError) {
+      setError(functionErrorMessage(requestError));
+    } finally {
+      setReviewing("");
+      await refresh(false, false);
     }
   }
 
@@ -2195,21 +2265,25 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const unlinkedLegacyBusinesses = data?.legacyBusinesses.filter((business) => !business.linked) ?? [];
 
   return (
-    <div className="panel-shell admin-shell">
-      <header className="panel-header">
-        <BrandMark compact />
-        <div className="account-menu">
-          <div>
-            <strong>{context.displayName || "Good4 Yöneticisi"}</strong>
-            <span>{user.email}</span>
-          </div>
-          <button className="logout-button" onClick={() => void signOut(auth)}>Çıkış</button>
-        </div>
-      </header>
-
-      <main className="admin-content">
+    <AdminAppShell
+      displayName={context.displayName || "Good4 Yöneticisi"}
+      userEmail={user.email ?? ""}
+      activeSection={tab}
+      counts={{
+        coupons: data?.pendingCoupons.length,
+        feedback: data?.feedback.filter((item) => item.report && item.status === "new").length,
+        communities: communityApplications.length,
+        businesses: businessApplications.length,
+        market: marketPendingCount,
+        social: socialPendingCount,
+      }}
+      socialLabel={socialText("title")}
+      onNavigate={setTab}
+      onLogout={() => void signOut(auth)}
+    >
+      <div className="admin-content">
         {data && Object.entries(data.nextCursors ?? {}).filter(([, cursor]) => cursor).map(([kind, cursor]) => <button type="button" key={kind} disabled={loading} onClick={() => void loadAdminPage(kind, cursor!)}>{{ organizations: "Daha fazla kurum", calendar: "Daha fazla takvim kaydı", legacyBusinesses: "Daha fazla eski işletme", legacyCommunities: "Daha fazla eski topluluk kuponu" }[kind] ?? "Daha fazla kayıt"}</button>)}
-        <section className="admin-heading">
+        {tab !== "home" && <section className="admin-heading">
           <div>
             <p className="section-label">Good4 yönetimi</p>
             <h1>Kontrol paneli</h1>
@@ -2223,35 +2297,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
               <div><strong>{data.communities.length}</strong><span>Aktif topluluk</span></div>
             </div>
           )}
-        </section>
+        </section>}
 
-        <div className="admin-workspace">
-        <nav className="admin-tabs admin-sidebar" aria-label="Yönetim bölümleri">
-          <button className={tab === "coupons" ? "active" : ""} aria-current={tab === "coupons" ? "page" : undefined} onClick={() => setTab("coupons")}>
-            Bekleyen kuponlar {data && <span>{data.pendingCoupons.length}</span>}
-          </button>
-          <button className={tab === "menu" ? "active" : ""} aria-current={tab === "menu" ? "page" : undefined} onClick={() => setTab("menu")}>Yemek Menüsü</button>
-          <button className={tab === "kyk" ? "active" : ""} aria-current={tab === "kyk" ? "page" : undefined} onClick={() => setTab("kyk")}>KYK Menüsü</button>
-          <button className={tab === "suspended" ? "active" : ""} aria-current={tab === "suspended" ? "page" : undefined} onClick={() => setTab("suspended")}>Askıda Yemek</button>
-          <button className={tab === "ads" ? "active" : ""} aria-current={tab === "ads" ? "page" : undefined} onClick={() => setTab("ads")}>Ana Sayfa Reklamı</button>
-          <button className={tab === "calendar" ? "active" : ""} aria-current={tab === "calendar" ? "page" : undefined} onClick={() => setTab("calendar")}>Akademik Takvim</button>
-          <button className={tab === "feedback" ? "active" : ""} aria-current={tab === "feedback" ? "page" : undefined} onClick={() => setTab("feedback")}>
-            Bildirimler ve geri bildirimler {data && <span>{data.feedback.filter((item) => item.report && item.status === "new").length}</span>}
-          </button>
-          <button className={tab === "businesses" ? "active" : ""} aria-current={tab === "businesses" ? "page" : undefined} onClick={() => setTab("businesses")}>İşletmeler</button>
-          <button className={tab === "communities" ? "active" : ""} aria-current={tab === "communities" ? "page" : undefined} onClick={() => setTab("communities")}>
-            Topluluklar {communityApplications.length > 0 && <span>{communityApplications.length}</span>}
-          </button>
-          <button className={tab === "market" ? "active" : ""} aria-current={tab === "market" ? "page" : undefined} onClick={() => setTab("market")}>
-            Kampüs Dolabı {marketPendingCount > 0 && <span>{marketPendingCount}</span>}
-          </button>
-          <button className={tab === "social" ? "active" : ""} aria-current={tab === "social" ? "page" : undefined} onClick={() => setTab("social")}>
-            {socialText("title")} {socialPendingCount > 0 && <span>{socialPendingCount}</span>}
-          </button>
-          <button className={tab === "audit" ? "active" : ""} aria-current={tab === "audit" ? "page" : undefined} onClick={() => setTab("audit")}>İşlem geçmişi</button>
-          <button className={tab === "notifications" ? "active" : ""} onClick={() => setTab("notifications")}>Bildirimler</button>
-          <button className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>İşlem geçmişi</button>
-        </nav>
 
         <div className="admin-tab-content">
 
@@ -2260,6 +2307,19 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
 
         {loading && <section className="admin-card admin-loading"><span className="spinner spinner--green" /><p>Bilgiler yükleniyor…</p></section>}
 
+        {!loading && data && tab === "home" && (
+          <AdminHome
+            displayName={context.displayName || "Good4 Yöneticisi"}
+            counts={{
+              coupons: data.pendingCoupons.length,
+              feedback: data.feedback.filter((item) => item.report && item.status === "new").length,
+              communityApplications: communityApplications.length,
+              businessApplications: businessApplications.length,
+            }}
+            totals={{ businesses: data.businesses.length, communities: data.communities.length }}
+            onNavigate={setTab}
+          />
+        )}
         {!loading && data && tab === "notifications" && <NotificationAdmin key={user.uid} uid={user.uid} communities={data.communities} />}
 
         {!loading && data && tab === "coupons" && (
@@ -2565,6 +2625,47 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
         )}
 
         {!loading && data && tab === "businesses" && (
+          <section className="admin-section" aria-labelledby="business-applications-title">
+            <div className="section-title-row">
+              <div>
+                <h2 id="business-applications-title">İşletme başvuruları</h2>
+                <p>İşletmeler <a href={STAFF_PANEL_URL}>panel.good4tr.com</a> adresinde Google hesabıyla başvurur. Onay, işletmeyi oluşturur, başvuranı işletme sahibi yapar ve kupon doğrulamayı açar.</p>
+              </div>
+              <button className="quiet-button" onClick={() => void loadBusinessApplications()}>Yenile</button>
+            </div>
+            {businessApplications.length === 0 ? (
+              <div className="admin-card empty-state"><h3>Bekleyen başvuru yok</h3><p>Yeni işletme başvuruları burada görünecek.</p></div>
+            ) : (
+              <div className="coupon-review-list">
+                {businessApplications.map((application) => {
+                  const busy = reviewing === `business-application:${application.id}`;
+                  return (
+                    <article className="admin-card coupon-review-card application-review-card" key={application.id}>
+                      <div className="coupon-review-main">
+                        <div className="coupon-review-title">
+                          <div><h3>{application.businessName}</h3><p>{application.contactName}</p></div>
+                        </div>
+                        <div className="coupon-tags">
+                          <span><a href={`tel:${application.phone.replace(/\s/g, "")}`}>{application.phone}</a></span>
+                          <span>{application.applicantEmail}</span>
+                          {application.createdAt && <span>{formatAdminDate(application.createdAt)}</span>}
+                        </div>
+                      </div>
+                      <div className="review-actions">
+                        <button className="danger-button" disabled={busy} onClick={() => void handleBusinessApplication(application, "reject")}>Reddet</button>
+                        <button className="primary-button compact-button" disabled={busy} onClick={() => void handleBusinessApplication(application, "approve")}>
+                          {busy ? "İşleniyor…" : "Onayla"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {!loading && data && tab === "businesses" && (
           <section className="admin-section admin-business-grid">
             <div className="admin-card form-card">
               <div className="form-card-heading"><div><p className="section-label">Yeni kayıt</p><h2>İşletme oluştur</h2><p>İşletmeyi sisteme ekleyin.</p></div></div>
@@ -2766,9 +2867,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           </section>
         )}
         </div>
-        </div>
-      </main>
-    </div>
+      </div>
+    </AdminAppShell>
   );
 }
 
@@ -2791,10 +2891,12 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
     }
 
     setContextLoading(true);
+    // A quick account switch can finish the older request last; only the current account's answer counts.
+    const isCurrent = () => auth.currentUser?.uid === nextUser.uid;
     void getPortalContext()
-      .then((response) => setContext(response.data))
-      .catch((error) => setAccessError(functionErrorMessage(error)))
-      .finally(() => setContextLoading(false));
+      .then((response) => { if (isCurrent()) setContext(response.data); })
+      .catch((error) => { if (isCurrent()) setAccessError(functionErrorMessage(error)); })
+      .finally(() => { if (isCurrent()) setContextLoading(false); });
   }), []);
 
   if (!authReady || contextLoading) {
@@ -2813,6 +2915,17 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
 
   if (accessError || !context) {
     return <AccessError message={accessError || "İşletme bilgisi bulunamadı."} />;
+  }
+
+  if (context.portalRole === "applicant") {
+    // No Good4 role yet: the staff entrance is where businesses apply; communities apply on their own page.
+    if (portal === "community") {
+      return <AccessError message="Bu Google hesabı henüz bir topluluğa bağlı değil. Topluluğunu eklemek için good4tr.com/topluluk-basvuru adresinden başvur." />;
+    }
+    const setApplication = (application: BusinessApplicationView) => setContext({ portalRole: "applicant", businessApplication: application });
+    return context.businessApplication
+      ? <BusinessPendingPanel user={user} application={context.businessApplication} onChanged={setApplication} describeError={functionErrorMessage} />
+      : <BusinessApplicationForm user={user} onSubmitted={setApplication} describeError={functionErrorMessage} />;
   }
 
   if ((portal === "community") !== (context.portalRole === "community")) {
