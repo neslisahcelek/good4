@@ -8,11 +8,13 @@ import {
 } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { getBusinessContextService } from "./business.js";
+import { getMyBusinessApplication, type BusinessApplicationSummary } from "./businessApplications.js";
 import { getCommunityContextService } from "./communityPortal.js";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
 
 export type PortalContext =
   | { portalRole: "admin"; displayName: string }
+  | { portalRole: "applicant"; businessApplication: BusinessApplicationSummary | null }
   | ({ portalRole: "community" } & Awaited<ReturnType<typeof getCommunityContextService>>)
   | {
     portalRole: "business";
@@ -350,6 +352,12 @@ export async function getPortalContextService(
   database: Firestore,
   actorUid: string,
 ): Promise<PortalContext> {
+  // An account without a Good4 profile has no role yet: it may be a business applying on the
+  // staff panel. It gets only its own application back, never any organization data.
+  const profile = await database.doc(`users/${actorUid}`).get();
+  if (!profile.exists) {
+    return { portalRole: "applicant", businessApplication: await getMyBusinessApplication(database, actorUid) };
+  }
   const actor = await database.runTransaction((transaction) => (
     requireActiveActor(database, transaction, actorUid)
   ));

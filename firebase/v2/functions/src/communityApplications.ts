@@ -102,12 +102,17 @@ export async function submitCommunityApplicationService(
 
   const applicationRef = database.doc(`communityApplications/${identity.uid}`);
   await database.runTransaction(async (transaction) => {
-    const [user, existing] = await Promise.all([
+    const [user, existing, businessApplication] = await Promise.all([
       transaction.get(database.doc(`users/${identity.uid}`)),
       transaction.get(applicationRef),
+      transaction.get(database.doc(`businessApplications/${identity.uid}`)),
     ]);
     requireAccountWithoutRole(user);
     if (existing.get("status") === "approved") throw new HttpsError("already-exists", "APPLICATION_ALREADY_APPROVED");
+    // One account, one role: an account waiting as a business cannot also become a community.
+    if (businessApplication.get("status") === "pending") {
+      throw new HttpsError("failed-precondition", "BUSINESS_APPLICATION_PENDING");
+    }
     // Editing a pending application keeps its place in the queue; a rejected one re-enters it.
     const keepCreatedAt = existing.get("status") === "pending" && existing.get("createdAt");
     transaction.set(applicationRef, {

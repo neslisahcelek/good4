@@ -55,6 +55,7 @@ import {
   reviewCommunityApplicationService,
   submitCommunityApplicationService,
 } from "./communityApplications.js";
+import { listBusinessApplicationsService, reviewBusinessApplicationService, submitBusinessApplicationService } from "./businessApplications.js";
 import { submitFeedbackService } from "./feedback.js";
 import { saveKykMenuService } from "./kykMenu.js";
 import { rateMealService } from "./mealRatings.js";
@@ -457,6 +458,30 @@ export const listCommunityApplications = onCall(readOptions, async (request) => 
 export const reviewCommunityApplication = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return reviewCommunityApplicationService(db, uid, request.data ?? {});
+});
+
+export const submitBusinessApplication = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "businessApplication", 5);
+  // Read the provider and verified e-mail from Firebase Auth, never from the request.
+  const authUser = await getAuth().getUser(uid);
+  return submitBusinessApplicationService(db, {
+    uid,
+    email: authUser.email,
+    emailVerified: authUser.emailVerified,
+    providers: authUser.providerData.map((provider) => provider.providerId),
+  }, request.data ?? {});
+});
+
+export const listBusinessApplications = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "panel", 6);
+  return listBusinessApplicationsService(db, uid);
+});
+
+export const reviewBusinessApplication = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return reviewBusinessApplicationService(db, uid, request.data ?? {});
 });
 
 export const setEventRegistration = onCall(callableOptions, async (request) => {
