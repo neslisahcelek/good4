@@ -1,3 +1,4 @@
+import { normalizeCouponCode as normalizeCode, couponCodeRoute, formatCommunityCouponDate } from "./communityCouponCode";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
   GoogleAuthProvider,
@@ -56,6 +57,62 @@ type PortalContext =
   }
   | { portalRole: "admin"; displayName: string };
 
+type V2CommunityCoupon = {
+  id: string;
+  communityId: string;
+  communityName: string;
+  businessId: string;
+  businessName: string;
+  title: string;
+  description: string;
+  discountType: "percentage" | "fixed" | "freeItem";
+  discountValue: number;
+  freeItem: string;
+  startsAt: string;
+  endsAt: string;
+  totalLimit: number;
+  dailyLimit: number | null;
+  redemptionCount: number;
+  status: "pending" | "published" | "rejected" | "ended";
+  rejectionReason: string;
+};
+const saveCommunityCoupon = httpsCallable<
+  Record<string, unknown>,
+  { couponId: string; status: string }
+>(functions, "saveCommunityCoupon");
+const endCommunityCoupon = httpsCallable<{ couponId: string }, { status: string }>(
+  functions,
+  "endCommunityCoupon",
+);
+const listCommunityCoupons = httpsCallable<
+  Record<string, unknown>,
+  {
+    coupons: V2CommunityCoupon[];
+    businesses: Array<{ id: string; name: string }>;
+    nextCursor: string | null;
+  }
+>(functions, "listCommunityCoupons");
+const reviewCommunityCoupon = httpsCallable<
+  { couponId: string; decision: "approve" | "reject"; reason?: string },
+  { status: string }
+>(functions, "reviewCommunityCoupon");
+function couponEntry(c: V2CommunityCoupon): CommunityEntry {
+  const date = (value: string) =>
+    new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Istanbul" }).format(new Date(value));
+  return {
+    ...c,
+    kind: "coupon",
+    date: date(c.endsAt),
+    startsOn: date(c.startsAt),
+    time: "",
+    location: c.businessName,
+    capacity: 0,
+    registrationCount: 0,
+    attendanceCount: 0,
+    participants: [],
+  };
+}
+
 type CommunityEntry = {
   id: string;
   kind: "event" | "coupon";
@@ -71,10 +128,20 @@ type CommunityEntry = {
   discountValue: number;
   capacity: number;
   totalLimit: number;
-  status: "published" | "pending" | "cancelled";
+  status: "published" | "pending" | "cancelled" | "rejected" | "ended";
+  startsOn?: string;
+  freeItem?: string;
+  dailyLimit?: number | null;
+  redemptionCount?: number;
+  rejectionReason?: string;
   registrationCount: number;
   attendanceCount: number;
-  participants: Array<{ userId: string; displayName: string; registeredAt: string | null; checkedIn: boolean }>;
+  participants: Array<{
+    userId: string;
+    displayName: string;
+    registeredAt: string | null;
+    checkedIn: boolean;
+  }>;
 };
 type CommunityDashboardData = {
   community: { name: string; university: string; description: string; logoUrl: string; coverUrl: string };
@@ -164,6 +231,7 @@ type AdminDashboardData = {
   communities: AdminCommunity[];
   legacyBusinesses: LegacyBusiness[];
   pendingCoupons: PendingCoupon[];
+  pendingCommunityCoupons: V2CommunityCoupon[];
   feedback: AdminFeedback[];
   audits: AuditRow[];
   diningMenu: DiningMenu | null;
@@ -180,12 +248,20 @@ type RedeemOutcome =
   | "expired"
   | "campaign_inactive"
   | "stale_code"
-  | "campaign_limit_reached";
+  | "campaign_limit_reached"
+  | "coupon_inactive"
+  | "limit_reached"
+  | "daily_limit_reached"
+  | "already_used_today"
+  | "student_inactive";
 
 type RedeemResult = {
   outcome: RedeemOutcome;
   campaignId?: string;
   campaignTitle?: string;
+  couponTitle?: string;
+  communityName?: string;
+  discountLabel?: string;
 };
 
 type Feedback = {
@@ -200,9 +276,30 @@ type BusinessRedemption = {
   campaignId: string;
   campaignTitle: string;
   redeemedAt: Date | null;
+  source: "campaign" | "communityCoupon";
+  communityName: string;
+  discountLabel: string;
 };
 
 const getPortalContext = httpsCallable<void, PortalContext>(functions, "getPortalContext");
+const redeemCommunityCouponCode = httpsCallable<{ code: string }, RedeemResult>(
+  functions,
+  "redeemCommunityCouponCode",
+);
+const listBusinessRedemptions = httpsCallable<
+  void,
+  {
+    redemptions: Array<{
+      id: string;
+      source: "campaign" | "communityCoupon";
+      code: string;
+      title: string;
+      communityName: string;
+      discountLabel: string;
+      redeemedAt: string;
+    }>;
+  }
+>(functions, "listBusinessRedemptions");
 const redeemCampaignCode = httpsCallable<{ code: string }, RedeemResult>(functions, "redeemCampaignCode");
 const redeemLegacyTestCoupon = httpsCallable<{ code: string }, RedeemResult>(functions, "redeemLegacyTestCoupon");
 const getAdminDashboard = httpsCallable<Record<string, unknown>, AdminDashboardData>(functions, "getAdminDashboard");
@@ -316,6 +413,31 @@ const saveCommunityPortalEntry = httpsCallable<{
 const cancelCommunityPortalEntry = httpsCallable<{ entryId: string }, { status: "cancelled" }>(functions, "cancelCommunityPortalEntry");
 
 const feedbackByOutcome: Record<RedeemOutcome, Feedback> = {
+  coupon_inactive: {
+    tone: "warning",
+    title: "Kupon kullanıma kapalı",
+    description: "Kuponun yayın ve tarih aralığını kontrol edin.",
+  },
+  limit_reached: {
+    tone: "warning",
+    title: "Kupon limiti doldu",
+    description: "Bu kupon için kullanım hakkı kalmadı.",
+  },
+  daily_limit_reached: {
+    tone: "warning",
+    title: "Günlük kupon limiti doldu",
+    description: "Bugün için kullanım hakkı kalmadı.",
+  },
+  already_used_today: {
+    tone: "warning",
+    title: "Bugün kullanılmış",
+    description: "Öğrenci bu kuponu yarın tekrar kullanabilir.",
+  },
+  student_inactive: {
+    tone: "error",
+    title: "Kullanım onaylanamadı",
+    description: "Öğrenciden hesabını kontrol etmesini isteyin.",
+  },
   redeemed: {
     tone: "success",
     title: "Kod onaylandı",
@@ -349,7 +471,8 @@ const feedbackByOutcome: Record<RedeemOutcome, Feedback> = {
   stale_code: {
     tone: "warning",
     title: "Kod güncel değil",
-    description: "Öğrenciden kuponunu uygulamada yeniden açıp orada görünen kodu göstermesini isteyin.",
+    description:
+      "Öğrenciden kuponunu uygulamada yeniden açıp orada görünen kodu göstermesini isteyin.",
   },
   campaign_limit_reached: {
     tone: "warning",
@@ -423,6 +546,15 @@ export function functionErrorMessage(error: unknown): string {
   if (message.includes("EVENT_CATEGORY_INVALID")) {
     return "Geçerli bir etkinlik kategorisi seçin.";
   }
+  if (message.includes("COUPON_NOT_EDITABLE")) return "Yalnızca onay bekleyen veya reddedilen kuponları düzenleyebilirsin.";
+  if (message.includes("COUPON_NOT_PENDING")) return "Kuponun durumu değişmiş. Listeyi yenileyip tekrar dene.";
+  if (message.includes("TOTAL_LIMIT_INVALID")) return "Toplam kullanım limitini en az 1 olacak şekilde gir.";
+  if (message.includes("DAILY_LIMIT_INVALID")) return "Günlük limit 1 ile toplam limit arasında olmalı.";
+  if (message.includes("DATE_RANGE_INVALID")) return "Bitiş tarihi başlangıç tarihinden sonra olmalı.";
+  if (message.includes("BUSINESS_NOT_ACTIVE") || message.includes("ORGANIZATION_NOT_ACTIVE")) return "Aktif ve onaylı bir işletme ile topluluk seçmelisin.";
+  if (message.includes("ORGANIZATION_MEMBERSHIP_REQUIRED")) return "Bu işlem için aktif kurum yetkisi gerekiyor.";
+  if (message.includes("FREEITEM_")) return "Ücretsiz verilecek ürünün adını gir (en fazla 80 karakter).";
+  if (message.includes("DISCOUNT_INVALID")) return "Geçerli bir indirim türü ve değeri gir.";
   if (message.includes("DISCOUNT_VALUE_INVALID")) {
     return "İndirim değerini kontrol edin. Yüzde indirimi 1–100 arasında olmalıdır.";
   }
@@ -477,10 +609,6 @@ export function functionErrorMessage(error: unknown): string {
   return "Bağlantı kurulamadı. Sayfayı yenileyip tekrar deneyin.";
 }
 
-// Codes are digits only: 6 for Good4Test coupons, 8 for V2 campaign codes.
-function normalizeCode(value: string): string {
-  return value.replace(/\D/g, "").slice(0, 8);
-}
 
 function formatCode(value: string): string {
   return value.length > 4 ? `${value.slice(0, 4)} ${value.slice(4)}` : value;
@@ -691,7 +819,7 @@ function BusinessUsageList({ items, compact = false }: { items: BusinessRedempti
     return (
       <EmptyState
         title="Henüz kullanım yok"
-        description="V2 kampanya kodları doğrulandığında kullanım kayıtları burada görünecek."
+        description="Topluluk kuponları ve Askıda Yemek kodları doğrulandığında burada görünecek."
       />
     );
   }
@@ -705,10 +833,15 @@ function BusinessUsageList({ items, compact = false }: { items: BusinessRedempti
       </div>
       <div role="rowgroup">
         {items.map((item) => (
-          <div className="business-usage-table__row" role="row" key={item.id}>
+          <div className="business-usage-table__row" role="row" key={`${item.source}:${item.id}`}>
             <div role="cell" data-label="Kampanya">
               <strong>{item.campaignTitle}</strong>
-              <span>Kod •••• {item.code.slice(-4)}</span>
+              <small>
+                {item.source === "communityCoupon" ? "Topluluk kuponu" : "Askıda Yemek"}
+                {item.communityName ? ` · ${item.communityName}` : ""}
+                {item.discountLabel ? ` · ${item.discountLabel}` : ""}
+              </small>
+              {item.code ? <span>Kod •••• {item.code.slice(-4)}</span> : null}
             </div>
             <time role="cell" data-label="Kullanım zamanı" dateTime={item.redeemedAt?.toISOString()}>{formatBusinessUsageDate(item.redeemedAt)}</time>
             <div role="cell" data-label="Durum"><span className="event-state-pill is-checked">Başarılı</span></div>
@@ -733,40 +866,29 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
   const codeInput = useRef<HTMLInputElement>(null);
   const normalizedCode = normalizeCode(code);
 
-  const refreshUsage = useCallback(async (showLoader = true) => {
-    if (showLoader) setUsageLoading(true);
-    try {
-      const [{ collection, getDocs, query, where, limit, orderBy }, database] = await Promise.all([
-        import("firebase/firestore/lite"),
-        getFirestoreDb(),
-      ]);
-      const [redemptionSnapshot, campaignSnapshot] = await Promise.all([
-        getDocs(query(collection(database, "redemptions"), where("organizationId", "==", context.organizationId), orderBy("redeemedAt", "desc"), limit(50))),
-        getDocs(query(collection(database, "campaigns"), where("organizationId", "==", context.organizationId), limit(100))),
-      ]);
-      const campaignTitles = new Map(campaignSnapshot.docs.map((document) => [
-        document.id,
-        String(document.data().title ?? "Kampanya"),
-      ]));
-      const nextRedemptions = redemptionSnapshot.docs.map((document) => {
-        const data = document.data();
-        const campaignId = String(data.campaignId ?? "");
-        return {
-          id: document.id,
-          code: String(data.code ?? document.id),
-          campaignId,
-          campaignTitle: campaignTitles.get(campaignId) ?? "Kampanya",
-          redeemedAt: firestoreDate(data.redeemedAt),
-        };
-      }).sort((left, right) => (right.redeemedAt?.getTime() ?? 0) - (left.redeemedAt?.getTime() ?? 0));
-      setRedemptions(nextRedemptions);
-      setUsageError("");
-    } catch (error) {
-      setUsageError(functionErrorMessage(error));
-    } finally {
-      if (showLoader) setUsageLoading(false);
-    }
-  }, [context.organizationId]);
+  const refreshUsage = useCallback(
+    async (showLoader = true) => {
+      if (showLoader) setUsageLoading(true);
+      try {
+        const response = await listBusinessRedemptions();
+        setRedemptions(
+          response.data.redemptions.map((item) => ({
+            ...item,
+            code: item.code,
+            campaignId: item.id,
+            campaignTitle: item.title,
+            redeemedAt: new Date(item.redeemedAt),
+          })),
+        );
+        setUsageError("");
+      } catch (error) {
+        setUsageError(functionErrorMessage(error));
+      } finally {
+        if (showLoader) setUsageLoading(false);
+      }
+    },
+    [context.organizationId],
+  );
 
   useEffect(() => {
     void refreshUsage();
@@ -774,7 +896,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (normalizedCode.length < 6) {
+    if (!couponCodeRoute(normalizedCode)) {
       setFeedback({
         tone: "error",
         title: "Kod eksik görünüyor",
@@ -788,12 +910,22 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
     setCampaignTitle("");
     try {
       const isLegacyCode = /^[0-9]{6}$/.test(normalizedCode);
-      const response = await (isLegacyCode
-        ? redeemLegacyTestCoupon({ code: normalizedCode })
-        : redeemCampaignCode({ code: normalizedCode }));
+      const response = await (normalizedCode.length === 4
+        ? redeemCommunityCouponCode({ code: normalizedCode })
+        : isLegacyCode
+          ? redeemLegacyTestCoupon({ code: normalizedCode })
+          : redeemCampaignCode({ code: normalizedCode }));
       const nextFeedback = feedbackByOutcome[response.data.outcome];
       setFeedback(nextFeedback);
-      setCampaignTitle(response.data.campaignTitle ?? "");
+      setCampaignTitle(
+        [
+          response.data.couponTitle ?? response.data.campaignTitle,
+          response.data.communityName,
+          response.data.discountLabel ? `${response.data.discountLabel} uygula` : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      );
       if (response.data.outcome === "redeemed") {
         setCode("");
         if (!isLegacyCode) await refreshUsage(false);
@@ -856,7 +988,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
           <section className="community-stat-grid business-stat-grid" aria-label="İşletme kullanım özeti">
             <StatCard label="Bugünkü kullanım" value={usageLoading ? "—" : todayUsage} detail="Bugün doğrulanan V2 kodları" />
             <StatCard label="Bu ay" value={usageLoading ? "—" : monthUsage} detail="Bu ay doğrulanan V2 kodları" />
-            <StatCard label="Toplam doğrulama" value={usageLoading ? "—" : redemptions.length} detail="Kayıtlı V2 kullanımlarının tamamı" />
+            <StatCard label="Toplam doğrulama" value={usageLoading ? "—" : redemptions.length} detail="Son 100 topluluk kuponu ve son 100 Askıda Yemek kullanımı" />
           </section>
           <Card className="business-recent-card">
             <div className="business-card-heading"><div><h2>Son Kullanımlar</h2><p>En son doğrulanan V2 kampanya kodları.</p></div><Button variant="ghost" onClick={() => setSection("usage")}>Tümünü gör</Button></div>
@@ -894,8 +1026,8 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
                   />
                   {normalizedCode ? <button type="button" className="clear-button" onClick={resetForm} aria-label="Kodu temizle">×</button> : null}
                 </div>
-                <p id="code-help" className="field-help">6 haneli Good4Test veya 8 haneli V2 kodunu kullan.</p>
-                <Button className="business-verify-button" variant="primary" type="submit" disabled={submitting || normalizedCode.length < 6}>
+                <p id="code-help" className="field-help">4 haneli topluluk kuponu, 6 haneli Good4Test veya 8 haneli Askıda Yemek kodunu kullan.</p>
+                <Button className="business-verify-button" variant="primary" type="submit" disabled={submitting || !couponCodeRoute(normalizedCode)}>
                   {submitting ? <><span className="spinner" /> Kontrol ediliyor</> : "Doğrula"}
                 </Button>
               </form>
@@ -903,7 +1035,17 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
               {feedback ? (
                 <div className={`business-result business-result--${feedback.tone}`} role="status" aria-live="polite">
                   <div className={`result-icon result-icon--${feedback.tone}`} aria-hidden="true">{feedback.tone === "success" ? "✓" : feedback.tone === "warning" ? "!" : "×"}</div>
-                  <div><span>{feedback.tone === "success" ? "Doğrulama başarılı" : "Doğrulama sonucu"}</span><h2>{feedback.title}</h2>{campaignTitle ? <strong>{campaignTitle}</strong> : null}<p>{feedback.description}</p><Button type="button" variant="secondary" onClick={resetForm}>Yeni kod doğrula</Button></div>
+                  <div>
+                    <span>{feedback.tone === "success" ? "Doğrulama başarılı" : "Doğrulama sonucu"}</span>
+                    <h2>{feedback.title}</h2>
+                    {campaignTitle ? (
+                      <strong className="verification-coupon-title">{campaignTitle}</strong>
+                    ) : null}
+                    <p>{feedback.description}</p>
+                    <Button type="button" variant="secondary" onClick={resetForm}>
+                      Yeni kod doğrula
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </Card>
@@ -914,7 +1056,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
 
       {section === "usage" ? (
         <div className="business-page">
-          <PageHeader title="Kullanımlar" description="İşletmende doğrulanan V2 kampanya kodlarını incele." action={<Button variant="primary" icon="verify" onClick={() => setSection("verify")}>Kupon Doğrula</Button>} />
+          <PageHeader title="Kullanımlar" description="İşletmende kullanılan topluluk kuponlarını ve Askıda Yemek kodlarını incele." action={<Button variant="primary" icon="verify" onClick={() => setSection("verify")}>Kupon Doğrula</Button>} />
           {usageError ? <div className="inline-message inline-message--error" role="alert">{usageError}</div> : null}
           <Card className="business-usage-card">
             <div className="business-usage-toolbar">
@@ -968,7 +1110,10 @@ function formatCommunityParticipantDate(value: string | null): string {
   }).format(date);
 }
 
-function CommunityPanel({ user, context }: {
+function CommunityPanel({
+  user,
+  context,
+}: {
   user: User;
   context: Extract<PortalContext, { portalRole: "community" }>;
 }) {
@@ -988,9 +1133,14 @@ function CommunityPanel({ user, context }: {
   const [capacity, setCapacity] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [businessId, setBusinessId] = useState("");
-  const [discountType, setDiscountType] = useState<"percentage" | "fixed" | "freeItem">("percentage");
+  const [discountType, setDiscountType] = useState<"percentage" | "fixed" | "freeItem">(
+    "percentage",
+  );
   const [discountValue, setDiscountValue] = useState("");
   const [totalLimit, setTotalLimit] = useState("");
+  const [couponStartsOn, setCouponStartsOn] = useState("");
+  const [dailyLimit, setDailyLimit] = useState("");
+  const [freeItem, setFreeItem] = useState("");
   const [eventView, setEventView] = useState<EventView>("list");
   const [eventDetailTab, setEventDetailTab] = useState<EventDetailTab>("overview");
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -1035,18 +1185,38 @@ function CommunityPanel({ user, context }: {
     const promise = (async () => {
       if (showLoader) setLoading(true);
       try {
-        const response = await getCommunityPortalDashboard({ section, ...(cursor ? { cursor } : {}) });
+        const [dashboard, couponPage] = await Promise.all([
+          getCommunityPortalDashboard({
+            section: "events",
+            ...(section === "events" && cursor ? { cursor } : {}),
+          }),
+          listCommunityCoupons(section === "coupons" && cursor ? { cursor } : {}),
+        ]);
+        const response = {
+          data: {
+            ...dashboard.data,
+            businesses: couponPage.data.businesses,
+            entries: [...dashboard.data.entries, ...couponPage.data.coupons.map(couponEntry)],
+            nextCursor:
+              section === "coupons" ? couponPage.data.nextCursor : dashboard.data.nextCursor,
+          },
+        };
         if (dashboardRequest.current?.key !== key) return;
-        setData((current) => cursor && current ? { ...response.data, entries: [...current.entries, ...response.data.entries] } : response.data);
+        setData((current) => cursor && current ? { ...response.data, entries: [...new Map([...current.entries,...response.data.entries].map(entry=>[`${entry.kind}:${entry.id}`,entry])).values()] } : response.data);
         setBusinessId((current) => current || response.data.businesses[0]?.id || "");
         setError("");
-      } catch (requestError) { setError(functionErrorMessage(requestError)); }
-      finally { if (showLoader) setLoading(false); }
+      } catch (requestError) {
+        setError(functionErrorMessage(requestError));
+      } finally {
+        if (showLoader) setLoading(false);
+      }
     })();
     dashboardRequest.current = { key, promise };
     try { await promise; } finally { if (dashboardRequest.current?.promise === promise) dashboardRequest.current = null; }
   }
-  useEffect(() => { void refresh(); }, [tab === "coupons"]);
+  useEffect(() => {
+    void refresh();
+  }, [tab === "coupons"]);
 
   function resetForm() {
     setEditingId("");
@@ -1059,6 +1229,9 @@ function CommunityPanel({ user, context }: {
     setCategoryId("");
     setDiscountValue("");
     setTotalLimit("");
+    setCouponStartsOn("");
+    setDailyLimit("");
+    setFreeItem("");
   }
 
   function editEntry(entry: CommunityEntry) {
@@ -1076,6 +1249,9 @@ function CommunityPanel({ user, context }: {
     setDiscountType(entry.discountType);
     setDiscountValue(entry.discountValue ? String(entry.discountValue) : "");
     setTotalLimit(entry.totalLimit ? String(entry.totalLimit) : "");
+    setCouponStartsOn(entry.startsOn ?? "");
+    setDailyLimit(entry.dailyLimit ? String(entry.dailyLimit) : "");
+    setFreeItem(entry.freeItem ?? "");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -1085,17 +1261,42 @@ function CommunityPanel({ user, context }: {
     setError("");
     setNotice("");
     try {
-      await saveCommunityPortalEntry({
-        ...(editingId ? { entryId: editingId } : {}),
-        kind, title: title.trim(), description: description.trim(), date,
-        ...(kind === "event" ? {
-          time, location: location.trim(), capacity: Number.parseInt(capacity || "0", 10), categoryId,
-        } : {
-          businessId, discountType,
-          discountValue: discountType === "freeItem" ? 0 : Number.parseInt(discountValue || "0", 10),
-          totalLimit: Number.parseInt(totalLimit || "0", 10),
-        }),
-      });
+      if (kind === "coupon")
+        await saveCommunityCoupon({
+          ...(editingId ? { couponId: editingId } : {}),
+          title: title.trim(),
+          description: description.trim(),
+          businessId,
+          discountType,
+          discountValue: discountType === "freeItem" ? 0 : Number(discountValue),
+          freeItem: freeItem.trim(),
+          totalLimit: Number(totalLimit),
+          dailyLimit: dailyLimit ? Number(dailyLimit) : null,
+          startsAt: new Date(`${couponStartsOn}T00:00:00+03:00`).toISOString(),
+          endsAt: new Date(`${date}T23:59:59.999+03:00`).toISOString(),
+        });
+      else
+        await saveCommunityPortalEntry({
+          ...(editingId ? { entryId: editingId } : {}),
+          kind,
+          title: title.trim(),
+          description: description.trim(),
+          date,
+          ...(kind === "event"
+            ? {
+                time,
+                location: location.trim(),
+                capacity: Number.parseInt(capacity || "0", 10),
+                categoryId,
+              }
+            : {
+                businessId,
+                discountType,
+                discountValue:
+                  discountType === "freeItem" ? 0 : Number.parseInt(discountValue || "0", 10),
+                totalLimit: Number.parseInt(totalLimit || "0", 10),
+              }),
+        });
       setNotice(kind === "event"
         ? `Etkinlik ${editingId ? "güncellendi" : "yayınlandı"}.`
         : `Kupon ${editingId ? "güncellendi" : "oluşturuldu"}; Good4 onayına gönderildi.`);
@@ -1114,7 +1315,8 @@ function CommunityPanel({ user, context }: {
     setError("");
     setNotice("");
     try {
-      await cancelCommunityPortalEntry({ entryId: entry.id });
+      if (entry.kind === "coupon") await endCommunityCoupon({ couponId: entry.id });
+      else await cancelCommunityPortalEntry({ entryId: entry.id });
       setNotice("İçerik yayından kaldırıldı.");
       if (editingId === entry.id) resetForm();
       await refresh(false);
@@ -1206,19 +1408,31 @@ function CommunityPanel({ user, context }: {
               action={<Button variant="primary" icon="calendar" onClick={startNewEvent}>Etkinlik Oluştur</Button>}
             />
           ) : null}
-          {tab === "coupons" ? <PageHeader title="Kuponlar" description="Topluluğuna özel işletme kuponlarını oluştur ve yayın durumlarını yönet." /> : null}
+          {tab === "coupons" ? (
+            <PageHeader title="Kuponlar" description="Topluluğuna özel işletme kuponlarını oluştur ve yayın durumlarını yönet." />
+          ) : null}
 
-          {error ? <div className="inline-message inline-message--error admin-message" role="alert">{error}</div> : null}
-          {notice ? <div className="inline-message inline-message--success admin-message" role="status">{notice}</div> : null}
+          {error ? (
+            <div className="inline-message inline-message--error admin-message" role="alert">{error}</div>
+          ) : null}
+          {notice ? (
+            <div className="inline-message inline-message--success admin-message" role="status">{notice}</div>
+          ) : null}
 
-          {data?.nextCursor && <Button disabled={loading} onClick={() => void refresh(true, data.nextCursor!)}>Daha fazla kayıt yükle</Button>}
+          {data?.nextCursor && (
+            <Button disabled={loading} onClick={() => void refresh(true, data.nextCursor!)}>Daha fazla kayıt yükle</Button>
+          )}
           {data && tab === "overview" ? (
             <div className="community-overview">
               <section className="community-stat-grid" aria-label="Topluluk özeti">
                 <StatCard label="Takipçi" value={data.followerCount} detail="Topluluğu takip eden öğrenci" />
                 <StatCard label="Yaklaşan etkinlik" value={upcomingEvents.length} detail="Yayında ve tarihi yaklaşan" />
                 <StatCard label="Toplam katılım" value={attendance} detail="Etkinliklerde giriş yapan" />
-                <StatCard label="Aktif kupon" value={activeCoupons.length} detail="Şu anda yayında olan" />
+                <StatCard
+                  label="Aktif kupon"
+                  value={activeCoupons.length}
+                  detail="Şu anda yayında olan"
+                />
               </section>
 
               <section className="community-overview-section" aria-labelledby="upcoming-events-title">
@@ -1251,7 +1465,7 @@ function CommunityPanel({ user, context }: {
                           <strong>{entry.registrationCount}{entry.capacity ? ` / ${entry.capacity}` : ""}</strong>
                           <span>{entry.capacity ? "Kayıt / kontenjan" : "Kayıt"}</span>
                         </div>
-                        <StatusBadge status={entry.status} />
+                        <StatusBadge status={entry.status === "published" ? "published" : entry.status === "pending" ? "pending" : "cancelled"} />
                         <Button variant="ghost" className="overview-event-row__action" onClick={() => manageEvent(entry)}>
                           Yönet <CommunityIcon name="arrow" />
                         </Button>
@@ -1328,7 +1542,7 @@ function CommunityPanel({ user, context }: {
                             <strong>{entry.registrationCount}{entry.capacity ? ` / ${entry.capacity}` : ""}</strong>
                             <span>{entry.capacity ? "Kayıt / kontenjan" : "Kayıt"}</span>
                           </div>
-                          <div className="event-table__status" role="cell" data-label="Durum"><StatusBadge status={entry.status} /></div>
+                          <div className="event-table__status" role="cell" data-label="Durum"><StatusBadge status={entry.status === "published" ? "published" : entry.status === "pending" ? "pending" : "cancelled"} /></div>
                           <div className="event-table__actions" role="cell">
                             <Button variant="secondary" onClick={() => manageEvent(entry)}>Etkinliği Yönet</Button>
                             <details className="event-actions-menu">
@@ -1407,7 +1621,7 @@ function CommunityPanel({ user, context }: {
                   <Card>
                     <p className="section-label">Etkinlik özeti</p>
                     <h2>{title.trim() || "Etkinlik adı"}</h2>
-                    <StatusBadge status={editingEvent?.status ?? "published"} />
+                    <StatusBadge status={editingEvent?.status === "pending" ? "pending" : editingEvent?.status === "cancelled" ? "cancelled" : "published"} />
                     <dl>
                       <div><dt>Kategori</dt><dd>{categoryId ? eventCategoryLabel(categoryId) : "Henüz seçilmedi"}</dd></div>
                       <div><dt>Tarih ve saat</dt><dd>{date ? formatCommunityEventDate(date, time) : "Henüz seçilmedi"}</dd></div>
@@ -1434,7 +1648,7 @@ function CommunityPanel({ user, context }: {
                 ) : <Button variant="secondary" onClick={() => setEventView("list")}>Etkinliklere dön</Button>}
               />
 
-              <div className="event-detail-status"><StatusBadge status={selectedEvent.status} /></div>
+              <div className="event-detail-status"><StatusBadge status={selectedEvent.status === "published" ? "published" : selectedEvent.status === "pending" ? "pending" : "cancelled"} /></div>
               <section className="community-stat-grid event-metric-grid" aria-label="Etkinlik özeti">
                 <StatCard label="Kayıt sayısı" value={selectedEvent.registrationCount} detail="Etkinliğe kayıt olan öğrenci" />
                 <StatCard label="Check-in" value={selectedEvent.attendanceCount} detail="Etkinlikte giriş yapan" />
@@ -1454,7 +1668,7 @@ function CommunityPanel({ user, context }: {
                     <div><dt>Kategori</dt><dd>{eventCategoryLabel(selectedEvent.categoryId)}</dd></div>
                     <div><dt>Tarih</dt><dd>{formatCommunityEventDate(selectedEvent.date, selectedEvent.time)}</dd></div>
                     <div><dt>Konum</dt><dd>{selectedEvent.location || "Belirtilmedi"}</dd></div>
-                    <div><dt>Yayın durumu</dt><dd><StatusBadge status={selectedEvent.status} /></dd></div>
+                    <div><dt>Yayın durumu</dt><dd><StatusBadge status={selectedEvent.status === "published" ? "published" : selectedEvent.status === "pending" ? "pending" : "cancelled"} /></dd></div>
                   </dl>
                 </Card>
               ) : (
@@ -1492,19 +1706,158 @@ function CommunityPanel({ user, context }: {
               <div className="admin-card form-card sticky-form">
                 <div className="form-card-heading"><div><p className="section-label">Kupon formu</p><h2>{editingId ? "Kuponu düzenle" : "İndirim kuponu ekle"}</h2><p>Kupon, Good4 onayından sonra yayınlanır.</p></div></div>
                 <form onSubmit={(event) => void saveEntry(event, "coupon")}>
-                  <label className="field-label" htmlFor="coupon-title">Kampanya adı</label><input id="coupon-title" value={title} onChange={(event) => setTitle(event.target.value)} required />
-                  <label className="field-label field-label-spaced" htmlFor="coupon-description">Açıklama</label><textarea id="coupon-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={4} required />
-                  <label className="field-label field-label-spaced" htmlFor="coupon-business">İşletme</label><select id="coupon-business" value={businessId} onChange={(event) => setBusinessId(event.target.value)} required><option value="" disabled>İşletme seçin</option>{data.businesses.map((business) => <option key={business.id} value={business.id}>{business.name}</option>)}</select>
-                  <div className="two-column-fields"><div><label className="field-label" htmlFor="discount-type">İndirim türü</label><select id="discount-type" value={discountType} onChange={(event) => setDiscountType(event.target.value as typeof discountType)}><option value="percentage">Yüzde (%)</option><option value="fixed">Sabit tutar (TL)</option><option value="freeItem">Ücretsiz ürün</option></select></div>{discountType !== "freeItem" ? <div><label className="field-label" htmlFor="discount-value">Değer</label><input id="discount-value" type="number" min="1" max={discountType === "percentage" ? 100 : undefined} value={discountValue} onChange={(event) => setDiscountValue(event.target.value)} required /></div> : null}</div>
-                  <div className="two-column-fields"><div><label className="field-label" htmlFor="coupon-date">Son kullanım</label><input id="coupon-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></div><div><label className="field-label" htmlFor="coupon-limit">Toplam limit</label><input id="coupon-limit" type="number" min="0" value={totalLimit} onChange={(event) => setTotalLimit(event.target.value)} placeholder="0 = sınırsız" /></div></div>
-                  <button className="primary-button" disabled={saving || !businessId}>{saving ? "Kaydediliyor…" : editingId ? "Değişiklikleri kaydet" : "Onaya gönder"}</button>
-                  {editingId ? <button className="quiet-button full-button" type="button" onClick={resetForm}>Düzenlemeyi iptal et</button> : null}
+                  <label className="field-label" htmlFor="coupon-title">
+                    Kampanya adı
+                  </label>
+                  <input
+                    id="coupon-title"
+                    value={title}
+                    maxLength={120}
+                    onChange={(event) => setTitle(event.target.value)}
+                    required
+                  />
+                  <label className="field-label field-label-spaced" htmlFor="coupon-description">
+                    Açıklama
+                  </label>
+                  <textarea
+                    id="coupon-description"
+                    maxLength={2000}
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    rows={4}
+                    required
+                  />
+                  <label className="field-label field-label-spaced" htmlFor="coupon-business">
+                    İşletme
+                  </label>
+                  <select
+                    id="coupon-business"
+                    value={businessId}
+                    onChange={(event) => setBusinessId(event.target.value)}
+                    required
+                  >
+                    <option value="" disabled>İşletme seçin</option>
+                    {data.businesses.map((business) => (
+                      <option key={business.id} value={business.id}>{business.name}</option>
+                    ))}
+                  </select>
+                  <div className="two-column-fields">
+                    <div>
+                      <label className="field-label" htmlFor="discount-type">
+                        İndirim türü
+                      </label>
+                      <select
+                        id="discount-type"
+                        value={discountType}
+                        onChange={(event) =>
+                          setDiscountType(event.target.value as typeof discountType)
+                        }
+                      >
+                        <option value="percentage">Yüzde (%)</option>
+                        <option value="fixed">Sabit tutar (TL)</option>
+                        <option value="freeItem">Ücretsiz ürün</option>
+                      </select>
+                    </div>
+                    {discountType !== "freeItem" ? (
+                      <div>
+                        <label className="field-label" htmlFor="discount-value">
+                          Değer
+                        </label>
+                        <input
+                          id="discount-value"
+                          type="number"
+                          min="1"
+                          max={discountType === "percentage" ? 100 : undefined}
+                          value={discountValue}
+                          onChange={(event) => setDiscountValue(event.target.value)}
+                          required
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="field-label" htmlFor="coupon-free-item">
+                          Ücretsiz ürün
+                        </label>
+                        <input
+                          id="coupon-free-item"
+                          value={freeItem}
+                          maxLength={80}
+                          onChange={(e) => setFreeItem(e.target.value)}
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="two-column-fields">
+                    <div>
+                      <label className="field-label" htmlFor="coupon-start">
+                        Başlangıç
+                      </label>
+                      <input
+                        id="coupon-start"
+                        type="date"
+                        value={couponStartsOn}
+                        onChange={(e) => setCouponStartsOn(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label" htmlFor="coupon-date">
+                        Son kullanım
+                      </label>
+                      <input
+                        id="coupon-date"
+                        type="date"
+                        value={date}
+                        onChange={(event) => setDate(event.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label" htmlFor="coupon-limit">
+                        Toplam limit
+                      </label>
+                      <input
+                        id="coupon-limit"
+                        type="number"
+                        min="1"
+                        max="1000000"
+                        required
+                        value={totalLimit}
+                        onChange={(event) => setTotalLimit(event.target.value)}
+                        placeholder="En az 1"
+                      />
+                    </div>
+                  </div>
+                  <label className="field-label" htmlFor="coupon-daily-limit">
+                    Günlük limit (isteğe bağlı)
+                  </label>
+                  <input
+                    id="coupon-daily-limit"
+                    type="number"
+                    min="1"
+                    max={totalLimit || undefined}
+                    value={dailyLimit}
+                    onChange={(e) => setDailyLimit(e.target.value)}
+                  />
+                  <button className="primary-button" disabled={saving || !businessId || context.membershipRole !== "manager"}>{saving ? "Kaydediliyor…" : editingId ? "Değişiklikleri kaydet" : "Onaya gönder"}</button>
+                  {editingId ? (
+                    <button className="quiet-button full-button" type="button" onClick={resetForm}>Düzenlemeyi iptal et</button>
+                  ) : null}
                 </form>
               </div>
               {coupons.length === 0 ? (
-                <div className="admin-card"><IllustratedEmpty illustration="coupon" title="Henüz kupon yok">Soldaki formla ilk kuponunu oluştur; Good4 onayına gönderilir.</IllustratedEmpty></div>
+                <div className="admin-card">
+                  <IllustratedEmpty illustration="coupon" title="Henüz kupon yok">
+                    Soldaki formla ilk kuponunu oluştur; Good4 onayına gönderilir.
+                  </IllustratedEmpty>
+                </div>
               ) : (
-                <div className="community-entry-grid">{coupons.map((entry) => <CommunityEntryCard key={entry.id} entry={entry} onEdit={editEntry} onCancel={cancelEntry} busy={busyId === entry.id} />)}</div>
+                <div className="community-entry-grid">
+                  {coupons.map((entry) => (
+                    <CommunityEntryCard key={entry.id} entry={entry} onEdit={editEntry} onCancel={cancelEntry} busy={busyId === entry.id} canManage={context.membershipRole === "manager"} />
+                  ))}
+                </div>
               )}
             </section>
           ) : null}
@@ -1524,23 +1877,122 @@ function CommunityPanel({ user, context }: {
   );
 }
 
-function CommunityEntryCard({ entry, onEdit, onCancel, busy }: {
+function CommunityEntryCard({
+  entry,
+  onEdit,
+  onCancel,
+  busy,
+  canManage = true,
+}: {
   entry: CommunityEntry;
   onEdit: (entry: CommunityEntry) => void;
   onCancel: (entry: CommunityEntry) => void;
   busy: boolean;
+  canManage?: boolean;
 }) {
-  const statusLabel = entry.status === "published" ? "Yayında" : entry.status === "pending" ? "Onay bekliyor" : "Yayından kaldırıldı";
+  const statusLabel =
+    entry.status === "published"
+      ? "Yayında"
+      : entry.status === "pending"
+        ? "Onay bekliyor"
+        : entry.status === "rejected"
+          ? "Reddedildi"
+          : entry.status === "ended"
+            ? "Bitti"
+            : "Yayından kaldırıldı";
   return (
-    <article className={`admin-card community-entry-card ${entry.status === "cancelled" ? "is-cancelled" : ""}`}>
-      <div className="community-entry-card__heading"><div><span className="entry-kind">{entry.kind === "event" ? "Etkinlik" : "Kupon"}</span><h3>{entry.title}</h3></div><span className={`status-pill status-pill--${entry.status}`}>{statusLabel}</span></div>
+    <article
+      className={`admin-card community-entry-card ${entry.status === "cancelled" ? "is-cancelled" : ""}`}
+    >
+      <div className="community-entry-card__heading">
+        <div>
+          <span className="entry-kind">{entry.kind === "event" ? "Etkinlik" : "Kupon"}</span>
+          <h3>{entry.title}</h3>
+        </div>
+        <span className={`status-pill status-pill--${entry.status}`}>{statusLabel}</span>
+      </div>
       <p className="entry-description">{entry.description}</p>
-      <dl className="entry-facts"><div><dt>Tarih</dt><dd>{entry.date}{entry.time ? ` · ${entry.time}` : ""}</dd></div><div><dt>{entry.kind === "event" ? "Konum" : "İşletme"}</dt><dd>{entry.kind === "event" ? entry.location : entry.businessName}</dd></div></dl>
+      <dl className="entry-facts">
+        <div>
+          <dt>Tarih</dt>
+          <dd>
+            {entry.date}
+            {entry.time ? ` · ${entry.time}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>{entry.kind === "event" ? "Konum" : "İşletme"}</dt>
+          <dd>{entry.kind === "event" ? entry.location : entry.businessName}</dd>
+        </div>
+      </dl>
       {entry.kind === "event" ? (
-        <><div className="entry-numbers"><div><strong>{entry.registrationCount}</strong><span>Kayıtlı</span></div><div><strong>{entry.attendanceCount}</strong><span>Giriş yaptı</span></div><div><strong>{entry.capacity || "∞"}</strong><span>Kontenjan</span></div></div>
-        <details className="participant-list"><summary>Katılımcıları görüntüle</summary>{entry.participants.length === 0 ? <p>Henüz kayıt yok.</p> : entry.participants.map((participant) => <div key={participant.userId}><span>{participant.displayName}</span><strong className={participant.checkedIn ? "arrived" : ""}>{participant.checkedIn ? "Geldi" : "Kayıtlı"}</strong></div>)}</details></>
-      ) : <div className="entry-numbers"><div><strong>{entry.discountType === "percentage" ? `%${entry.discountValue}` : entry.discountType === "fixed" ? `${entry.discountValue} TL` : "Ücretsiz"}</strong><span>İndirim</span></div><div><strong>{entry.totalLimit || "∞"}</strong><span>Toplam limit</span></div></div>}
-      {entry.status !== "cancelled" && <div className="entry-actions"><button className="quiet-button" onClick={() => onEdit(entry)}>Düzenle</button><button className="danger-button" disabled={busy} onClick={() => onCancel(entry)}>{busy ? "İşleniyor…" : "Yayından kaldır"}</button></div>}
+        <>
+          <div className="entry-numbers">
+            <div>
+              <strong>{entry.registrationCount}</strong>
+              <span>Kayıtlı</span>
+            </div>
+            <div>
+              <strong>{entry.attendanceCount}</strong>
+              <span>Giriş yaptı</span>
+            </div>
+            <div>
+              <strong>{entry.capacity || "∞"}</strong>
+              <span>Kontenjan</span>
+            </div>
+          </div>
+          <details className="participant-list">
+            <summary>Katılımcıları görüntüle</summary>
+            {entry.participants.length === 0 ? (
+              <p>Henüz kayıt yok.</p>
+            ) : (
+              entry.participants.map((participant) => (
+                <div key={participant.userId}>
+                  <span>{participant.displayName}</span>
+                  <strong className={participant.checkedIn ? "arrived" : ""}>
+                    {participant.checkedIn ? "Geldi" : "Kayıtlı"}
+                  </strong>
+                </div>
+              ))
+            )}
+          </details>
+        </>
+      ) : (
+        <div className="entry-numbers">
+          <div>
+            <strong>
+              {entry.discountType === "percentage"
+                ? `%${entry.discountValue}`
+                : entry.discountType === "fixed"
+                  ? `${entry.discountValue} TL`
+                  : "Ücretsiz"}
+            </strong>
+            <span>İndirim</span>
+          </div>
+          <div>
+            <strong>{entry.totalLimit || "∞"}</strong>
+            <span>Toplam limit</span>
+          </div>
+        </div>
+      )}
+      {entry.rejectionReason ? <p role="note">{entry.rejectionReason}</p> : null}
+      {entry.kind === "coupon" ? (
+        <p>
+          {entry.redemptionCount ?? 0} / {entry.totalLimit} kullanım
+        </p>
+      ) : null}
+      {canManage && !["cancelled", "ended"].includes(entry.status) && (
+        <div className="entry-actions">
+          {entry.kind !== "coupon" || ["pending", "rejected"].includes(entry.status) ? (
+            <button className="quiet-button" onClick={() => onEdit(entry)}>
+              Düzenle
+            </button>
+          ) : null}
+          <button className="danger-button" disabled={busy} onClick={() => onCancel(entry)}>
+            {busy ? "İşleniyor…" : "Yayından kaldır"}
+          </button>
+        </div>
+      )}
     </article>
   );
 }
@@ -1604,6 +2056,10 @@ const auditLabels: Record<string, string> = {
   "organization.created": "Kurum oluşturuldu",
   "organization.memberAssigned": "Kurum yetkilisi atandı",
   "legacyCoupon.redeemed": "Kupon kullanıldı",
+  "communityCoupon.created": "Topluluk kuponu oluşturuldu",
+  "communityCoupon.published": "Topluluk kuponu yayınlandı",
+  "communityCoupon.rejected": "Topluluk kuponu reddedildi",
+  "communityCoupon.ended": "Topluluk kuponu sonlandırıldı",
   "campaignCode.redeemed": "Kampanya kodu kullanıldı",
   "diningMenu.updated": "Haftalık yemek menüsü güncellendi",
   "kykMenu.updated": "KYK yemek menüsü güncellendi",
@@ -1838,6 +2294,24 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
     loadCampaigns().catch(() => setError("Kampanyalar yüklenemedi."));
   }, [tab, data]);
 
+  const [v2CouponBusyId, setV2CouponBusyId] = useState("");
+  async function handleV2CouponReview(coupon: V2CommunityCoupon, decision: "approve" | "reject") {
+    const reason =
+      decision === "reject"
+        ? window.prompt("Ret gerekçesi (en fazla 500 karakter)")?.trim()
+        : undefined;
+    if (decision === "reject" && !reason) return;
+    setV2CouponBusyId(coupon.id);
+    setError("");
+    try {
+      await reviewCommunityCoupon({ couponId: coupon.id, decision, ...(reason ? { reason } : {}) });
+      await refresh(false);
+    } catch (error) {
+      setError(functionErrorMessage(error));
+    } finally {
+      setV2CouponBusyId("");
+    }
+  }
   async function handleReview(coupon: PendingCoupon, decision: "approve" | "reject") {
     if (decision === "reject" && !window.confirm(`“${coupon.title}” kuponunu reddetmek istiyor musunuz?`)) return;
     const key = `${coupon.communityId}:${coupon.entryId}`;
@@ -2270,7 +2744,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       userEmail={user.email ?? ""}
       activeSection={tab}
       counts={{
-        coupons: data?.pendingCoupons.length,
+        coupons: (data?.pendingCoupons.length ?? 0) + (data?.pendingCommunityCoupons.length ?? 0),
         feedback: data?.feedback.filter((item) => item.report && item.status === "new").length,
         communities: communityApplications.length,
         businesses: businessApplications.length,
@@ -2291,7 +2765,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           </div>
           {data && (
             <div className="admin-summary" aria-label="Yönetim özeti">
-              <div><strong>{data.pendingCoupons.length}</strong><span>Bekleyen kupon</span></div>
+              <div><strong>{(data.pendingCoupons.length + (data.pendingCommunityCoupons?.length ?? 0))}</strong><span>Bekleyen kupon</span></div>
               <div><strong>{data.feedback.filter((item) => item.report && item.status === "new").length}</strong><span>Açık içerik bildirimi</span></div>
               <div><strong>{data.businesses.length}</strong><span>Aktif işletme</span></div>
               <div><strong>{data.communities.length}</strong><span>Aktif topluluk</span></div>
@@ -2311,7 +2785,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           <AdminHome
             displayName={context.displayName || "Good4 Yöneticisi"}
             counts={{
-              coupons: data.pendingCoupons.length,
+              coupons: (data.pendingCoupons.length + (data.pendingCommunityCoupons?.length ?? 0)),
               feedback: data.feedback.filter((item) => item.report && item.status === "new").length,
               communityApplications: communityApplications.length,
               businessApplications: businessApplications.length,
@@ -2328,7 +2802,46 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
               <div><h2 id="pending-coupons-title">Bekleyen kuponlar</h2><p>Onaylanan kupon öğrencilerin uygulamasında yayınlanır.</p></div>
               <button className="quiet-button" onClick={() => void refresh(false)}>Yenile</button>
             </div>
-            {data.pendingCoupons.length === 0 ? (
+            <div className="coupon-review-list">
+              {data.pendingCommunityCoupons?.map((coupon) => (
+                <article className="admin-card coupon-review-card" key={`v2:${coupon.id}`}>
+                  <div>
+                    <h3>{coupon.title}</h3>
+                    <p>{coupon.communityName} → {coupon.businessName}</p>
+                    <p>{coupon.description}</p>
+                    <p>
+                      {coupon.discountType === "freeItem"
+                        ? `Ücretsiz: ${coupon.freeItem}`
+                        : coupon.discountType === "fixed"
+                          ? `${coupon.discountValue} TL indirim`
+                          : `%${coupon.discountValue} indirim`}
+                      {" · "}{coupon.redemptionCount} / {coupon.totalLimit}
+                    </p>
+                    <p>
+                      Başlangıç: {formatCommunityCouponDate(coupon.startsAt)}
+                      {" – "}Bitiş: {formatCommunityCouponDate(coupon.endsAt)}
+                    </p>
+                    {coupon.dailyLimit != null ? <p>Günlük limit: {coupon.dailyLimit}</p> : null}
+                  </div>
+                  <div className="entry-actions">
+                    <button
+                      disabled={v2CouponBusyId === coupon.id}
+                      onClick={() => void handleV2CouponReview(coupon, "reject")}
+                    >
+                      Reddet
+                    </button>
+                    <button
+                      className="primary-button"
+                      disabled={v2CouponBusyId === coupon.id}
+                      onClick={() => void handleV2CouponReview(coupon, "approve")}
+                    >
+                      Onayla
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {(data.pendingCoupons.length + (data.pendingCommunityCoupons?.length ?? 0)) === 0 ? (
               <div className="admin-card empty-state"><h3>Bekleyen kupon yok</h3><p>Yeni başvurular burada görünecek.</p></div>
             ) : (
               <div className="coupon-review-list">

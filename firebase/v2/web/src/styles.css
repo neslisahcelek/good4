@@ -1111,3 +1111,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .pending-banner--rejected > span { color: var(--error); }
 .event-state-pill.is-pending { color: #7f5b00; background: var(--cream); }
 @media (max-width: 560px) { .pending-banner { flex-wrap: wrap; } }
+
+.verification-coupon-title {
+  font-size: 1.5rem;
+}
