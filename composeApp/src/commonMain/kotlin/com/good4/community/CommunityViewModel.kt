@@ -196,12 +196,18 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val businesses = repository.businesses()
                 val blocked = loadBlockedCommunityIds()
                 val visibleCommunities = communities.filterNot { c -> c.id in blocked && c.id !in access.communityIds }
-                val coupons = try {
-                    repository.featuredCoupons(visibleCommunities)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (_: Exception) {
-                    null
+                var couponFailure: String? = null
+                // One quiet retry covers a dropped connection right after the app comes to the front.
+                val coupons = (0..1).firstNotNullOfOrNull { attempt ->
+                    if (attempt > 0) delay(1_500)
+                    try {
+                        repository.featuredCoupons(visibleCommunities)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        couponFailure = e.message
+                        null
+                    }
                 }
                 if (generation != loadingGeneration || uid != repository.currentUserId) return@launch
                 mutable.update {
@@ -212,9 +218,12 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                         access = access,
                         businesses = businesses,
                         featuredCoupons = coupons.orEmpty(),
-                        couponsError = if (coupons == null) {
-                            UiText.StringResourceId(Res.string.community_coupon_load_error)
-                        } else null,
+                        couponsError = when {
+                            coupons != null -> null
+                            // Test builds show the technical reason so a device-only failure can be diagnosed.
+                            AppEnvironment.isDebug -> UiText.DynamicString("Kuponlar yüklenemedi: ${couponFailure.orEmpty()}")
+                            else -> UiText.StringResourceId(Res.string.community_coupon_load_error)
+                        },
                         loading = false,
                         error = null
                     )

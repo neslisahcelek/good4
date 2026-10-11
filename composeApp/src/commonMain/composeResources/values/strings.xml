@@ -1347,7 +1347,7 @@
     <string name="community_coupon_daily_limit_reached">Bu kuponun bugünkü kullanım limiti doldu.</string>
     <string name="community_coupon_inactive">Bu kupon şu anda kullanıma açık değil.</string>
     <string name="community_coupon_code_error">Kod alınamadı. Bağlantını kontrol edip tekrar dene.</string>
-    <string name="community_coupon_load_error">Kuponlar yüklenemedi. Tekrar dene.</string>
+    <string name="community_coupon_load_error">Kuponlar yüklenemedi.</string>
     <string name="community_coupon_percentage">%%1$d indirim</string>
     <string name="community_coupon_fixed">%1$d TL indirim</string>
     <string name="community_coupon_free_item">Ücretsiz: %1$s</string>

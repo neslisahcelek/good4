@@ -378,7 +378,7 @@ class CommunityRepository(
             is Result.Success -> {
                 result.data.filter { it.data.isCurrentlyValid(now) }
             }
-            is Result.Error -> error("COMMUNITY_COUPONS_LOAD_FAILED")
+            is Result.Error -> error("COMMUNITY_COUPONS_LOAD_FAILED: ${result.error.message}")
         }
     }
 
