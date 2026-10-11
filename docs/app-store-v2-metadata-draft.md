@@ -6,16 +6,17 @@
 
 **Tanıtım metni**
 
-Kampüs Dolabı'nda öğrenciler arasında elden teslim ikinci el alışverişi. Toplulukları keşfet, yemekhane menüsünü gör ve öğününü puanla.
+Kampüste plan yap, Sosyal ile buluş! Kampüs Dolabı'nda öğrenciler arası elden teslim ikinci el alışverişi, topluluklar ve yemekhane menüsü Good4'da.
 
 **Alt başlık önerisi**
 
-Kampüs, topluluklar ve menü
+Kampüs, Sosyal, dolap ve menü
 
 **Açıklama**
 
 Good4, Akdeniz Üniversitesi öğrencileri için kampüs yaşamını kolaylaştıran bir uygulamadır.
 
+- **Sosyal:** Kampüste spor, kahve buluşması, ders çalışma veya masa oyunları için etkinlik planla, paylaşılan buluşmalara katıl ve kabul edilen eşleşmelerle birebir sohbet et.
 - **Kampüs Dolabı:** .edu.tr e-posta adresini doğrulamış öğrenciler, ikinci el eşya ilanı yayınlayabilir ve kendi kampüslerinde elden teslim için birbirleriyle iletişime geçebilir. Good4 satışın tarafı değildir; uygulama içinde ödeme almaz veya işlemez ve satıştan komisyon almaz. Ödeme ve teslimat kullanıcılar arasında, uygulama dışında gerçekleşir.
 - Öğrenci topluluklarını ve yayımladıkları etkinlikleri keşfet.
 - Etkinliklere kayıt ol ve katılım bilgilerini takip et.
@@ -31,9 +32,10 @@ Good4 hesabını uygulama içinden yönetebilir ve silebilirsin. Soruların içi
 
 **Sürüm yenilikleri / What's New**
 
-Kampüs Dolabı açıldı! .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kendi kampüslerinde elden teslim için ilana koyabilir. Good4 ödeme almaz ve satıştan komisyon almaz.
-
-Topluluklar yenilendi. Yemekhane öğünlerine puan verme ve diğer öğrencilerin değerlendirmelerini görme özelliği eklendi. Bildirim tercihleri de geliştirildi.
+- Good4 Sosyal Açıldı: Kampüste spor, kahve, ders veya oyun için buluşma planla, etkinliklere katıl ve kabul edilen isteklerle birebir sohbet et!
+- Kampüs Dolabı: .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kampüste elden teslim için ilana koyabilir. Good4 ödeme almaz ve komisyonsuzdur.
+- Topluluklar & Menü: Öğrenci toplulukları yenilendi. Güncel yemekhane menüsünü görüntüleme ve öğünleri puanlama özelliği eklendi.
+- Bildirim tercihleri ve performans geliştirmeleri yapıldı.
 
 **Anahtar kelimeler önerisi**
 
@@ -79,6 +81,7 @@ Kampüsünde öğrencilerle elden teslim, komisyonsuz ikinci el alışveriş yap
 
 Good4, Akdeniz Üniversitesi öğrencileri için kampüs yaşamını kolaylaştırır.
 
+- **Sosyal:** Kampüste spor, kahve, ders veya oyun için etkinlik planla, buluşmalara katıl ve kabul edilen isteklerle birebir sohbet et.
 - **Kampüs Dolabı:** Yalnızca .edu.tr e-posta adresini doğrulamış öğrencilere açıktır. İkinci el eşya ilanı yayınla ve kendi kampüsünde elden teslim için diğer öğrencilerle iletişime geç. Good4 satışın tarafı değildir; uygulama içinde ödeme almaz veya işlemez ve satıştan komisyon almaz. Ödeme ve teslimat kullanıcılar arasında, uygulama dışında gerçekleşir.
 - Öğrenci topluluklarını ve etkinliklerini keşfet.
 - Etkinliklere kaydol; katılım bilgilerini takip et.
@@ -95,9 +98,10 @@ Hesabını uygulama içinden yönetebilir ve silebilirsin. Destek için uygulama
 
 **Sürüm yenilikleri / What's New**
 
-Kampüs Dolabı açıldı! .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kendi kampüslerinde elden teslim için ilana koyabilir. Good4 ödeme almaz ve satıştan komisyon almaz.
-
-Topluluklar yenilendi. Yemekhane öğünlerine puan verme ve diğer öğrencilerin değerlendirmelerini görme özelliği eklendi. Bildirim tercihleri de geliştirildi.
+- Good4 Sosyal Açıldı: Kampüste spor, kahve, ders veya oyun için buluşma planla, etkinliklere katıl ve kabul edilen isteklerle birebir sohbet et!
+- Kampüs Dolabı: .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kampüste elden teslim için ilana koyabilir. Good4 ödeme almaz ve komisyonsuzdur.
+- Topluluklar & Menü: Öğrenci toplulukları yenilendi. Güncel yemekhane menüsünü görüntüleme ve öğünleri puanlama özelliği eklendi.
+- Bildirim tercihleri ve performans geliştirmeleri yapıldı.
 
 **Gizlilik Politikası URL'si**
 
