@@ -1143,6 +1143,7 @@
     <string name="social_request_note_hint">Kendini kısaca tanıt (isteğe bağlı)</string>
     <string name="social_join">Katılmak istiyorum</string>
     <string name="social_verify_title">Katılmak için okul e-postanı doğrula</string>
+    <string name="social_verify_create_title">Etkinlik açmak için okul e-postanı doğrula</string>
     <string name="social_verify_ready">Artık etkinliklere katılabilirsin.</string>
     <string name="social_verify_after">Kodu doğrulayınca katılma isteğin gönderilir. Bir kez doğrulaman yeter, Kampüs Dolabı'nda da geçerli olur.</string>
     <string name="social_rules_title">Sosyal Etkinlik kuralları</string>

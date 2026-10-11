@@ -1,6 +1,14 @@
 package com.good4.social
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.good4.campuscloset.CampusEmailVerificationCard
+import com.good4.campuscloset.CampusEmailVerificationViewModel
+import com.good4.core.presentation.components.dismissKeyboardOnTap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,6 +70,7 @@ import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialScreen(
     onBack: () -> Unit,
@@ -69,23 +78,69 @@ fun SocialScreen(
     onCreate: () -> Unit,
     onOpenInbox: () -> Unit,
     onOpenChat: (String) -> Unit,
-    viewModel: SocialHomeViewModel = koinViewModel()
+    viewModel: SocialHomeViewModel = koinViewModel(),
+    eduViewModel: CampusEmailVerificationViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val eduState by eduViewModel.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
+    var showVerification by rememberSaveable { mutableStateOf(false) }
+    // Set when the student pressed "Etkinlik oluştur" before verifying; the form opens once they can.
+    var createAfterVerification by rememberSaveable { mutableStateOf(false) }
     // Coming back from a detail, the form or a chat refreshes both lists and the badges.
     LifecycleResumeEffect(Unit) {
         viewModel.load()
         if (tab == 1) viewModel.loadMine()
-        onPauseOrDispose { }
+        eduViewModel.onResume()
+        onPauseOrDispose { eduViewModel.onPause() }
     }
     LaunchedEffect(tab) { if (tab == 1) viewModel.loadMine() }
+    LaunchedEffect(eduState.verifiedEmail) {
+        if (eduState.verifiedEmail != null && showVerification) {
+            showVerification = false
+            viewModel.load()
+        }
+    }
+    val me = state.me
+    LaunchedEffect(me?.eduVerified, me?.termsAccepted, createAfterVerification) {
+        if (!createAfterVerification || me == null || !me.eduVerified) return@LaunchedEffect
+        createAfterVerification = false
+        // Without accepted rules the screen itself shows them first; the student taps create again after.
+        if (me.termsAccepted) onCreate()
+    }
     SocialContent(
-        state = state, tab = tab, onTab = { tab = it }, onBack = onBack, onOpenActivity = onOpenActivity, onCreate = onCreate,
+        state = state, tab = tab, onTab = { tab = it }, onBack = onBack, onOpenActivity = onOpenActivity,
+        onCreate = {
+            if (me?.eduVerified == true) onCreate()
+            else { createAfterVerification = true; showVerification = true }
+        },
         onOpenInbox = onOpenInbox, onOpenChat = onOpenChat, onSelectKind = viewModel::selectKind, onLoadMore = viewModel::loadMore,
         onRetry = viewModel::load, onRetryMine = viewModel::loadMine, onAcceptTerms = viewModel::acceptTerms,
         onUpdateProfile = viewModel::updateProfile, onProfilePhotoError = viewModel::profilePhotoError
     )
+
+    if (showVerification) {
+        ModalBottomSheet(
+            onDismissRequest = { showVerification = false; createAfterVerification = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = AppBackground
+        ) {
+            // Sheets sit above the app root, so they need their own tap-to-dismiss.
+            Column(Modifier.fillMaxWidth().dismissKeyboardOnTap().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp).navigationBarsPadding()) {
+                CampusEmailVerificationCard(
+                    state = eduState,
+                    onEmailChange = eduViewModel::setEmail,
+                    onSendCode = eduViewModel::sendCode,
+                    onChangeEmail = eduViewModel::changeEmail,
+                    onCodeChange = eduViewModel::setCode,
+                    onConfirmCode = eduViewModel::confirmCode,
+                    title = stringResource(Res.string.social_verify_create_title),
+                    readyText = stringResource(Res.string.social_verify_ready),
+                    afterVerifyText = stringResource(Res.string.social_verify_after)
+                )
+            }
+        }
+    }
 }
 
 @Composable
