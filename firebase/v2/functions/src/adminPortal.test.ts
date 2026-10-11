@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
+import { Timestamp } from "firebase-admin/firestore";
 import { createOrganizationService } from "./admin.js";
 import {
   getAdminDashboardService,
@@ -11,7 +12,7 @@ import {
 import { db, legacyTestDb } from "./firebase.js";
 
 const collections = [
-  "users", "organizations", "legacyTestBusinessLinks", "businesses", "communities", "auditLogs", "feedbackSubmissions", "app_config",
+  "communityCoupons", "users", "organizations", "legacyTestBusinessLinks", "businesses", "communities", "auditLogs", "feedbackSubmissions", "app_config",
 ];
 
 beforeEach(async () => {
@@ -236,4 +237,33 @@ test("portal context routes admins and business users correctly", async () => {
     legacyTestCommunityId: "legacy-community",
     membershipRole: "manager",
   });
+});
+
+
+test("dashboard keeps pending canonical community coupons separate from legacy coupons", async () => {
+  await seedAdmin();
+  await db.doc("communityCoupons/v2-pending").set({communityId:"club",communityName:"Club",businessId:"business",businessName:"Business",title:"V2 Coupon",description:"Description",discountType:"fixed",discountValue:50,totalLimit:10,status:"pending",startsAt:Timestamp.now(),endsAt:Timestamp.fromMillis(Date.now()+600000),redemptionCount:2});
+  const data = await getAdminDashboardService(db,legacyTestDb,"admin-1");
+  assert.equal(data.pendingCommunityCoupons.length,1);
+  assert.equal(data.pendingCommunityCoupons[0]?.title,"V2 Coupon");
+  assert.equal(data.pendingCommunityCoupons[0]?.redemptionCount,2);
+  assert.deepEqual(data.pendingCoupons,[]);
+});
+
+
+test("dashboard bounds the pending canonical coupon queue to 200", async () => {
+  await seedAdmin();
+  const batch = db.batch();
+  for (let index = 0; index < 201; index += 1) {
+    batch.set(db.doc(`communityCoupons/pending-${index}`), {
+      communityId: "club", communityName: "Club", businessId: "business", businessName: "Business",
+      title: "V2 Coupon", description: "Description", discountType: "fixed", discountValue: 50,
+      totalLimit: 10, dailyLimit: 2, status: "pending", startsAt: Timestamp.now(),
+      endsAt: Timestamp.fromMillis(Date.now() + 600000), redemptionCount: 0,
+    });
+  }
+  await batch.commit();
+  const data = await getAdminDashboardService(db, legacyTestDb, "admin-1");
+  assert.equal(data.pendingCommunityCoupons.length, 200);
+  assert.equal(data.pendingCommunityCoupons[0]?.dailyLimit, 2);
 });

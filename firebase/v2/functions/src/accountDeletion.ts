@@ -286,6 +286,10 @@ export async function eraseAccountData(
     database.collectionGroup("attendance").where("userId", "==", uid),
   );
 
+  await deleteMatchingDocuments(database, database.collection("communityCouponClaims").where("studentId", "==", uid));
+  await deleteMatchingDocuments(database, database.collection("communityCouponCodes").where("studentId", "==", uid));
+  await replaceMatchingField(database, database.collection("communityCouponRedemptions").where("studentId", "==", uid), "studentId");
+  await replaceMatchingField(database, database.collection("communityCouponRedemptions").where("redeemedBy", "==", uid), "redeemedBy");
   await deleteMatchingDocuments(database, database.collection("campaignClaims").where("studentId", "==", uid));
   await replaceMatchingField(database, database.collection("campaignCodes").where("studentId", "==", uid), "studentId");
   await replaceMatchingField(database, database.collection("redemptions").where("studentId", "==", uid), "studentId");

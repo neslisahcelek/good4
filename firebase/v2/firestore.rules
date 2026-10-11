@@ -122,6 +122,14 @@ service cloud.firestore {
       }
     }
 
+    match /communityCoupons/{couponId} {
+      allow get, list: if signedIn() && resource.data.status == 'published';
+      allow write: if false;
+    }
+    match /communityCouponCodes/{id} { allow read, write: if false; }
+    match /communityCouponClaims/{id} { allow read, write: if false; }
+    match /communityCouponRedemptions/{id} { allow read, write: if false; }
+
     match /campaigns/{campaignId} {
       allow get, list: if (signedIn() && resource.data.status == 'published')
         || isGood4Admin()

@@ -10,7 +10,7 @@ beforeEach(async () => {
   await Promise.all([
     ...[
       "users", "organizations", "events", "campaignClaims", "campaignCodes",
-      "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
+      "communityCouponClaims", "communityCouponCodes", "communityCouponRedemptions", "communityCoupons", "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
       "communities", "codes", "orders", "businesses", "community_access",
       "eduEmailClaims", "eduVerifications", "campusEmailVerifications", "mail", "communityApplications",
       "pushDevices", "notificationJobs", "notificationDispatches",
@@ -166,4 +166,25 @@ test("account deletion removes push endpoints and private delivery receipts and 
   assert.equal((await db.doc(`users/${uid}/notifications/n`).get()).exists, false);
   assert.equal((await db.doc(`users/${uid}/notificationPreferences/default`).get()).exists, false);
   assert.equal((await db.doc("notificationJobs/job").get()).get("actorUid"), "deleted-account");
+});
+
+
+test("erases community coupon claims and codes and anonymizes retained coupon history", async () => {
+  await db.doc(`users/${uid}`).set({status:"active",role:"student"});
+  await db.doc(`communityCouponClaims/coupon_${uid}_2026-10-11`).set({studentId:uid});
+  await db.doc("communityCouponCodes/business_0001").set({studentId:uid});
+  await db.doc("communityCouponCodes/business_0002").set({studentId:"other"});
+  await db.doc("communityCouponRedemptions/history").set({studentId:uid,redeemedBy:"staff",title:"Coupon"});
+  await db.doc("communityCoupons/retained").set({ title: "Coupon", status: "published" });
+  await db.doc("auditLogs/coupon-created").set({ actorUid: uid, targetType: "communityCoupon", targetId: "retained", action: "communityCoupon.created" });
+  await eraseAccountData(db,legacyTestDb,uid,null);
+  assert.equal((await db.collection("communityCouponClaims").get()).size,0);
+  assert.equal((await db.doc("communityCouponCodes/business_0001").get()).exists,false);
+  assert.equal((await db.doc("communityCouponCodes/business_0002").get()).exists,true);
+  const history = await db.doc("communityCouponRedemptions/history").get();
+  assert.equal(history.get("studentId"),"deleted-account");
+  assert.equal(history.get("title"),"Coupon");
+  assert.equal((await db.doc("auditLogs/coupon-created").get()).get("actorUid"), "deleted-account");
+  assert.equal((await db.doc("auditLogs/coupon-created").get()).get("action"), "communityCoupon.created");
+  assert.equal((await db.doc("communityCoupons/retained").get()).get("createdBy"), undefined);
 });

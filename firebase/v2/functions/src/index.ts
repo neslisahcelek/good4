@@ -1,3 +1,4 @@
+import { saveCommunityCouponService, endCommunityCouponService, listCommunityCouponsService, reviewCommunityCouponService, issueCommunityCouponCodeService, redeemCommunityCouponCodeService, listBusinessRedemptionsService } from "./communityCoupons.js";
 import { brevoApiKey, isDemoMailEmulator } from "./verificationEmail.js";
 import { cleanupTechnicalRecords } from "./maintenance.js";
 import { setGlobalOptions } from "firebase-functions/v2";
@@ -968,4 +969,46 @@ export const getCommunityEventParticipants = onCall(readOptions, async (request)
 
 export const cleanupCostArtifacts = onSchedule({ schedule: "0 4 * * *", region: "europe-west1", timeZone: "Europe/Istanbul", maxInstances: 1, timeoutSeconds: 300 }, async () => {
   if (productionJobsEnabled()) await cleanupTechnicalRecords(db, storageBucket);
+});
+
+export const saveCommunityCoupon = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "saveCommunityCoupon", 10);
+  return saveCommunityCouponService(db, uid, request.data ?? {});
+});
+
+export const endCommunityCoupon = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "endCommunityCoupon", 10);
+  return endCommunityCouponService(db, uid, request.data ?? {});
+});
+
+export const listCommunityCoupons = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "listCommunityCoupons", 30);
+  return listCommunityCouponsService(db, uid, request.data ?? {});
+});
+
+export const reviewCommunityCoupon = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "reviewCommunityCoupon", 20);
+  return reviewCommunityCouponService(db, uid, request.data ?? {});
+});
+
+export const issueCommunityCouponCode = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "issueCommunityCouponCode", 20);
+  return issueCommunityCouponCodeService(db, uid, request.data ?? {});
+});
+
+export const redeemCommunityCouponCode = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "redeemCommunityCouponCode", 30);
+  return redeemCommunityCouponCodeService(db, uid, request.data ?? {});
+});
+
+export const listBusinessRedemptions = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "listBusinessRedemptions", 30);
+  return listBusinessRedemptionsService(db, uid);
 });

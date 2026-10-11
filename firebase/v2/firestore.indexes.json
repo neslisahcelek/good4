@@ -351,6 +351,14 @@
         { "fieldPath": "context", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "communityCoupons", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "communityId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "communityCouponRedemptions", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "organizationId", "order": "ASCENDING" }, { "fieldPath": "redeemedAt", "order": "DESCENDING" }]
     }
   ],
   "fieldOverrides": [

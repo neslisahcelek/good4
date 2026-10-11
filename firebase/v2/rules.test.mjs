@@ -28,7 +28,7 @@ before(async () => {
     projectId,
     firestore: {
       host: '127.0.0.1',
-      port: 8285,
+      port: Number(process.env.FIRESTORE_EMULATOR_HOST?.split(':').at(-1) ?? 8285),
       rules: await readFile(new URL('./firestore.rules', import.meta.url), 'utf8'),
     },
   });
@@ -466,4 +466,30 @@ test('notification inbox is self-readable and every mutation and endpoint is ser
   await assertFails(getDoc(doc(own, 'pushDevices/phone')));
   await assertFails(setDoc(doc(own, 'notificationJobs/job2'), { status: 'queued' }));
   await assertFails(getDoc(doc(own, 'notificationJobs/job')));
+});
+
+
+test('community coupons expose only published documents; private coupon collections deny even admins', async () => {
+  await seed('users/student-1', {role:'student',status:'active'});
+  await seed('users/admin-1', {role:'good4Admin',status:'active'});
+  await seed('communityCoupons/published', {status:'published'});
+  await seed('communityCoupons/pending', {status:'pending'});
+  const db = testEnv.authenticatedContext('student-1').firestore();
+  await assertSucceeds(getDoc(doc(db,'communityCoupons/published')));
+  await assertSucceeds(getDocs(query(collection(db,'communityCoupons'),where('status','==','published'))));
+  await assertFails(getDoc(doc(db,'communityCoupons/pending')));
+  await assertFails(getDocs(collection(db,'communityCoupons')));
+  await assertFails(setDoc(doc(db,'communityCoupons/new'),{status:'published'}));
+  await assertFails(updateDoc(doc(db,'communityCoupons/published'),{redemptionCount:0}));
+  await assertFails(deleteDoc(doc(db,'communityCoupons/published')));
+  await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(),'communityCoupons/published')));
+  for (const path of ['communityCouponCodes','communityCouponClaims','communityCouponRedemptions']) {
+    await seed(`${path}/private`,{studentId:'student-1'});
+    for (const uid of ['student-1','admin-1']) {
+      const client = testEnv.authenticatedContext(uid).firestore();
+      await assertFails(getDoc(doc(client,path,'private')));
+      await assertFails(getDocs(collection(client,path)));
+      await assertFails(setDoc(doc(client,path,'new'),{studentId:uid}));
+    }
+  }
 });

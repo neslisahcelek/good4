@@ -1,3 +1,4 @@
+import { communityCouponSummary } from "./communityCoupons.js";
 import {
   FieldPath,
   FieldValue,
@@ -123,6 +124,7 @@ export interface AdminDashboardResult {
   communities: AdminCommunitySummary[];
   legacyBusinesses: LegacyBusinessSummary[];
   pendingCoupons: PendingCouponSummary[];
+  pendingCommunityCoupons: ReturnType<typeof communityCouponSummary>[];
   feedback: FeedbackSummary[];
   audits: AuditSummary[];
   diningMenu: DiningMenuSummary | null;
@@ -526,6 +528,7 @@ export async function getAdminDashboardService(
     businesses,
     communities: v2Communities,
     legacyBusinesses,
+    pendingCommunityCoupons: (await database.collection("communityCoupons").where("status", "==", "pending").limit(200).get()).docs.map(communityCouponSummary),
     pendingCoupons: pendingCouponsNested.flat().sort((a, b) => a.expiresOn.localeCompare(b.expiresOn)),
     feedback,
     audits,

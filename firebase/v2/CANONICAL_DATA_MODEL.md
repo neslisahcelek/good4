@@ -55,6 +55,19 @@ These paths are the existing V2 target contract. Mobile migration to them is Pha
 
 The canonical naming is `campaignClaims`, `campaignCodes`, and `redemptions`; legacy `community_coupon_codes` and nested entry `claims` are not extended in V2.
 
+## Community coupons — separate V2 contract
+
+Community coupons use their own server-owned collections; the campaigns/claims/codes/redemptions paths above remain the suspended-meal contract.
+
+| Path | ID | Fields and access |
+| --- | --- | --- |
+| `communityCoupons` | Server-generated | `communityId`, `communityName`, `businessId`, `businessName`, `title`, `description`, `discountType` (`percentage/fixed/freeItem`), `discountValue`, `freeItem`, `startsAt/endsAt:Timestamp`, mandatory `totalLimit>=1`, optional `dailyLimit`, `redemptionCount`, `dailyRedemptionDay`, `dailyRedemptionCount`, `status` (`pending/published/rejected/ended`), `rejectionReason`, timestamps. Creator UID is retained only in server-only `auditLogs` (`communityCoupon.created`, `actorUid`); published coupon documents have no `createdBy` field. Signed-in clients can read published coupons only; all writes are callable-only. |
+| `communityCouponCodes` | `{businessId}_{fourDigits}` | `couponId`, `communityId`, `businessId`, `studentId`, `day`, `code`, `status`, `issuedAt`, `expiresAt`, optional redemption fields. No client reads/writes. |
+| `communityCouponClaims` | `{couponId}_{uid}_{yyyy-mm-dd}` | Daily issued/redeemed state. Calendar day is Europe/Istanbul; a code redeemed across midnight consumes the new day's claim. No client reads/writes. |
+| `communityCouponRedemptions` | Server-generated | Coupon/business/community references, discount/title snapshots, `studentId`, `redeemedBy`, `redeemedAt`. No client reads/writes; business history is a sanitized callable response. |
+
+Active students need no edu verification or following relationship. Codes are generated only at checkout, live for ten minutes, and reuse the student's live daily claim. Unexpired issued code collisions are scoped to the business. Total and daily redemption limits are checked transactionally both on issue and redemption. Failed-code throttling is shared by members of the same business. Managers create pending coupons and may edit pending/rejected ones; only Good4 admins publish/reject (with an audit log); managers may end their coupons. Account deletion removes student claims and codes and anonymizes retained redemption history.
+
 ## Media contract (design only)
 
 V2 Storage remains deny-all in Phase 1. No public upload permission was added. Proposed object paths are:
