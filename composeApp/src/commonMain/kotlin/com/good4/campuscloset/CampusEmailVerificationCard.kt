@@ -29,10 +29,7 @@ fun CampusEmailVerificationCard(
     onChangeEmail: () -> Unit,
     onCodeChange: (String) -> Unit,
     onConfirmCode: () -> Unit,
-    modifier: Modifier = Modifier,
-    title: String? = null,
-    readyText: String? = null,
-    afterVerifyText: String? = null
+    modifier: Modifier = Modifier
 ) {
     val busy = state.isSending || state.isConfirming
     Card(modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
@@ -42,10 +39,10 @@ fun CampusEmailVerificationCard(
             when {
                 state.verifiedEmail != null -> {
                     ClosetSectionHeading(stringResource(Res.string.campus_closet_e_postan_onaylandi), Icons.Outlined.School)
-                    Text(readyText ?: stringResource(Res.string.campus_closet_ilan_verebilirsin), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(Res.string.campus_email_verified_ready), color = MaterialTheme.colorScheme.primary)
                 }
                 state.sentTo == null -> {
-                    ClosetSectionHeading(title ?: stringResource(Res.string.campus_email_title), Icons.Outlined.School,
+                    ClosetSectionHeading(stringResource(Res.string.campus_email_title), Icons.Outlined.School,
                         stringResource(Res.string.campus_email_code_intro))
                     OutlinedTextField(
                         value = state.email, onValueChange = onEmailChange,
@@ -66,7 +63,6 @@ fun CampusEmailVerificationCard(
                 else -> {
                     ClosetSectionHeading(stringResource(Res.string.campus_email_code_title), Icons.Outlined.MarkEmailUnread)
                     Text(stringResource(Res.string.campus_email_code_sent_to, state.sentTo), color = TextSecondary)
-                    afterVerifyText?.let { Text(it) }
                     OutlinedTextField(
                         value = state.code, onValueChange = onCodeChange,
                         modifier = Modifier.fillMaxWidth(),

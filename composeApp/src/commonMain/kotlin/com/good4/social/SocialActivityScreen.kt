@@ -145,10 +145,7 @@ fun SocialActivityScreen(
                     onSendCode = eduViewModel::sendCode,
                     onChangeEmail = eduViewModel::changeEmail,
                     onCodeChange = eduViewModel::setCode,
-                    onConfirmCode = eduViewModel::confirmCode,
-                    title = stringResource(Res.string.social_verify_title),
-                    readyText = stringResource(Res.string.social_verify_ready),
-                    afterVerifyText = stringResource(Res.string.social_verify_after)
+                    onConfirmCode = eduViewModel::confirmCode
                 )
             }
         }

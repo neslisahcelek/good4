@@ -573,6 +573,7 @@
     <string name="campus_closet_gonder" formatted="false">Gönder</string>
     <string name="campus_closet_e_postan_onaylandi" formatted="false">E-postan onaylandı</string>
     <string name="campus_email_title" formatted="false">Okul e-postanı doğrula</string>
+    <string name="campus_email_verified_ready" formatted="false">Artık Kampüs Dolabı ve Sosyal’i kullanabilirsin.</string>
     <string name="campus_email_intro" formatted="false">İlan vermek, mesaj ve teklif göndermek için bir kez doğrulaman yeterli.</string>
     <string name="campus_email_send_link" formatted="false">Doğrulama bağlantısı gönder</string>
     <string name="campus_email_send_hint" formatted="false">Bağlantı okul e-postana Outlook'ta gelir ve 15 dakika geçerlidir.</string>
@@ -584,7 +585,6 @@
     <string name="campus_email_waiting" formatted="false">Doğrulama bekleniyor. Bağlantıyı açınca burası kendiliğinden güncellenir.</string>
     <string name="campus_closet_ilan_vermek_icin_okul_e_postani_dogrula" formatted="false">İlan vermek için okul e-postanı doğrula</string>
     <string name="campus_closet_dogrulama_e_postana_outlook_uzerinden_ulasabilirsin_gereksiz_e_posta" formatted="false">Doğrulama e-postana Outlook üzerinden ulaşabilirsin. Gereksiz E-posta/Spam klasörünü kontrol etmeyi unutma.</string>
-    <string name="campus_closet_ilan_verebilirsin" formatted="false">İlan verebilirsin.</string>
     <string name="campus_closet_ogrenci_numaran" formatted="false">Öğrenci numaran</string>
     <string name="campus_closet_numaran" formatted="false">Numaran</string>
     <string name="campus_closet_tekrar_dene_sn">Tekrar dene (%1$s)</string>
@@ -1142,10 +1142,6 @@
     <string name="social_withdraw_request">İsteği geri çek</string>
     <string name="social_request_note_hint">Kendini kısaca tanıt (isteğe bağlı)</string>
     <string name="social_join">Katılmak istiyorum</string>
-    <string name="social_verify_title">Katılmak için okul e-postanı doğrula</string>
-    <string name="social_verify_create_title">Etkinlik açmak için okul e-postanı doğrula</string>
-    <string name="social_verify_ready">Artık etkinliklere katılabilirsin.</string>
-    <string name="social_verify_after">Kodu doğrulayınca katılma isteğin gönderilir. Bir kez doğrulaman yeter, Kampüs Dolabı'nda da geçerli olur.</string>
     <string name="social_rules_title">Sosyal Etkinlik kuralları</string>
     <string name="social_rules_intro">Etkinlikler yalnızca okul e-postasını doğrulayan öğrencilere açıktır. Buluşmadan önce bunları oku:</string>
     <string name="social_rule_public_places">Kampüste ya da kalabalık, herkese açık bir yerde buluş.</string>
