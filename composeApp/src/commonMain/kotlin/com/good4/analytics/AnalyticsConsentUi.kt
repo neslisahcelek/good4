@@ -20,9 +20,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -72,6 +74,7 @@ import good4.composeapp.generated.resources.analytics_preference_error
 import good4.composeapp.generated.resources.analytics_privacy_link
 import good4.composeapp.generated.resources.analytics_settings_description
 import good4.composeapp.generated.resources.analytics_settings_title
+import good4.composeapp.generated.resources.notification_close
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -103,16 +106,20 @@ class AnalyticsConsentViewModel(private val tracker: AnalyticsTracker) : ViewMod
 }
 
 @Composable
-fun AnalyticsConsentPrompt(viewModel: AnalyticsConsentViewModel = koinViewModel()) {
+fun AnalyticsConsentPrompt(
+    viewModel: AnalyticsConsentViewModel = koinViewModel(),
+    show: Boolean = true,
+    onDismissed: (() -> Unit)? = null
+) {
     val consent by viewModel.consent.collectAsStateWithLifecycle()
     val dismissed by viewModel.promptDismissed.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val detailsExpanded by viewModel.detailsExpanded.collectAsStateWithLifecycle()
-    if (consent == AnalyticsConsent.UNKNOWN && !dismissed) {
+    if (show && consent == AnalyticsConsent.UNKNOWN && (onDismissed != null || !dismissed)) {
         com.good4.review.ReviewModalBlocker(true)
         AnalyticsConsentDialog(
             onChoose = viewModel::choose,
-            onDismiss = viewModel::dismiss,
+            onDismiss = { if (onDismissed != null) onDismissed() else viewModel.dismiss() },
             error = error?.asString(),
             detailsExpanded = detailsExpanded,
             onToggleDetails = viewModel::toggleDetails
@@ -168,14 +175,19 @@ private fun AnalyticsConsentCard(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = stringResource(Res.string.analytics_consent_title),
-                color = TextPrimary,
-                fontSize = 22.sp,
-                lineHeight = 28.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.semantics { heading() }
-            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(Res.string.analytics_consent_title),
+                    color = TextPrimary,
+                    fontSize = 22.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f).semantics { heading() }
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Filled.Close, stringResource(Res.string.notification_close), tint = TextSecondary)
+                }
+            }
             Text(
                 text = stringResource(Res.string.analytics_consent_description),
                 color = TextSecondary,

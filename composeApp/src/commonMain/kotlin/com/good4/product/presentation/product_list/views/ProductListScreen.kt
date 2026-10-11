@@ -142,6 +142,7 @@ private fun defaultHomeShortcuts(): List<HomeShortcut> = HomeShortcut.entries.fi
 @Composable
 fun ProductListScreenRoot(
     communityManager: Boolean = false,
+    permissionSuggestion: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: ProductListViewModel = koinViewModel(),
     onProfileClick: (() -> Unit)? = null,
@@ -213,6 +214,7 @@ fun ProductListScreenRoot(
 
     ProductListScreen(
         communityManager = communityManager,
+        permissionSuggestion = permissionSuggestion,
         modifier = modifier,
         state = state,
         diningMenuState = diningMenuState,
@@ -241,6 +243,7 @@ fun ProductListScreenRoot(
 @Composable
 fun ProductListScreen(
     communityManager: Boolean = false,
+    permissionSuggestion: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
     state: ProductListState,
     diningMenuState: AkdenizDiningMenuState = AkdenizDiningMenuState(),
@@ -310,11 +313,15 @@ fun ProductListScreen(
                             }
                         }
 
-                        item {
+                        item(key = "campus_summary") {
                             CampusSummaryCards(
                                 diningMenuState = diningMenuState,
                                 onDailyMenuClick = onDailyMenuClick
                             )
+                        }
+
+                        permissionSuggestion?.let { suggestion ->
+                            item(key = "permission_suggestion") { suggestion() }
                         }
 
                         if (state.homeBanners.isNotEmpty()) {

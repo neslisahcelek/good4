@@ -34,6 +34,7 @@ expect suspend fun pushSnapshot(): PushSnapshot
 expect suspend fun clearPushRegistration(): Boolean
 expect fun notificationEducationShown(): Boolean
 expect fun saveNotificationEducationShown()
+expect suspend fun notificationPermissionGranted(): Boolean
 interface NotificationPermissionLauncher {
     fun request(onComplete: () -> Unit)
     fun openSettings()
@@ -62,8 +63,6 @@ object PushSignals {
     val revision = _revision.asStateFlow()
     private val _pendingOpen = MutableStateFlow<NotificationOpen?>(null)
     val pendingOpen = _pendingOpen.asStateFlow()
-    private val _education = MutableStateFlow(false)
-    val education = _education.asStateFlow()
     fun refresh() { _revision.update { it + 1 } }
     fun opened(notificationId: String, recipientUid: String) {
         if (notificationId.matches(Regex("[A-Za-z0-9_-]{1,256}")) && recipientUid.isNotBlank()) {
@@ -71,10 +70,6 @@ object PushSignals {
         }
     }
     fun consumeOpen() { _pendingOpen.update { null } }
-    fun suggestPermission() {
-        if (AppEnvironment.firebaseProjectId == "good4tr-v2" && !notificationEducationShown()) _education.update { true }
-    }
-    fun dismissEducation() { saveNotificationEducationShown(); _education.update { false } }
 }
 object NotificationInbox {
     private val _hasUnseen = MutableStateFlow(false)

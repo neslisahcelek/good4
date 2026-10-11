@@ -79,14 +79,16 @@ export async function unregisterPushDeviceService(database: Firestore, uid: stri
 }
 
 export async function updateNotificationPreferencesService(database: Firestore, uid: string, input: Record<string, unknown>) {
-  if (["eventUpdates", "reminders", "announcements"].some((key) => typeof input[key] !== "boolean")) {
+  const keys = ["eventUpdates", "reminders", "announcements"] as const;
+  const supplied = keys.filter((key) => Object.prototype.hasOwnProperty.call(input, key));
+  if (supplied.length === 0 || supplied.some((key) => typeof input[key] !== "boolean")
+    || Object.keys(input).some((key) => !keys.includes(key as typeof keys[number]))) {
     throw new HttpsError("invalid-argument", "PREFERENCES_INVALID");
   }
   await database.runTransaction(async (transaction) => {
     await requireActiveActor(database, transaction, uid);
-    transaction.set(database.doc(`users/${uid}/notificationPreferences/default`), {
-      eventUpdates: input.eventUpdates, reminders: input.reminders, announcements: input.announcements,
-    });
+    transaction.set(database.doc(`users/${uid}/notificationPreferences/default`),
+      Object.fromEntries(supplied.map((key) => [key, input[key]])), { merge: true });
   });
   return { saved: true };
 }

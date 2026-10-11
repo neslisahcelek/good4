@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import com.good4.core.domain.Result
 import com.good4.core.network.callV2Function
 import com.good4.core.util.AppEnvironment
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
@@ -23,6 +24,7 @@ interface NotificationDataSource {
     suspend fun notification(id: String): StudentNotification?
     suspend fun preferences(): NotificationPreferencesDto
     suspend fun savePreferences(value: NotificationPreferencesDto)
+    suspend fun enableAnnouncements()
     suspend fun markRead(ids: Set<String>)
     suspend fun syncDevice(): PushSnapshot
 }
@@ -62,13 +64,29 @@ class NotificationRepository(private val store: FirestoreRepository, private val
         if (!supported) return NotificationPreferencesDto()
         return when (val result = store.getDocument("users/$uid/notificationPreferences", "default", NotificationPreferencesDto::class)) {
             is Result.Success -> result.data
-            is Result.Error -> NotificationPreferencesDto()
+            is Result.Error -> if (result.error.message == "Document not found") NotificationPreferencesDto()
+                else error("notification_preferences_load_failed")
         }
     }
     override suspend fun savePreferences(value: NotificationPreferencesDto) {
         callV2Function("updateNotificationPreferences", buildJsonObject {
             put("eventUpdates", value.eventUpdates); put("reminders", value.reminders); put("announcements", value.announcements)
         })
+    }
+    override suspend fun enableAnnouncements() {
+        val uid = currentUserId ?: error("notification_auth_required")
+        try {
+            callV2Function("updateNotificationPreferences", buildJsonObject { put("announcements", true) })
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            // Earlier server releases require all three fields. Preserve the student's other
+            // preferences, and retry only a definite schema rejection, never a transport failure.
+            if (failure.message != "PREFERENCES_INVALID") throw failure
+            val current = preferences()
+            check(currentUserId == uid) { "notification_session_changed" }
+            savePreferences(current.copy(announcements = true))
+        }
     }
     override suspend fun markRead(ids: Set<String>) {
         if (!supported) return

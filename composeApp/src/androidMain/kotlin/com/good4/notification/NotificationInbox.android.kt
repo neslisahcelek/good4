@@ -1,20 +1,19 @@
 package com.good4.notification
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import com.good4.R
 import kotlinx.coroutines.tasks.await
@@ -31,13 +30,16 @@ actual fun pushInstallation(): PushInstallation {
 }
 actual fun notificationEducationShown() = preferences().getBoolean("education_shown", false)
 actual fun saveNotificationEducationShown() { preferences().edit().putBoolean("education_shown", true).apply() }
-private fun permitted(context: Context) = NotificationManagerCompat.from(context).areNotificationsEnabled() &&
-    (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
+actual fun loadHomePermissionPromptHistory(): String? = preferences().getString("home_permission_prompts_v1", null)
+actual fun saveHomePermissionPromptHistory(value: String) {
+    check(preferences().edit().putString("home_permission_prompts_v1", value).commit())
+}
+actual suspend fun notificationPermissionGranted(): Boolean = androidNotificationPermissionGranted(context())
 actual suspend fun pushSnapshot(): PushSnapshot {
     createNotificationChannels(context())
     val messaging = FirebaseMessaging.getInstance()
     messaging.isAutoInitEnabled = true
-    return PushSnapshot(runCatching { messaging.token.await() }.getOrDefault(""), permitted(context()))
+    return PushSnapshot(runCatching { messaging.token.await() }.getOrDefault(""), androidNotificationPermissionGranted(context()))
 }
 actual suspend fun clearPushRegistration(): Boolean = runCatching {
     val messaging = FirebaseMessaging.getInstance()
@@ -49,15 +51,29 @@ actual suspend fun clearPushRegistration(): Boolean = runCatching {
 @Composable
 actual fun rememberNotificationPermissionLauncher(): NotificationPermissionLauncher {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { PushSignals.refresh() }
+    var pendingComplete by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        PushSignals.refresh()
+        val complete = pendingComplete
+        pendingComplete = null
+        complete?.invoke()
+    }
     return remember(context, launcher) { object : NotificationPermissionLauncher {
         override fun request(onComplete: () -> Unit) {
-            if (Build.VERSION.SDK_INT >= 33 && !permitted(context)) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            else PushSignals.refresh()
-            onComplete()
+            if (androidNotificationPermissionGranted(context)) { PushSignals.refresh(); onComplete(); return }
+            pendingComplete = onComplete
+            try {
+                if (!requestAndroidNotificationPermission(context) { launcher.launch(it) }) {
+                    pendingComplete = null
+                    onComplete()
+                }
+            } catch (failure: Exception) {
+                pendingComplete = null
+                throw failure
+            }
         }
         override fun openSettings() {
-            context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+            openAndroidNotificationSettings(context)
         }
     } }
 }

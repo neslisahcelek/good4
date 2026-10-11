@@ -7,7 +7,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.good4.notification.NotificationsViewModel
 import com.good4.notification.PushSignals
-import com.good4.notification.NotificationPermissionEducation
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -134,14 +133,9 @@ fun Good4NavGraph(
         notificationsViewModel.setForeground(true)
         onPauseOrDispose { notificationsViewModel.setForeground(false) }
     }
-    NotificationPermissionEducation(onEnabled = notificationsViewModel::enableAnnouncements)
     val entry by navController.currentBackStackEntryAsState()
     val pendingOpen by PushSignals.pendingOpen.collectAsStateWithLifecycle()
     val destination = entry?.destination
-    // Ask once, on the student home after sign-in, instead of only when following a community.
-    LaunchedEffect(destination?.hasRoute<Route.StudentHome>()) {
-        if (destination?.hasRoute<Route.StudentHome>() == true) com.good4.notification.PushSignals.suggestPermission()
-    }
     val ready = destination != null && !destination.hasRoute<Route.Splash>() &&
         !destination.hasRoute<Route.ForceUpdate>() &&
         !destination.hasRoute<Route.Login>() && !destination.hasRoute<Route.SessionRestore>() &&

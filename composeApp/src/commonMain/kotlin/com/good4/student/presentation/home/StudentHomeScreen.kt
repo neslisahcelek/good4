@@ -77,7 +77,6 @@ fun StudentHomeScreenRoot(
     onNavigateToSocial: () -> Unit = {},
     onNavigateToEditHome: (Boolean) -> Unit = {}
 ) {
-    com.good4.analytics.AnalyticsConsentPrompt()
     val analytics: AnalyticsInteractionViewModel = koinViewModel()
     val navItems = listOf(
         BottomNavItem(
@@ -95,6 +94,9 @@ fun StudentHomeScreenRoot(
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     var dailyMenuMeal by rememberSaveable { mutableStateOf(DailyMeal.CAFETERIA) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
+    val permissionSuggestion = com.good4.notification.rememberHomePermissionSuggestionCard(
+        enabled = selectedItemIndex == 0 && !menuOpen
+    )
     var menuInitialShortcutId by rememberSaveable { mutableStateOf<String?>(null) }
     var editHomeRequested by remember { mutableStateOf(false) }
     val layoutViewModel: HomeLayoutViewModel = koinViewModel()
@@ -228,6 +230,7 @@ fun StudentHomeScreenRoot(
                 )
                 0 -> {
                     ProductListScreenRoot(
+                        permissionSuggestion = permissionSuggestion,
                         communityManager = communityState.access.active && communityState.access.communityIds.isNotEmpty(),
                         viewModel = productListViewModel,
                         homeShortcuts = layoutState.layout.visible.mapNotNull { id -> layoutState.shortcuts.firstOrNull { it.id == id } },

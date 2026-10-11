@@ -46,6 +46,8 @@ import org.koin.dsl.module
 expect val platformModule: org.koin.core.module.Module
 
 val commonModule = module {
+    single { com.good4.notification.HomePermissionPromptStore() }
+    viewModel { com.good4.notification.HomePermissionSuggestionsViewModel(get(), get(), get<com.good4.notification.NotificationRepository>()) }
     viewModel { com.good4.analytics.AnalyticsConsentViewModel(get()) }
     viewModel { com.good4.analytics.AnalyticsInteractionViewModel(get()) }
     viewModel { com.good4.update.AppUpdateViewModel(get<AppConfigRepository>()) }

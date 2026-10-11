@@ -185,7 +185,7 @@ yer alabilir.
 
 Firebase ve Google altyapıları hizmetin sunulması sırasında IP adresi, user-agent ve benzeri teknik bağlantı veya güvenlik bilgilerini işleyebilir. Good4 uygulama kodu bu IP adreslerini kullanıcı profiline veya Firestore kullanıcı kayıtlarına ayrıca kaydetmemektedir.
 
-Mevcut Good4 sürümünde Firebase Analytics, Firebase Crashlytics, reklam SDK'ları veya reklam kimliğine dayalı takip kullanıldığı tespit edilmemiştir. Bu durum değişirse ilgili gizlilik metinleri ve mağaza beyanları güncellenir.
+İsteğe bağlı kullanım analitiği yalnızca izin verdiğinizde Firebase Analytics üzerinden çalışır. Özellik kullanımını anlamak için tıklama ve işlem sonucu olayları; uygulama kurulumu/oturumu, uygulama sürümü, cihaz ve işletim sistemi bilgileri ile IP adresinden türetilebilen yaklaşık bölge bilgisi işlenebilir. Analytics olaylarına e-posta, telefon, Firebase kullanıcı kimliği, içerik kimlikleri, mesajlar, arama metinleri veya doğrulama/kupon kodları eklenmez. Reklam kimliği toplama ve reklam kişiselleştirme kapalıdır. İzni Hesap Ayarları'ndan geri alabilirsiniz; geri alma yeni toplamayı durdurur ve cihazdaki Analytics verisini sıfırlar, daha önce sunucuya ulaşmış verileri geriye dönük silmez. Firebase Crashlytics kullanılmaz.
 
 Good4 ayrıca özelliklerin çalıştırılması amacıyla harita, hava durumu veya kullanıcının seçimiyle açılan dış hizmetlerden yararlanabilir. Bu hizmetlere yapılan bağlantılar sırasında ilgili sağlayıcı bağlantının teknik bilgilerini işleyebilir.
 

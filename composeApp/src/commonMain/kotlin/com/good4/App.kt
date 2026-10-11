@@ -29,9 +29,11 @@ fun App(
     onSplashReady: (() -> Unit)? = null
 ) {
     val reviewCoordinator: StoreReviewCoordinator = koinInject()
+    val permissionPrompts: com.good4.notification.HomePermissionPromptStore = koinInject()
     LifecycleResumeEffect(reviewCoordinator) {
+        permissionPrompts.onForeground()
         reviewCoordinator.onForeground()
-        onPauseOrDispose { reviewCoordinator.onBackground() }
+        onPauseOrDispose { reviewCoordinator.onBackground(); permissionPrompts.onBackground() }
     }
     var isDarkMode by remember { mutableStateOf(loadDarkModePreference()) }
     Good4Theme(darkTheme = isDarkMode) {

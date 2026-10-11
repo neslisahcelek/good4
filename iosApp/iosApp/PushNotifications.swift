@@ -66,10 +66,20 @@ private final class Good4NativePushLauncher: NSObject, NativePushLauncher {
         }
     }
     func requestPermission(callback: NativePushCallback) {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in
-            DispatchQueue.main.async {
-                UIApplication.shared.registerForRemoteNotifications()
-                self.snapshot(callback: callback)
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            if settings.authorizationStatus == .denied {
+                DispatchQueue.main.async {
+                    self.openAppNotificationSettings()
+                    self.snapshot(callback: callback)
+                }
+            } else {
+                center.requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in
+                    DispatchQueue.main.async {
+                        UIApplication.shared.registerForRemoteNotifications()
+                        self.snapshot(callback: callback)
+                    }
+                }
             }
         }
     }

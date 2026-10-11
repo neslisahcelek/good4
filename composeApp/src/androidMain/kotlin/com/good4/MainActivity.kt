@@ -7,27 +7,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import android.provider.Settings
 import com.good4.notification.AndroidCampusPush
 import com.good4.notification.CampusPushNotifications
+import com.good4.notification.requestAndroidNotificationPermission
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.good4.navigation.Route
 
 class MainActivity : ComponentActivity() {
     private val pushPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { AndroidCampusPush.refresh() }
     private val requestPushPermission: () -> Unit = {
-        val preferences = getSharedPreferences("campus_push", MODE_PRIVATE)
-        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-            && (!preferences.getBoolean("permission_asked", false) || shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))) {
-            preferences.edit().putBoolean("permission_asked", true).apply()
-            pushPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
-        }
+        requestAndroidNotificationPermission(this) { pushPermission.launch(it) }
     }
     companion object {
         private const val SPLASH_HARD_CAP_MS = 2_000L
