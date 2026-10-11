@@ -267,12 +267,20 @@ async function deliverToUser(database: Firestore, jobId: string, uid: string, jo
         data: { notificationId: jobId, recipientUid: uid, eventId: job.eventId, organizationId: job.organizationId, kind: job.kind } });
     } catch (error) {
       const code = (error as { code?: string }).code;
-      if (!["messaging/registration-token-not-registered", "messaging/invalid-registration-token"].includes(code ?? "")) throw error;
-      outcome = "failed";
-      await database.runTransaction(async (transaction) => {
-        const current = await transaction.get(device.ref);
-        if (current.get("uid") === uid && current.get("token") === device.get("token")) transaction.update(device.ref, { token: "", permission: false });
-      });
+      // A broken APNs/FCM project credential fails this device only; retrying cannot fix it, and
+      // throwing would stop every other recipient (Android included) on the page.
+      if (code === "messaging/third-party-auth-error") {
+        console.error(`push credential rejected for ${device.get("platform") ?? "unknown"} device`);
+        outcome = "failed";
+      } else if (!["messaging/registration-token-not-registered", "messaging/invalid-registration-token"].includes(code ?? "")) {
+        throw error;
+      } else {
+        outcome = "failed";
+        await database.runTransaction(async (transaction) => {
+          const current = await transaction.get(device.ref);
+          if (current.get("uid") === uid && current.get("token") === device.get("token")) transaction.update(device.ref, { token: "", permission: false });
+        });
+      }
     }
     await database.runTransaction(async (transaction) => {
       const current = await transaction.get(receipt);

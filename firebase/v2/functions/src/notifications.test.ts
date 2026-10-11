@@ -144,6 +144,24 @@ test("invalid endpoints are retired; other devices remain usable and read flags 
   assert.ok((await db.doc("users/student/notifications/multi").get()).get("readAt") > 0);
 });
 
+test("a rejected push credential fails only that device and the job still completes", async () => {
+  await registerPushDeviceService(db, "student", { ...device, platform: "ios" });
+  await registerPushDeviceService(db, "student", { ...device, installationId: "android-phone", token: "android-token" });
+  await makeJob("apns", { audience: "self", actorUid: "student", test: true });
+  const sent: string[] = [];
+  await processNotificationPage(db, "apns", async (token) => {
+    if (token === "token") throw Object.assign(new Error("Invalid APNs credential."), { code: "messaging/third-party-auth-error" });
+    sent.push(token);
+  });
+  const job = await db.doc("notificationJobs/apns").get();
+  assert.deepEqual(sent, ["android-token"]);
+  assert.equal(job.get("status"), "complete");
+  assert.equal(job.get("accepted"), 1);
+  assert.equal(job.get("failed"), 1);
+  // The device keeps its token: the credential, not the phone, was the problem.
+  assert.equal((await db.doc("pushDevices/phone").get()).get("token"), "token");
+});
+
 test("paged audiences and transient retries preserve inbox and completed endpoint receipts", async () => {
   const batch = db.batch();
   for (let i = 0; i < 55; i++) batch.set(db.doc(`users/recipient-${String(i).padStart(2, "0")}`), { status: "active", role: "student", mobileNotifications: true });
