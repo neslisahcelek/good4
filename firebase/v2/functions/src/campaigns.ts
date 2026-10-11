@@ -14,7 +14,10 @@ import {
   recordFailedAttempt,
 } from "./rateLimit.js";
 
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// Digits only, so businesses type codes on a numeric keypad. Codes live 10 minutes and failed
+// redemptions are throttled, which keeps 8 digits well out of guessing range. normalizeCampaignCode
+// still accepts letters for alphanumeric codes issued before this change.
+const CODE_ALPHABET = "0123456789";
 const CODE_LENGTH = 8;
 const CODE_VALIDITY_MINUTES = 10;
 

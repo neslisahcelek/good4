@@ -65,6 +65,7 @@ test("a student can issue and a business staff member can redeem a code", async 
     campaignId: "campaign-1",
   });
   assert.equal(issued.outcome, "issued");
+  assert.match(issued.code ?? "", /^[0-9]{8}$/, "codes are 8 digits");
   assert.ok(issued.code);
 
   const redeemed = await redeemCampaignCodeService(db, "business-1", {
