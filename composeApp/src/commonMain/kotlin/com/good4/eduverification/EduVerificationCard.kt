@@ -43,12 +43,12 @@ import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.campuscloset.minutesAndSeconds
 
-/** Shown on Askıda Yemek and Kampüs Dolabı until the student proves a .edu.tr address. */
+/** Shown on Askıda Yemek until the student proves an @ogr.akdeniz.edu.tr address. */
 @Composable
 fun EduVerificationCard(
     state: EduVerificationState,
     title: String = "Askıda Yemek üniversite öğrencilerine özel",
-    description: String = "Rezervasyon yapıp kod alabilmek için üniversite (.edu.tr) e-posta adresinizi doğrulamanız gerekiyor.",
+    description: String = "Rezervasyon yapıp kod alabilmek için okul e-postanızı (@ogr.akdeniz.edu.tr) doğrulamanız gerekiyor.",
     optInLabel: String = "Edu mailimi aktif ederek Askıda Yemek'ten faydalanmak istiyorum",
     onOptInChange: (Boolean) -> Unit,
     onEmailChange: (String) -> Unit,
@@ -115,7 +115,7 @@ fun EduVerificationCard(
                     value = state.email,
                     onValueChange = onEmailChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(".edu.tr e-posta adresiniz") },
+                    label = { Text("Okul e-posta adresiniz") },
                     placeholder = { Text("ad.soyad@ogr.akdeniz.edu.tr") },
                     singleLine = true,
                     enabled = !state.isSending,

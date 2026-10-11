@@ -61,7 +61,7 @@ test("a student verifies a .edu.tr address with the e-mailed code", async () => 
   assert.equal((await db.doc(`eduVerifications/${uid}`).get()).get("codeHash"), undefined);
 });
 
-test("non .edu.tr addresses are rejected", async () => {
+test("only @ogr.akdeniz.edu.tr addresses are accepted", async () => {
   await assert.rejects(
     requestEduVerificationService(db, uid, { email: "can@gmail.com" }),
     (error: { message?: string }) => error.message === "EDU_EMAIL_INVALID",
@@ -70,6 +70,12 @@ test("non .edu.tr addresses are rejected", async () => {
     requestEduVerificationService(db, uid, { email: "can@edu.tr.example.com" }),
     (error: { message?: string }) => error.message === "EDU_EMAIL_INVALID",
   );
+  for (const email of ["can@akdeniz.edu.tr", "can@ogr.ege.edu.tr", "can@ogr.akdeniz.edu.tr.example.com"]) {
+    await assert.rejects(
+      requestEduVerificationService(db, uid, { email }),
+      (error: { message?: string }) => error.message === "EDU_EMAIL_INVALID",
+    );
+  }
 });
 
 test("wrong codes are counted and lock the request after five attempts", async () => {
@@ -130,10 +136,10 @@ test("only student accounts can request verification", async () => {
   );
 });
 
-test("a verified .edu.tr sign-in counts as a verified university address", async () => {
+test("a verified @ogr.akdeniz.edu.tr sign-in counts as a verified university address", async () => {
   await ensureStudentProfileService(db, {
     uid: "edu-google",
-    email: "Ada@Akdeniz.edu.tr",
+    email: "Ada@OGR.Akdeniz.edu.tr",
     emailVerified: true,
     providers: ["google.com"],
   }, {
@@ -142,8 +148,8 @@ test("a verified .edu.tr sign-in counts as a verified university address", async
   });
   const user = await db.doc("users/edu-google").get();
   assert.equal(user.get("eduVerified"), true);
-  assert.equal(user.get("eduEmail"), "ada@akdeniz.edu.tr");
-  assert.equal((await db.doc(eduEmailClaimPath("ada@akdeniz.edu.tr")).get()).get("uid"), "edu-google");
+  assert.equal(user.get("eduEmail"), "ada@ogr.akdeniz.edu.tr");
+  assert.equal((await db.doc(eduEmailClaimPath("ada@ogr.akdeniz.edu.tr")).get()).get("uid"), "edu-google");
 });
 
 test("a Gmail sign-in stays a student without suspended-meal eligibility", async () => {
@@ -212,8 +218,8 @@ test("campus request and confirmation reject other .edu.tr domains on the server
     await assert.rejects(requestCampusEmailCodeService(db, uid, { email }, now, deps));
   }
   assert.equal(deliveries.length, 0);
-  await requestEduVerificationService(db, uid, { email: "can@other.edu.tr" }, now);
-  await assert.rejects(confirmCampusEmailCodeService(db, uid, { code: await sentCode() }, now), /CAMPUS_EMAIL_INVALID/);
+  // The suspended-meal flow no longer accepts another domain either, so it cannot be used to sneak one in.
+  await assert.rejects(requestEduVerificationService(db, uid, { email: "can@other.edu.tr" }, now), /EDU_EMAIL_INVALID/);
   assert.notEqual((await db.doc(`users/${uid}`).get()).get("eduVerified"), true);
 });
 

@@ -209,10 +209,16 @@ test("expired codes cannot be redeemed", async () => {
   assert.equal(code.get("status"), "expired");
 });
 
-test("students without a verified .edu.tr address cannot issue suspended-meal codes", async () => {
+test("students without a verified @ogr.akdeniz.edu.tr address cannot issue suspended-meal codes", async () => {
   await seedBase();
   await assert.rejects(
     issueCampaignCodeService(db, "gmail-student", { campaignId: "campaign-1" }),
+    (error: { message?: string }) => error.message === "EDU_VERIFICATION_REQUIRED",
+  );
+  // An address verified on another university's domain no longer counts.
+  await db.doc("users/student-1").update({ eduEmail: "one@ogr.ege.edu.tr" });
+  await assert.rejects(
+    issueCampaignCodeService(db, "student-1", { campaignId: "campaign-1" }),
     (error: { message?: string }) => error.message === "EDU_VERIFICATION_REQUIRED",
   );
   const claims = await db.collection("campaignClaims").get();

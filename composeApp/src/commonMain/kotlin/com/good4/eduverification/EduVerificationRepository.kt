@@ -72,8 +72,8 @@ class EduVerificationRepository(
 }
 
 internal suspend fun eduVerificationErrorMessage(error: Throwable): String = when (error.message) {
-    "EDU_EMAIL_REQUIRED", "EDU_EMAIL_INVALID" -> "Geçerli bir .edu.tr e-posta adresi girin."
-    "EDU_EMAIL_IN_USE" -> "Bu .edu.tr adresi başka bir Good4 hesabıyla doğrulanmış."
+    "EDU_EMAIL_REQUIRED", "EDU_EMAIL_INVALID" -> "Yalnızca @ogr.akdeniz.edu.tr adresleri kabul edilir."
+    "EDU_EMAIL_IN_USE" -> "Bu okul e-postası başka bir Good4 hesabıyla doğrulanmış."
     "EDU_CODE_RESEND_TOO_SOON" -> "Yeni kod istemeden önce biraz bekleyin."
     "EDU_CODE_SEND_LIMIT" -> "Çok fazla kod istendi. Bir saat sonra tekrar deneyin."
     "EDU_CODE_RECIPIENT_LIMIT" -> getString(Res.string.campus_email_code_recipient_limit)

@@ -75,8 +75,8 @@ class EduVerificationViewModel(
         val snapshot = _state.value
         if (snapshot.isSending || snapshot.resendSeconds > 0) return
         val email = snapshot.email.trim()
-        if (!email.lowercase().endsWith(".edu.tr") && !email.lowercase().endsWith("@edu.tr")) {
-            _state.update { it.copy(errorMessage = "Geçerli bir .edu.tr e-posta adresi girin.") }
+        if (!email.trim().lowercase().endsWith("@ogr.akdeniz.edu.tr")) {
+            _state.update { it.copy(errorMessage = "Yalnızca @ogr.akdeniz.edu.tr adresleri kabul edilir.") }
             return
         }
         viewModelScope.launch {

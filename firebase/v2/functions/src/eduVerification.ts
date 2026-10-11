@@ -23,7 +23,8 @@ const MAX_SENDS_PER_ACCOUNT_DAY = 10;
 const MAX_SENDS_PER_RECIPIENT_HOUR = 3;
 const MAX_SENDS_TOTAL_DAY = 250;
 
-const EDU_EMAIL_PATTERN = /^[^\s@/]+@(?:[a-z0-9-]+\.)*edu\.tr$/;
+// Only Akdeniz student addresses: Askıda Yemek, Kampüs Dolabı and Sosyal share one verification.
+const EDU_EMAIL_PATTERN = /^[^\s@/<>]+@ogr\.akdeniz\.edu\.tr$/;
 
 export function isEduEmail(email: string): boolean {
   return EDU_EMAIL_PATTERN.test(email.trim().toLowerCase());
@@ -62,8 +63,8 @@ export interface EduVerificationDeps {
   send: VerificationEmailSender;
 }
 
-// A server-selected scope, never a trusted client boolean. Keep general .edu.tr
-// verification for suspended meals and enforce the campus domain in both steps.
+// A server-selected scope, never a trusted client boolean. Both scopes accept only the
+// campus domain now; the explicit check keeps the campus error code for the campus flow.
 function requireScope(email: string, campus: boolean): void {
   if (campus && !/^[^\s@/<>]+@ogr\.akdeniz\.edu\.tr$/.test(email)) {
     throw new HttpsError("invalid-argument", "CAMPUS_EMAIL_INVALID");
