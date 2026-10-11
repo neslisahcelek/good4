@@ -463,8 +463,8 @@
     <string name="notification_close">Kapat</string>
     <string name="notification_open_event">Etkinliği aç</string>
     <string name="notification_open_ticket">Etkinliği ve bileti aç</string>
-    <string name="notification_permission_title">Etkinliklerden haberdar ol</string>
-    <string name="notification_permission_body">Takip ettiğin toplulukların yeni etkinliklerini, etkinlik değişikliklerini ve kayıtlı etkinliklerinin hatırlatmalarını telefonunda görmek ister misin?</string>
+    <string name="notification_permission_title">Bildirimleri açalım mı?</string>
+    <string name="notification_permission_body">Takip ettiğin toplulukların yeni etkinlikleri, kayıtlı olduğun etkinliklerin hatırlatmaları ve günün menüsü gibi Good4 duyuruları telefonuna gelsin. Hangilerini alacağını Bildirimler ekranından istediğin zaman değiştirebilirsin.</string>
     <string name="notification_enable">Bildirimleri aç</string>
     <string name="notification_later">Daha sonra</string>
     <string name="community_load_more">Daha fazla etkinlik yükle</string>

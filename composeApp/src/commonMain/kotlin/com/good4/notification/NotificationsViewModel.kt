@@ -157,6 +157,12 @@ class NotificationsViewModel(private val repository: NotificationDataSource) : V
         } catch (e: CancellationException) { throw e }
         catch (_: Exception) { if (repository.currentUserId == uid) mutable.update { it.copy(error = UiText.StringResourceId(Res.string.notification_save_failed)) } }
     }
+    /** "Bildirimleri aç" in the permission dialog is the student's opt-in to Good4 announcements too. */
+    fun enableAnnouncements() {
+        val current = mutable.value.preferences
+        if (!current.announcements) savePreferences(current.copy(announcements = true))
+    }
+
     fun savePreferences(value: NotificationPreferencesDto) {
         if (mutable.value.saving) return
         val uid = repository.currentUserId

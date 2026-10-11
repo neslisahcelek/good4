@@ -212,14 +212,14 @@ private fun PreferenceRow(title: String, description: String, checked: Boolean, 
 }
 
 @Composable
-fun NotificationPermissionEducation() {
+fun NotificationPermissionEducation(onEnabled: () -> Unit = {}) {
     val requested by PushSignals.education.collectAsStateWithLifecycle()
     val launcher = rememberNotificationPermissionLauncher()
     if (requested) AlertDialog(
         onDismissRequest = PushSignals::dismissEducation,
         title = { Text(stringResource(Res.string.notification_permission_title)) },
         text = { Text(stringResource(Res.string.notification_permission_body)) },
-        confirmButton = { TextButton(onClick = { PushSignals.dismissEducation(); launcher.request { PushSignals.refresh() } }) { Text(stringResource(Res.string.notification_enable)) } },
+        confirmButton = { TextButton(onClick = { PushSignals.dismissEducation(); onEnabled(); launcher.request { PushSignals.refresh() } }) { Text(stringResource(Res.string.notification_enable)) } },
         dismissButton = { TextButton(onClick = PushSignals::dismissEducation) { Text(stringResource(Res.string.notification_later)) } }
     )
 }
