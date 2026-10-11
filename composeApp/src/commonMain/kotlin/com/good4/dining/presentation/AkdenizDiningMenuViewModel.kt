@@ -122,7 +122,6 @@ class AkdenizDiningMenuViewModel(
             analytics.result(tracking, InteractionStatus.VALIDATION_ERROR)
             return
         }
-        if (meal in current.ratingInFlight || current.ratings[meal]?.myVote == vote) return
         val requestGeneration = generation
         voteVersions[meal] = (voteVersions[meal] ?: 0) + 1
         val before = current.ratings[meal]

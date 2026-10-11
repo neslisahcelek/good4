@@ -8,8 +8,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,11 +39,20 @@ class SocialBadge {
     fun clear() { _count.value = 0 }
 }
 
+/** Advance before Firebase sign-out, so a rapid return to the same UID is a new session. */
+object SocialSession {
+    private val mutable = MutableStateFlow(0L)
+    val changes = mutable.asStateFlow()
+    val revision: Long get() = mutable.value
+    fun end() { mutable.update { it + 1 } }
+}
+
 /** Every read and write goes through the social callables (functions/src/social.ts). */
 class SocialRepository(private val auth: AuthRepository, private val badge: SocialBadge) : SocialHomeDataSource {
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true; explicitNulls = false }
     private data class Cache(
         val uid: String? = null,
+        val sessionRevision: Long = 0,
         val accessRevision: Long = 0,
         val revision: Long = 0,
         val me: SocialMe? = null,
@@ -61,18 +73,50 @@ class SocialRepository(private val auth: AuthRepository, private val badge: Soci
     private var mineRequest: MineRequest? = null
     // A home prefetch survives navigation to Sosyal; only three category requests can be shared.
     private val readScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    init {
+        readScope.launch {
+            combine(auth.authStateFlow, SocialSession.changes) { _, _ -> Unit }.collect {
+                requestsMutex.withLock {
+                    // Buffered auth events may arrive after a reader already entered the new session.
+                    // Resolve the live session and cancel only requests that belong to an older one.
+                    cancelStaleRequests(session())
+                }
+            }
+        }
+    }
     override val currentUid: String? get() = auth.currentUser?.uid
     override val revision: Long get() = session().revision
     private fun now() = Clock.System.now().toEpochMilliseconds()
 
     private fun session(): Cache {
-        val uid = currentUid
-        val accessRevision = com.good4.eduverification.CampusAccessSession.revision(uid)
-        if (cache.value.uid != uid || cache.value.accessRevision != accessRevision) {
-            cache.update { if (it.uid == uid && it.accessRevision == accessRevision) it else Cache(uid = uid, revision = it.revision + 1, accessRevision = accessRevision) }
-            badge.clear()
+        val previous = cache.value
+        cache.update {
+            val uid = currentUid
+            val sessionRevision = SocialSession.revision
+            val accessRevision = com.good4.eduverification.CampusAccessSession.revision(uid)
+            if (it.uid == uid && it.sessionRevision == sessionRevision && it.accessRevision == accessRevision) it
+            else Cache(uid = uid, sessionRevision = sessionRevision,
+                revision = it.revision + 1, accessRevision = accessRevision)
         }
+        if (cache.value.revision != previous.revision) badge.clear()
         return cache.value
+    }
+
+    /** Caller holds requestsMutex; fresh requests are preserved even after a delayed auth signal. */
+    private fun cancelStaleRequests(owner: Cache) {
+        firstPageRequests.entries.removeAll { (_, request) ->
+            val stale = request.uid != owner.uid || request.revision != owner.revision
+            if (stale) request.result.cancel()
+            stale
+        }
+        summaryRequest?.takeIf { it.uid != owner.uid || it.revision != owner.revision }?.let {
+            it.result.cancel()
+            summaryRequest = null
+        }
+        mineRequest?.takeIf { it.uid != owner.uid || it.revision != owner.revision }?.let {
+            it.result.cancel()
+            mineRequest = null
+        }
     }
 
     override fun cachedFeed(kind: String?): CachedSocialFeed? {
@@ -148,11 +192,7 @@ class SocialRepository(private val auth: AuthRepository, private val badge: Soci
 
     private suspend fun firstPageRequest(kind: String?, owner: Cache): Deferred<SocialFeed> = requestsMutex.withLock {
         checkSession(owner)
-        firstPageRequests.entries.removeAll { (_, request) ->
-            val stale = request.uid != owner.uid || request.revision != owner.revision
-            if (stale) request.result.cancel()
-            stale
-        }
+        cancelStaleRequests(owner)
         firstPageRequests[kind]?.takeIf { it.result.isActive }?.result
             ?: readScope.async { fetchFeed(kind, null, owner) }.also {
                 firstPageRequests[kind] = FeedRequest(requireNotNull(owner.uid), owner.revision, it)
