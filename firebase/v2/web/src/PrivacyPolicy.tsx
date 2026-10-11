@@ -121,7 +121,7 @@ const sections: PrivacySection[] = [
       "Veriler; kayıt ve profil alanlarına sizin tarafınızdan girilmesi, uygulama/web hizmetini kullanmanız, destek veya geri bildirim göndermeniz ve Google ile giriş seçeneğini kullanmanız yoluyla doğrudan elde edilir. Google ile girişte kimlik doğrulaması için gerekli hesap tanımlayıcıları ve Google tarafından sağlanan temel hesap bilgileri kullanılır; Good4, Gmail, Drive, takvim veya kişiler içeriğine erişim istemez.",
       "Kampüs Dolabı'nda okul e-posta adresinizi doğrulama sırasında siz girersiniz; ilan bilgileri, fotoğraflar ve mesajlar sizin tarafınızdan oluşturulur.",
       "Sosyal'de etkinlik bilgileri, katılım istekleri, mesajlar, isim tercihi ve isteğe bağlı profil fotoğrafı sizin tarafınızdan oluşturulur.",
-      "Uygulama ve altyapı sağlayıcıları hizmetin çalışması sırasında oturum, bağlantı, cihaz ve güvenlik kayıtları oluşturabilir. Hedeflenen Good4 V2 mobil paketlerinde uygulama analitiği ve çökme tanılama SDK'ları bulunmaz. İsteğe bağlı profil alanlarını doldurmamanız, ilgili alanı kullanan bazı özelliklere erişiminizi etkileyebilir.",
+      "Uygulama ve altyapı sağlayıcıları hizmetin çalışması sırasında oturum, bağlantı, cihaz ve güvenlik kayıtları oluşturabilir. Çökme tanılama SDK'ları (Crashlytics vb.) bulunmaz; kullanım analitiği ise yalnızca kullanıcının açık onayı doğrultusunda Firebase Analytics üzerinden isteğe bağlı olarak çalışır. İsteğe bağlı profil alanlarını doldurmamanız, ilgili alanı kullanan bazı özelliklere erişiminizi etkileyebilir.",
     ],
   },
   {
@@ -207,7 +207,7 @@ export default function PrivacyPolicy() {
             Good4'un hangi kişisel verileri hangi amaçlarla kullandığını, kimlerle
             paylaşabildiğini ve KVKK kapsamındaki haklarınızı burada bulabilirsiniz.
           </p>
-          <time dateTime="2026-10-10">Son güncelleme: 10 Ekim 2026</time>
+          <time dateTime="2026-10-11">Son güncelleme: 11 Ekim 2026</time>
           <p className="privacy-review-note">
             Bu çalışma sürümüdür. Google ile aktarım mekanizması ve dağıtılmış
             hesap silme ve saklama akışı doğrulanmadan kamuya açık nihai metin olarak yayımlanmamalıdır.
