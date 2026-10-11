@@ -783,7 +783,7 @@
     <!-- Daily menu and meal ratings -->
     <string name="daily_menu_not_published">Bugün için yayınlanmadı</string>
     <string name="daily_menu_breakfast">Kahvaltı</string>
-    <string name="daily_menu_cafeteria">Öğle ve Akşam</string>
+    <string name="daily_menu_cafeteria">Öğle</string>
     <string name="daily_menu_weekend_closed">Hafta sonu kapalı</string>
     <string name="daily_menu_dinner">Akşam Yemeği</string>
     <string name="daily_menu_dismiss">Tamam</string>
