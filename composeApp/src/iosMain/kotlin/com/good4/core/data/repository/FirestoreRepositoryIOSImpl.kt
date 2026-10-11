@@ -553,6 +553,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "V2OrganizationDto" to com.good4.community.V2OrganizationDto.serializer(),
         "V2MembershipDto" to com.good4.community.V2MembershipDto.serializer(),
         "V2UserRoleDto" to com.good4.community.V2UserRoleDto.serializer(),
+        "V2CommunityCouponDto" to com.good4.community.V2CommunityCouponDto.serializer(),
         "V2EventDto" to com.good4.community.V2EventDto.serializer(),
         "V2EventRegistrationDto" to com.good4.community.V2EventRegistrationDto.serializer(),
         "ProductDto" to ProductDto.serializer(),
@@ -595,6 +596,23 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             "V2OrganizationDto" -> decodeV2OrganizationDto(document) as T
             "V2MembershipDto" -> decodeV2MembershipDto(document) as T
             "V2UserRoleDto" -> com.good4.community.V2UserRoleDto(role = document.getOrNull("role") ?: "") as T
+            "V2CommunityCouponDto" -> com.good4.community.V2CommunityCouponDto(
+                communityId = document.getOrNull("communityId") ?: "",
+                communityName = document.getOrNull("communityName") ?: "",
+                businessId = document.getOrNull("businessId") ?: "",
+                businessName = document.getOrNull("businessName") ?: "",
+                title = document.getOrNull("title") ?: "",
+                description = document.getOrNull("description") ?: "",
+                discountType = document.getOrNull("discountType") ?: "percentage",
+                discountValue = document.getAsInt("discountValue") ?: 0,
+                freeItem = document.getOrNull("freeItem") ?: "",
+                startsAt = document.getEpochSeconds("startsAt") ?: 0,
+                endsAt = document.getEpochSeconds("endsAt") ?: 0,
+                totalLimit = document.getAsInt("totalLimit") ?: 0,
+                dailyLimit = document.getAsInt("dailyLimit"),
+                redemptionCount = document.getAsInt("redemptionCount") ?: 0,
+                status = document.getOrNull("status") ?: "published"
+            ) as T
             "V2EventDto" -> decodeV2EventDto(document) as T
             "V2CampaignDto" -> com.good4.suspendedmeal.V2CampaignDto(
                 organizationId = document.getOrNull("organizationId") ?: "", title = document.getOrNull("title") ?: "",

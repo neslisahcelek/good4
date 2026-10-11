@@ -9,6 +9,7 @@ import com.good4.core.util.AppEnvironment
 import com.good4.core.util.FirebaseBackend
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -17,6 +18,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlin.random.Random
 import com.good4.user.data.dto.UserDto
 import kotlinx.coroutines.CancellationException
@@ -47,6 +49,35 @@ data class V2MembershipDto(val userId: String = "", val role: String = "", val s
 
 @Serializable
 data class V2UserRoleDto(val role: String = "")
+
+@Serializable
+data class V2CommunityCouponDto(
+    val communityId: String = "",
+    val communityName: String = "",
+    val businessId: String = "",
+    val businessName: String = "",
+    val title: String = "",
+    val description: String = "",
+    val discountType: String = "percentage",
+    val discountValue: Int = 0,
+    val freeItem: String = "",
+    val startsAt: Long = 0,
+    val endsAt: Long = 0,
+    val totalLimit: Int = 0,
+    val dailyLimit: Int? = null,
+    val redemptionCount: Int = 0,
+    val status: String = "published"
+)
+
+data class CommunityCouponIssue(
+    val outcome: String,
+    val code: String? = null,
+    val expiresAt: Instant? = null
+)
+
+internal fun V2CommunityCouponDto.isCurrentlyValid(nowEpochSeconds: Long): Boolean =
+    startsAt <= nowEpochSeconds && nowEpochSeconds < endsAt
+
 
 @Serializable
 data class V2EventDto(
@@ -82,6 +113,11 @@ data class CommunityEntryDto(
     val capacity: Int = 0,
     val totalLimit: Int = 0,
     val perUserLimit: Int = 1,
+    val couponStartsAt: Long = 0,
+    val couponEndsAt: Long = 0,
+    val freeItem: String = "",
+    val redemptionCount: Int = 0,
+    val dailyLimit: Int? = null,
     val status: String = "published",
     val categoryId: String = "",
     val registrationCount: Int = 0
@@ -232,7 +268,10 @@ class CommunityRepository(
         if (!isV2) return entries(id, manager) to null
         val conditions: Map<String, Any> = if (manager) mapOf("organizationId" to id) else mapOf("organizationId" to id, "status" to "published")
         return when (val result = store.queryPage("events", conditions, V2EventDto::class, cursor = cursor)) {
-            is Result.Success -> result.data.items.map(::mapV2Event) to result.data.nextCursor
+            is Result.Success -> {
+                val coupons = if (cursor == null) couponEntries(id) else emptyList()
+                (result.data.items.map(::mapV2Event) + coupons) to result.data.nextCursor
+            }
             is Result.Error -> error("Etkinlikler yüklenemedi. Tekrar deneyin.")
         }
     }
@@ -242,7 +281,8 @@ class CommunityRepository(
             val result = if (manager) allPages("events", mapOf("organizationId" to id), V2EventDto::class)
             else allPages("events", mapOf("organizationId" to id, "status" to "published"), V2EventDto::class)
             return when (result) {
-                is Result.Success -> result.data.map(::mapV2Event).sortedBy { it.data.date + it.data.time }
+                is Result.Success -> (result.data.map(::mapV2Event) + couponEntries(id))
+                    .sortedBy { it.data.date + it.data.time }
                 is Result.Error -> error("Etkinlikler yüklenemedi. Tekrar deneyin.")
             }
         }
@@ -301,6 +341,68 @@ class CommunityRepository(
             .toList()
     }
 
+    private fun mapV2Coupon(document: com.good4.core.data.repository.DocumentWithId<V2CommunityCouponDto>): CommunityEntry {
+        val coupon = document.data
+        val lastDate = Instant.fromEpochSeconds(coupon.endsAt)
+            .toLocalDateTime(TimeZone.of("Europe/Istanbul")).date.toString()
+        return CommunityEntry(document.id, CommunityEntryDto(
+            kind = "coupon",
+            title = coupon.title,
+            description = coupon.description,
+            date = lastDate,
+            location = coupon.businessName,
+            businessId = coupon.businessId,
+            discountType = coupon.discountType,
+            discountValue = coupon.discountValue,
+            freeItem = coupon.freeItem,
+            totalLimit = coupon.totalLimit,
+            redemptionCount = coupon.redemptionCount,
+            dailyLimit = coupon.dailyLimit,
+            status = coupon.status,
+            couponStartsAt = coupon.startsAt,
+            couponEndsAt = coupon.endsAt
+        ))
+    }
+
+    private suspend fun validCouponDocuments(communityId: String? = null): List<com.good4.core.data.repository.DocumentWithId<V2CommunityCouponDto>> {
+        val conditions = mutableMapOf<String, Any>("status" to "published")
+        if (communityId != null) conditions["communityId"] = communityId
+        return when (val result = allPages("communityCoupons", conditions, V2CommunityCouponDto::class)) {
+            is Result.Success -> {
+                val now = Clock.System.now().epochSeconds
+                result.data.filter { it.data.isCurrentlyValid(now) }
+            }
+            is Result.Error -> error("COMMUNITY_COUPONS_LOAD_FAILED")
+        }
+    }
+
+    suspend fun couponEntries(communityId: String? = null): List<CommunityEntry> {
+        if (!isV2) return emptyList()
+        return validCouponDocuments(communityId).map(::mapV2Coupon)
+    }
+
+    suspend fun featuredCoupons(communities: List<Community>): List<CommunityFeaturedEvent> {
+        if (!isV2) return emptyList()
+        val communitiesById = communities.associateBy { it.id }
+        return validCouponDocuments().mapNotNull { document ->
+            communitiesById[document.data.communityId]?.let { community ->
+                CommunityFeaturedEvent(community, mapV2Coupon(document))
+            }
+        }
+    }
+
+    suspend fun issueCouponCode(entry: CommunityEntry): CommunityCouponIssue {
+        if (!isV2) return CommunityCouponIssue("issued", createCouponCode("", entry))
+        val result = callV2Function("issueCommunityCouponCode", buildJsonObject {
+            put("couponId", entry.id)
+        })
+        return CommunityCouponIssue(
+            outcome = result["outcome"]?.jsonPrimitive?.contentOrNull ?: "error",
+            code = result["code"]?.jsonPrimitive?.contentOrNull,
+            expiresAt = result["expiresAt"]?.jsonPrimitive?.contentOrNull?.let(Instant::parse)
+        )
+    }
+
     private fun mapV2Event(document: com.good4.core.data.repository.DocumentWithId<V2EventDto>): CommunityEntry {
         val event = document.data
         val zone = TimeZone.of(event.timezone.ifBlank { "Europe/Istanbul" })
@@ -332,7 +434,9 @@ class CommunityRepository(
     suspend fun saveEntry(communityId: String, entryId: String?, entry: CommunityEntryDto) {
         requireManager(communityId)
         if (isV2) {
-            check(entry.kind == "event") { "Kuponlar V2'ye taşınana kadar eski panelden yönetilmelidir." }
+            if (entry.kind == "coupon") {
+                error("COMMUNITY_COUPON_PANEL_REQUIRED")
+            }
             callV2Function("saveCommunityPortalEntry", buildJsonObject {
                 put("kind", "event"); entryId?.let { put("entryId", it) }; put("title", entry.title)
                 put("description", entry.description); put("date", entry.date); put("time", entry.time)
@@ -356,10 +460,11 @@ class CommunityRepository(
         check(result is Result.Success) { "Kaydedilemedi. Lütfen tekrar deneyin." }
     }
 
-    suspend fun cancelEntry(communityId: String, entryId: String) {
+    suspend fun cancelEntry(communityId: String, entryId: String, kind: String = "event") {
         requireManager(communityId)
         if (isV2) {
-            callV2Function("cancelCommunityPortalEntry", buildJsonObject { put("entryId", entryId) })
+            if(kind == "coupon") callV2Function("endCommunityCoupon",buildJsonObject {put("couponId",entryId)})
+            else callV2Function("cancelCommunityPortalEntry", buildJsonObject { put("entryId", entryId) })
             return
         }
         check(store.updateFields("communities/$communityId/entries", entryId, mapOf("status" to "cancelled")) is Result.Success) { "İptal edilemedi. Tekrar deneyin." }
@@ -502,7 +607,10 @@ class CommunityRepository(
     }
 
     suspend fun createCouponCode(communityId: String, entry: CommunityEntry): String {
-        check(!isV2) { "Kuponlar V2'ye henüz taşınmadı." }
+        if (isV2) {
+            val result = issueCouponCode(entry)
+            return result.code ?: error(result.outcome)
+        }
         val userId = auth.currentUser?.uid ?: error("Kod oluşturmak için giriş yapmalısınız.")
         check(entry.data.kind == "coupon" && entry.data.status == "published") { "Bu kupon henüz kullanıma açık değil." }
         check(entry.data.businessId.isNotBlank()) { "Kupon için doğrulama yapacak işletme seçilmemiş." }

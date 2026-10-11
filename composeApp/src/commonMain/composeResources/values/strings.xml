@@ -1333,4 +1333,52 @@
     <string name="campus_email_code_intro" formatted="false">Okul e-postanı bir kez doğrula; Kampüs Dolabı ve Sosyal’de geçerli olur.</string>
     <string name="campus_email_code_account_mismatch" formatted="false">Kodu istediğin Good4 hesabıyla giriş yap.</string>
     <string name="campus_email_code_unavailable" formatted="false">Kod doğrulanamadı. Bağlantını kontrol edip tekrar dene.</string>
+
+    <string name="community_coupon_tab">Kuponlar</string>
+    <string name="community_coupon_event_tab">Etkinlikler</string>
+    <string name="community_coupon_manager_tab">Kupon yönetimi</string>
+    <string name="community_coupon_manager_event_tab">Etkinlik yönetimi</string>
+    <string name="community_coupon_show_checkout">Kasada göster</string>
+    <string name="community_coupon_generating">Kod oluşturuluyor…</string>
+    <string name="community_coupon_remaining">Kalan süre: %1$s</string>
+    <string name="community_coupon_tell_business">İşletmeye bu kodu söyle</string>
+    <string name="community_coupon_single_use">Kod 10 dakika geçerli ve tek kullanımlıktır.</string>
+    <string name="community_coupon_new_code">Yeni kod al</string>
+    <string name="community_coupon_expired">Kodun süresi doldu. Yeni kod alabilirsin.</string>
+    <string name="community_coupon_used_today">Bugün kullandın, yarın tekrar kullanabilirsin</string>
+    <string name="community_coupon_limit_reached">Bu kuponun kullanım limiti doldu.</string>
+    <string name="community_coupon_daily_limit_reached">Bu kuponun bugünkü kullanım limiti doldu.</string>
+    <string name="community_coupon_inactive">Bu kupon şu anda kullanıma açık değil.</string>
+    <string name="community_coupon_code_error">Kod alınamadı. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="community_coupon_load_error">Kuponlar yüklenemedi. Tekrar dene.</string>
+    <string name="community_coupon_percentage">%%1$d indirim</string>
+    <string name="community_coupon_fixed">%1$d TL indirim</string>
+    <string name="community_coupon_free_item">Ücretsiz: %1$s</string>
+    <string name="community_coupon_last_day">Son gün: %1$s</string>
+    <string name="community_coupon_view">Kuponu görüntüle</string>
+    <string name="community_coupon_usage">%1$d / %2$d kullanım</string>
+    <string name="community_coupon_empty">Henüz yayında kupon yok</string>
+    <string name="community_coupon_empty_detail">Toplulukların kuponları yayınlandığında burada görünecek.</string>
+    <string name="community_coupon_month_1">Ocak</string>
+    <string name="community_coupon_month_2">Şubat</string>
+    <string name="community_coupon_month_3">Mart</string>
+    <string name="community_coupon_month_4">Nisan</string>
+    <string name="community_coupon_month_5">Mayıs</string>
+    <string name="community_coupon_month_6">Haziran</string>
+    <string name="community_coupon_month_7">Temmuz</string>
+    <string name="community_coupon_month_8">Ağustos</string>
+    <string name="community_coupon_month_9">Eylül</string>
+    <string name="community_coupon_month_10">Ekim</string>
+    <string name="community_coupon_month_11">Kasım</string>
+    <string name="community_coupon_month_12">Aralık</string>
+    <string name="community_coupon_stub_percentage">%%1$d</string>
+    <string name="community_coupon_stub_fixed">%1$d TL</string>
+    <string name="community_coupon_stub_discount">indirim</string>
+    <string name="community_coupon_stub_free">ücretsiz</string>
+    <string name="community_coupon_deadline_date">Son gün %1$d %2$s</string>
+    <string name="community_coupon_deadline_days">%1$d gün kaldı</string>
+    <string name="community_coupon_deadline_tomorrow">Yarın son gün</string>
+    <string name="community_coupon_deadline_today">Bugün son gün</string>
+    <string name="community_coupon_get_code">Kodu al</string>
+    <string name="community_coupon_panel_required">Kuponlarını topluluk panelinden oluşturup yönetebilirsin</string>
 </resources>

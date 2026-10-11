@@ -29,6 +29,8 @@ data class EventEditorState(
 data class CommunityState(
     val communities: List<Community> = emptyList(),
     val featuredEvents: List<CommunityFeaturedEvent> = emptyList(),
+    val featuredCoupons: List<CommunityFeaturedEvent> = emptyList(),
+    val couponsError: UiText? = null,
     val featuredEventsLoading: Boolean = false,
     val featuredEventsError: String? = null,
     val selectedCategoryId: String = "",
@@ -47,6 +49,9 @@ data class CommunityState(
     val generatedCouponCode: String? = null,
     val generatedCouponEntryId: String? = null,
     val codeGenerating: Boolean = false,
+    val couponCodeSeconds: Int = 0,
+    val couponCodeExpiresAt: kotlinx.datetime.Instant? = null,
+    val couponCodeMessage: UiText? = null,
     val registrationsByEntry: Map<String, List<CommunityEventRegistrationDto>> = emptyMap(),
     val attendanceByEntry: Map<String, List<EventAttendanceDto>> = emptyMap(),
     val followerCount: Int? = null,
@@ -91,6 +96,8 @@ internal fun CommunityState.withStudentRegistration(entryId: String, registered:
 class CommunityViewModel(private val repository: CommunityRepository, private val admission: EventAdmissionGateway = NativeEventAdmissionGateway) : ViewModel() {
     private val mutable = MutableStateFlow(CommunityState())
     val state = mutable.asStateFlow()
+    private var couponCountdownJob: Job? = null
+    private var couponIssueJob: Job? = null
     private var loadingJob: Job? = null
     private var registrationJob: Job? = null
     private var featuredEventsJob: Job? = null
@@ -108,6 +115,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
             repository.authStateFlow.collect { user ->
                 if (user?.uid != observedUserId) {
                     selectionGeneration++
+                    couponIssueJob?.cancel()
+                    couponCountdownJob?.cancel()
                     observedUserId = user?.uid
                     loadingJob?.cancel()
                     registrationJob?.cancel()
@@ -179,6 +188,13 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val access = repository.access()
                 val businesses = repository.businesses()
                 val blocked = loadBlockedCommunityIds()
+                val coupons = try {
+                    repository.featuredCoupons(communities)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    null
+                }
                 mutable.update {
                     it.copy(
                         // Managers always keep their own community, even if it was blocked earlier.
@@ -186,6 +202,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                         blockedCommunityIds = blocked,
                         access = access,
                         businesses = businesses,
+                        featuredCoupons = coupons.orEmpty(),
+                        couponsError = if (coupons == null) {
+                            UiText.StringResourceId(Res.string.community_coupon_load_error)
+                        } else null,
                         loading = false,
                         error = null
                     )
@@ -232,6 +252,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
 
     fun select(community: Community, targetEventId: String? = null) {
         selectionGeneration++
+        couponIssueJob?.cancel()
+        couponCountdownJob?.cancel()
         loadingJob?.cancel()
         registrationJob?.cancel()
         mutable.update {
@@ -243,6 +265,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 error = null,
                 generatedCouponCode = null,
                 generatedCouponEntryId = null,
+                couponCodeSeconds = 0,
+                couponCodeExpiresAt = null,
+                couponCodeMessage = null,
+                codeGenerating = false,
                 registrationsByEntry = emptyMap(),
                 attendanceByEntry = emptyMap(),
                 followerCount = null,
@@ -285,7 +311,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 }
                 if (manager && updatesVisible) startRegistrationUpdates(community.id)
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { mutable.update { it.copy(loading = false, error = e.message) } }
+            catch (e: Exception) { mutable.update { it.copy(loading = false, error = communityErrorMessage(e)) } }
         }
     }
 
@@ -302,12 +328,14 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 mutable.update { it.copy(entries = (it.entries + page.first).distinctBy { entry -> entry.id }, entriesCursor = page.second, registeredEventIds = it.registeredEventIds + registered, loading = false) }
                 if (snapshot.canManage && updatesVisible) startRegistrationUpdates(community.id)
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { mutable.update { it.copy(loading = false, error = e.message) } }
+            catch (e: Exception) { mutable.update { it.copy(loading = false, error = communityErrorMessage(e)) } }
         }
     }
 
     fun back() {
         selectionGeneration++
+        couponIssueJob?.cancel()
+        couponCountdownJob?.cancel()
         loadingJob?.cancel()
         registrationJob?.cancel()
         mutable.update {
@@ -318,6 +346,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 entries = emptyList(),
                 generatedCouponCode = null,
                 generatedCouponEntryId = null,
+                couponCodeSeconds = 0,
+                couponCodeExpiresAt = null,
+                couponCodeMessage = null,
+                codeGenerating = false,
                 registrationsByEntry = emptyMap(),
                 registeredEventIds = emptySet(),
                 registrationLoadingIds = emptySet(),
@@ -459,7 +491,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         val url = image?.let { uploadCommunityImage(it) } ?: entry.imageUrl
         repository.saveEntry(community.id, entryId, entry.copy(imageUrl = url))
     }
-    fun cancel(entryId: String, onSaved: () -> Unit) = change(onSaved) { community -> repository.cancelEntry(community.id, entryId) }
+    fun cancel(entryId: String, onSaved: () -> Unit) = change(onSaved) { community ->
+        val kind = mutable.value.entries.firstOrNull { it.id == entryId }?.data?.kind ?: "event"
+        repository.cancelEntry(community.id, entryId, kind)
+    }
     fun updateProfile(data: CommunityDto, logo: ByteArray?, cover: ByteArray?, onSaved: () -> Unit) = change(onSaved) { community ->
         val updated = data.copy(
             logoUrl = logo?.let { uploadCommunityImage(it) } ?: data.logoUrl,
@@ -536,13 +571,67 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     fun createCouponCode(entry: CommunityEntry) {
         val community = mutable.value.selected ?: return
         if (mutable.value.codeGenerating) return
-        viewModelScope.launch {
-            mutable.update { it.copy(codeGenerating = true, generatedCouponCode = null, error = null) }
+        val generation = selectionGeneration
+        val uid = repository.currentUserId
+        couponIssueJob?.cancel()
+        couponCountdownJob?.cancel()
+        mutable.update {
+            it.copy(
+                codeGenerating = true,
+                generatedCouponCode = null,
+                generatedCouponEntryId = entry.id,
+                couponCodeMessage = null,
+                couponCodeSeconds = 0,
+                couponCodeExpiresAt = null
+            )
+        }
+        couponIssueJob = viewModelScope.launch {
             try {
-                val code = repository.createCouponCode(community.id, entry)
-                mutable.update { it.copy(codeGenerating = false, generatedCouponCode = code, generatedCouponEntryId = entry.id) }
-            } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { mutable.update { it.copy(codeGenerating = false, error = e.message) } }
+                val result = if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                    repository.issueCouponCode(entry)
+                } else {
+                    CommunityCouponIssue("issued", repository.createCouponCode(community.id, entry))
+                }
+                if (generation != selectionGeneration || uid != repository.currentUserId) return@launch
+                mutable.update {
+                    it.copy(
+                        codeGenerating = false,
+                        generatedCouponCode = result.code,
+                        couponCodeExpiresAt = result.expiresAt,
+                        couponCodeSeconds = couponSecondsRemaining(result.expiresAt),
+                        couponCodeMessage = couponOutcomeMessage(result.outcome)
+                    )
+                }
+                if (result.expiresAt != null) {
+                    couponCountdownJob = viewModelScope.launch {
+                        while (generation == selectionGeneration && uid == repository.currentUserId) {
+                            val remaining = couponSecondsRemaining(result.expiresAt)
+                            mutable.update {
+                                it.copy(
+                                    couponCodeSeconds = remaining,
+                                    generatedCouponCode = if (remaining == 0) null else result.code,
+                                    couponCodeMessage = if (remaining == 0) {
+                                        UiText.StringResourceId(Res.string.community_coupon_expired)
+                                    } else null
+                                )
+                            }
+                            if (remaining == 0) break
+                            delay(1000)
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                if (generation == selectionGeneration && uid == repository.currentUserId) {
+                    mutable.update {
+                        it.copy(
+                            codeGenerating = false,
+                            couponCodeMessage = UiText.StringResourceId(Res.string.community_coupon_code_error)
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -598,6 +687,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
 
 /** Turkish copy for the error codes the community callables return. */
 internal val communityServerMessages = mapOf(
+    "COMMUNITY_COUPONS_LOAD_FAILED" to Res.string.community_coupon_load_error,
+    "COMMUNITY_COUPON_PANEL_REQUIRED" to Res.string.community_coupon_panel_required,
     "TITLE_REQUIRED" to Res.string.community_error_title_required, "TITLE_INVALID" to Res.string.community_error_title_invalid,
     "DESCRIPTION_REQUIRED" to Res.string.community_error_description_required, "DESCRIPTION_INVALID" to Res.string.community_error_description_invalid,
     "LOCATION_REQUIRED" to Res.string.community_error_location_required, "LOCATION_INVALID" to Res.string.community_error_location_invalid,

@@ -25,6 +25,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -294,6 +296,40 @@ fun CommunitiesScreen(
                                 }
                             }
                         }
+                        item(key = "student-coupons-heading") {
+                            Text(
+                                stringResource(Res.string.community_coupon_tab),
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                        }
+                        item(key = "student-coupons") {
+                            val couponsError = state.couponsError
+                            when {
+                                couponsError != null -> NoticeCard(
+                                    couponsError.asString(),
+                                    ErrorRed,
+                                    actionLabel = stringResource(Res.string.campus_closet_retry),
+                                    onAction = viewModel::refreshCommunities
+                                )
+                                state.featuredCoupons.isNotEmpty() -> LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    items(state.featuredCoupons, key = { "coupon-${it.entry.id}" }) { coupon ->
+                                        StudentCouponCard(coupon.entry, communityName = coupon.community.data.name) {
+                                            pendingFeaturedEvent = coupon
+                                            viewModel.select(coupon.community, coupon.entry.id)
+                                        }
+                                    }
+                                }
+                                !state.loading -> EmptyCommunityContent(
+                                    stringResource(Res.string.community_coupon_empty),
+                                    stringResource(Res.string.community_coupon_empty_detail)
+                                )
+                            }
+                        }
+
                         item(key = "community-list-heading") {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -483,9 +519,11 @@ fun CommunitiesScreen(
                                     editingId = null
                                     editor = CommunityEntryDto()
                                 },
-                                onAddCoupon = {
-                                    editingId = null
-                                    editor = CommunityEntryDto(kind = "coupon", status = "pending")
+                                onAddCoupon = if (isV2) null else {
+                                    {
+                                        editingId = null
+                                        editor = CommunityEntryDto(kind = "coupon", status = "pending")
+                                    }
                                 },
                                 onEditProfile = { profileEditor = true },
                                 onSwitchToStudent = { previewAsStudent = true }
@@ -508,12 +546,20 @@ fun CommunitiesScreen(
                             }
                         }
                     }
-                    if (!studentView) item {
+                    item(key = "community-entry-tabs") {
                         CommunityTabs(
                             selectedTab = tab,
                             onTabSelected = { tab = it },
                             manager = managerView
                         )
+                    }
+                    if (managerView && isV2 && tab == 1) {
+                        item(key = "coupon-panel-guidance") {
+                            Text(
+                                stringResource(Res.string.community_coupon_panel_required),
+                                color = TextSecondary
+                            )
+                        }
                     }
                     if (managerView && tab == 0) item {
                         ManagerEventFilters(
@@ -521,7 +567,7 @@ fun CommunitiesScreen(
                             onSelected = { eventFilter = it }
                         )
                     }
-                    if (studentView) item {
+                    if (studentView && tab == 0) item {
                         StudentEventFilters(state.entries, state.registeredEventIds, now, studentFilter) { studentFilter = it }
                     }
                     if (!studentView && !managerView && tab == 0) item {
@@ -533,7 +579,7 @@ fun CommunitiesScreen(
                             }
                         }
                     }
-                    val entries = if (studentView) studentEventsFor(state.entries, studentFilter, state.registeredEventIds, now)
+                    val entries = if (studentView && tab == 0) studentEventsFor(state.entries, studentFilter, state.registeredEventIds, now)
                     else state.entries.filter { entry ->
                         val kindMatches = entry.data.kind == (if (tab == 0) "event" else "coupon")
                         val visibilityMatches = if (managerView) true else entry.data.status == "published"
@@ -549,7 +595,7 @@ fun CommunitiesScreen(
                         if (managerView && tab == 0 && eventFilter == 2) filtered.sortedByDescending { it.data.date + it.data.time }
                         else filtered
                     }
-                    if (!studentView && tab == 1 && !managerView && entries.isNotEmpty()) {
+                    if (tab == 1 && !managerView && entries.isNotEmpty()) {
                         item {
                             LazyRow(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -562,7 +608,7 @@ fun CommunitiesScreen(
                         }
                     } else {
                         items(entries, key = { it.id }) { entry ->
-                            if (studentView) StudentEventRow(entry, entry.id in state.registeredEventIds, now) { detail = entry }
+                            if (studentView && tab == 0) StudentEventRow(entry, entry.id in state.registeredEventIds, now) { detail = entry }
                             else CommunityEntryCard(
                                 entry = entry,
                                 registrationCount = state.registrationsByEntry[entry.id]?.size,
@@ -594,8 +640,8 @@ fun CommunitiesScreen(
                                 else -> stringResource(Res.string.community_tamamlanan_ve_yayindan_kaldirilan_etkinlikler_burada_tutulur)
                             }
                             EmptyCommunityContent(
-                                title = if (studentView) studentFilter.emptyTitle else if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) stringResource(Res.string.community_filtrelere_uygun_etkinlik_bulunamadi) else if (tab == 0) stringResource(Res.string.community_henuz_etkinlik_yok) else stringResource(Res.string.community_henuz_kupon_yok),
-                                subtitle = if (studentView) studentFilter.emptySubtitle else if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) stringResource(Res.string.community_kategori_veya_kayit_filtresini_degistirerek_tekrar_deneyebilirsin) else if (tab == 0) stringResource(Res.string.community_yeni_etkinlikler_burada_gorunecek) else stringResource(Res.string.community_toplulugun_firsatlari_burada_yer_alacak),
+                                title = if (studentView && tab == 0) studentFilter.emptyTitle else if (managerView && tab == 0) managerEventTitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) stringResource(Res.string.community_filtrelere_uygun_etkinlik_bulunamadi) else if (tab == 0) stringResource(Res.string.community_henuz_etkinlik_yok) else stringResource(Res.string.community_henuz_kupon_yok),
+                                subtitle = if (studentView && tab == 0) studentFilter.emptySubtitle else if (managerView && tab == 0) managerEventSubtitle else if (tab == 0 && (state.selectedCategoryId.isNotEmpty() || registeredOnly)) stringResource(Res.string.community_kategori_veya_kayit_filtresini_degistirerek_tekrar_deneyebilirsin) else if (tab == 0) stringResource(Res.string.community_yeni_etkinlikler_burada_gorunecek) else stringResource(Res.string.community_toplulugun_firsatlari_burada_yer_alacak),
                                 coupon = !studentView && tab == 1
                             )
                         }
@@ -660,6 +706,9 @@ fun CommunitiesScreen(
             canManage = managerView,
             saving = state.saving,
             generatedCode = state.generatedCouponCode.takeIf { state.generatedCouponEntryId == entry.id },
+            couponSeconds = state.couponCodeSeconds.takeIf { state.generatedCouponEntryId == entry.id } ?: 0,
+            couponMessage = state.couponCodeMessage.takeIf { state.generatedCouponEntryId == entry.id },
+            couponExpired = state.generatedCouponEntryId == entry.id && state.couponCodeExpiresAt != null && state.couponCodeSeconds == 0,
             codeGenerating = state.codeGenerating,
             registrations = state.registrationsByEntry[entry.id].orEmpty(),
             registered = entry.id in state.registeredEventIds,
@@ -1202,7 +1251,7 @@ private fun CommunityManagementActions(
     monthlyAttendanceCount: Int,
     followerCount: Int?,
     onAddEvent: () -> Unit,
-    onAddCoupon: () -> Unit,
+    onAddCoupon: (() -> Unit)?,
     onEditProfile: () -> Unit,
     onSwitchToStudent: () -> Unit
 ) {
@@ -1241,14 +1290,16 @@ private fun CommunityManagementActions(
                 ) {
                     Text("Etkinlik ekle")
                 }
-                OutlinedButton(
-                    onClick = onAddCoupon,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-                ) {
-                    Text("Kupon ekle")
+                onAddCoupon?.let { addCoupon ->
+                    OutlinedButton(
+                        onClick = addCoupon,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                    ) {
+                        Text("Kupon ekle")
+                    }
                 }
             }
             TextButton(
@@ -1330,7 +1381,17 @@ private fun CommunityTabs(selectedTab: Int, onTabSelected: (Int) -> Unit, manage
             modifier = Modifier.padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            val labels = if (manager) listOf("Etkinlik yönetimi", "Kupon yönetimi") else listOf("Etkinlikler", "Kuponlar")
+            val labels = if (manager) {
+                listOf(
+                    stringResource(Res.string.community_coupon_manager_event_tab),
+                    stringResource(Res.string.community_coupon_manager_tab)
+                )
+            } else {
+                listOf(
+                    stringResource(Res.string.community_coupon_event_tab),
+                    stringResource(Res.string.community_coupon_tab)
+                )
+            }
             labels.forEachIndexed { index, label ->
                 Surface(
                     onClick = { onTabSelected(index) },
@@ -1461,7 +1522,7 @@ private fun CommunityEntryCard(
                         color = TextSecondary
                     )
                 }
-                if (canManage) {
+                if (canManage && (entry.data.kind != "coupon" || AppEnvironment.firebaseBackend != FirebaseBackend.V2)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1580,32 +1641,115 @@ private fun EntryRemovalConfirmation(
 }
 
 @Composable
-private fun StudentCouponCard(entry: CommunityEntry, onClick: () -> Unit) {
+private fun StudentCouponCard(entry: CommunityEntry, communityName: String? = null, onClick: () -> Unit) {
+    val data = entry.data
+    val isFreeItem = data.discountType == "freeItem"
+    val today = remember { Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul")).date }
+    val deadline = couponDeadline(data.date, today)
+    val urgent = deadline == CouponDeadline.Today || deadline == CouponDeadline.Tomorrow
+    val stubColor = if (isFreeItem) SurfaceMuted else PistachioGreen
+    val stubInk = if (isFreeItem) DraftAccent else MaterialTheme.colorScheme.primary
+    val dashColor = BorderMuted
     Surface(
         onClick = onClick,
-        modifier = Modifier.width(260.dp),
-        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.width(316.dp).height(104.dp),
+        shape = RoundedCornerShape(16.dp),
         color = SurfaceDefault,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.18f)),
-        shadowElevation = 1.dp
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.35f))
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Surface(modifier = Modifier.size(42.dp), shape = RoundedCornerShape(13.dp), color = PistachioGreen) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Row(Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.width(84.dp).fillMaxHeight().background(stubColor),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (isFreeItem) {
+                    Icon(Icons.Outlined.CardGiftcard, contentDescription = null, tint = stubInk, modifier = Modifier.size(26.dp))
+                } else {
+                    val amount = stringResource(
+                        if (data.discountType == "fixed") Res.string.community_coupon_stub_fixed
+                        else Res.string.community_coupon_stub_percentage,
+                        data.discountValue
+                    )
+                    Text(
+                        amount,
+                        fontSize = if (amount.length > 5) 20.sp else 26.sp,
+                        lineHeight = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = stubInk,
+                        maxLines = 1
+                    )
+                }
+                Text(
+                    stringResource(if (isFreeItem) Res.string.community_coupon_stub_free else Res.string.community_coupon_stub_discount),
+                    fontSize = 12.sp,
+                    color = stubInk
+                )
+            }
+            // Perforation between the stub and the body.
+            androidx.compose.foundation.Canvas(Modifier.width(1.5.dp).fillMaxHeight()) {
+                drawLine(
+                    color = dashColor,
+                    start = androidx.compose.ui.geometry.Offset(size.width / 2, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width / 2, size.height),
+                    strokeWidth = size.width,
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        if (isFreeItem && data.freeItem.isNotBlank()) data.freeItem else data.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        listOfNotNull(data.location.takeIf { it.isNotBlank() }, communityName?.takeIf { it.isNotBlank() })
+                            .joinToString(" · "),
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (deadline != null) {
+                        Icon(
+                            Icons.Outlined.Schedule,
+                            contentDescription = null,
+                            tint = if (urgent) DraftAccent else TextSecondary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            couponDeadlineText(deadline),
+                            fontSize = 12.sp,
+                            fontWeight = if (urgent) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (urgent) DraftAccent else TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary) {
+                        Text(
+                            stringResource(Res.string.community_coupon_get_code),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        )
+                    }
                 }
             }
-            val advantage = when (entry.data.discountType) {
-                "percentage" -> if (entry.data.discountValue > 0) "%${entry.data.discountValue} indirim" else "Topluluğa özel indirim"
-                "fixed" -> if (entry.data.discountValue > 0) "${entry.data.discountValue} TL indirim" else "Topluluğa özel indirim"
-                "freeItem" -> "Ücretsiz ürün"
-                else -> entry.data.title
-            }
-            Text(advantage, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Text(entry.data.title, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 2)
-            Text(entry.data.location, fontSize = 13.sp, color = TextSecondary, maxLines = 1)
-            Text("Son gün: ${entry.data.date}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
-            Text("Kuponu görüntüle", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -1618,6 +1762,9 @@ private fun CommunityEntryDetailDialog(
     saving: Boolean,
     generatedCode: String?,
     codeGenerating: Boolean,
+    couponSeconds: Int,
+    couponMessage: com.good4.core.presentation.UiText?,
+    couponExpired: Boolean,
     registrations: List<CommunityEventRegistrationDto>,
     registered: Boolean,
     registrationLoading: Boolean,
@@ -1632,7 +1779,9 @@ private fun CommunityEntryDetailDialog(
     onReport: (() -> Unit)? = null
 ) {
     val isCoupon = entry.data.kind == "coupon"
-    val dateTime = if (isCoupon) entry.data.date else formatEventSchedule(entry.data)
+    val couponToday = remember { Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul")).date }
+    val dateTime = if (isCoupon) couponDeadline(entry.data.date, couponToday)?.let { couponDeadlineText(it) } ?: entry.data.date
+    else formatEventSchedule(entry.data)
 
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
@@ -1711,7 +1860,21 @@ private fun CommunityEntryDetailDialog(
                     color = TextSecondary
                 )
 
-                if (isCoupon && !canManage) {
+                if (isCoupon && !canManage && AppEnvironment.firebaseBackend == FirebaseBackend.V2) {
+                    Text(
+                        couponDiscountText(entry.data),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    CommunityCouponCodeContent(
+                        code = generatedCode,
+                        seconds = couponSeconds,
+                        busy = codeGenerating,
+                        message = couponMessage,
+                        expired = couponExpired,
+                        onIssue = onCreateCode
+                    )
+                } else if (isCoupon && !canManage) {
                     if (generatedCode == null) {
                         Button(
                             onClick = onCreateCode,
@@ -1777,7 +1940,7 @@ private fun CommunityEntryDetailDialog(
                     }
                 }
 
-                if (canManage) {
+                if (canManage && (!isCoupon || AppEnvironment.firebaseBackend != FirebaseBackend.V2)) {
                     HorizontalDivider(color = BorderMuted.copy(alpha = 0.32f))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
