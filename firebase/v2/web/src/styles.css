@@ -1115,3 +1115,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .verification-coupon-title {
   font-size: 1.5rem;
 }
+
+/* Cards whose children have no padding of their own. */
+.admin-card--padded { padding: 20px; }
+.admin-card--padded > h3:first-child { margin-top: 0; }
+.admin-load-more { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+.admin-load-more:empty { display: none; }
+.notification-history-head { margin-top: 24px; align-items: center; }
+.notification-history-head h3 { margin: 0; }
+.cost-controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; margin-top: 24px; }
+.cost-controls h3 { margin: 0 0 4px; }
+.cost-controls__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-section > .admin-card + .admin-card { margin-top: 16px; }

@@ -1998,6 +1998,21 @@ function CommunityEntryCard({
 }
 
 type AdminTab = "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
+
+// "Load more" buttons belong to the tab that lists those records.
+const LOAD_MORE_TABS: Record<string, AdminTab[]> = {
+  organizations: ["businesses", "communities"],
+  calendar: ["calendar"],
+  legacyBusinesses: ["businesses"],
+  legacyCommunities: ["coupons"],
+};
+const LOAD_MORE_LABELS: Record<string, string> = {
+  organizations: "Daha fazla kurum",
+  calendar: "Daha fazla takvim kaydı",
+  legacyBusinesses: "Daha fazla eski işletme",
+  legacyCommunities: "Daha fazla eski topluluk kuponu",
+};
+
 type DiningMenuDayForm = { date: string; dayName: string; meals: string; calories: string };
 
 const diningDayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"];
@@ -2756,22 +2771,6 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       onLogout={() => void signOut(auth)}
     >
       <div className="admin-content">
-        {data && Object.entries(data.nextCursors ?? {}).filter(([, cursor]) => cursor).map(([kind, cursor]) => <button type="button" key={kind} disabled={loading} onClick={() => void loadAdminPage(kind, cursor!)}>{{ organizations: "Daha fazla kurum", calendar: "Daha fazla takvim kaydı", legacyBusinesses: "Daha fazla eski işletme", legacyCommunities: "Daha fazla eski topluluk kuponu" }[kind] ?? "Daha fazla kayıt"}</button>)}
-        {tab !== "home" && <section className="admin-heading">
-          <div>
-            <p className="section-label">Good4 yönetimi</p>
-            <h1>Kontrol paneli</h1>
-            <p>Kuponları ve kullanıcı geri bildirimlerini takip edin; kurum hesaplarını yönetin.</p>
-          </div>
-          {data && (
-            <div className="admin-summary" aria-label="Yönetim özeti">
-              <div><strong>{(data.pendingCoupons.length + (data.pendingCommunityCoupons?.length ?? 0))}</strong><span>Bekleyen kupon</span></div>
-              <div><strong>{data.feedback.filter((item) => item.report && item.status === "new").length}</strong><span>Açık içerik bildirimi</span></div>
-              <div><strong>{data.businesses.length}</strong><span>Aktif işletme</span></div>
-              <div><strong>{data.communities.length}</strong><span>Aktif topluluk</span></div>
-            </div>
-          )}
-        </section>}
 
 
         <div className="admin-tab-content">
@@ -2971,7 +2970,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
                 </button>
               </div>
             </form>
-            <div className="admin-card">
+            <div className="admin-card admin-card--padded">
               <h3>Kampanyalar</h3>
               {campaigns.length === 0 ? <p>Henüz kampanya yok.</p> : (
                 <ul className="admin-list">
@@ -3379,6 +3378,18 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
             </div>
           </section>
         )}
+
+        {data && !loading ? (
+          <div className="admin-load-more">
+            {Object.entries(data.nextCursors ?? {})
+              .filter(([kind, cursor]) => cursor && (LOAD_MORE_TABS[kind] ?? []).includes(tab))
+              .map(([kind, cursor]) => (
+                <button type="button" className="quiet-button" key={kind} disabled={loading} onClick={() => void loadAdminPage(kind, cursor!)}>
+                  {LOAD_MORE_LABELS[kind] ?? "Daha fazla kayıt"}
+                </button>
+              ))}
+          </div>
+        ) : null}
         </div>
       </div>
     </AdminAppShell>

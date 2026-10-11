@@ -80,8 +80,8 @@ export function NotificationAdmin({ uid, communities }: { uid: string; communiti
   }
   const choices = draft.audience === "followers" ? events.filter((event) => event.organizationId === draft.organizationId) : events;
   return <section className="admin-section" aria-labelledby="notifications-title">
-    <div className="section-title-row"><div><h2 id="notifications-title">Bildirimler</h2><p>Öğrencilerin izin ve kategori tercihleri gönderimde dikkate alınır.</p></div></div>
-    <form className="admin-card" onSubmit={(event) => void previewDraft(event)}>
+    <div className="section-title-row"><div><h2 id="notifications-title">Telefon bildirimleri</h2><p>Öğrencilerin izin ve kategori tercihleri gönderimde dikkate alınır.</p></div></div>
+    <form className="admin-card admin-card--padded" onSubmit={(event) => void previewDraft(event)}>
       <fieldset disabled={busy} className="notification-form-fields">
         <label>Başlık<input required maxLength={120} value={draft.title} onChange={(event) => change({ title: event.target.value })} /></label>
         <label>Mesaj<textarea required maxLength={2000} rows={5} value={draft.body} onChange={(event) => change({ body: event.target.value })} /></label>
@@ -91,15 +91,16 @@ export function NotificationAdmin({ uid, communities }: { uid: string; communiti
         <button type="submit" className="primary-button">Önizleme ve hedef kitle</button>
       </fieldset>
     </form>
-    {preview ? <div className="admin-card" aria-live="polite"><h3>{draft.title}</h3><p className="notification-preview-body">{draft.body}</p><p>Hedef kitle: {preview.audienceCount} hesap. Telefon gönderimi yalnızca bildirim izni ve ilgili kategori açık olan cihazlara yapılır.</p>
+    {preview ? <div className="admin-card admin-card--padded" aria-live="polite"><h3>{draft.title}</h3><p className="notification-preview-body">{draft.body}</p><p>Hedef kitle: {preview.audienceCount} hesap. Telefon gönderimi yalnızca bildirim izni ve ilgili kategori açık olan cihazlara yapılır.</p>
       {!preview.enabled ? <p role="status">Bildirim gönderimi henüz etkinleştirilmedi.</p> : null}
       <p>Test alıcısı: <strong>{auth.currentUser?.email ?? uid}</strong>. Test yalnızca bu hesabın bildirim izni olan cihazlarına gönderilir; seçili hedef kitleye gönderilmez.</p>
       <div className="notification-actions"><button className="quiet-button" disabled={busy || !preview.enabled} onClick={() => void send(true)}>Yalnızca kendi hesabıma test gönder</button><button className="primary-button" disabled={busy || !preview.enabled || preview.audienceCount === 0} onClick={() => void send(false)}>Duyuruyu gönder</button></div>
     </div> : null}
     {message ? <p role="status">{message}</p> : null}{error ? <p role="alert">{error}</p> : null}
-    <div className="section-title-row"><ButtonCostControls /><h3>Gönderim geçmişi</h3><button className="quiet-button" disabled={busy} onClick={() => void refreshHistory()}>Yenile</button></div>
-    <p>FCM kabul sayısı, kullanıcının bildirimi gördüğünü veya cihazına teslim edildiğini göstermez.</p>
-    {history.length === 0 ? <p>Henüz gönderim yok.</p> : <div className="notification-history"><table><caption className="sr-only">Son 50 bildirim işi</caption><thead><tr><th>Başlık / gönderen</th><th>Hedef</th><th>Zaman</th><th>Durum</th><th>Hesap</th><th>FCM kabul</th><th>Geçersiz cihaz</th></tr></thead><tbody>{history.map((job) => <tr key={job.id}><td>{job.title}<br /><small>{job.actorUid}</small></td><td>{job.audience === "followers" ? "Takipçiler" : job.audience === "registrations" ? "Katılımcılar" : job.audience === "self" ? "Test" : "Genel"}</td><td>{job.createdAt ? new Date(job.createdAt).toLocaleString("tr-TR") : "—"}</td><td>{({ queued: "Kuyrukta", processing: "İşleniyor", complete: "Tamamlandı", cancelled: "Durduruldu", waiting: "Bekliyor", expired: "Süresi doldu" } as Record<string, string>)[job.status] ?? job.status}{job.status === "waiting" && <button type="button" onClick={() => void resumeJob({ jobId: job.id }).then(refreshHistory).catch((error) => setError(String(error)))}>Devam et</button>}</td><td>{job.users}</td><td>{job.accepted}</td><td>{job.failed}</td></tr>)}</tbody></table></div>}
+    <div className="section-title-row notification-history-head"><h3>Gönderim geçmişi</h3><button className="quiet-button" disabled={busy} onClick={() => void refreshHistory()}>Yenile</button></div>
+    <p className="field-help">FCM kabul sayısı, kullanıcının bildirimi gördüğünü veya cihazına teslim edildiğini göstermez.</p>
+    {history.length === 0 ? <p>Henüz gönderim yok.</p> : <div className="notification-history"><table><caption className="sr-only">Son 50 bildirim işi</caption><thead><tr><th>Başlık / gönderen</th><th>Hedef</th><th>Zaman</th><th>Durum</th><th>Hesap</th><th>FCM kabul</th><th>Geçersiz cihaz</th></tr></thead><tbody>{history.map((job) => <tr key={job.id}><td>{job.title}</td><td>{job.audience === "followers" ? "Takipçiler" : job.audience === "registrations" ? "Katılımcılar" : job.audience === "self" ? "Test" : "Genel"}</td><td>{job.createdAt ? new Date(job.createdAt).toLocaleString("tr-TR") : "—"}</td><td>{({ queued: "Kuyrukta", processing: "İşleniyor", complete: "Tamamlandı", cancelled: "Durduruldu", waiting: "Bekliyor", expired: "Süresi doldu" } as Record<string, string>)[job.status] ?? job.status}{job.status === "waiting" && <button type="button" className="quiet-button compact-button" onClick={() => void resumeJob({ jobId: job.id }).then(refreshHistory).catch((error) => setError(String(error)))}>Devam et</button>}</td><td>{job.users}</td><td>{job.accepted}</td><td>{job.failed}</td></tr>)}</tbody></table></div>}
+    <ButtonCostControls />
   </section>;
 }
 
@@ -109,5 +110,9 @@ function ButtonCostControls() {
     try { const response = await setCostControl({ manualPaused }); setMessage(response.data.optionalJobsAllowed ? "Ek işler açık." : "Ek işler durduruldu; bütçe eşiği de geçerli olabilir."); }
     catch { setMessage("Maliyet kontrolü güncellenemedi."); }
   }
-  return <div><button type="button" onClick={() => void setPaused(true)}>Ek işleri durdur</button><button type="button" onClick={() => void setPaused(false)}>Elle durdurmayı kaldır</button><span role="status">{message}</span></div>;
+  return <div className="admin-card admin-card--padded cost-controls">
+    <div><h3>Ek bildirim işleri</h3><p className="field-help">Bütçe sıkıştığında hatırlatma gibi ek gönderimleri elle durdurabilirsin.</p></div>
+    <div className="cost-controls__actions"><button type="button" className="quiet-button" onClick={() => void setPaused(true)}>Ek işleri durdur</button><button type="button" className="quiet-button" onClick={() => void setPaused(false)}>Durdurmayı kaldır</button></div>
+    {message ? <p role="status" className="field-help">{message}</p> : null}
+  </div>;
 }
