@@ -1,5 +1,6 @@
 import { normalizeCouponCode as normalizeCode, couponCodeRoute, formatCommunityCouponDate } from "./communityCouponCode";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { createAccountRequestScope } from "./accountRequestScope";
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -90,6 +91,7 @@ const listCommunityCoupons = httpsCallable<
     coupons: V2CommunityCoupon[];
     businesses: Array<{ id: string; name: string }>;
     nextCursor: string | null;
+    businessesNextCursor: string | null;
   }
 >(functions, "listCommunityCoupons");
 const reviewCommunityCoupon = httpsCallable<
@@ -149,6 +151,7 @@ type CommunityDashboardData = {
   businesses: Array<{ id: string; name: string }>;
   entries: CommunityEntry[];
   nextCursor: string | null;
+  businessesNextCursor?: string | null;
 };
 type EventView = "list" | "form" | "detail";
 type EventDetailTab = "overview" | "participants";
@@ -373,7 +376,7 @@ export type CommunityApplication = {
   rejectionReason: string;
   createdAt: string | null;
 };
-const listCommunityApplications = httpsCallable<void, { applications: CommunityApplication[] }>(functions, "listCommunityApplications");
+const listCommunityApplications = httpsCallable<{ cursor?: string }, { applications: CommunityApplication[]; nextCursor: string | null }>(functions, "listCommunityApplications");
 const reviewCommunityApplication = httpsCallable<
   { applicationId: string; decision: "approve" | "reject"; reason?: string },
   { status: "approved" | "rejected"; organizationId?: string }
@@ -388,7 +391,7 @@ export type BusinessApplication = {
   rejectionReason: string;
   createdAt: string | null;
 };
-const listBusinessApplications = httpsCallable<void, { applications: BusinessApplication[] }>(functions, "listBusinessApplications");
+const listBusinessApplications = httpsCallable<{ cursor?: string }, { applications: BusinessApplication[]; nextCursor: string | null }>(functions, "listBusinessApplications");
 const reviewBusinessApplication = httpsCallable<
   { applicationId: string; decision: "approve" | "reject"; reason?: string },
   { status: "approved" | "rejected"; organizationId?: string }
@@ -522,6 +525,10 @@ export function functionErrorMessage(error: unknown): string {
     ? String(error.code)
     : "";
   const message = error instanceof Error ? error.message : "";
+  if (message.includes("APPLICANT_ACCOUNT_NOT_ACTIVE")) return "Başvuran hesap devre dışı. Başvuruyu onaylamadan önce hesap durumunu kontrol edin.";
+  if (message.includes("APPLICANT_ACCOUNT_NOT_FOUND")) return "Başvuran hesap silinmiş. Bu başvuru artık onaylanamaz.";
+  if (message.includes("APPLICANT_ACCOUNT_CHECK_FAILED")) return "Başvuran hesabın durumu kontrol edilemedi. Lütfen tekrar deneyin.";
+  if (message.includes("ACCOUNT_NOT_ACTIVE")) return "Hesabınız devre dışı. Hesap erişimi için Good4 yöneticinizle iletişime geçin.";
   if (code.includes("unauthenticated")) {
     return "Oturumunuz sona erdi. Yeniden giriş yapın.";
   }
@@ -864,13 +871,17 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
   const [usageSearch, setUsageSearch] = useState("");
   const [usagePeriod, setUsagePeriod] = useState<"all" | "today" | "month">("all");
   const codeInput = useRef<HTMLInputElement>(null);
+  const usageGeneration = useRef(0);
   const normalizedCode = normalizeCode(code);
 
   const refreshUsage = useCallback(
     async (showLoader = true) => {
-      if (showLoader) setUsageLoading(true);
+      const generation = ++usageGeneration.current;
+      const isCurrent = () => usageGeneration.current === generation;
+      setUsageLoading(showLoader);
       try {
         const response = await listBusinessRedemptions();
+        if (!isCurrent()) return;
         setRedemptions(
           response.data.redemptions.map((item) => ({
             ...item,
@@ -882,9 +893,9 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
         );
         setUsageError("");
       } catch (error) {
-        setUsageError(functionErrorMessage(error));
+        if (isCurrent()) setUsageError(functionErrorMessage(error));
       } finally {
-        if (showLoader) setUsageLoading(false);
+        if (isCurrent()) setUsageLoading(false);
       }
     },
     [context.organizationId],
@@ -892,11 +903,14 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
 
   useEffect(() => {
     void refreshUsage();
+    return () => { usageGeneration.current++; };
   }, [refreshUsage]);
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!couponCodeRoute(normalizedCode)) {
+    const route = couponCodeRoute(normalizedCode);
+    if (submitting) return;
+    if (!route) {
       setFeedback({
         tone: "error",
         title: "Kod eksik görünüyor",
@@ -909,8 +923,8 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
     setFeedback(null);
     setCampaignTitle("");
     try {
-      const isLegacyCode = /^[0-9]{6}$/.test(normalizedCode);
-      const response = await (normalizedCode.length === 4
+      const isLegacyCode = route === "legacy";
+      const response = await (route === "communityCoupon"
         ? redeemCommunityCouponCode({ code: normalizedCode })
         : isLegacyCode
           ? redeemLegacyTestCoupon({ code: normalizedCode })
@@ -986,9 +1000,9 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
           />
           {usageError ? <div className="inline-message inline-message--error" role="alert">{usageError}</div> : null}
           <section className="community-stat-grid business-stat-grid" aria-label="İşletme kullanım özeti">
-            <StatCard label="Bugünkü kullanım" value={usageLoading ? "—" : todayUsage} detail="Bugün doğrulanan V2 kodları" />
-            <StatCard label="Bu ay" value={usageLoading ? "—" : monthUsage} detail="Bu ay doğrulanan V2 kodları" />
-            <StatCard label="Toplam doğrulama" value={usageLoading ? "—" : redemptions.length} detail="Son 100 topluluk kuponu ve son 100 Askıda Yemek kullanımı" />
+            <StatCard label="Listelenen bugünkü kullanım" value={usageLoading ? "—" : todayUsage} detail="Yüklenen kayıtlardaki bugünkü V2 kodları" />
+            <StatCard label="Listelenen bu ay" value={usageLoading ? "—" : monthUsage} detail="Yüklenen kayıtlardaki bu ayın V2 kodları" />
+            <StatCard label="Listelenen doğrulama" value={usageLoading ? "—" : redemptions.length} detail="Son 100 topluluk kuponu ve son 100 Askıda Yemek kullanımı" />
           </section>
           <Card className="business-recent-card">
             <div className="business-card-heading"><div><h2>Son Kullanımlar</h2><p>En son doğrulanan V2 kampanya kodları.</p></div><Button variant="ghost" onClick={() => setSection("usage")}>Tümünü gör</Button></div>
@@ -1011,9 +1025,9 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
                     id="campaign-code"
                     name="campaign-code"
                     type="text"
-                    inputMode="numeric"
+                    inputMode="text"
                     autoComplete="off"
-                    pattern="[0-9 ]*"
+                    pattern="[A-Za-z0-9 -]*"
                     spellCheck={false}
                     value={formatCode(normalizedCode)}
                     onChange={(event) => {
@@ -1026,7 +1040,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
                   />
                   {normalizedCode ? <button type="button" className="clear-button" onClick={resetForm} aria-label="Kodu temizle">×</button> : null}
                 </div>
-                <p id="code-help" className="field-help">4 haneli topluluk kuponu, 6 haneli Good4Test veya 8 haneli Askıda Yemek kodunu kullan.</p>
+                <p id="code-help" className="field-help">4 haneli topluluk kuponu, 6 haneli Good4Test veya 8 haneli Askıda Yemek kodunu kullan. Daha önce verilmiş harfli kampanya kodlarını da girebilirsin.</p>
                 <Button className="business-verify-button" variant="primary" type="submit" disabled={submitting || !couponCodeRoute(normalizedCode)}>
                   {submitting ? <><span className="spinner" /> Kontrol ediliyor</> : "Doğrula"}
                 </Button>
@@ -1056,7 +1070,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
 
       {section === "usage" ? (
         <div className="business-page">
-          <PageHeader title="Kullanımlar" description="İşletmende kullanılan topluluk kuponlarını ve Askıda Yemek kodlarını incele." action={<Button variant="primary" icon="verify" onClick={() => setSection("verify")}>Kupon Doğrula</Button>} />
+          <PageHeader title="Kullanımlar" description="Son 100 topluluk kuponu ve son 100 Askıda Yemek kullanımını incele." action={<Button variant="primary" icon="verify" onClick={() => setSection("verify")}>Kupon Doğrula</Button>} />
           {usageError ? <div className="inline-message inline-message--error" role="alert">{usageError}</div> : null}
           <Card className="business-usage-card">
             <div className="business-usage-toolbar">
@@ -1149,6 +1163,8 @@ function CommunityPanel({
   const [pendingCancellation, setPendingCancellation] = useState<CommunityEntry | null>(null);
 
   const dashboardRequest = useRef<{ key: string; promise: Promise<void> } | null>(null);
+  const dashboardGeneration = useRef(0);
+  const [businessesLoading, setBusinessesLoading] = useState(false);
   const [participants, setParticipants] = useState<CommunityEntry["participants"]>([]);
   const [participantCursor, setParticipantCursor] = useState<string | null>(null);
   const [participantsLoading, setParticipantsLoading] = useState(false);
@@ -1167,7 +1183,9 @@ function CommunityPanel({
       if (activeParticipantEvent.current !== eventId || participantGeneration.current !== generation) return;
       setParticipants((current) => cursor ? [...current, ...response.data.participants] : response.data.participants);
       setParticipantCursor(response.data.nextCursor);
-    } catch (requestError) { setError(functionErrorMessage(requestError)); }
+    } catch (requestError) {
+      if (activeParticipantEvent.current === eventId && participantGeneration.current === generation) setError(functionErrorMessage(requestError));
+    }
     finally { if (participantRequest.current === requestKey) { participantRequest.current = null; setParticipantsLoading(false); } }
   }
   useEffect(() => {
@@ -1181,34 +1199,41 @@ function CommunityPanel({
   async function refresh(showLoader = true, cursor?: string) {
     const section = tab === "coupons" ? "coupons" : "events";
     const key = `${section}:${cursor ?? ""}`;
-    if (dashboardRequest.current?.key === key) return dashboardRequest.current.promise;
+    if (showLoader && dashboardRequest.current?.key === key) return dashboardRequest.current.promise;
+    const generation = ++dashboardGeneration.current;
+    const isCurrent = () => dashboardGeneration.current === generation;
+    setLoading(showLoader);
+    setBusinessesLoading(false);
     const promise = (async () => {
-      if (showLoader) setLoading(true);
       try {
         const [dashboard, couponPage] = await Promise.all([
-          getCommunityPortalDashboard({
+          cursor && section === "coupons" ? null : getCommunityPortalDashboard({
             section: "events",
             ...(section === "events" && cursor ? { cursor } : {}),
           }),
-          listCommunityCoupons(section === "coupons" && cursor ? { cursor } : {}),
+          cursor && section === "events" ? null : listCommunityCoupons(
+            cursor ? { cursor, includeBusinesses: false } : {},
+          ),
         ]);
-        const response = {
-          data: {
-            ...dashboard.data,
-            businesses: couponPage.data.businesses,
-            entries: [...dashboard.data.entries, ...couponPage.data.coupons.map(couponEntry)],
-            nextCursor:
-              section === "coupons" ? couponPage.data.nextCursor : dashboard.data.nextCursor,
-          },
-        };
-        if (dashboardRequest.current?.key !== key) return;
-        setData((current) => cursor && current ? { ...response.data, entries: [...new Map([...current.entries,...response.data.entries].map(entry=>[`${entry.kind}:${entry.id}`,entry])).values()] } : response.data);
-        setBusinessId((current) => current || response.data.businesses[0]?.id || "");
+        if (!isCurrent()) return;
+        setData((current) => {
+          const base = dashboard?.data ?? current;
+          if (!base) return current;
+          const entries = [...(dashboard?.data.entries ?? []), ...(couponPage?.data.coupons.map(couponEntry) ?? [])];
+          return {
+            ...base,
+            businesses: cursor ? current?.businesses ?? base.businesses : couponPage?.data.businesses ?? base.businesses,
+            businessesNextCursor: cursor ? current?.businessesNextCursor : couponPage?.data.businessesNextCursor,
+            entries: cursor && current ? [...new Map([...current.entries, ...entries].map((entry) => [`${entry.kind}:${entry.id}`, entry])).values()] : entries,
+            nextCursor: section === "coupons" ? couponPage?.data.nextCursor ?? null : dashboard?.data.nextCursor ?? null,
+          };
+        });
+        if (!cursor && couponPage) setBusinessId((current) => current || couponPage.data.businesses[0]?.id || "");
         setError("");
       } catch (requestError) {
-        setError(functionErrorMessage(requestError));
+        if (isCurrent()) setError(functionErrorMessage(requestError));
       } finally {
-        if (showLoader) setLoading(false);
+        if (showLoader && isCurrent()) setLoading(false);
       }
     })();
     dashboardRequest.current = { key, promise };
@@ -1216,7 +1241,27 @@ function CommunityPanel({
   }
   useEffect(() => {
     void refresh();
+    return () => { dashboardGeneration.current++; dashboardRequest.current = null; setBusinessesLoading(false); };
   }, [tab === "coupons"]);
+
+  async function loadMoreBusinesses() {
+    const cursor = data?.businessesNextCursor;
+    if (!cursor || businessesLoading) return;
+    const generation = dashboardGeneration.current;
+    const isCurrent = () => dashboardGeneration.current === generation;
+    setBusinessesLoading(true);
+    try {
+      const response = await listCommunityCoupons({ businessesOnly: true, businessesCursor: cursor });
+      if (!isCurrent()) return;
+      setData((current) => current ? {
+        ...current,
+        businesses: [...new Map([...current.businesses, ...response.data.businesses].map((business) => [business.id, business])).values()],
+        businessesNextCursor: response.data.businessesNextCursor,
+      } : current);
+      setError("");
+    } catch (requestError) { if (isCurrent()) setError(functionErrorMessage(requestError)); }
+    finally { if (isCurrent()) setBusinessesLoading(false); }
+  }
 
   function resetForm() {
     setEditingId("");
@@ -1257,6 +1302,7 @@ function CommunityPanel({
 
   async function saveEntry(event: FormEvent<HTMLFormElement>, kind: "event" | "coupon") {
     event.preventDefault();
+    if (saving) return;
     setSaving(true);
     setError("");
     setNotice("");
@@ -1282,20 +1328,10 @@ function CommunityPanel({
           title: title.trim(),
           description: description.trim(),
           date,
-          ...(kind === "event"
-            ? {
-                time,
-                location: location.trim(),
-                capacity: Number.parseInt(capacity || "0", 10),
-                categoryId,
-              }
-            : {
-                businessId,
-                discountType,
-                discountValue:
-                  discountType === "freeItem" ? 0 : Number.parseInt(discountValue || "0", 10),
-                totalLimit: Number.parseInt(totalLimit || "0", 10),
-              }),
+          time,
+          location: location.trim(),
+          capacity: Number.parseInt(capacity || "0", 10),
+          categoryId,
         });
       setNotice(kind === "event"
         ? `Etkinlik ${editingId ? "güncellendi" : "yayınlandı"}.`
@@ -1741,6 +1777,7 @@ function CommunityPanel({
                       <option key={business.id} value={business.id}>{business.name}</option>
                     ))}
                   </select>
+                  {data.businessesNextCursor ? <Button type="button" variant="ghost" disabled={businessesLoading} onClick={() => void loadMoreBusinesses()}>{businessesLoading ? "İşletmeler yükleniyor…" : "Daha fazla işletme yükle"}</Button> : null}
                   <div className="two-column-fields">
                     <div>
                       <label className="field-label" htmlFor="discount-type">
@@ -2001,12 +2038,14 @@ type AdminTab = "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspend
 
 // "Load more" buttons belong to the tab that lists those records.
 const LOAD_MORE_TABS: Record<string, AdminTab[]> = {
+  communityCoupons: ["coupons"],
   organizations: ["businesses", "communities"],
   calendar: ["calendar"],
   legacyBusinesses: ["businesses"],
   legacyCommunities: ["coupons"],
 };
 const LOAD_MORE_LABELS: Record<string, string> = {
+  communityCoupons: "Daha fazla bekleyen topluluk kuponu",
   organizations: "Daha fazla kurum",
   calendar: "Daha fazla takvim kaydı",
   legacyBusinesses: "Daha fazla eski işletme",
@@ -2157,6 +2196,11 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [assigningCommunityManager, setAssigningCommunityManager] = useState(false);
   const [communityApplications, setCommunityApplications] = useState<CommunityApplication[]>([]);
   const [businessApplications, setBusinessApplications] = useState<BusinessApplication[]>([]);
+  const [communityApplicationsCursor, setCommunityApplicationsCursor] = useState<string | null>(null);
+  const [businessApplicationsCursor, setBusinessApplicationsCursor] = useState<string | null>(null);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+  const applicationRequests = useRef({ business: 0, community: 0 });
+  const adminGeneration = useRef(0);
   const [menuWeekStart, setMenuWeekStart] = useState("");
   const [menuWeekEnd, setMenuWeekEnd] = useState("");
   const [menuDays, setMenuDays] = useState<DiningMenuDayForm[]>(() => emptyDiningDays());
@@ -2194,31 +2238,42 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [savingCalendar, setSavingCalendar] = useState(false);
 
   async function loadAdminPage(kind: string, cursor: string) {
+    if (loading) return;
+    const generation = adminGeneration.current;
+    const isCurrent = () => adminGeneration.current === generation;
     setLoading(true);
     try {
       const response = await getAdminDashboard({ [`${kind}Cursor`]: cursor, includeLegacy: kind.startsWith("legacy") });
+      if (!isCurrent()) return;
       setData((current) => !current ? response.data : { ...current,
         nextCursors: { ...current.nextCursors, [kind]: response.data.nextCursors[kind] },
         ...(kind === "organizations" ? { businesses: [...current.businesses, ...response.data.businesses], communities: [...current.communities, ...response.data.communities] } : {}),
         ...(kind === "calendar" ? { calendarEvents: [...current.calendarEvents, ...response.data.calendarEvents] } : {}),
         ...(kind === "legacyBusinesses" ? { legacyBusinesses: [...current.legacyBusinesses, ...response.data.legacyBusinesses] } : {}),
         ...(kind === "legacyCommunities" ? { pendingCoupons: [...current.pendingCoupons, ...response.data.pendingCoupons] } : {}),
+        ...(kind === "communityCoupons" ? { pendingCommunityCoupons: [...new Map([...current.pendingCommunityCoupons, ...response.data.pendingCommunityCoupons].map((coupon) => [coupon.id, coupon])).values()] } : {}),
       });
-    } catch (requestError) { setError(functionErrorMessage(requestError)); }
-    finally { setLoading(false); }
+    } catch (requestError) { if (isCurrent()) setError(functionErrorMessage(requestError)); }
+    finally { if (isCurrent()) setLoading(false); }
   }
-  const adminRequest = useRef<Promise<void> | null>(null);
+  const adminRequest = useRef<{ key: boolean; promise: Promise<void> } | null>(null);
   async function refresh(showLoader = true, clearExistingError = true): Promise<void> {
-    if (adminRequest.current) return adminRequest.current;
-    const promise = refreshDashboard(showLoader, clearExistingError).finally(() => { if (adminRequest.current === promise) adminRequest.current = null; });
-    adminRequest.current = promise;
+    const key = tab === "coupons" || tab === "businesses";
+    if (showLoader && adminRequest.current?.key === key) return adminRequest.current.promise;
+    const generation = ++adminGeneration.current;
+    setApplicationsLoading(false);
+    const promise = refreshDashboard(showLoader, clearExistingError, key, generation).finally(() => { if (adminRequest.current?.promise === promise) adminRequest.current = null; });
+    adminRequest.current = { key, promise };
     return promise;
   }
-  async function refreshDashboard(showLoader = true, clearExistingError = true) {
+  async function refreshDashboard(showLoader: boolean, clearExistingError: boolean, includeLegacy: boolean, generation: number) {
+    const isCurrent = () => adminGeneration.current === generation;
     if (showLoader) setLoading(true);
+    else setLoading(false);
     if (clearExistingError) setError("");
     try {
-      const response = await getAdminDashboard({ includeLegacy: tab === "coupons" || tab === "businesses" });
+      const response = await getAdminDashboard({ includeLegacy });
+      if (!isCurrent()) return;
       setData(response.data);
       setMemberOrganizationId((current) => current || response.data.businesses[0]?.id || "");
       setCommunityOrganizationId((current) => current || response.data.communities[0]?.id || "");
@@ -2228,28 +2283,51 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       fillBannerForm(bannerForSlot(response.data, bannerSlot));
       await Promise.all([loadCommunityApplications(false), loadBusinessApplications(false)]);
     } catch (requestError) {
-      setError(functionErrorMessage(requestError));
+      if (isCurrent()) setError(functionErrorMessage(requestError));
     } finally {
-      if (showLoader) setLoading(false);
+      if (showLoader && isCurrent()) setLoading(false);
     }
   }
 
-  async function loadCommunityApplications(clearExistingError = true) {
+  async function loadCommunityApplications(clearExistingError = true, cursor?: string) {
+    const generation = adminGeneration.current;
+    const request = ++applicationRequests.current.community;
+    const isCurrent = () => adminGeneration.current === generation && applicationRequests.current.community === request;
     if (clearExistingError) setError("");
     try {
-      setCommunityApplications((await listCommunityApplications()).data.applications);
+      const response = await listCommunityApplications(cursor ? { cursor } : {});
+      if (!isCurrent()) return;
+      setCommunityApplications((current) => cursor ? [...new Map([...current, ...response.data.applications].map((application) => [application.id, application])).values()] : response.data.applications);
+      setCommunityApplicationsCursor(response.data.nextCursor);
     } catch (requestError) {
-      setError(`Topluluk başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
+      if (isCurrent()) setError(`Topluluk başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
     }
   }
 
-  async function loadBusinessApplications(clearExistingError = true) {
+  async function loadBusinessApplications(clearExistingError = true, cursor?: string) {
+    const generation = adminGeneration.current;
+    const request = ++applicationRequests.current.business;
+    const isCurrent = () => adminGeneration.current === generation && applicationRequests.current.business === request;
     if (clearExistingError) setError("");
     try {
-      setBusinessApplications((await listBusinessApplications()).data.applications);
+      const response = await listBusinessApplications(cursor ? { cursor } : {});
+      if (!isCurrent()) return;
+      setBusinessApplications((current) => cursor ? [...new Map([...current, ...response.data.applications].map((application) => [application.id, application])).values()] : response.data.applications);
+      setBusinessApplicationsCursor(response.data.nextCursor);
     } catch (requestError) {
-      setError(`İşletme başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
+      if (isCurrent()) setError(`İşletme başvuruları yüklenemedi. ${functionErrorMessage(requestError)}`);
     }
+  }
+
+  async function loadMoreApplications(kind: "business" | "community") {
+    const cursor = kind === "business" ? businessApplicationsCursor : communityApplicationsCursor;
+    if (!cursor || applicationsLoading) return;
+    const generation = adminGeneration.current;
+    setApplicationsLoading(true);
+    try {
+      if (kind === "business") await loadBusinessApplications(true, cursor);
+      else await loadCommunityApplications(true, cursor);
+    } finally { if (adminGeneration.current === generation) setApplicationsLoading(false); }
   }
 
   async function handleBusinessApplication(application: BusinessApplication, decision: "approve" | "reject") {
@@ -2303,6 +2381,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   }
 
   useEffect(() => { void refresh(); }, [tab === "coupons" || tab === "businesses"]);
+  useEffect(() => () => { adminGeneration.current++; adminRequest.current = null; }, []);
   useEffect(() => {
     if (tab !== "suspended") return;
     setCampaignBusinessId((current) => current || data?.businesses[0]?.id || "");
@@ -3381,6 +3460,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
 
         {data && !loading ? (
           <div className="admin-load-more">
+            {tab === "businesses" && businessApplicationsCursor ? <Button disabled={applicationsLoading} onClick={() => void loadMoreApplications("business")}>Daha fazla işletme başvurusu</Button> : null}
+            {tab === "communities" && communityApplicationsCursor ? <Button disabled={applicationsLoading} onClick={() => void loadMoreApplications("community")}>Daha fazla topluluk başvurusu</Button> : null}
             {Object.entries(data.nextCursors ?? {})
               .filter(([kind, cursor]) => cursor && (LOAD_MORE_TABS[kind] ?? []).includes(tab))
               .map(([kind, cursor]) => (
@@ -3402,8 +3483,13 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
   const [context, setContext] = useState<PortalContext | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [accessError, setAccessError] = useState("");
+  const [requestScope] = useState(createAccountRequestScope);
+  const contextRequest = useRef<(() => boolean) | null>(null);
 
-  useEffect(() => onAuthStateChanged(auth, (nextUser) => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+    requestScope.setAccount(nextUser?.uid ?? null);
+    contextRequest.current = null;
     setUser(nextUser);
     setContext(null);
     setAccessError("");
@@ -3415,13 +3501,16 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
     }
 
     setContextLoading(true);
-    // A quick account switch can finish the older request last; only the current account's answer counts.
-    const isCurrent = () => auth.currentUser?.uid === nextUser.uid;
+    const requestIsCurrent = requestScope.start(nextUser.uid)!;
+    const isCurrent = () => requestIsCurrent() && auth.currentUser?.uid === nextUser.uid;
+    contextRequest.current = isCurrent;
     void getPortalContext()
       .then((response) => { if (isCurrent()) setContext(response.data); })
       .catch((error) => { if (isCurrent()) setAccessError(functionErrorMessage(error)); })
       .finally(() => { if (isCurrent()) setContextLoading(false); });
-  }), []);
+    });
+    return () => { unsubscribe(); requestScope.setAccount(null); contextRequest.current = null; };
+  }, [requestScope]);
 
   if (!authReady || contextLoading) {
     return (
@@ -3446,7 +3535,10 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
     if (portal === "community") {
       return <AccessError message="Bu Google hesabı henüz bir topluluğa bağlı değil. Topluluğunu eklemek için good4tr.com/topluluk-basvuru adresinden başvur." />;
     }
-    const setApplication = (application: BusinessApplicationView) => setContext({ portalRole: "applicant", businessApplication: application });
+    const isCurrent = contextRequest.current;
+    const setApplication = (application: BusinessApplicationView) => {
+      if (isCurrent?.()) setContext({ portalRole: "applicant", businessApplication: application });
+    };
     return context.businessApplication
       ? <BusinessPendingPanel user={user} application={context.businessApplication} onChanged={setApplication} describeError={functionErrorMessage} />
       : <BusinessApplicationForm user={user} onSubmitted={setApplication} describeError={functionErrorMessage} />;

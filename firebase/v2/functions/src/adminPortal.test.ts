@@ -251,7 +251,7 @@ test("dashboard keeps pending canonical community coupons separate from legacy c
 });
 
 
-test("dashboard bounds the pending canonical coupon queue to 200", async () => {
+test("dashboard pages the pending canonical coupon queue without losing records", async () => {
   await seedAdmin();
   const batch = db.batch();
   for (let index = 0; index < 201; index += 1) {
@@ -264,6 +264,20 @@ test("dashboard bounds the pending canonical coupon queue to 200", async () => {
   }
   await batch.commit();
   const data = await getAdminDashboardService(db, legacyTestDb, "admin-1");
-  assert.equal(data.pendingCommunityCoupons.length, 200);
+  assert.equal(data.pendingCommunityCoupons.length, 100);
   assert.equal(data.pendingCommunityCoupons[0]?.dailyLimit, 2);
+  const second = await getAdminDashboardService(db, legacyTestDb, "admin-1", {
+    communityCouponsCursor: data.nextCursors.communityCoupons,
+  });
+  const third = await getAdminDashboardService(db, legacyTestDb, "admin-1", {
+    communityCouponsCursor: second.nextCursors.communityCoupons,
+  });
+  assert.equal(second.pendingCommunityCoupons.length, 100);
+  assert.equal(third.pendingCommunityCoupons.length, 1);
+  assert.equal(third.nextCursors.communityCoupons, null);
+  assert.equal(new Set([
+    ...data.pendingCommunityCoupons,
+    ...second.pendingCommunityCoupons,
+    ...third.pendingCommunityCoupons,
+  ].map((coupon) => coupon.id)).size, 201);
 });

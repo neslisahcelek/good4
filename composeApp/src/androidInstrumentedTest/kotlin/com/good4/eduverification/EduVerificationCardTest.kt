@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.good4.MainActivity
+import com.good4.core.presentation.UiText
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,15 +41,15 @@ class EduVerificationCardTest {
             }
         } }
 
-        compose.onNodeWithText(".edu.tr e-posta adresiniz").assertDoesNotExist()
+        compose.onNodeWithText("Okul e-posta adresin").assertDoesNotExist()
         compose.onNodeWithText("Edu mailimi aktif ederek Askıda Yemek'ten faydalanmak istiyorum").performClick()
         compose.onNodeWithText("Doğrulama kodu gönder").assertIsNotEnabled()
-        compose.onNodeWithText(".edu.tr e-posta adresiniz").performTextInput("can@ogr.akdeniz.edu.tr")
+        compose.onNodeWithText("Okul e-posta adresin").performTextInput("can@ogr.akdeniz.edu.tr")
         compose.onNodeWithText("Doğrulama kodu gönder").assertIsEnabled().performClick()
         assert(sentEmail == "can@ogr.akdeniz.edu.tr")
 
         compose.onNodeWithText("6 haneli kod can@ogr.akdeniz.edu.tr adresine gönderildi", substring = true).assertExists()
-        compose.onNodeWithText("Tekrar gönder (60 sn)").assertIsNotEnabled()
+        compose.onNodeWithText("Tekrar gönder (1:00)").assertIsNotEnabled()
         compose.onNodeWithText("Doğrula").assertIsNotEnabled()
         compose.onNodeWithText("Doğrulama kodu").performTextInput("12a3456")
         compose.onNodeWithText("Doğrula").assertIsEnabled().performClick()
@@ -63,7 +64,7 @@ class EduVerificationCardTest {
                         isLoading = false,
                         optedIn = true,
                         email = "can@gmail.com",
-                        errorMessage = "Geçerli bir .edu.tr e-posta adresi girin."
+                        errorMessage = UiText.DynamicString("Geçerli bir .edu.tr e-posta adresi girin.")
                     ),
                     onOptInChange = {}, onEmailChange = {}, onSendCode = {},
                     onCodeChange = {}, onConfirmCode = {}, onChangeEmail = {}

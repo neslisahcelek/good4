@@ -15,6 +15,14 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class CampusEmailCodeViewModelTest {
     private class Source : CampusEmailCodeSource {
+        override var accessRevision = 0L
+        var statusResult = com.good4.eduverification.EduStatus(false, null)
+        val sessions = mutableListOf<String?>()
+        override suspend fun status() = statusResult
+        override suspend fun confirmCode(code: String, sessionId: String?): EduCodeConfirmResult {
+            sessions += sessionId
+            return confirmCode(code)
+        }
         var requests = 0
         val codes = mutableListOf<String>()
         var request: suspend () -> EduCodeRequestResult = { EduCodeRequestResult.Sent("123@ogr.akdeniz.edu.tr", 60) }
@@ -117,4 +125,51 @@ class CampusEmailCodeViewModelTest {
         assertEquals(Res.string.campus_email_code_account_daily_limit, (campusCodeError(Exception("EDU_CODE_ACCOUNT_DAILY_LIMIT")) as UiText.StringResourceId).id)
         assertEquals(Res.string.campus_email_code_daily_limit, (campusCodeError(Exception("EDU_CODE_DAILY_LIMIT")) as UiText.StringResourceId).id)
     }
+    @Test fun testRecipientIsFixedAndConfirmationCarriesTheServerSession() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler)); val store = ViewModelStore()
+        try {
+            val source = Source().apply {
+                statusResult = com.good4.eduverification.EduStatus(false, null, testAvailable = true, testEmail = "admin@example.com")
+                request = { EduCodeRequestResult.Sent("admin@example.com", 180, "server-session") }
+                confirm = { EduCodeConfirmResult.Verified("admin@example.com") }
+            }
+            val vm = CampusEmailVerificationViewModel(source) { testScheduler.currentTime }.also { store.put("code", it) }
+            vm.onResume(); runCurrent()
+            assertTrue(vm.state.value.testAvailable)
+            vm.setEmail("other@example.com")
+            assertEquals("admin@example.com", vm.state.value.email)
+            vm.sendCode(); runCurrent()
+            vm.setCode("123456"); runCurrent()
+            assertEquals(listOf<String?>("server-session"), source.sessions)
+            assertEquals("admin@example.com", vm.state.value.verifiedEmail)
+            source.accessRevision++
+            source.statusResult = source.statusResult.copy(resendAfterSeconds = 180)
+            vm.onResume(); runCurrent()
+            assertNull(vm.state.value.verifiedEmail)
+            assertNull(vm.state.value.sentTo)
+            assertNull(vm.state.value.sessionId)
+            assertEquals(180, vm.state.value.resendSeconds)
+            vm.sendCode(); runCurrent(); assertEquals(1, source.requests)
+        } finally { store.clear(); Dispatchers.resetMain() }
+    }
+
+    @Test fun lateDeliveryCannotRestoreTheOldSessionAfterDisconnection() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler)); val store = ViewModelStore()
+        try {
+            val delivery = CompletableDeferred<EduCodeRequestResult>()
+            val source = Source().apply {
+                statusResult = com.good4.eduverification.EduStatus(false, null, testAvailable = true, testEmail = "admin@example.com")
+                request = { delivery.await() }
+            }
+            val vm = CampusEmailVerificationViewModel(source) { testScheduler.currentTime }.also { store.put("code", it) }
+            vm.onResume(); runCurrent(); vm.sendCode(); runCurrent()
+            source.accessRevision++
+            vm.onResume(); runCurrent()
+            delivery.complete(EduCodeRequestResult.Sent("admin@example.com", 180, "old-session")); runCurrent()
+            assertNull(vm.state.value.sentTo)
+            assertNull(vm.state.value.sessionId)
+            assertFalse(vm.state.value.isSending)
+        } finally { store.clear(); Dispatchers.resetMain() }
+    }
+
 }

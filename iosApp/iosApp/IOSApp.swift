@@ -3,6 +3,7 @@ import Foundation
 import PhotosUI
 import StoreKit
 import FirebaseCore
+import FirebaseAnalytics
 import FirebaseFirestore
 import FirebaseAuth
 import GoogleSignIn
@@ -24,6 +25,7 @@ struct IOSApp: App {
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
         #endif
         Good4AppCheck.configureFirebaseIfNeeded()
+        AnalyticsBridge.shared.native = Good4NativeAnalytics()
         CampusNativePushBridge.shared.launcher = NativeCampusPush.shared
         CampusEmailAuthBridge.shared.launcher = NativeCampusEmailAuthLauncher()
         StoreReviewBridge.shared.launcher = NativeStoreReviewLauncher()
@@ -416,5 +418,22 @@ private final class NativeStoreReviewLauncher: NSObject, NativeReviewLauncher {
                 approval.approve() else { return }
             AppStore.requestReview(in: scene)
         }
+    }
+}
+
+private final class Good4NativeAnalytics: NSObject, NativeAnalytics {
+    func setEnabled(enabled: Bool) {
+        Analytics.setConsent([
+            .analyticsStorage: enabled ? .granted : .denied,
+            .adStorage: .denied, .adUserData: .denied, .adPersonalization: .denied
+        ])
+        Analytics.setAnalyticsCollectionEnabled(enabled)
+    }
+    func reset() {
+        Analytics.resetAnalyticsData()
+        setEnabled(enabled: false)
+    }
+    func log(name: String, parameters: [String: String]) {
+        Analytics.logEvent(name, parameters: parameters)
     }
 }

@@ -1,5 +1,7 @@
 package com.good4.dining.presentation
 
+import com.good4.analytics.*
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.core.domain.Result
@@ -28,7 +30,8 @@ import kotlinx.datetime.toLocalDateTime
 class AkdenizDiningMenuViewModel(
     private val repository: AkdenizDiningMenuRepository,
     private val kykRepository: KykMenuRepository,
-    private val ratingRepository: MealRatingRepository
+    private val ratingRepository: MealRatingRepository,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
 ) : ViewModel() {
     private val _state = MutableStateFlow(AkdenizDiningMenuState())
     val state = _state.asStateFlow()
@@ -111,9 +114,14 @@ class AkdenizDiningMenuViewModel(
 
     fun rate(meal: DailyMeal, vote: MealVote) {
         val current = _state.value
+        if (meal in current.ratingInFlight || current.ratings[meal]?.myVote == vote) return
+        val tracking = analytics.click(Interaction.DINING_RATE, AnalyticsTarget.valueOf(meal.name))
         val now = Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul"))
-        if (current.loadedDate != now.date.toString()) { refreshIfDayChanged(); return }
-        if (current.isLoading || meal !in publishedMeals(current) || !meal.ratingOpensAt(now.hour)) return
+        if (current.loadedDate != now.date.toString()) { analytics.result(tracking, InteractionStatus.VALIDATION_ERROR); refreshIfDayChanged(); return }
+        if (current.isLoading || meal !in publishedMeals(current) || !meal.ratingOpensAt(now.hour)) {
+            analytics.result(tracking, InteractionStatus.VALIDATION_ERROR)
+            return
+        }
         if (meal in current.ratingInFlight || current.ratings[meal]?.myVote == vote) return
         val requestGeneration = generation
         voteVersions[meal] = (voteVersions[meal] ?: 0) + 1
@@ -129,12 +137,14 @@ class AkdenizDiningMenuViewModel(
         voteJobs[meal] = viewModelScope.launch {
             try {
                 val rating = ratingRepository.rate(current.loadedDate, meal, vote)
+                analytics.result(tracking, InteractionStatus.SUCCESS)
                 if (generation == requestGeneration) _state.update {
                     it.copy(ratings = it.ratings + (meal to rating), ratingInFlight = it.ratingInFlight - meal)
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 if (generation == requestGeneration) _state.update {
                     it.copy(
                         ratings = if (before == null) it.ratings - meal else it.ratings + (meal to before),

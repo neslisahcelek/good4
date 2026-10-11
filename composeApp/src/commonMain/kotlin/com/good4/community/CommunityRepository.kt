@@ -9,7 +9,6 @@ import com.good4.core.util.AppEnvironment
 import com.good4.core.util.FirebaseBackend
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -25,6 +24,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 
 @Serializable
 data class CommunityDto(
@@ -205,11 +206,19 @@ class CommunityRepository(
         }
     }
 
-    private suspend fun <T : Any> allPages(path: String, conditions: Map<String, Any>, clazz: kotlin.reflect.KClass<T>): Result<List<com.good4.core.data.repository.DocumentWithId<T>>, com.good4.core.domain.Error> {
+    private suspend fun <T : Any> allPages(
+        path: String,
+        conditions: Map<String, Any>,
+        clazz: kotlin.reflect.KClass<T>,
+        minimumTimestamp: Pair<String, Long>? = null
+    ): Result<List<com.good4.core.data.repository.DocumentWithId<T>>, com.good4.core.domain.Error> {
         val items = mutableListOf<com.good4.core.data.repository.DocumentWithId<T>>()
         var cursor: String? = null
         do {
-            when (val page = store.queryPage(path, conditions, clazz, cursor = cursor)) {
+            val page = store.queryPage(path, conditions, clazz, cursor = cursor, minimumTimestamp = minimumTimestamp)
+            // Native adapters may return cancellation as Result.Error; do not apply a cancelled read.
+            coroutineContext.ensureActive()
+            when (page) {
                 is Result.Error -> return page
                 is Result.Success -> { items.addAll(page.data.items); cursor = page.data.nextCursor }
             }
@@ -268,10 +277,7 @@ class CommunityRepository(
         if (!isV2) return entries(id, manager) to null
         val conditions: Map<String, Any> = if (manager) mapOf("organizationId" to id) else mapOf("organizationId" to id, "status" to "published")
         return when (val result = store.queryPage("events", conditions, V2EventDto::class, cursor = cursor)) {
-            is Result.Success -> {
-                val coupons = if (cursor == null) couponEntries(id) else emptyList()
-                (result.data.items.map(::mapV2Event) + coupons) to result.data.nextCursor
-            }
+            is Result.Success -> result.data.items.map(::mapV2Event) to result.data.nextCursor
             is Result.Error -> error("Etkinlikler yüklenemedi. Tekrar deneyin.")
         }
     }
@@ -367,9 +373,9 @@ class CommunityRepository(
     private suspend fun validCouponDocuments(communityId: String? = null): List<com.good4.core.data.repository.DocumentWithId<V2CommunityCouponDto>> {
         val conditions = mutableMapOf<String, Any>("status" to "published")
         if (communityId != null) conditions["communityId"] = communityId
-        return when (val result = allPages("communityCoupons", conditions, V2CommunityCouponDto::class)) {
+        val now = Clock.System.now().epochSeconds
+        return when (val result = allPages("communityCoupons", conditions, V2CommunityCouponDto::class, minimumTimestamp = "endsAt" to now)) {
             is Result.Success -> {
-                val now = Clock.System.now().epochSeconds
                 result.data.filter { it.data.isCurrentlyValid(now) }
             }
             is Result.Error -> error("COMMUNITY_COUPONS_LOAD_FAILED")

@@ -1,15 +1,12 @@
 export function normalizeCouponCode(value: string): string {
-  return value.replace(/\D/g, "").slice(0, 8);
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
 }
 export function couponCodeRoute(code: string): "communityCoupon" | "legacy" | "campaign" | null {
-  if (!/^\d+$/.test(code)) return null;
-  return code.length === 4
-    ? "communityCoupon"
-    : code.length === 6
-      ? "legacy"
-      : code.length === 8
-        ? "campaign"
-        : null;
+  if (/^\d{4}$/.test(code)) return "communityCoupon";
+  if (/^\d{6}$/.test(code)) return "legacy";
+  // The server still accepts older alphanumeric campaign codes during their TTL.
+  if (/^\d{8}$/.test(code) || (/^[A-Z0-9]{6,12}$/.test(code) && /[A-Z]/.test(code))) return "campaign";
+  return null;
 }
 
 export function formatCommunityCouponDate(value: string): string {

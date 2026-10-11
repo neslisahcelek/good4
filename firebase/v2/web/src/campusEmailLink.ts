@@ -71,11 +71,11 @@ export function campusEmailBrowserError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
   const code = error && typeof error === "object" && "code" in error ? error.code : "";
   if (message === "CAMPUS_EMAIL_LINK_EXPIRED" || code === "functions/deadline-exceeded") {
-    return "Bağlantının süresi doldu. Good4'tan yeni bir doğrulama e-postası iste.";
+    return "Bağlantının süresi doldu. Good4'dan yeni bir doğrulama e-postası iste.";
   }
   if (message === "CAMPUS_EMAIL_TEMPORARILY_UNAVAILABLE" || code === "functions/unavailable"
     || code === "functions/internal" || code === "functions/not-found") {
     return "Şu an doğrulanamadı. Biraz sonra tekrar dene.";
   }
-  return "Bağlantı geçersiz veya kullanılmış. Good4'tan yeni bir doğrulama e-postası iste.";
+  return "Bağlantı geçersiz veya kullanılmış. Good4'dan yeni bir doğrulama e-postası iste.";
 }

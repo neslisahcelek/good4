@@ -37,6 +37,15 @@ Bu skill, repodaki `AGENTS.md` ile birlikte okunur. Çelişki varsa kullanıcı 
 - Lazy list öğelerine stabil `key` ekle. Görünürlük/scroll state'ini ViewModel iş state'inin yerine koyma.
 - Önemli yeni Compose ekranlarında Preview ekle; birden fazla ekranda yinelenen yapıyı ortaklaştır.
 
+## Liste yükleme ve kategori geçişleri
+
+- İlk yüklemeyi arka plan yenilemesinden ayır. Başarılı boş sonuç da yüklenmiş state'tir; boş listeyi her dönüşte yeniden tam ekran loading'e çevirme.
+- Kategori cache'i yüklenen tüm öğeleri ve onlara ait cursor'ı birlikte saklamalı. Sayfalı bir genel listenin yerel alt kümesini tam kategori sonucu sayma; genel liste tamamlandıysa filtreyi ağ çağrısı olmadan türetebilirsin.
+- Lifecycle resume ve tab effect aynı okumayı iki kez başlatmamalı. Yüklemeyi ViewModel'de tekilleştir; güncel tab cache'ini kullan, yeniden deneme ve yazma sonrası dönüşte yenile.
+- Sık kullanılan komşu tabın ilk isteğini yalnız tıklamada başlatmak geçişi ağ süresine bağlar. Okuma maliyeti sınırlıysa ekran girişinde paralel hazırlamayı değerlendir; tab tıklaması devam eden isteği paylaşsın ve kişisel sonuç hesap bazında cache'lensin. Kişisel listeyi keşfet listesinden türetme veya bütün tabları koşulsuz önceden yükleme.
+- Feed zaten ekran durumunu taşıyorsa her filtre değişiminde ayrıca özet çağırma. Paralel status okumaları profil/şart kabulü yazmasını ezmemeli; sonuçları kullanıcı ve veri/istek nesliyle doğrula. UID, kampüs doğrulaması veya ilgili yazma değişince eski cache'i geçersiz kıl.
+- Cache gösterilirken yenileme hatasını gizleme. Devam sayfası hatasında öğeleri ve cursor'ı koruyup görünür yeniden deneme sağla.
+
 ## Firebase ve sunucu güven sınırı
 
 - İstemci gizlenmiş buton, UID veya Firebase client rules tek başına yetkilendirme değildir. Admin SDK kullanan her hassas okuma/yazma yolunda hesap aktifliğini ve rol/ownership yetkisini sunucuda doğrula.
@@ -58,6 +67,15 @@ Menü puanlama, etkinlik düzenleme, kişisel koleksiyon veya sayfalı ekran de�
 
 - Görsel seçme, hazırlama veya yükleme değişikliğinde [good4-media](../good4-media/SKILL.md) rehberini kullan.
 - Firebase deploy istenirse [good4-firebase-release](../good4-firebase-release/SKILL.md) rehberini kullan. Bu yönlendirme kendiliğinden deploy yetkisi vermez.
+
+## İçerik ve istek yaşam döngüsü
+
+- Yeni keşfedilebilir içerik türünü bloklama/erişim filtresine bütün yollarıyla bağla: ilk liste, öne çıkan kart, anlık bloklama ve doğrudan seçim. Bağımsız bir koleksiyonun yükleme hatası, komşu başarılı listenin verisini kapatmamalı; kendi lokalize hata ve yeniden deneme state'ini taşımalı.
+- İstek nesli yalnız başarı sonucunu değil hata, cursor ve loading/finally güncellemelerini de korumalı. Aynı UID'ye yeniden giriş veya A→B→A sekme dönüşünde eski istek yeni oturum/nesille eşleşmemeli; yazma sonrası refresh'i yazmadan önce başlayan okumayla tekilleştirme. Yeni nesil, iptal ettiği isteğin loading sahipliğini de devralmalı.
+- Doğrulama gibi devam akışlarında proof pencere açılmadan önce gelebilir; pending intent/pencere görünürlüğü değişince devam aksiyonunu da değerlendir. Zamana bağlı kart metinlerini tek canlı saatten türet; gece yarısı ve lifecycle dönüşünü per-card `remember` saatiyle dondurma.
+- Yeni debug/config/scheme sürümünü kopyalarken kullanılan Firebase ortamı ve zorunlu güncelleme kontrolüyle karşılaştır; production'a bağlı debug yapılandırması eski uygulama sürümünde kalmamalı. Paylaşılan kurulum betiklerinde geliştiriciye ait mutlak checkout yolu veya varsayılan cihaz kimliği yerine kaynak ağacını ve çıktı ortamını doğrula, cihazı açık girdi olarak al.
+
+Somut tetikleyiciler için [11 Ekim kupon/başvuru kalıpları](../../../docs/REPEATED_REVIEW_PATTERNS.md#11-ekim-kupon-başvuru-ve-teslimat-sözleşmeleri) bölümünü kullan.
 
 ## Değişiklik akışı
 

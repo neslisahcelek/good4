@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 import { type DocumentSnapshot, FieldValue, type Firestore, Timestamp } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
+import { getCampusAccessStatusService, hasCampusEmailProof } from "./campusAccess.js";
 import { eduEmailClaimPath } from "./eduVerification.js";
 import { requireActiveActor } from "./shared.js";
 
@@ -20,8 +21,7 @@ export function isCampusEmail(email: string): boolean {
 }
 
 export function hasVerifiedCampusEmail(user: DocumentSnapshot): boolean {
-  const email = user.get("eduEmail");
-  return user.get("eduVerified") === true && typeof email === "string" && isCampusEmail(email);
+  return hasCampusEmailProof(user);
 }
 
 function normalizedEmail(value: unknown): string {
@@ -138,13 +138,7 @@ export async function exchangeCampusEmailLink(email: string, oobCode: string): P
 const productionBrowserDeps: CampusBrowserVerificationDeps = { ...productionDeps, exchangeEmailLink: exchangeCampusEmailLink };
 
 export async function getCampusEmailVerificationStatusService(database: Firestore, uid: string) {
-  return database.runTransaction(async (transaction) => {
-    await requireActiveActor(database, transaction, uid, ["student"]);
-    const user = await transaction.get(database.doc(`users/${uid}`));
-    return hasVerifiedCampusEmail(user)
-      ? { verified: true, email: user.get("eduEmail") as string }
-      : { verified: false };
-  });
+  return getCampusAccessStatusService(database, uid);
 }
 
 /** The opaque request chooses the original account; the one-time Auth code is

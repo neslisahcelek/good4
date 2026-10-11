@@ -10,12 +10,18 @@ import {
   beginCampusEmailVerificationService as begin,
   completeCampusEmailVerificationService as complete,
   completeCampusEmailVerificationFromBrowserService as completeBrowser,
-  getCampusEmailVerificationStatusService as status,
+  getCampusEmailVerificationStatusService as fullStatus,
   type CampusBrowserVerificationDeps,
   isCampusEmail,
   type CampusEmailVerificationDeps,
 } from "./campusEmailVerification.js";
 import { eduEmailClaimPath } from "./eduVerification.js";
+
+// Keep the legacy proof assertions; campusAccess.test covers the additive access contract.
+async function status(database: typeof db, uid: string) {
+  const result = await fullStatus(database, uid);
+  return result.verified ? { verified: true, email: result.email } : { verified: false };
+}
 
 const uid = "primary-google-student";
 const email = "can@ogr.akdeniz.edu.tr";

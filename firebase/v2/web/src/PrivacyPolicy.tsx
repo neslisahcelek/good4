@@ -93,10 +93,10 @@ const processingGroups: PrivacyDataGroup[] = [
     basis: "Hizmet güvenliği ve kötüye kullanımın önlenmesine yönelik meşru menfaat (KVKK m. 5/2-f); kanuni zorunluluk bulunması hâlinde m. 5/2-ç.",
   },
   {
-    title: "Mobil analitik ve çökme raporları",
-    data: "Hedeflenen Good4 V2 Android ve iOS yayın paketlerinde Firebase Analytics ve Firebase Crashlytics SDK'ları bulunmaz; bu SDK'lar aracılığıyla uygulama etkileşimi veya çökme raporu toplanmaz ya da gönderilmez.",
-    purpose: "Bu sürümde analitik ve çökme raporu toplama amacıyla veri işlenmez.",
-    basis: "Mevcut sürümde bu veri işleme faaliyeti bulunmadığından bu kategori için hukuki sebep uygulanmaz. SDK'lar yeniden eklenmeden önce amaç, hukuki sebep ve gerekiyorsa kullanıcı tercihi belirlenerek metin güncellenmelidir.",
+    title: "İsteğe bağlı mobil kullanım analitiği",
+    data: "İsteğe bağlı kullanım analitiği, yalnız kullanıcı izin verdiğinde Firebase Analytics üzerinden işlenir. Tıklamalar, işlem sonuçları, uygulama kurulum/oturum tanımlayıcıları, uygulama sürümü ve cihaz/işletim sistemi bilgileri ile IP’den türetilen yaklaşık bölge bilgileri işlenebilir. E-posta, telefon, Firebase kullanıcı kimliği, içerik kimlikleri, mesaj, arama metni ve doğrulama/kupon kodları analytics event’lerine eklenmez. Reklam kimliği toplama ve reklam kişiselleştirme kapalıdır. İzin Hesap Ayarları’ndan geri alınabilir; yeni toplama durur ve cihazdaki analytics verisi sıfırlanır. Daha önce sunucuya ulaşmış veriler bu işlemle geriye dönük silinmez. Firebase Crashlytics kullanılmaz.",
+    purpose: "Özelliklerin kullanımını ve işlem tamamlanma oranlarını ölçerek uygulamayı geliştirmek.",
+    basis: "İsteğe bağlı kullanım analitiği için ayrı kullanıcı izni/açık rıza (KVKK m. 5/1). İzin verilmemesi temel uygulama kullanımını etkilemez.",
   },
 ];
 
@@ -111,7 +111,7 @@ const sections: PrivacySection[] = [
   {
     title: "2. İşlenen veriler, amaçlar ve hukuki sebepler",
     paragraphs: [
-      "Aşağıdaki bilgiler, Good4'ta kullandığınız hesap türüne ve tercih ettiğiniz özelliklere göre işlenir. Her veri, yalnızca ilgili olduğu amaç için ve tabloda belirtilen hukuki işleme şartına dayanılarak kullanılır; bir satırdaki bütün hukuki sebepler her işlem için birlikte uygulanmaz.",
+      "Aşağıdaki bilgiler, Good4'da kullandığınız hesap türüne ve tercih ettiğiniz özelliklere göre işlenir. Her veri, yalnızca ilgili olduğu amaç için ve tabloda belirtilen hukuki işleme şartına dayanılarak kullanılır; bir satırdaki bütün hukuki sebepler her işlem için birlikte uygulanmaz.",
     ],
     dataGroups: processingGroups,
   },
@@ -127,7 +127,7 @@ const sections: PrivacySection[] = [
   {
     title: "4. Veriler kimlerle ve hangi amaçla paylaşılır?",
     paragraphs: [
-      "Altyapı, kimlik doğrulama, veri saklama ve sunucu işlevleri için veriler hizmet sağlayıcısı sıfatıyla Google Firebase/Google Cloud hizmetlerine (Firebase Authentication, Firestore, Storage ve Cloud Functions gibi) iletilebilir. Hedeflenen Good4 V2 mobil paketlerinde Firebase Analytics ve Crashlytics SDK'ları bulunmaz. Google bu verileri Good4 adına hizmeti işletmek, saklamak ve güvenliğini sağlamak için işler.",
+      "Altyapı, kimlik doğrulama, veri saklama ve sunucu işlevleri için veriler hizmet sağlayıcısı sıfatıyla Google Firebase/Google Cloud hizmetlerine (Firebase Authentication, Firestore, Storage ve Cloud Functions gibi) iletilebilir. Firebase Analytics yalnız isteğe bağlı kullanım analitiği izniyle kullanılır; tercih Hesap Ayarları’ndan değiştirilebilir. Firebase Crashlytics ve reklam kimliğine dayalı takip kullanılmaz. Google bu verileri Good4 adına hizmeti işletmek, saklamak ve güvenliğini sağlamak için işler.",
       "Bir etkinliğe kaydolduğunuzda, katıldığınız topluluk veya etkinlik düzenleyicisi katılımı yönetmek için gerekli sınırlı bilgilere (örneğin görünen ad, kayıt ve check-in durumu) erişebilir. Bir teklif ya da kupon kullandığınızda, ilgili topluluk veya işletme işlemi doğrulamak için gerekli işlem bilgilerini görebilir. Bu gruplar sizin kullanmadığınız özelliklere ilişkin verileri bu kapsamda almaz.",
       "Kampüs Dolabı'nda yayındaki ilanlarınız (fotoğraflar, açıklama, fiyat ve ad-soyadınızın yalnızca baş harfleri) Kampüs Dolabı'nı kullanan diğer öğrencilere görünür. Mesajlarınızı ve tekliflerinizi yalnızca konuştuğunuz kişi görür. Good4 ekibi ilanları yayından önce inceler ve şikayet edilen ilan ile konuşmaları değerlendirir. Good4, alıcı ile satıcı arasındaki satışın tarafı değildir ve ödemeye aracılık etmez.",
       "Sosyal'de etkinlikleriniz ve adınız (varsayılan olarak yalnızca baş harfler) aynı üniversitenin okul e-postasını doğrulamış öğrencilerine görünür. Okul e-postasını henüz doğrulamamış öğrenci hesapları, yaklaşan açık etkinlikleri (başlık, not, tarih, saat, üniversite ve organizatörün baş harfli adı) tüm üniversiteler için yalnızca görüntüleyebilir. Profil fotoğrafınızı yalnızca aynı üniversitenin doğrulanmış öğrencileri görür. Katılım isteğinizi etkinliğin organizatörü görür; mesajlarınızı yalnızca konuştuğunuz kişi görür. Etkinlikler yayından önce incelenmez; yasaklı kelime filtresi uygulanır ve Good4 ekibi şikayet edilen etkinlik ve konuşmaları değerlendirir. Good4 etkinliğin tarafı veya organizatörü değildir.",
@@ -159,7 +159,7 @@ const sections: PrivacySection[] = [
     title: "7. Çerezler ve cihazdaki yerel depolama",
     paragraphs: [
       "Good4 V2 web uygulamasında oturumunuzu tarayıcıyı kapattıktan sonra da açık tutabilmek için Firebase Authentication'ın yerel oturum saklama özelliği kullanılır. Bu oturum bilgisi tarayıcının localStorage alanında saklanır ve web hesabına giriş için gereklidir.",
-      "Good4 V2 web uygulamasında reklam takibi amacıyla kullanılan bir çerez yapılandırması bulunmamaktadır. Hedeflenen Good4 V2 mobil paketlerinde Firebase Analytics ve Firebase Crashlytics SDK'ları bulunmaz. Tarayıcı ayarlarından site verilerini silebilir ya da engelleyebilirsiniz; bu durumda web oturumunuz kapanabilir veya tekrar giriş yapmanız gerekebilir.",
+      "Good4 V2 web uygulamasında reklam takibi amacıyla kullanılan bir çerez yapılandırması bulunmamaktadır. Firebase Analytics yalnız isteğe bağlı kullanım analitiği izniyle kullanılır; tercih Hesap Ayarları’ndan değiştirilebilir. Firebase Crashlytics ve reklam kimliğine dayalı takip kullanılmaz. Tarayıcı ayarlarından site verilerini silebilir ya da engelleyebilirsiniz; bu durumda web oturumunuz kapanabilir veya tekrar giriş yapmanız gerekebilir.",
     ],
   },
   {

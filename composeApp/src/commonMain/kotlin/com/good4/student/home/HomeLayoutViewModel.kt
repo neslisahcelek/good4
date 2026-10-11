@@ -20,7 +20,8 @@ data class HomeLayoutState(
 /** Used only by StudentHome and its editor route, including community managers with a student role. */
 class HomeLayoutViewModel(
     private val auth: AuthRepository,
-    private val store: HomeLayoutStore
+    private val store: HomeLayoutStore,
+    private val access: com.good4.eduverification.CampusAccessRepository = com.good4.eduverification.CampusAccessRepository(auth)
 ) : ViewModel() {
     private val _state = MutableStateFlow(stateFor(auth.currentUser?.uid))
     val state = _state.asStateFlow()
@@ -30,6 +31,15 @@ class HomeLayoutViewModel(
             auth.authStateFlow.distinctUntilChangedBy { it?.uid }.collectLatest { user ->
                 // Replace the previous account immediately, before observing layout edits.
                 _state.value = stateFor(user?.uid)
+                if (com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2) {
+                    launch {
+                        try { access.status() } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                        catch (_: Exception) { /* Optional test entry remains hidden until a successful status read. */ }
+                    }
+                }
+                launch {
+                    com.good4.eduverification.CampusAccessSession.changes.collect { _state.value = stateFor(user?.uid) }
+                }
                 store.revision.collect { _state.value = stateFor(user?.uid) }
             }
         }
@@ -37,7 +47,7 @@ class HomeLayoutViewModel(
 
     private fun stateFor(uid: String?): HomeLayoutState {
         if (uid.isNullOrBlank()) return HomeLayoutState()
-        val shortcuts = availableHomeShortcuts(UserRole.STUDENT, ReleaseFeatures.suspendedMeals, ReleaseFeatures.campusCloset, ReleaseFeatures.socialActivities)
+        val shortcuts = availableHomeShortcuts(UserRole.STUDENT, ReleaseFeatures.suspendedMeals || com.good4.eduverification.CampusAccessSession.status(uid)?.testAvailable == true, ReleaseFeatures.campusCloset, ReleaseFeatures.socialActivities)
         return HomeLayoutState(uid, shortcuts, store.read(uid, shortcuts.map { it.definition }))
     }
 

@@ -8,4 +8,13 @@ if /usr/bin/pgrep -x Xcode >/dev/null; then
 fi
 
 # Firebase reads this in Package.swift, before any target or scheme runs.
-/usr/bin/open --env FIREBASE_SOURCE_FIRESTORE=1 "$script_dir/../iosApp.xcodeproj"
+# Refresh the graph before opening Xcode: a previous binary resolution can leave
+# stale transitive product references even when Package.resolved pins source packages.
+project_path="$script_dir/../iosApp.xcodeproj"
+FIREBASE_SOURCE_FIRESTORE=1 /usr/bin/xcodebuild \
+  -resolvePackageDependencies \
+  -project "$project_path" \
+  -scheme "iosApp Prod" \
+  -onlyUsePackageVersionsFromResolvedFile
+
+/usr/bin/open --env FIREBASE_SOURCE_FIRESTORE=1 "$project_path"

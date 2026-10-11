@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { after, beforeEach, test } from "node:test";
 import { db, legacyTestDb } from "./firebase.js";
-import { eraseAccountData } from "./accountDeletion.js";
+import { beginAccountDeletion, eraseAccountData } from "./accountDeletion.js";
 import { reviewCommunityApplicationService } from "./communityApplications.js";
 
 const uid = "delete-me";
@@ -9,11 +10,11 @@ const uid = "delete-me";
 beforeEach(async () => {
   await Promise.all([
     ...[
-      "users", "organizations", "events", "campaignClaims", "campaignCodes",
+      "app_config", "users", "organizations", "events", "campaignClaims", "campaignCodes",
       "communityCouponClaims", "communityCouponCodes", "communityCouponRedemptions", "communityCoupons", "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
       "communities", "codes", "orders", "businesses", "community_access",
       "eduEmailClaims", "eduVerifications", "campusEmailVerifications", "mail", "communityApplications",
-      "pushDevices", "notificationJobs", "notificationDispatches",
+      "pushDevices", "notificationJobs", "notificationDispatches", "rateLimits",
     ].map((collection) => db.recursiveDelete(db.collection(collection))),
     ...["communities", "community_coupon_codes", "community_access", "users"].map((collection) =>
       legacyTestDb.recursiveDelete(legacyTestDb.collection(collection))),
@@ -48,7 +49,11 @@ for (const status of ["pending", "rejected", "approved"]) {
 }
 
 test("deletes personal records and removes account identifiers from retained V2 history", async () => {
+  const accountMailKeys = [`eduMail:account:${uid}`, `eduMailRequest:${uid}`];
+  const sharedMailKeys = ["eduMail:recipient:recipient-hash", "eduMail:total"];
+  const mailLimitRef = (key: string) => db.doc(`rateLimits/${createHash("sha256").update(key).digest("hex")}`);
   await Promise.all([
+    ...[...accountMailKeys, ...sharedMailKeys].map((key) => mailLimitRef(key).set({ key, count: 2 })),
     db.doc(`users/${uid}`).set({ email: "delete@example.com", status: "active" }),
     db.doc(`communityApplications/${uid}`).set({ applicantUid: uid, applicantEmail: "delete@example.com", status: "approved" }),
     db.doc("organizations/community-1").set({ followerCount: 1, createdBy: uid }),
@@ -108,6 +113,8 @@ test("deletes personal records and removes account identifiers from retained V2 
 
   await eraseAccountData(db, legacyTestDb, uid, "delete@example.com");
 
+  for (const key of accountMailKeys) assert.equal((await mailLimitRef(key).get()).exists, false);
+  for (const key of sharedMailKeys) assert.equal((await mailLimitRef(key).get()).get("count"), 2);
   assert.equal((await db.doc(`users/${uid}`).get()).exists, false);
   assert.equal((await db.doc(`communityApplications/${uid}`).get()).exists, false);
   assert.equal((await db.doc(`organizations/community-1/members/${uid}`).get()).exists, false);
@@ -173,7 +180,7 @@ test("erases community coupon claims and codes and anonymizes retained coupon hi
   await db.doc(`users/${uid}`).set({status:"active",role:"student"});
   await db.doc(`communityCouponClaims/coupon_${uid}_2026-10-11`).set({studentId:uid});
   await db.doc("communityCouponCodes/business_0001").set({studentId:uid});
-  await db.doc("communityCouponCodes/business_0002").set({studentId:"other"});
+  await db.doc("communityCouponCodes/business_0002").set({studentId:"other",redeemedBy:uid});
   await db.doc("communityCouponRedemptions/history").set({studentId:uid,redeemedBy:"staff",title:"Coupon"});
   await db.doc("communityCoupons/retained").set({ title: "Coupon", status: "published" });
   await db.doc("auditLogs/coupon-created").set({ actorUid: uid, targetType: "communityCoupon", targetId: "retained", action: "communityCoupon.created" });
@@ -181,10 +188,24 @@ test("erases community coupon claims and codes and anonymizes retained coupon hi
   assert.equal((await db.collection("communityCouponClaims").get()).size,0);
   assert.equal((await db.doc("communityCouponCodes/business_0001").get()).exists,false);
   assert.equal((await db.doc("communityCouponCodes/business_0002").get()).exists,true);
+  assert.equal((await db.doc("communityCouponCodes/business_0002").get()).get("studentId"),"other");
+  assert.equal((await db.doc("communityCouponCodes/business_0002").get()).get("redeemedBy"),"deleted-account");
   const history = await db.doc("communityCouponRedemptions/history").get();
   assert.equal(history.get("studentId"),"deleted-account");
   assert.equal(history.get("title"),"Coupon");
   assert.equal((await db.doc("auditLogs/coupon-created").get()).get("actorUid"), "deleted-account");
   assert.equal((await db.doc("auditLogs/coupon-created").get()).get("action"), "communityCoupon.created");
   assert.equal((await db.doc("communityCoupons/retained").get()).get("createdBy"), undefined);
+});
+
+
+test("account deletion clears its campus test selector without removing another account's selector", async () => {
+  await db.doc(`users/${uid}`).set({ role: "good4Admin", status: "active", adminEduTest: { enabled: true } });
+  const config = db.doc("app_config/admin_edu_test");
+  await config.set({ uid: "another-admin" });
+  await beginAccountDeletion(db, uid);
+  assert.equal((await config.get()).get("uid"), "another-admin");
+  await config.set({ uid });
+  await beginAccountDeletion(db, uid);
+  assert.equal((await config.get()).exists, false);
 });

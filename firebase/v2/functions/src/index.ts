@@ -1,3 +1,4 @@
+import { disconnectCampusTestService } from "./campusAccess.js";
 import { saveCommunityCouponService, endCommunityCouponService, listCommunityCouponsService, reviewCommunityCouponService, issueCommunityCouponCodeService, redeemCommunityCouponCodeService, listBusinessRedemptionsService } from "./communityCoupons.js";
 import { brevoApiKey, isDemoMailEmulator } from "./verificationEmail.js";
 import { cleanupTechnicalRecords } from "./maintenance.js";
@@ -57,6 +58,7 @@ import {
   submitCommunityApplicationService,
 } from "./communityApplications.js";
 import { listBusinessApplicationsService, reviewBusinessApplicationService, submitBusinessApplicationService } from "./businessApplications.js";
+import { requireActiveApplicantForApproval } from "./applicationSupport.js";
 import { submitFeedbackService } from "./feedback.js";
 import { saveKykMenuService } from "./kykMenu.js";
 import { rateMealService } from "./mealRatings.js";
@@ -447,17 +449,19 @@ export const submitCommunityApplication = onCall(callableOptions, async (request
     email: authUser.email,
     emailVerified: authUser.emailVerified,
     providers: authUser.providerData.map((provider) => provider.providerId),
+    disabled: authUser.disabled,
   }, request.data ?? {});
 });
 
 export const listCommunityApplications = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   await limitRequest(uid, "panel", 6);
-  return listCommunityApplicationsService(db, uid);
+  return listCommunityApplicationsService(db, uid, request.data ?? {});
 });
 
 export const reviewCommunityApplication = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await requireActiveApplicantForApproval(db, uid, request.data ?? {});
   return reviewCommunityApplicationService(db, uid, request.data ?? {});
 });
 
@@ -471,17 +475,19 @@ export const submitBusinessApplication = onCall(callableOptions, async (request)
     email: authUser.email,
     emailVerified: authUser.emailVerified,
     providers: authUser.providerData.map((provider) => provider.providerId),
+    disabled: authUser.disabled,
   }, request.data ?? {});
 });
 
 export const listBusinessApplications = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   await limitRequest(uid, "panel", 6);
-  return listBusinessApplicationsService(db, uid);
+  return listBusinessApplicationsService(db, uid, request.data ?? {});
 });
 
 export const reviewBusinessApplication = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
+  await requireActiveApplicantForApproval(db, uid, request.data ?? {});
   return reviewBusinessApplicationService(db, uid, request.data ?? {});
 });
 
@@ -1012,3 +1018,6 @@ export const listBusinessRedemptions = onCall(readOptions, async (request) => {
   await limitRequest(uid, "listBusinessRedemptions", 30);
   return listBusinessRedemptionsService(db, uid);
 });
+
+export const disconnectCampusTest = onCall(callableOptions, async (request) =>
+  disconnectCampusTestService(db, requireAuthenticatedUid(request.auth?.uid)));

@@ -1,5 +1,7 @@
 package com.good4.admin.presentation.campaigns
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +19,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -106,12 +107,7 @@ fun AdminCampaignsScreen(
                 .padding(paddingValues)
         ) {
             if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = TextPrimary)
-                }
+                Good4LoadingState()
             } else if (state.campaigns.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),

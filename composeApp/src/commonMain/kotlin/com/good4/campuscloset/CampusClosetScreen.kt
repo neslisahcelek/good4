@@ -1,5 +1,9 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.Good4LoadingState
+
+import com.good4.analytics.*
+
 import com.good4.core.presentation.*
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -53,7 +57,6 @@ import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material.icons.outlined.SportsSoccer
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -125,6 +128,9 @@ fun CampusClosetScreen(
     viewModel: CampusClosetFeedViewModel = koinViewModel(),
     eduViewModel: CampusEmailVerificationViewModel = koinViewModel()
 ) {
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
+    val openListing: (String) -> Unit = { id -> analytics.click(Interaction.CLOSET_OPEN_LISTING); onOpenListing(id) }
+    val newListing: () -> Unit = { analytics.click(Interaction.CLOSET_NEW); onNewListing() }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val eduState by eduViewModel.state.collectAsStateWithLifecycle()
     val me = state.me
@@ -143,7 +149,7 @@ fun CampusClosetScreen(
         }
     }
 
-    val canUse = me != null && me.eduVerified && me.termsAccepted && me.suspendedUntil == null
+    val canUse = me != null && me.campusAccessAllowed && me.termsAccepted && me.suspendedUntil == null
     Good4Scaffold(
         topBar = {
             Good4TopBar(
@@ -167,7 +173,7 @@ fun CampusClosetScreen(
         floatingActionButton = {
             if (canUse) {
                 ExtendedFloatingActionButton(
-                    onClick = onNewListing,
+                    onClick = newListing,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = RoundedCornerShape(18.dp),
@@ -179,12 +185,10 @@ fun CampusClosetScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(padding)) {
             when {
-                me == null && state.isLoading -> CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center)
-                )
+                me == null && state.isLoading -> Good4LoadingState()
                 me == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.campus_closet_yuklenemedi), stringResource(Res.string.campus_closet_retry), viewModel::load)
                 !me.enabled -> CenteredState(stringResource(Res.string.campus_closet_kampus_dolabi_su_an_bakimda_daha_sonra_tekrar_dene))
-                me.eduVerified && !me.termsAccepted -> CampusClosetTermsContent(
+                me.campusAccessAllowed && !me.termsAccepted -> CampusClosetTermsContent(
                     accepting = state.acceptingTerms,
                     error = state.termsError?.asString(),
                     onAccept = { viewModel.acceptTerms(me.termsVersion) }
@@ -197,8 +201,8 @@ fun CampusClosetScreen(
                     onSelectCategory = viewModel::selectCategory,
                     onLoadMore = viewModel::loadMore,
                     onRetry = viewModel::load,
-                    onOpenListing = onOpenListing,
-                    onNewListing = onNewListing,
+                    onOpenListing = openListing,
+                    onNewListing = newListing,
                     onVerify = { showVerification = true },
                     onQueryChange = viewModel::setQuery,
                     onToggleFavorite = viewModel::toggleFavorite
@@ -310,7 +314,7 @@ private fun FeedGrid(
         if (canSell) {
             item(span = { full }) { com.good4.notification.CampusPushPermissionCard() }
         }
-        if (!me.eduVerified) {
+        if (!me.campusAccessAllowed) {
             item(span = { full }) {
                 VerifyCard(codeSentTo = codeSentTo, onClick = onVerify)
             }
@@ -345,10 +349,8 @@ private fun FeedGrid(
             }
         }
         when {
-            state.isLoading -> item(span = { full }) {
-                Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+            state.isLoading -> item(key = "loading", span = { full }) {
+                Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(48.dp))
             }
             state.loadError != null && state.listings.isEmpty() -> item(span = { full }) {
                 CenteredState(state.loadError, stringResource(Res.string.campus_closet_retry), onRetry)
@@ -365,15 +367,13 @@ private fun FeedGrid(
                 items(visibleListings, key = { it.id }) { listing ->
                     ListingGridCard(
                         listing,
-                        showUniversity = !me.eduVerified,
+                        showUniversity = !me.campusAccessAllowed,
                         onToggleFavorite = if (listing.isMine) null else ({ onToggleFavorite(listing) })
                     ) { onOpenListing(listing.id) }
                 }
                 if (state.isLoadingMore) {
-                    item(span = { full }) {
-                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary)
-                        }
+                    item(key = "loading-more", span = { full }) {
+                        Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(16.dp))
                     }
                 }
             }

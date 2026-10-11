@@ -6,7 +6,7 @@
 
 ## 1. Taraflar ve sözleşmenin konusu
 
-İşbu Üyelik ve Kullanım Sözleşmesi (“Sözleşme”), Good4 mobil uygulaması ve Good4 ile bağlantılı çevrim içi hizmetlerin sağlayıcısı **Ahmetcan Kılınç** (“Good4”) ile Good4’ta hesap oluşturan veya yetkili hesabıyla hizmetlerden yararlanan kişi (“Kullanıcı”) arasında kurulur.
+İşbu Üyelik ve Kullanım Sözleşmesi (“Sözleşme”), Good4 mobil uygulaması ve Good4 ile bağlantılı çevrim içi hizmetlerin sağlayıcısı **Ahmetcan Kılınç** (“Good4”) ile Good4’da hesap oluşturan veya yetkili hesabıyla hizmetlerden yararlanan kişi (“Kullanıcı”) arasında kurulur.
 
 **Hizmet sağlayıcısı:** Ahmetcan Kılınç  
 **Adres:** Ahatlı Mah. 3174 Sk. No: 6 İç Kapı No: 9, Kepez / Antalya  
@@ -30,9 +30,9 @@ Kullanıcı, hesabını veya Good4 hizmetlerini hukuka aykırı amaçla kullanam
 
 ## 4. Kullanıcı içerikleri ve yasaklı davranışlar
 
-İşletme veya topluluk temsilcilerinin Good4’a eklediği ad, metin, logo, fotoğraf, afiş, etkinlik, kampanya ve benzeri materyaller “Kullanıcı İçeriği” sayılır. İçeriği sağlayan Kullanıcı, içeriği sunmaya ve Good4’ta yayımlamaya yetkili olduğunu; içeriğin doğru, yürürlükteki mevzuata uygun ve üçüncü kişilerin haklarını ihlal etmeyen nitelikte olduğunu kabul eder.
+İşletme veya topluluk temsilcilerinin Good4’a eklediği ad, metin, logo, fotoğraf, afiş, etkinlik, kampanya ve benzeri materyaller “Kullanıcı İçeriği” sayılır. İçeriği sağlayan Kullanıcı, içeriği sunmaya ve Good4’da yayımlamaya yetkili olduğunu; içeriğin doğru, yürürlükteki mevzuata uygun ve üçüncü kişilerin haklarını ihlal etmeyen nitelikte olduğunu kabul eder.
 
-Good4’ta aşağıdaki içerik ve davranışlara izin verilmez:
+Good4’da aşağıdaki içerik ve davranışlara izin verilmez:
 
 - tehdit, taciz, zorbalık, şantaj, nefret söylemi veya kişileri hedef gösterme;
 - hukuka aykırı, müstehcen ya da çocukların güvenliğini tehlikeye düşüren içerik;
@@ -63,7 +63,7 @@ Etkinlik kaydı veya QR kod, ilgili etkinlikte kayıt ya da katılım doğrulama
 
 ## 8. İşletmeler, kampanyalar ve rezervasyonlar
 
-Good4’ta üçüncü taraf işletmelerin tanıtımları, kampanyaları, kuponları veya rezervasyon işlevleri yer alabilir. Kampanyanın ve kuponun geçerlilik süresi ile kullanım koşulları, ilgili işletmenin sunduğu açıklamalara göre belirlenir. Rezervasyonun kesinleşip kesinleşmediği, Good4 ekranında veya ilgili işletmenin Kullanıcıya gönderdiği bildirimde açıklanır.
+Good4’da üçüncü taraf işletmelerin tanıtımları, kampanyaları, kuponları veya rezervasyon işlevleri yer alabilir. Kampanyanın ve kuponun geçerlilik süresi ile kullanım koşulları, ilgili işletmenin sunduğu açıklamalara göre belirlenir. Rezervasyonun kesinleşip kesinleşmediği, Good4 ekranında veya ilgili işletmenin Kullanıcıya gönderdiği bildirimde açıklanır.
 
 Good4’un ilgili işlemde satıcı veya hizmet sağlayıcı olduğu açıkça belirtilmedikçe, işletmenin sunduğu mal veya hizmete ilişkin işlem Kullanıcı ile ilgili işletme arasındadır. Bu hüküm, Good4’un kendi rolünden veya yürürlükteki mevzuattan doğan yükümlülüklerini ya da Kullanıcının emredici tüketici haklarını ortadan kaldırmaz veya sınırlandırmaz.
 

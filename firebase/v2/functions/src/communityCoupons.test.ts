@@ -25,8 +25,11 @@ const input = {
   totalLimit: 50,
 };
 beforeEach(async () => {
-  if (!process.env.FIRESTORE_EMULATOR_HOST?.endsWith(":8395")) {
-    throw new Error("Isolated 8395 emulator required");
+  if (
+    !/^(localhost|127\.0\.0\.1|\[::1\]):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST ?? "") ||
+    !process.env.GCLOUD_PROJECT?.startsWith("demo-")
+  ) {
+    throw new Error("A localhost Firestore emulator and demo project are required");
   }
   await Promise.all(
     [
@@ -604,10 +607,27 @@ test("community staff can read their own coupon list but cannot create or end co
   await database
     .doc("organizations/community/members/community-staff")
     .set({ userId: "community-staff", role: "staff", status: "active" });
-  assert.equal(
-    (await listCommunityCouponsService(database, "community-staff")).coupons[0]?.id,
-    couponId,
-  );
+  const businesses = database.batch();
+  for (let index = 0; index < 101; index += 1) {
+    businesses.set(database.doc(`organizations/selector-${String(index).padStart(3, "0")}`), {
+      type: "business", status: "active", name: `Business ${index}`,
+    });
+  }
+  await businesses.commit();
+  const firstPage = await listCommunityCouponsService(database, "community-staff");
+  assert.equal(firstPage.coupons[0]?.id, couponId);
+  assert.equal(firstPage.businesses.length, 100);
+  assert.ok(firstPage.businessesNextCursor);
+  const businessPage = await listCommunityCouponsService(database, "community-staff", {
+    businessesOnly: true, businessesCursor: firstPage.businessesNextCursor,
+  });
+  assert.deepEqual(businessPage.coupons, []);
+  assert.equal(businessPage.businesses.length, 3);
+  assert.equal(businessPage.businessesNextCursor, null);
+  assert.equal(new Set([...firstPage.businesses, ...businessPage.businesses].map((business) => business.id)).size, 103);
+  const couponsOnly = await listCommunityCouponsService(database, "community-staff", { includeBusinesses: false });
+  assert.equal(couponsOnly.coupons[0]?.id, couponId);
+  assert.deepEqual(couponsOnly.businesses, []);
   await assert.rejects(
     saveCommunityCouponService(database, "community-staff", input),
     /ROLE_NOT_ALLOWED/,

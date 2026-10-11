@@ -9,9 +9,8 @@ import {
   type Transaction,
 } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { hasVerifiedCampusEmail } from "./campusEmailVerification.js";
+import { requireCampusAccess, resolveCampusAccess } from "./campusAccess.js";
 import {
-  eduDomainOf,
   isBlockedBetween,
   iso,
   MARKET_LIMITS,
@@ -196,7 +195,7 @@ async function requireSocialMember(
   ]);
   // Fails closed: the feature stays off until the switch is set explicitly.
   if (config.get("enabled") !== true) throw new HttpsError("unavailable", "SOCIAL_DISABLED");
-  if (!hasVerifiedCampusEmail(user)) throw new HttpsError("permission-denied", "SOCIAL_EDU_REQUIRED");
+  const eduDomain = requireCampusAccess(user, "SOCIAL_EDU_REQUIRED");
   if (Number(state.get("termsVersion") ?? 0) < SOCIAL_TERMS_VERSION) {
     throw new HttpsError("failed-precondition", "SOCIAL_TERMS_REQUIRED");
   }
@@ -204,7 +203,7 @@ async function requireSocialMember(
   if (suspendedUntil instanceof Timestamp && suspendedUntil.toMillis() > now) {
     throw new HttpsError("permission-denied", "SOCIAL_SUSPENDED");
   }
-  return { user, state, moderation, eduDomain: eduDomainOf(String(user.get("eduEmail"))) };
+  return { user, state, moderation, eduDomain };
 }
 
 async function requireEnabledReader(database: Firestore, transaction: Transaction, uid: string): Promise<void> {
@@ -802,18 +801,20 @@ async function viewerContext(database: Firestore, uid: string, now: number, phot
   ]);
   if (!user.exists || user.get("status") !== "active") throw new HttpsError("permission-denied", "ACCOUNT_NOT_ACTIVE");
   if (!SOCIAL_ROLES.includes(user.get("role"))) throw new HttpsError("permission-denied", "ROLE_NOT_ALLOWED");
-  const verified = hasVerifiedCampusEmail(user);
+  const access = resolveCampusAccess(user);
   const ownProfile = config.get("enabled") === true
     ? (await loadSocialProfiles(database, [uid], uid, photos)).get(uid) : null;
-  const eduDomain = verified ? eduDomainOf(String(user.get("eduEmail"))) : null;
+  const eduDomain = access.universityDomain;
   const suspendedUntil = moderation.get("suspendedUntil");
   return {
     eduDomain,
     blocked: new Set((moderation.get("blockedUids") ?? []) as string[]),
     me: {
       enabled: config.get("enabled") === true,
-      eduVerified: verified,
-      eduEmail: verified ? String(user.get("eduEmail")) : null,
+      eduVerified: access.eduVerified,
+      eduEmail: access.eduEmail,
+      campusAccessAllowed: access.campusAccessAllowed,
+      accessSource: access.accessSource,
       universityName: eduDomain ? UNIVERSITY_NAMES[eduDomain] ?? eduDomain : null,
       termsAccepted: Number(state.get("termsVersion") ?? 0) >= SOCIAL_TERMS_VERSION,
       termsVersion: SOCIAL_TERMS_VERSION,

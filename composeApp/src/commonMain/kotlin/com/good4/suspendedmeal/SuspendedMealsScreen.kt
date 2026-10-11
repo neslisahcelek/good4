@@ -1,5 +1,7 @@
 package com.good4.suspendedmeal
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,8 +73,12 @@ fun SuspendedMealsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val eduState by eduViewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(eduState.isVerified) {
-        if (eduState.isVerified) viewModel.load()
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        eduViewModel.refresh()
+        onPauseOrDispose { }
+    }
+    LaunchedEffect(eduState.campusAccessAllowed) {
+        if (eduState.campusAccessAllowed) viewModel.load()
     }
 
     Good4NestedScaffold(
@@ -90,8 +96,8 @@ fun SuspendedMealsScreen(
     ) { paddingValues ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(paddingValues)) {
             when {
-                eduState.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
-                !eduState.isVerified -> Column(
+                eduState.isLoading -> Good4LoadingState()
+                !eduState.campusAccessAllowed -> Column(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
                 ) {
                     EduVerificationCard(
@@ -109,7 +115,7 @@ fun SuspendedMealsScreen(
                     meal = state.meals.firstOrNull { it.id == state.activeCode?.mealId },
                     onDone = viewModel::dismissCode
                 )
-                state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
+                state.isLoading -> Good4LoadingState()
                 state.loadError != null -> CenteredMessage(state.loadError!!, actionLabel = "Tekrar dene", onAction = viewModel::load)
                 state.meals.isEmpty() -> CenteredMessage(
                     "Şu an askıda yemek yok.\nYeni askıda yemekler eklendiğinde burada görünecek.",

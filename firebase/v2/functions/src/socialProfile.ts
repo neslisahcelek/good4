@@ -1,8 +1,8 @@
 import type { Bucket } from "@google-cloud/storage";
 import { type DocumentSnapshot, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { eduDomainOf, publicName } from "./market.js";
-import { hasVerifiedCampusEmail } from "./campusEmailVerification.js";
+import { publicName } from "./market.js";
+import { resolveCampusAccess } from "./campusAccess.js";
 
 // How a student appears in Sosyal Etkinlikler: a name (masked by default) and an
 // optional photo. Names are resolved when read, so a later change of the setting
@@ -64,8 +64,7 @@ export function validProfilePhotoFolder(uid: string, value: unknown): value is s
 }
 
 function verifiedStudent(user: DocumentSnapshot | undefined): boolean {
-  return user?.exists === true && user.get("status") === "active" && user.get("role") === "student"
-    && hasVerifiedCampusEmail(user);
+  return user?.exists === true && resolveCampusAccess(user).studentAccessAllowed;
 }
 
 /** Never return state-supplied URLs. Evaluate both current accounts, not historical activity data. */
@@ -82,7 +81,7 @@ export async function loadSocialProfiles(database: Firestore, uids: readonly str
     const user = snapshots[index * 2]; const state = snapshots[index * 2 + 1];
     const profile = profileFrom(user, state);
     const eligible = moderator || (config?.get("enabled") === true && verifiedStudent(viewer) && verifiedStudent(user)
-      && eduDomainOf(String(viewer!.get("eduEmail"))) === eduDomainOf(String(user!.get("eduEmail"))));
+      && resolveCampusAccess(viewer!).universityDomain === resolveCampusAccess(user!).universityDomain);
     const folder = state?.get("photoFolder");
     if (eligible && photos && validProfilePhotoFolder(uid, folder)) {
       try {

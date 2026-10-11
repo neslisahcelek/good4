@@ -1,5 +1,7 @@
 package com.good4.social
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -98,15 +100,15 @@ fun SocialActivityScreen(
         eduViewModel.onResume()
         onPauseOrDispose { eduViewModel.onPause() }
     }
-    LaunchedEffect(eduState.verifiedEmail) {
+    LaunchedEffect(eduState.verifiedEmail, showVerification) {
         if (eduState.verifiedEmail != null && showVerification) {
             showVerification = false
             viewModel.load(activityId)
         }
     }
     val me = state.detail?.me
-    LaunchedEffect(me?.eduVerified, me?.termsAccepted, joinAfterVerification) {
-        if (!joinAfterVerification || me == null || !me.eduVerified) return@LaunchedEffect
+    LaunchedEffect(me?.campusAccessAllowed, me?.termsAccepted, joinAfterVerification) {
+        if (!joinAfterVerification || me == null || !me.campusAccessAllowed) return@LaunchedEffect
         joinAfterVerification = false
         if (me.termsAccepted) viewModel.requestToJoin() else showTerms = true
     }
@@ -116,10 +118,11 @@ fun SocialActivityScreen(
         onBack = onBack,
         onNote = viewModel::setRequestNote,
         onJoin = {
+            viewModel.beginJoin()
             val current = state.detail?.me
             when {
                 current == null -> Unit
-                !current.eduVerified -> { joinAfterVerification = true; showVerification = true }
+                !current.campusAccessAllowed -> { joinAfterVerification = true; showVerification = true }
                 !current.termsAccepted -> showTerms = true
                 else -> viewModel.requestToJoin()
             }
@@ -133,7 +136,7 @@ fun SocialActivityScreen(
 
     if (showVerification) {
         ModalBottomSheet(
-            onDismissRequest = { showVerification = false; joinAfterVerification = false },
+            onDismissRequest = { showVerification = false; joinAfterVerification = false; viewModel.dismissJoin() },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = AppBackground
         ) {
@@ -152,7 +155,7 @@ fun SocialActivityScreen(
     }
     if (showTerms && me != null) {
         ModalBottomSheet(
-            onDismissRequest = { showTerms = false },
+            onDismissRequest = { showTerms = false; viewModel.dismissJoin() },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = AppBackground
         ) {
@@ -196,7 +199,7 @@ internal fun SocialActivityContent(
     ) { padding ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(bottom = padding.calculateBottomPadding())) {
             when {
-                state.isLoading -> SocialCenteredProgress()
+                state.isLoading -> Good4LoadingState()
                 detail == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.social_yuklenemedi),
                     stringResource(Res.string.social_geri_don), onBack)
                 else -> DetailBody(detail)

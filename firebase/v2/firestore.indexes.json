@@ -357,8 +357,24 @@
       "fields": [{ "fieldPath": "communityId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }]
     },
     {
+      "collectionGroup": "communityCoupons", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "endsAt", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "communityCoupons", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "communityId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "endsAt", "order": "ASCENDING" }]
+    },
+    {
       "collectionGroup": "communityCouponRedemptions", "queryScope": "COLLECTION",
       "fields": [{ "fieldPath": "organizationId", "order": "ASCENDING" }, { "fieldPath": "redeemedAt", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "businessApplications", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "communityApplications", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "ASCENDING" }]
     }
   ],
   "fieldOverrides": [

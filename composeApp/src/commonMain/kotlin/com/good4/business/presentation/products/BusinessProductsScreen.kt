@@ -1,5 +1,7 @@
 package com.good4.business.presentation.products
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -129,14 +130,9 @@ fun BusinessProductsScreenRoot(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = TextPrimary)
-            }
+            Good4LoadingState(
+                modifier = Modifier.fillMaxSize().padding(paddingValues)
+            )
         } else if (state.products.isEmpty()) {
             Box(
                 modifier = Modifier

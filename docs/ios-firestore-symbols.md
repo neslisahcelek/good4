@@ -15,7 +15,8 @@ debug information in the app dSYM. Firebase is pinned to the already-resolved
 1. Quit Xcode completely. The variable must reach the Xcode process that resolves
    packages; adding it to a scheme's Run environment or an xcconfig is too late.
 2. From the repository root, run `bash iosApp/scripts/open-xcode.sh`.
-3. Let Swift packages resolve. The source graph uses `abseil-cpp-SwiftPM`,
+3. The launcher resolves the locked Swift packages with the source environment
+   before opening Xcode. The source graph uses `abseil-cpp-SwiftPM`,
    `grpc-ios` and `boringSSL-SwiftPM` instead of the binary packages.
 4. Choose **Product > Clean Build Folder**, then archive **iosApp Prod**.
    The first source build takes longer than the prebuilt distribution.
@@ -25,6 +26,12 @@ debug information in the app dSYM. Firebase is pinned to the already-resolved
 Archive preflight fails early if the environment variable is missing. The final
 archive check rejects the five prebuilt frameworks if an old package graph is
 still being used. Regular and simulator builds skip these checks.
+
+If Xcode reports missing products `abseil-cpp-swiftpm_abseil.abseil` or
+`grpc-ios_gRPC-cpp.gRPC-cpp`, quit Xcode and run the launcher again, then clean
+the build folder. These are transitive Firestore products; do not add them to the
+app target manually. Opening the project directly without the source environment
+can switch the package graph back to binary dependencies.
 
 ## Command line and Xcode Cloud
 

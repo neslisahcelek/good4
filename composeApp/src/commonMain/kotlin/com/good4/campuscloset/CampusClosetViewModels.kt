@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import com.good4.analytics.*
+
 import good4.composeapp.generated.resources.*
 import com.good4.core.presentation.UiText
 import androidx.lifecycle.ViewModel
@@ -40,7 +42,7 @@ data class CampusClosetFeedState(
     val message: UiText? = null
 )
 
-class CampusClosetFeedViewModel(private val repository: CampusClosetFeedDataSource) : ViewModel() {
+class CampusClosetFeedViewModel(private val repository: CampusClosetFeedDataSource, private val analytics: AnalyticsTracker = NoOpAnalyticsTracker) : ViewModel() {
     private val _state = MutableStateFlow(CampusClosetFeedState())
     val state = _state.asStateFlow()
     private var loadJob: Job? = null
@@ -77,6 +79,7 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetFeedDataSour
     }
 
     fun selectCategory(category: String?) {
+        analytics.click(Interaction.CLOSET_CATEGORY, AnalyticsTarget.category(category))
         if (category == _state.value.category) return
         searchJob?.cancel()
         _state.update { it.copy(category = category, listings = emptyList(), nextBefore = null, message = null) }
@@ -101,6 +104,7 @@ class CampusClosetFeedViewModel(private val repository: CampusClosetFeedDataSour
 
     /** Optimistic: the heart turns at once and reverts if the server refuses. */
     fun toggleFavorite(listing: MarketListing) {
+        analytics.click(Interaction.CLOSET_FEED_FAVORITE)
         val saved = !listing.isFavorite
         fun mark(value: Boolean) = _state.update { state ->
             state.copy(listings = state.listings.map { if (it.id == listing.id) it.copy(isFavorite = value) else it })
@@ -180,7 +184,7 @@ data class CampusClosetListingState(
     val priceEdit: CampusClosetPriceEditState? = null
 )
 
-class CampusClosetListingViewModel(private val repository: CampusClosetRepository) : ViewModel() {
+class CampusClosetListingViewModel(private val repository: CampusClosetRepository, private val analytics: AnalyticsTracker = NoOpAnalyticsTracker) : ViewModel() {
     private val _state = MutableStateFlow(CampusClosetListingState())
     val state = _state.asStateFlow()
 
@@ -195,6 +199,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
 
     /** Opens the buyer's conversation; it is created by the first message sent from the chat screen. */
     fun openChat() {
+        analytics.click(Interaction.CLOSET_CHAT)
         val detail = _state.value.detail ?: return
         val conversationId = detail.conversationId ?: repository.conversationIdFor(detail.listing.id) ?: return
         _state.update { it.copy(openConversationId = conversationId) }
@@ -203,7 +208,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
     fun sendOffer(percent: Int) {
         val detail = _state.value.detail ?: return
         val conversationId = detail.conversationId ?: repository.conversationIdFor(detail.listing.id) ?: return
-        runAction {
+        runAction(Interaction.CLOSET_OFFER) {
             repository.sendOffer(conversationId, percent)
             _state.update { it.copy(openConversationId = conversationId) }
         }
@@ -262,6 +267,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
     }
 
     fun toggleFavorite() {
+        analytics.click(Interaction.CLOSET_FAVORITE)
         val listing = _state.value.detail?.listing ?: return
         val saved = !listing.isFavorite
         fun mark(value: Boolean) = _state.update { state ->
@@ -277,13 +283,14 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
     fun consumeNavigation() = _state.update { it.copy(openConversationId = null) }
     fun clearMessage() = _state.update { it.copy(message = null) }
 
-    private fun runAction(block: suspend () -> Unit) {
+    private fun runAction(interaction: Interaction? = null, block: suspend () -> Unit) {
         if (_state.value.busy) return
+        val tracking = interaction?.let { analytics.click(it) }
         viewModelScope.launch {
             _state.update { it.copy(busy = true, message = null) }
             attempt { block() }
-                .onSuccess { _state.update { it.copy(busy = false) } }
-                .onFailure { error -> _state.update { it.copy(busy = false, message = campusClosetErrorMessage(error)) } }
+                .onSuccess { analytics.result(tracking, InteractionStatus.SUCCESS); _state.update { it.copy(busy = false) } }
+                .onFailure { error -> analytics.result(tracking, InteractionStatus.ERROR); _state.update { it.copy(busy = false, message = campusClosetErrorMessage(error)) } }
         }
     }
 }
@@ -321,7 +328,7 @@ data class CampusClosetNewListingState(
         get() = !submitting && !submitted && validationMessage == null
 }
 
-class CampusClosetNewListingViewModel(private val repository: CampusClosetRepository) : ViewModel() {
+class CampusClosetNewListingViewModel(private val repository: CampusClosetRepository, private val analytics: AnalyticsTracker = NoOpAnalyticsTracker) : ViewModel() {
     private val _state = MutableStateFlow(CampusClosetNewListingState())
     val state = _state.asStateFlow()
 
@@ -341,7 +348,10 @@ class CampusClosetNewListingViewModel(private val repository: CampusClosetReposi
 
     fun submit() {
         val snapshot = _state.value
+        if (snapshot.submitting) return
+        val tracking = analytics.click(Interaction.CLOSET_PUBLISH)
         if (!snapshot.canSubmit) {
+            analytics.result(tracking, InteractionStatus.VALIDATION_ERROR)
             snapshot.validationMessage?.let(::showError)
             return
         }
@@ -359,8 +369,8 @@ class CampusClosetNewListingViewModel(private val repository: CampusClosetReposi
                     snapshot.photos
                 )
             }
-                .onSuccess { _state.update { it.copy(submitting = false, submitted = true) } }
-                .onFailure { error -> _state.update { it.copy(submitting = false, error = campusClosetErrorMessage(error)) } }
+                .onSuccess { analytics.result(tracking, InteractionStatus.SUCCESS); _state.update { it.copy(submitting = false, submitted = true) } }
+                .onFailure { error -> analytics.result(tracking, InteractionStatus.ERROR); _state.update { it.copy(submitting = false, error = campusClosetErrorMessage(error)) } }
         }
     }
 }

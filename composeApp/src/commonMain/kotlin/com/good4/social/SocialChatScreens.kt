@@ -1,5 +1,7 @@
 package com.good4.social
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -100,7 +102,7 @@ fun SocialInboxScreen(
         Box(Modifier.fillMaxSize().background(AppBackground).padding(padding)) {
             val inbox = state.inbox
             when {
-                state.isLoading -> SocialCenteredProgress()
+                state.isLoading -> Good4LoadingState()
                 inbox == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.social_yuklenemedi),
                     stringResource(Res.string.social_retry), viewModel::load)
                 inbox.conversations.isEmpty() -> ClosetEmptyState(Icons.Outlined.ChatBubbleOutline,
@@ -219,7 +221,7 @@ internal fun SocialChatContent(
     ) { padding ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(padding).consumeWindowInsets(padding)) {
             when {
-                state.isLoading -> SocialCenteredProgress()
+                state.isLoading -> Good4LoadingState()
                 state.loadError != null -> CenteredState(state.loadError.asString(), stringResource(Res.string.social_geri_don), onBack)
                 else -> LazyColumn(state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()) {

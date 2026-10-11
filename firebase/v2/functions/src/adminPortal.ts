@@ -388,8 +388,9 @@ export async function getAdminDashboardService(
   await requireGood4Admin(database, actorUid);
   console.info("[getAdminDashboard] Loading dashboard", { actorUid });
 
-  function pageQuery(db: Firestore, path: string, cursor: unknown, size = 100) {
+  function pageQuery(db: Firestore, path: string, cursor: unknown, size = 100, status?: string) {
     let query = db.collection(path).orderBy(FieldPath.documentId()).limit(size);
+    if (status !== undefined) query = query.where("status", "==", status);
     if (cursor !== undefined) {
       const id = requireNonEmptyString(cursor, "cursor", 128);
       if (!/^[A-Za-z0-9_-]+$/.test(id)) throw new HttpsError("invalid-argument", "CURSOR_INVALID");
@@ -404,6 +405,7 @@ export async function getAdminDashboardService(
     diningMenuDocument,
     homeBannerDocument,
     calendarEventsSnapshot,
+    pendingCommunityCouponsSnapshot,
   ] = await Promise.all([
     pageQuery(database, "organizations", input.organizationsCursor).get(),
     database.collection("auditLogs").orderBy("createdAt", "desc").limit(50).get(),
@@ -411,6 +413,7 @@ export async function getAdminDashboardService(
     database.doc("app_config/akdeniz_dining_menu").get(),
     database.doc("app_config/home_banner").get(),
     pageQuery(database, "academic_calendar_events", input.calendarCursor).get(),
+    pageQuery(database, "communityCoupons", input.communityCouponsCursor, 100, "pending").get(),
   ]);
   const diningMenu = diningMenuFromDocument(diningMenuDocument);
   const homeBanner = homeBannerFromDocument(homeBannerDocument);
@@ -524,11 +527,12 @@ export async function getAdminDashboardService(
     nextCursors: { organizations: organizations.size === 100 ? organizations.docs.at(-1)!.id : null,
       calendar: calendarEventsSnapshot.size === 100 ? calendarEventsSnapshot.docs.at(-1)!.id : null,
       legacyBusinesses: legacyBusinessDocuments.length === 100 ? legacyBusinessDocuments.at(-1)!.id : null,
-      legacyCommunities: legacyCommunityDocuments.length === 100 ? legacyCommunityDocuments.at(-1)!.id : null },
+      legacyCommunities: legacyCommunityDocuments.length === 100 ? legacyCommunityDocuments.at(-1)!.id : null,
+      communityCoupons: pendingCommunityCouponsSnapshot.size === 100 ? pendingCommunityCouponsSnapshot.docs.at(-1)!.id : null },
     businesses,
     communities: v2Communities,
     legacyBusinesses,
-    pendingCommunityCoupons: (await database.collection("communityCoupons").where("status", "==", "pending").limit(200).get()).docs.map(communityCouponSummary),
+    pendingCommunityCoupons: pendingCommunityCouponsSnapshot.docs.map(communityCouponSummary),
     pendingCoupons: pendingCouponsNested.flat().sort((a, b) => a.expiresOn.localeCompare(b.expiresOn)),
     feedback,
     audits,

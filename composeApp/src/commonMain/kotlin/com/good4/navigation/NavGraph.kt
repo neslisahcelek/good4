@@ -497,7 +497,13 @@ fun Good4NavGraph(
 
         composable<Route.WebPanelNotice> {
             com.good4.auth.presentation.webpanel.WebPanelNoticeScreen(
-                onSignedOut = { navController.navigateToLogin() }
+                onSignedOut = { navController.navigateToLogin() },
+                onCampusTestAvailable = {
+                    navController.navigate(Route.StudentHome) {
+                        popUpTo(Route.WebPanelNotice) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 

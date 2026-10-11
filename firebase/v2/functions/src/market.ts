@@ -9,7 +9,7 @@ import {
   type Transaction,
 } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { hasVerifiedCampusEmail } from "./campusEmailVerification.js";
+import { requireCampusAccess, resolveCampusAccess } from "./campusAccess.js";
 import { checkMarketText, containsPhoneNumber } from "./marketModeration.js";
 import type { PushPayload } from "./push.js";
 import { requireActiveActor } from "./shared.js";
@@ -190,7 +190,7 @@ async function requireMarketMember(
     transaction.get(database.doc("app_config/campus_closet")),
   ]);
   if (config.get("enabled") === false) throw new HttpsError("unavailable", "MARKET_DISABLED");
-  if (!hasVerifiedCampusEmail(user)) throw new HttpsError("permission-denied", "MARKET_EDU_REQUIRED");
+  const eduDomain = requireCampusAccess(user, "MARKET_EDU_REQUIRED");
   if (Number(state.get("termsVersion") ?? 0) < MARKET_TERMS_VERSION) {
     throw new HttpsError("failed-precondition", "MARKET_TERMS_REQUIRED");
   }
@@ -198,7 +198,7 @@ async function requireMarketMember(
   if (suspendedUntil instanceof Timestamp && suspendedUntil.toMillis() > now) {
     throw new HttpsError("permission-denied", "MARKET_SUSPENDED");
   }
-  return { user, state, eduDomain: eduDomainOf(String(user.get("eduEmail"))) };
+  return { user, state, eduDomain };
 }
 
 function dailyCount(state: DocumentSnapshot, field: string, now: number): number {
@@ -1077,8 +1077,8 @@ async function viewerContext(database: Firestore, uid: string, now: number) {
     database.doc("app_config/campus_closet").get(),
   ]);
   if (!user.exists || user.get("status") !== "active") throw new HttpsError("permission-denied", "ACCOUNT_NOT_ACTIVE");
-  const verified = hasVerifiedCampusEmail(user);
-  const eduDomain = verified ? eduDomainOf(String(user.get("eduEmail"))) : null;
+  const access = resolveCampusAccess(user);
+  const eduDomain = access.universityDomain;
   const suspendedUntil = state.get("suspendedUntil");
   return {
     state,
@@ -1087,8 +1087,10 @@ async function viewerContext(database: Firestore, uid: string, now: number) {
     favorites: new Set((state.get("favoriteIds") ?? []) as string[]),
     me: {
       enabled: config.get("enabled") !== false,
-      eduVerified: verified,
-      eduEmail: verified ? String(user.get("eduEmail")) : null,
+      eduVerified: access.eduVerified,
+      eduEmail: access.eduEmail,
+      campusAccessAllowed: access.campusAccessAllowed,
+      accessSource: access.accessSource,
       universityName: eduDomain ? UNIVERSITY_NAMES[eduDomain] ?? eduDomain : null,
       termsAccepted: Number(state.get("termsVersion") ?? 0) >= MARKET_TERMS_VERSION,
       termsVersion: MARKET_TERMS_VERSION,

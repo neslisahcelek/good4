@@ -13,6 +13,12 @@ Review yaparken önce `AGENTS.md`, `.agents/skills/good4-architecture/SKILL.md` 
 - Kullanıcı düzeltme veya refactor da istediyse, önce bulguları kısa bir ara mesajla göster, ardından yetkilendirilmiş kapsamda düzelt ve son diff'i yeniden incele. Daha önce verilen düzeltme yetkisi için tekrar onay isteme.
 - Commit/push öncesi kontrol, mevcut geliştirme veya düzeltme talebinin parçasıysa kapsam içindeki gerekli düzeltmeleri tamamla; bu yetkiyi ilgisiz refactor, deploy veya canlı veri değişikliğine genişletme.
 
+## İncelemeden skill güncelleme yetkisi
+
+- Kullanıcının Good4 review, düzeltme veya refactor talebi; incelemede kanıtlanan ve mevcut rehberde eksik kalan tekrar kullanılabilir hata kalıplarını bu repodaki ilgili Good4 skill'lerine ve `docs/REPEATED_REVIEW_PATTERNS.md` kaynağına ekleme yetkisini de içerir. Bu dar kapsamlı rehber güncellemesi için ayrıca onay isteme. Yalnız review talebinde uygulama kaynak kodunu değiştirmeme kuralı geçerliliğini korur.
+- Önce mevcut kuralı ara; aynı yönlendirmeyi çoğaltma. Yalnız kaynak/diff veya anlamlı doğrulamayla kanıtlanan tetikleyici, etki ve korunacak sözleşmeyi genelleştir; kişisel stil tercihini, varsayımı veya tek seferlik ürün kararını zorunlu kurala dönüştürme. Uzun örnekleri tekrar kalıpları kaynağında tut, ilgili skill'den yönlendir.
+- `skill-creator` rehberiyle güncellemenin kapsamını ve referanslarını doğrula; kullanıcıya hangi skill'in neden değiştiğini raporla. Bu yetki commit/push, deploy, canlı veri/ayar, başka repo veya global skill güncelleme yetkisi değildir; yürütme ve dosya sistemi izinlerini genişletmez.
+
 ## Kapsam ve kullanıcı değişiklikleri
 
 ```bash
@@ -70,6 +76,13 @@ git ls-files --others --exclude-standard
 - `!!`, zorla cast, boş/null/index sınırları, tekrar submit, loading/error/empty state, yarış ve yeniden deneme koşullarını kontrol et.
 - Route/UserRole/NavGraph/home ve logout akışları tutarlı mı? Tema paleti ve mevcut ortak form/profile/card/button bileşenleri kullanılıyor mu?
 - Hata olumsuz veya dayanıklılık sınırında ne olur? Örn. Storage/Firestore kısmi başarısızlık, hesap devre dışı, konuşma cleanup ile eşzamanlı yazı.
+
+## Liste performansı ve cache incelemesi
+
+- İlk giriş, hızlı kategori dönüşü, başarılı boş kategori ve sayfalama sonrası geri dönüşü izle. Güncel cache varken ağ/loading tekrarı, yalnız ilk sayfaya geri düşme veya listeyle uyumsuz cursor var mı?
+- Lifecycle ve tab effect aynı isteği başlatıyor mu; feed'in içerdiği status için her filtrede fazladan özet çağrısı var mı? Paylaşılan isteğin tüketici iptalinde ve geç dönüşünde davranışını kontrol et.
+- Yenileme/özet sonucu profil veya şart kabulü yazmasını geri alabilir mi? Hesap/kampüs değişimi ve yazma sonrası cache invalidation ile sonuç neslini birlikte incele.
+- Cache doluyken yenileme ve devam sayfası hatası kullanıcıya gösteriliyor mu; cursor korunarak tekrar denenebiliyor mu? Başarılı boş sonuç ile henüz yüklenmemiş state ayrılıyor mu?
 
 ## Mimari ve refactor geçişi
 

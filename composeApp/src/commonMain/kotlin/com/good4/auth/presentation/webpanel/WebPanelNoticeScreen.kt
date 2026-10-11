@@ -35,6 +35,7 @@ import com.good4.core.presentation.components.Good4Scaffold
 import config.ReleaseFeatures
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Business and admin accounts land here on the V2 backend: their in-app panels
@@ -44,8 +45,14 @@ import org.koin.compose.koinInject
 fun WebPanelNoticeScreen(
     onSignedOut: () -> Unit,
     authRepository: AuthRepository = koinInject(),
-    startupSessionCache: StartupSessionCache = koinInject()
+    startupSessionCache: StartupSessionCache = koinInject(),
+    onCampusTestAvailable: () -> Unit = {}
 ) {
+    val eduViewModel: com.good4.eduverification.EduVerificationViewModel = org.koin.compose.viewmodel.koinViewModel()
+    val eduState by eduViewModel.state.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(eduState.testAvailable) {
+        if (eduState.testAvailable) onCampusTestAvailable()
+    }
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     var signingOut by remember { mutableStateOf(false) }

@@ -33,6 +33,7 @@ function useApplicationForm(initial: Pick<BusinessApplicationView, "businessName
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setSaving(true);
     setError("");
     try {
@@ -78,8 +79,10 @@ export function BusinessApplicationForm({ user, onSubmitted, describeError }: {
             İşletme adını ve iletişim bilgini yaz. Panelin hemen açılır; Good4 başvurunu onayladığında öğrenci kuponlarını doğrulayabilirsin.
           </p>
           <form onSubmit={(event) => void submit(event)}>
+            <fieldset disabled={saving}>
             {fields}
             <button className="primary-button" disabled={saving}>{saving ? "Gönderiliyor…" : "Başvuruyu gönder"}</button>
+            </fieldset>
           </form>
           <p className="support-copy">
             {user.email} hesabıyla başvuruyorsun. <button type="button" className="text-button" onClick={() => void signOut(auth)}>Farklı hesapla giriş yap</button>
@@ -184,9 +187,11 @@ export function BusinessPendingPanel({ user, application, onChanged, describeErr
             <div className="business-card-heading"><div><h2>Başvuru bilgileri</h2><p>Hesap e-postası: {user.email}</p></div>
               <span className={`event-state-pill ${rejected ? "" : "is-pending"}`.trim()}>{rejected ? "Onaylanmadı" : "Onay bekliyor"}</span></div>
             <form onSubmit={(event) => { setSavedNotice(""); void submit(event); }}>
+              <fieldset disabled={saving}>
               {fields}
               {savedNotice ? <div className="inline-message inline-message--success" role="status">{savedNotice}</div> : null}
               <button className="primary-button" disabled={saving}>{saving ? "Kaydediliyor…" : rejected ? "Yeniden gönder" : "Bilgileri güncelle"}</button>
+              </fieldset>
             </form>
           </Card>
         </div>

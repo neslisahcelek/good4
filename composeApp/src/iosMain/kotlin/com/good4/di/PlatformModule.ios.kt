@@ -12,6 +12,13 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 actual val platformModule: Module = module {
+    single<com.good4.analytics.AnalyticsTracker>(createdAtStart = true) {
+        com.good4.analytics.DeviceAnalyticsTracker(
+            com.good4.analytics.IOSAnalyticsConsentStorage(),
+            com.good4.analytics.IOSAnalyticsTransport(),
+            com.good4.analytics.analyticsCollectionAllowed()
+        )
+    }
     single<AuthRepository> { FirebaseAuthRepositoryIOS() }
     single<FirestoreRepository> { FirestoreRepositoryIOSImpl() }
     single<ProductImageUploadRepository> { ProductImageUploadRepositoryIOS() }

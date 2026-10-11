@@ -1,5 +1,7 @@
 package com.good4.business.presentation.dashboard
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +22,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -107,14 +108,9 @@ fun BusinessDashboardScreen(
         }
     ) { paddingValues ->
         if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = TextPrimary)
-            }
+            Good4LoadingState(
+                modifier = Modifier.fillMaxSize().padding(paddingValues)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier

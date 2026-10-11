@@ -50,6 +50,43 @@
     <!-- ─── Collected Data Types ─── -->
     <key>NSPrivacyCollectedDataTypes</key>
     <array>
+        <!-- Optional Firebase Analytics; associated with an installation, never a Firebase UID. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeDeviceID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array><string>NSPrivacyCollectedDataTypePurposeAnalytics</string></array>
+        </dict>
+
+        <!-- Optional Firebase Analytics; associated with an installation, never a Firebase UID. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeProductInteraction</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array><string>NSPrivacyCollectedDataTypePurposeAnalytics</string></array>
+        </dict>
+
+        <!-- Optional Firebase Analytics; associated with an installation, never a Firebase UID. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeOtherUsageData</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array><string>NSPrivacyCollectedDataTypePurposeAnalytics</string></array>
+        </dict>
+
+        <!-- Optional Firebase Analytics; associated with an installation, never a Firebase UID. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array><string>NSPrivacyCollectedDataTypePurposeAnalytics</string></array>
+        </dict>
+
+
 
         <!-- Firebase Auth -->
         <dict>

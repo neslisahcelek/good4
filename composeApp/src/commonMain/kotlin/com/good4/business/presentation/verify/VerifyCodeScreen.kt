@@ -1,5 +1,7 @@
 package com.good4.business.presentation.verify
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -110,25 +112,10 @@ fun VerifyCodeScreen(
         }
     ) { paddingValues ->
         if (state.isBusinessContextLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(AppBackground)
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CircularProgressIndicator(color = TextPrimary)
-                    Text(
-                        text = stringResource(Res.string.verify_code_business_loading),
-                        fontSize = 16.sp,
-                        color = TextSecondary
-                    )
-                }
-            }
+            Good4LoadingState(
+                modifier = Modifier.fillMaxSize().background(AppBackground).padding(paddingValues),
+                label = stringResource(Res.string.verify_code_business_loading)
+            )
         } else {
             Column(
                 modifier = Modifier

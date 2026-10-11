@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_source='/Users/cankilinc/Desktop/Good4/Good4 dev'
 expected_bundle="${GOOD4_IPHONE_BUNDLE_ID:-com.good4.iosApp}"
 expected_firebase='good4tr-v2'
-device_id="${1:-00008120-001831543C42601E}"
+device_id="${1:?Kullanım: tools/install-v2-iphone.sh <iPhone UDID>}"
 source_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
-if [[ "$source_dir" != "$expected_source" ]]; then
-    echo "Kurulum durduruldu: güncel V2 kaynağı $expected_source olmalı." >&2
+if [[ ! -f "$source_dir/iosApp/iosApp.xcodeproj/project.pbxproj" || ! -f "$source_dir/gradlew" ]]; then
+    echo 'Kurulum durduruldu: betik Good4 kaynak ağacından çalıştırılmalı.' >&2
     exit 1
 fi
 

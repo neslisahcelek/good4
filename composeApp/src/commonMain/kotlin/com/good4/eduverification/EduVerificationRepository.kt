@@ -9,8 +9,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import good4.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.getString
 
 /** Only the server-written eligibility fields of `users/{uid}`. */
 @Serializable
@@ -19,10 +17,9 @@ data class EduStatusDto(
     val eduVerified: Boolean? = null
 )
 
-data class EduStatus(val verified: Boolean, val email: String?)
 
 sealed interface EduCodeRequestResult {
-    data class Sent(val email: String, val resendAfterSeconds: Int) : EduCodeRequestResult
+    data class Sent(val email: String, val resendAfterSeconds: Int, val sessionId: String? = null) : EduCodeRequestResult
     data class AlreadyVerified(val email: String) : EduCodeRequestResult
 }
 
@@ -33,35 +30,52 @@ sealed interface EduCodeConfirmResult {
     data object TooManyAttempts : EduCodeConfirmResult
 }
 
+interface EduVerificationSource {
+    val currentUid: String?
+    suspend fun status(): EduStatus
+    suspend fun requestCode(email: String): EduCodeRequestResult
+    suspend fun confirmCode(code: String, sessionId: String? = null): EduCodeConfirmResult
+    suspend fun disconnectTest()
+}
+
 class EduVerificationRepository(
     private val store: FirestoreRepository,
     private val auth: AuthRepository
-) {
-    suspend fun status(): EduStatus {
-        val uid = auth.currentUser?.uid ?: return EduStatus(verified = false, email = null)
+) : EduVerificationSource {
+    private val access = CampusAccessRepository(auth)
+    override val currentUid: String? get() = auth.currentUser?.uid
+    override suspend fun status(): EduStatus {
+        if (com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2) return access.status()
+        val uid = currentUid ?: return EduStatus(false, null)
         return when (val result = store.getDocument("users", uid, EduStatusDto::class)) {
-            is Result.Success -> EduStatus(
-                verified = result.data.eduVerified == true && !result.data.eduEmail.isNullOrBlank(),
-                email = result.data.eduEmail
-            )
-            is Result.Error -> error("Doğrulama durumu alınamadı. Bağlantınızı kontrol edip tekrar deneyin.")
+            is Result.Success -> EduStatus(result.data.eduVerified == true && !result.data.eduEmail.isNullOrBlank(), result.data.eduEmail)
+            is Result.Error -> error("EDU_STATUS_LOAD_FAILED")
         }
     }
+    override suspend fun disconnectTest() = access.disconnectTest()
 
-    suspend fun requestCode(email: String): EduCodeRequestResult {
+    override suspend fun requestCode(email: String): EduCodeRequestResult {
+        val uid = currentUid ?: error("AUTHENTICATION_REQUIRED")
+        val revision = CampusAccessSession.revision(uid)
         val response = callV2Function("requestEduVerification", buildJsonObject { put("email", email.trim()) })
+        check(currentUid == uid && CampusAccessSession.revision(uid) == revision) { "CAMPUS_EMAIL_ACCOUNT_MISMATCH" }
         val sentTo = response["email"]?.jsonPrimitive?.content ?: email.trim().lowercase()
         return when (response["outcome"]?.jsonPrimitive?.content) {
             "already_verified" -> EduCodeRequestResult.AlreadyVerified(sentTo)
             else -> EduCodeRequestResult.Sent(
                 email = sentTo,
-                resendAfterSeconds = response["resendAfterSeconds"]?.jsonPrimitive?.int ?: 60
+                resendAfterSeconds = response["resendAfterSeconds"]?.jsonPrimitive?.int ?: 60,
+                sessionId = response["sessionId"]?.jsonPrimitive?.content
             )
         }
     }
 
-    suspend fun confirmCode(code: String): EduCodeConfirmResult {
-        val response = callV2Function("confirmEduVerification", buildJsonObject { put("code", code) })
+    override suspend fun confirmCode(code: String, sessionId: String?): EduCodeConfirmResult {
+        val uid = currentUid ?: error("AUTHENTICATION_REQUIRED")
+        val revision = CampusAccessSession.revision(uid)
+        val response = callV2Function("confirmEduVerification", buildJsonObject { put("code", code); sessionId?.let { put("sessionId", it) } })
+        check(currentUid == uid && CampusAccessSession.revision(uid) == revision) { "CAMPUS_EMAIL_ACCOUNT_MISMATCH" }
+        if (response["outcome"]?.jsonPrimitive?.content == "verified") CampusAccessSession.changed(uid)
         return when (response["outcome"]?.jsonPrimitive?.content) {
             "verified" -> EduCodeConfirmResult.Verified(response["email"]?.jsonPrimitive?.content.orEmpty())
             "expired" -> EduCodeConfirmResult.Expired
@@ -69,21 +83,4 @@ class EduVerificationRepository(
             else -> EduCodeConfirmResult.InvalidCode(response["attemptsLeft"]?.jsonPrimitive?.int ?: 0)
         }
     }
-}
-
-internal suspend fun eduVerificationErrorMessage(error: Throwable): String = when (error.message) {
-    "EDU_EMAIL_REQUIRED", "EDU_EMAIL_INVALID" -> "Yalnızca @ogr.akdeniz.edu.tr adresleri kabul edilir."
-    "EDU_EMAIL_IN_USE" -> "Bu okul e-postası başka bir Good4 hesabıyla doğrulanmış."
-    "EDU_CODE_RESEND_TOO_SOON" -> "Yeni kod istemeden önce biraz bekleyin."
-    "EDU_CODE_SEND_LIMIT" -> "Çok fazla kod istendi. Bir saat sonra tekrar deneyin."
-    "EDU_CODE_RECIPIENT_LIMIT" -> getString(Res.string.campus_email_code_recipient_limit)
-    "EDU_CODE_ACCOUNT_DAILY_LIMIT" -> getString(Res.string.campus_email_code_account_daily_limit)
-    "EDU_CODE_DAILY_LIMIT" -> getString(Res.string.campus_email_code_daily_limit)
-    "EDU_EMAIL_SEND_FAILED" -> getString(Res.string.campus_email_code_send_failed)
-    "EDU_CODE_FORMAT_INVALID" -> "Kod 6 haneli olmalı."
-    "EDU_CODE_NOT_REQUESTED" -> "Önce doğrulama kodu isteyin."
-    "ROLE_NOT_ALLOWED" -> "Bu doğrulama yalnızca öğrenci hesapları için."
-    "ACCOUNT_NOT_ACTIVE" -> "Hesabınız henüz aktif değil."
-    else -> error.message?.takeIf { it.any(Char::isLowerCase) }
-        ?: "İşlem tamamlanamadı. Bağlantınızı kontrol edip tekrar deneyin."
 }

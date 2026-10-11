@@ -15,6 +15,8 @@ Communities and businesses are organization types, not separate canonical top-le
 
 Following is managed by the authenticated `setCommunityFollowing` callable. Its transaction checks the active actor, permits new follows only for active community organizations, writes a server timestamp, and updates `followerCount` only when the follow state changes. Users may leave an organization that was subsequently disabled or removed. Organizations without a counter initialize it from their existing followers on the first change. Direct client follower writes remain denied. `getFollowingCommunityIds` checks the active actor and runs one `followers` collection group query for their UID, returning only IDs from canonical `organizations/{id}/followers/{uid}` paths. No client collection group read permission is added; the client intersects these IDs with its already loaded active, unblocked communities. `followers.userId` needs the collection group index in `firestore.indexes.json`.
 
+Application review queues (`businessApplications`, `communityApplications`) select only `status=pending` and paginate by `createdAt ASC` and document ID. Their composite indexes are recorded in `firestore.indexes.json`; reviewed history does not consume a pending queue page.
+
 ## Events, registration, and attendance
 
 | Domain / path | Document ID | Required fields | Optional fields / enums | Relations |
@@ -67,6 +69,8 @@ Community coupons use their own server-owned collections; the campaigns/claims/c
 | `communityCouponRedemptions` | Server-generated | Coupon/business/community references, discount/title snapshots, `studentId`, `redeemedBy`, `redeemedAt`. No client reads/writes; business history is a sanitized callable response. |
 
 Active students need no edu verification or following relationship. Codes are generated only at checkout, live for ten minutes, and reuse the student's live daily claim. Unexpired issued code collisions are scoped to the business. Total and daily redemption limits are checked transactionally both on issue and redemption. Failed-code throttling is shared by members of the same business. Managers create pending coupons and may edit pending/rejected ones; only Good4 admins publish/reject (with an audit log); managers may end their coupons. Account deletion removes student claims and codes and anonymizes retained redemption history.
+
+Published coupon discovery queries `status=published` and `endsAt` after the current time using the declared composite indexes. Both normal and bounded rules preserve this read contract; bounded list pages require a limit of at most 100. The admin pending queue uses 100-document ID pages with `communityCouponsCursor` / `nextCursors.communityCoupons`. Community coupon and active business selector pages are independent: `cursor` / `nextCursor` for coupons, `businessesCursor` / `businessesNextCursor` for businesses; `businessesOnly` and `includeBusinesses=false` avoid unrelated reads. Account deletion re-reads reused code documents transactionally before deleting the student's code or anonymizing a staff member's `redeemedBy` field.
 
 ## Media contract (design only)
 
@@ -130,9 +134,20 @@ Firebase Console / güvenilir Admin SDK üzerinden `marketListings/{listingId}.s
 - Fotoğraf alanları Storage nesne referanslarıdır; istemciye ham URL verilmez. Okumada güncel aktif/doğrulanmış öğrenci ve aynı üniversite kontrolünden sonra küçük JPEG data URI döner; admin moderasyonu açık istisnadır. Storage nesnelerinde indirme token'ı ve public cache kullanılmaz. Eski token'lar tüm nesne sürümlerinde yayın öncesi iptal edilir.
 - Profil fotoğrafı `social-profiles/{uid}/{id}/photo.jpg` ve `thumb.jpg` olarak sunucuda yeniden kodlanır (kare kırpma, EXIF silinir), günde en fazla 5 değişiklik. Fotoğraf yalnızca okul e-postasını doğrulamış, aynı üniversitenin öğrencilerine döner. Eski fotoğraf klasörü değişiklikte, tüm `social-profiles/{uid}/` hesap silmede silinir.
 - Admin, açık bir sosyal şikayetin hedef kullanıcısının fotoğrafını `removeSocialReportedProfilePhoto` ile kaldırabilir: önce ilgili Storage klasörü silinir, ardından `photoUrl`, `photoThumbUrl`, `photoFolder` alanları kaldırılır ve `auditLogs` içine `social.profile.photoRemoved` yazılır. Şikayet açık kalır. Storage hatasında alanlar tekrar denemek için korunur; eşzamanlı yüklenen yeni fotoğraf korunur ve admin listeyi yenileyerek tekrar incelemelidir.
-- Kapı Kampüs Dolabı ile aynıdır: `users.eduVerified` + `@ogr.akdeniz.edu.tr` (`hasVerifiedCampusEmail`). Okul adresini Kampüs Dolabı'nda doğrulayan öğrenci burada tekrar doğrulamaz.
+- Kapı Kampüs Dolabı ile aynıdır: merkezi `campusAccess.ts` erişim politikası (gerçek okul kanıtı veya kodla tamamlanmış yetkili admin testi). Okul adresini Kampüs Dolabı'nda doğrulayan öğrenci burada tekrar doğrulamaz.
 - Engelleme listesi (`marketUserState.blockedUids`), 24 saatlik kapatma (`marketUserState.suspendedUntil`) ve yasaklı içerik ihlalleri (`marketViolations`, `context: socialActivity|socialRequest|socialMessage`) Kampüs Dolabı ile ortaktır; günlük sayaçlar `socialUserState`'tedir.
 - Etkinlik oluşturma her seferinde `socialUserState` belgesine yazar; aynı kullanıcının eşzamanlı oluşturmaları bu belge üzerinde sıraya girer ve aktif etkinlik sınırı (5) aşılamaz.
 - Kabul, kontenjan dolunca bekleyen bütün istekleri aynı transaction'da `closed` yapar. İstek sahibine `declined`, `closed` ve `removed` durumları tek bir `closed` ("Yer kalmadı") olarak döner.
 - Sohbet imleci `s:{sequence}` biçimindedir; sequence aynı sohbet transaction'ında messageCount ile artar. Yeni mesajlar en eskiden başlayarak sayfalara bölünür, `hasMore` ile devamı alınır. Eski timestamp imlecinde eşit sınır örtüşür; yeni yazılarda zaman damgası kesin artar.
 - Sohbet, etkinlik başladıktan 7 gün sonra salt-okunurdur. `cleanupSocialActivities` (her gün 04:45) başlamış etkinlikleri `ended` yapar; etkinlik, istekleri ve sohbetleri başlangıçtan 30 gün sonra, çözülmüş şikayetler 365 gün sonra silinir. Hesap silme `eraseSocialData` ile bütün sosyal veriyi kaldırır ve kabul edilmiş yerleri boşaltır.
+
+
+## Merkezi kampüs erişimi ve admin edu testi
+Kampüs üyeliği `functions/src/campusAccess.ts` politikasından üretilir. Gerçek okul
+kanıtı ile `campusAccessAllowed` / `accessSource` ayrı tutulur. `users/{uid}` üzerindeki
+sunucu alanları `adminEduTest`, `adminEduTestVerification`, `adminEduTestGeneration`;
+`app_config/admin_edu_test` tek operatör tarafından seçilen UID'yi izler. Normal ve
+bounded kullanıcı güncelleme allowlist'leri bu alanları açmaz. Test kanıtı hesaba
+bağlıdır ve kullanıcı belgesi silindiğinde kaldırılır; mevcut eduVerifications ve
+campusEmailVerifications hesap silme kapsamındadır. Ayrıntılı sözleşme ve agent kuralları:
+[Merkezi kampüs erişim politikası](../../docs/CAMPUS_ACCESS_POLICY.md).

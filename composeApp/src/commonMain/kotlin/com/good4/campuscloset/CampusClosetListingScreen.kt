@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.*
 import good4.composeapp.generated.resources.*
@@ -141,9 +143,7 @@ fun CampusClosetListingScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(padding)) {
             when {
-                state.isLoading -> CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center)
-                )
+                state.isLoading -> Good4LoadingState()
                 listing == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.campus_closet_ilan_bulunamadi), stringResource(Res.string.campus_closet_geri_don), onBack)
                 else -> Column(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)
@@ -411,7 +411,7 @@ private fun ActionBar(
             "sold" -> { { BarButtons(stringResource(Res.string.campus_closet_yayindan_kaldir), { onStatus("remove") }, stringResource(Res.string.campus_closet_tekrar_yayina_al), { onStatus("markAvailable") }, busy) } }
             else -> null
         }
-        !me.eduVerified -> { { BarButtons(null, {}, stringResource(Res.string.campus_closet_dogrula_mesaj_gonder), onVerify, busy) } }
+        !me.campusAccessAllowed -> { { BarButtons(null, {}, stringResource(Res.string.campus_closet_dogrula_mesaj_gonder), onVerify, busy) } }
         me.suspendedUntil != null -> { { BarText(stringResource(Res.string.campus_closet_kampus_dolabi_erisimin_gecici_olarak_kapali)) } }
         !detail.sameCampus && detail.conversationId == null -> { { BarText(stringResource(Res.string.campus_closet_bu_ilan_baska_bir_kampuste_yalnizca_kendi_kampusundeki_ilanlara)) } }
         else -> {

@@ -1,5 +1,7 @@
 package com.good4.suspendedmeal
 
+import com.good4.analytics.*
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.good4.core.domain.Result
@@ -30,7 +32,8 @@ data class SuspendedMealsState(
 )
 
 class SuspendedMealsViewModel(
-    private val repository: SuspendedMealRepository
+    private val repository: SuspendedMealRepository,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
 ) : ViewModel() {
     private val _state = MutableStateFlow(SuspendedMealsState())
     val state = _state.asStateFlow()
@@ -50,20 +53,25 @@ class SuspendedMealsViewModel(
 
     fun requestCode(mealId: String) {
         if (_state.value.requestingMealId != null) return
+        val tracking = analytics.click(Interaction.MEAL_CODE)
         viewModelScope.launch {
             _state.update { it.copy(requestingMealId = mealId, message = null) }
             try {
                 when (val result = repository.requestCode(mealId)) {
                     is CodeRequestResult.Code -> {
+                        analytics.result(tracking, InteractionStatus.SUCCESS)
                         _state.update { it.copy(activeCode = ActiveMealCode(mealId, result.code, result.expiresAtMillis)) }
                         watchCode(result.code)
                     }
-                    CodeRequestResult.AlreadyUsed ->
+                    CodeRequestResult.AlreadyUsed -> {
+                        analytics.result(tracking, InteractionStatus.ERROR)
                         _state.update { it.copy(message = "Bu askıdaki yemekten daha önce yararlandın.") }
+                    }
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 _state.update { it.copy(message = error.message.toCodeMessage()) }
                 if (error.message == "CAMPAIGN_LIMIT_REACHED" || error.message == "CAMPAIGN_NOT_ACTIVE") load()
             } finally {

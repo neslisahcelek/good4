@@ -114,6 +114,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--green); box-shad
 .application-status p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.55; }
 .application-status .primary-button { margin-top: 16px; text-decoration: none; }
 .application-edit { margin-top: 14px; }
+.application-card form > fieldset, .business-profile-card form > fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .application-account { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: -12px 0 22px; color: var(--text-secondary); font-size: 14px; overflow-wrap: anywhere; }
 .application-review-card .coupon-tags a, .field-help a, .section-title-row p a { color: var(--green-dark); }
 .field-help { margin: 7px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.45; }

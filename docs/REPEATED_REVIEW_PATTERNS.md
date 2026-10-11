@@ -2,6 +2,8 @@
 
 Bu notlar, 4 ve 5 Ekim 2026 incelemelerinde doğrulanan hata kalıplarından çıkarıldı. Değişen özelliğe uygun bölümü uygulayın. 5 Ekim bulgularının kanıtı ve kapsamı [daily-menu-ratings incelemesinde](code-review-daily-menu-ratings-2026-10-05.md) bulunur.
 
+11 Ekim kupon, okul doğrulama ve panel incelemesinin kapsamı/kanıtı [Can commitleri incelemesinde](code-review-can-2026-10-11.md) bulunur.
+
 ## Firestore ve arka plan işleri
 
 - Güvenlik kontrolünü sadece ekranda veya callable girişinde bırakmayın. Her hassas okuma/yazma yolunda hesabın aktifliğini ve gereken rolü sunucuda doğrulayın.
@@ -55,3 +57,17 @@ Bu notlar, 4 ve 5 Ekim 2026 incelemelerinde doğrulanan hata kalıplarından ç�
 - Composite index deploy'unun başarılı olması index'in kullanıma hazır olması değildir. Yeni sorguyu kullanan istemci yayınından önce canlı index `READY` olmalı; emülatör index ihtiyacını doğrulamaz.
 - 5 Ekim cihaz logunda `events where status==published and endsAt>=...` sorgusu index `CREATING` iken `FAILED_PRECONDITION` verdi. Bu durum “etkinlik yok” diye gösterilmemeli; index hazırlandıktan sonra yeniden deneme sorguyu yenilemeli.
 - Deploy'u açık proje ID'siyle yap, ortak servis değişikliklerinin etkilediği exports'ı birlikte kapsa ve her hedefin sonucunu kontrol et. Alternatif rules dosyası aktif `firebase.json` kaynağı değilse yayınlanmış sayılmaz. Backend deploy, mobil uygulama build/mağaza yayını değildir.
+
+## 11 Ekim: kupon, başvuru ve teslimat sözleşmeleri
+
+- Kısa kod gibi tekrar kullanılan belge kimliğinde, cleanup sorgusundan sonra kayıt başka kullanıcıya atanabilir. Transaction içinde güncel sahipliği yeniden doğrula. Hesap silmede yalnız `studentId` gibi owner alanlarını değil `redeemedBy` gibi actor alanlarını ve UID içeren kota anahtarlarını da izle; alıcı/genel ortak kotayı sıfırlamak hesap silerek limit aşılmasına yol açar.
+- Harici posta isteğinde timeout/transport/5xx, teslim edilmediğinin kanıtı değildir. Kesin reddi belirsiz kabulden ayır; yalnız kanıtlı reddin teslim kotasını geri ver. Geri verilmeyen ayrı deneme limiti bütün callable alias'larında ortak olmalı; kota iadesi servis kesintisinde sınırsız sağlayıcı/Firestore isteği açmamalı.
+- Gönderim reservation'ı iptal/disconnect sırasında da kullanılacaksa kendi pencere ve sayaç değerlerini saklamalı. Yeni saat penceresindeki ilk gönderimi iptal ederken eski saatin `sendCount` değerini artırmak, tek isteği yeni pencereye geçmiş limit olarak taşır. Sonuç yazımı ve iptal aynı reservation sözleşmesini kullanmalı; eski kayıt fallback'i pencere eşitliğini kontrol etmelidir.
+- Profilsiz başvuru hesabında Firestore aktif-hesap kontrolü yeterli değildir. Gönderimde güncel Firebase Auth `disabled`, onayda hedef hesabın varlığı/aktifliği kontrol edilir. Başvuruyu reddetmek devre dışı/silinmiş hedef için mümkün kalmalı. SDK'nın varsayılan token doğrulamasıyla emulator'daki ek kontrolleri production aktiflik kanıtı olarak eşitleme.
+- Yönetici onay kuyruğunda `limit` tek başına erişilebilirlik sağlamaz. Sunucuda sıralama, bütün sıralama alanlarını içeren cursor ve UI devam düğmesi birlikte gerekir; eşit timestamp, sınır belgesinin onaylanması/silinmesi ve son sayfa senaryolarını izle. Admin SDK sorgusunda filtre/sıralamayı cursor sınırından önce kur. Bağımsız işletme seçicisi kendi bounded sayfalarını taşımalı; her kupon devam sayfasında bütün işletmeleri yeniden indirme.
+- Sınırlı geçmişten çıkarılan sayaç gerçek toplam değildir. Tam bir aggregate/summary yoksa metin yüklenen kayıtları açıkça ifade etmeli. Süresi dolmuş kuponları yalnız istemcide elemek yıllar içinde okuma biriktirir; server zaman filtresi ve gereken index'i birlikte ele al, çok sayıda henüz bitmemiş kayıt kalıyorsa bu sınırı raporla.
+- Nesil kontrolü başarıyla sınırlı kalamaz: eski hata, cursor veya `finally` loading güncellemesi de yeni sekmeyi bozabilir. Aynı UID'ye yeniden giriş ve A→B→A dönüşü yeni nesildir. Yeni refresh loading sahipliğini devralmalı; yazma sonrası refresh yazmadan önce başlayan istekle tekilleştirilmemeli.
+- Yeni kupon/başka içerik türünün block kontrolünü ilk liste, featured liste, anlık bloklama ve doğrudan seçimde izle. Yeni bağımsız koleksiyonun hatası çalışan komşu feed'i kapatmamalı; kendi lokalize hata/retry state'ini taşımalı.
+- Doğrulama proof'i sheet açılmadan önce yüklenirse, yalnız proof değişimini izleyen effect devam akışını çalıştırmaz. Pending intent/sheet görünürlüğünü de değerlendir. Gece yarısı etiketi kart başına `remember` ile sabitlenmez; tek canlı saat ve lifecycle resume kullanılır.
+- Yeni kod biçimini bütün tüketicilere yayarken mevcut geçerli kodların TTL boyunca giriş/normalizasyon/route sözleşmesini koru. Sunucu eski harfli kodu kabul ederken web input'unun harfleri silmesi sessiz uyumluluk kırılmasıdır.
+- Production'a bağlı yeni debug scheme/config, minimum sürüm kontrolüne gireceği için güncel uygulama sürümünü taşımalıdır. Paylaşılan kurulum betiğinde geliştiriciye ait mutlak checkout yolu ve varsayılan cihaz kimliği kullanılmaz; kaynak/çıktı ortamı doğrulanır, hedef cihaz açık girdidir. Emülatör testinde güvenlik sınırı tek bir geliştirici portu değil yerel host + açık demo proje olmalıdır.

@@ -29,7 +29,7 @@ import androidx.compose.material.icons.outlined.BakeryDining
 import androidx.compose.material.icons.outlined.DinnerDining
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Restaurant
-import androidx.compose.material3.CircularProgressIndicator
+import com.good4.core.presentation.components.Good4LoadingState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -381,7 +381,7 @@ private fun MealSection(
                         MealRatingRow(rating, ratingOpen, ratingInFlight, onRate)
                     }
                 }
-                isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
+                isLoading -> Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp))
                 else -> Text(content.emptyText, color = TextSecondary, fontSize = 14.sp)
             }
             if (onBalanceClick != null) {

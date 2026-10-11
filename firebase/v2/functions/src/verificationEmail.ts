@@ -4,6 +4,13 @@ import { HttpsError } from "firebase-functions/v2/https";
 export const brevoApiKey = defineSecret("BREVO_API_KEY");
 export type VerificationEmailSender = (email: string, code: string) => Promise<void>;
 
+/** Transport failures can occur after the provider accepted the message. */
+export class VerificationEmailDeliveryError extends HttpsError {
+  constructor(readonly definitelyRejected: boolean) {
+    super("unavailable", "EDU_EMAIL_SEND_FAILED");
+  }
+}
+
 /** No response bodies or transport errors escape: they can contain recipient data. */
 export function brevoVerificationSender(
   key: () => string,
@@ -11,8 +18,13 @@ export function brevoVerificationSender(
 ): VerificationEmailSender {
   return async (email, code) => {
     try {
-      const apiKey = key();
-      if (!apiKey) throw new Error();
+      let apiKey: string;
+      try {
+        apiKey = key();
+      } catch {
+        throw new VerificationEmailDeliveryError(true);
+      }
+      if (!apiKey) throw new VerificationEmailDeliveryError(true);
       const response = await transport("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: { "api-key": apiKey, "Content-Type": "application/json", Accept: "application/json" },
@@ -25,9 +37,12 @@ export function brevoVerificationSender(
           htmlContent: `<p>Good4 okul e-postası doğrulama kodun:</p><p style="font-size:28px;font-weight:600;letter-spacing:6px">${code}</p><p>Bu kod 10 dakika geçerli. Bu isteği sen yapmadıysan e-postayı yok sayabilirsin.</p>`,
         }),
       });
-      if (!response.ok) throw new Error();
-    } catch {
-      throw new HttpsError("unavailable", "EDU_EMAIL_SEND_FAILED");
+      if (!response.ok) {
+        throw new VerificationEmailDeliveryError(response.status >= 400 && response.status < 500 && response.status !== 408);
+      }
+    } catch (error) {
+      if (error instanceof VerificationEmailDeliveryError) throw error;
+      throw new VerificationEmailDeliveryError(false);
     }
   };
 }

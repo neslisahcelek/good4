@@ -46,6 +46,8 @@ import org.koin.dsl.module
 expect val platformModule: org.koin.core.module.Module
 
 val commonModule = module {
+    viewModel { com.good4.analytics.AnalyticsConsentViewModel(get()) }
+    viewModel { com.good4.analytics.AnalyticsInteractionViewModel(get()) }
     viewModel { com.good4.update.AppUpdateViewModel(get<AppConfigRepository>()) }
     viewModel { com.good4.update.ForceUpdateViewModel(get<AppConfigRepository>()) }
     single { com.good4.notification.NotificationRepository(get(), get()) }
@@ -55,7 +57,7 @@ val commonModule = module {
     single { com.good4.student.home.HomeLayoutStore(com.good4.student.home.DeviceHomeLayoutStorage()) }
     viewModel { com.good4.student.home.HomeLayoutViewModel(get(), get()) }
     single { com.good4.community.CommunityRepository(get(), get(), get()) }
-    viewModel { com.good4.community.CommunityViewModel(get()) }
+    viewModel { com.good4.community.CommunityViewModel(get(), analytics = get()) }
     single<FirestoreRepository> { FirestoreRepositoryImpl() }
 
     single { AppConfigRepository(get<FirestoreRepository>()) }
@@ -77,7 +79,7 @@ val commonModule = module {
     single { com.good4.campuscloset.CampusEmailVerificationRepository(get<AuthRepository>()) }
     single { com.good4.campuscloset.CampusClosetRepository(get<AuthRepository>(), get()) }
     single { com.good4.social.SocialBadge() }
-    single { com.good4.social.SocialRepository(get()) }
+    single { com.good4.social.SocialRepository(get<AuthRepository>(), get()) }
     single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
     single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
 
@@ -167,24 +169,24 @@ val commonModule = module {
         )
     }
     viewModel { SessionRestoreViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
-    viewModel { AkdenizDiningMenuViewModel(get<AkdenizDiningMenuRepository>(), get<KykMenuRepository>(), get<MealRatingRepository>()) }
+    viewModel { AkdenizDiningMenuViewModel(get<AkdenizDiningMenuRepository>(), get<KykMenuRepository>(), get<MealRatingRepository>(), analytics = get()) }
     viewModel { AcademicCalendarViewModel(get<AcademicCalendarRepository>()) }
     viewModel { ClassScheduleViewModel(get<AuthRepository>(), get<UserRepository>()) }
     viewModel { FeedbackViewModel(get<FeedbackRepository>()) }
-    viewModel { com.good4.eduverification.EduVerificationViewModel(get()) }
-    viewModel { com.good4.suspendedmeal.SuspendedMealsViewModel(get()) }
-    viewModel { com.good4.campuscloset.CampusClosetFeedViewModel(get()) }
+    viewModel { com.good4.eduverification.EduVerificationViewModel(get<com.good4.eduverification.EduVerificationRepository>()) }
+    viewModel { com.good4.suspendedmeal.SuspendedMealsViewModel(get(), analytics = get()) }
+    viewModel { com.good4.campuscloset.CampusClosetFeedViewModel(get(), analytics = get()) }
     viewModel { com.good4.campuscloset.CampusEmailVerificationViewModel(get<com.good4.campuscloset.CampusEmailVerificationRepository>()) }
-    viewModel { com.good4.campuscloset.CampusClosetListingViewModel(get()) }
-    viewModel { com.good4.campuscloset.CampusClosetNewListingViewModel(get()) }
+    viewModel { com.good4.campuscloset.CampusClosetListingViewModel(get(), analytics = get()) }
+    viewModel { com.good4.campuscloset.CampusClosetNewListingViewModel(get(), analytics = get()) }
     viewModel { com.good4.campuscloset.CampusClosetMyListingsViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetInboxViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetChatViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetFavoritesViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetBlockedViewModel(get()) }
-    viewModel { com.good4.social.SocialHomeViewModel(get()) }
-    viewModel { com.good4.social.SocialCreateViewModel(get()) }
-    viewModel { com.good4.social.SocialActivityViewModel(get()) }
+    viewModel { com.good4.social.SocialHomeViewModel(get<com.good4.social.SocialRepository>(), analytics = get()) }
+    viewModel { com.good4.social.SocialCreateViewModel(get(), analytics = get()) }
+    viewModel { com.good4.social.SocialActivityViewModel(get(), analytics = get()) }
     viewModel { com.good4.social.SocialRequestsViewModel(get()) }
     viewModel { com.good4.social.SocialInboxViewModel(get()) }
     viewModel { com.good4.social.SocialChatViewModel(get()) }

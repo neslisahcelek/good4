@@ -1,7 +1,7 @@
 # Good4 KVKK Aydınlatma Metni ve Gizlilik Politikası
 
-**Çalışma sürümü:** 1.0  
-**Tarih:** 24 Eylül 2026  
+**Çalışma sürümü:** 1.1
+**Tarih:** 11 Ekim 2026
 **Veri sorumlusu:** Ahmetcan Kılınç
 
 > Bu metin, Good4 mobil uygulaması ve Good4 V2 web hizmetleri için hazırlanmış çalışma sürümüdür. Kamuya açılmadan önce aşağıdaki yayın öncesi doğrulamalar tamamlanmalıdır. Metin, kişisel veriler hakkında bilgilendirme içindir; açık rıza veya üyelik sözleşmesi değildir.
@@ -15,7 +15,7 @@ Good4 mobil uygulaması ve Good4 V2 web hizmetleri kapsamında kişisel verileri
 
 ## 2. İşlenen veriler, amaçlar ve hukuki sebepler
 
-Veriler, Good4'ta kullandığınız hesap türüne ve tercih ettiğiniz özelliklere göre işlenir. Aşağıdaki hukuki sebeplerden yalnızca ilgili işleme faaliyeti için geçerli olan kullanılır; bir satırdaki bütün hukuki sebepler her işlem için birlikte uygulanmaz.
+Veriler, Good4'da kullandığınız hesap türüne ve tercih ettiğiniz özelliklere göre işlenir. Aşağıdaki hukuki sebeplerden yalnızca ilgili işleme faaliyeti için geçerli olan kullanılır; bir satırdaki bütün hukuki sebepler her işlem için birlikte uygulanmaz.
 
 | Veri kategorisi ve örnekler | İşleme amaçları | KVKK kapsamındaki hukuki sebep |
 | --- | --- | --- |
@@ -25,17 +25,17 @@ Veriler, Good4'ta kullandığınız hesap türüne ve tercih ettiğiniz özellik
 | **Etkinlik ve teklif işlemleri:** takip edilen topluluklar; etkinlik kaydı/katılımı, QR veya check-in durumu; sürümde sunulan özelliklere bağlı olarak rezervasyon, teklif/kupon talebi ve kullanım durumu | Seçilen etkinlik ve teklifleri sunma, katılımı veya kullanımı doğrulama, ilgili işlem durumunu gösterme ve uyuşmazlıkları inceleme | Talep edilen hizmet sözleşmesinin kurulması veya ifası (m. 5/2-c); gerekli olduğunda bir hakkın tesisi, kullanılması veya korunması (m. 5/2-e) |
 | **Geri bildirim ve destek:** gönderilen konu ve mesajlar, bunlarla ilişkilendirilen hesap kimliği, ad ve e-posta | Talebi inceleme ve yanıtlama, hizmet sorunlarını giderme ve benzer sorunları önleme | Talebi karşılamak için sözleşmenin ifası (m. 5/2-c) veya temel hak ve özgürlüklere zarar vermemek kaydıyla hizmet güvenliği/kalitesine ilişkin meşru menfaat (m. 5/2-f); uyuşmazlık hâlinde m. 5/2-e |
 | **Cihaz ve güvenlik kayıtları:** uygulama/web sürümü, işletim sistemi, cihaz/tarayıcı bilgileri, bağlantı, oturum, hata ve güvenlik kayıtları; hizmet sağlayıcıların bağlantı sırasında üretebildiği IP adresi gibi teknik kayıtlar | Hizmeti çalıştırma, oturum güvenliği, kötüye kullanımı önleme ve teknik hataları araştırma | Hizmet güvenliği ve kötüye kullanımı önleme bakımından meşru menfaat (m. 5/2-f); kanuni zorunluluk varsa m. 5/2-ç |
-| **Mobil uygulama analitiği ve çökme raporları:** hedeflenen Good4 V2 Android/iOS yayın paketlerinde Firebase Analytics ve Firebase Crashlytics SDK'ları bulunmaz; bu SDK'lar yoluyla etkileşim veya çökme raporu toplanmaz/gönderilmez | Hedeflenen V2 sürümünde bu SDK'larla analitik veya çökme raporu toplama amacıyla veri işlenmez | Bu V2 sürüm hedefinde söz konusu işleme faaliyeti bulunmadığından bu kategori için hukuki sebep uygulanmaz. SDK'lar yeniden eklenmeden önce amaç, hukuki sebep ve gerekiyorsa kullanıcı tercihi belirlenerek metin güncellenmelidir. |
+| **İsteğe bağlı mobil kullanım analitiği:** İsteğe bağlı kullanım analitiği, yalnız kullanıcı izin verdiğinde Firebase Analytics üzerinden işlenir. Tıklamalar, işlem sonuçları, uygulama kurulum/oturum tanımlayıcıları, uygulama sürümü ve cihaz/işletim sistemi bilgileri ile IP’den türetilen yaklaşık bölge bilgileri işlenebilir. E-posta, telefon, Firebase kullanıcı kimliği, içerik kimlikleri, mesaj, arama metni ve doğrulama/kupon kodları analytics event’lerine eklenmez. Reklam kimliği toplama ve reklam kişiselleştirme kapalıdır. İzin Hesap Ayarları’ndan geri alınabilir; yeni toplama durur ve cihazdaki analytics verisi sıfırlanır. Daha önce sunucuya ulaşmış veriler bu işlemle geriye dönük silinmez. Firebase Crashlytics kullanılmaz. | Özellik kullanımını ve işlem tamamlanma oranlarını ölçerek uygulamayı geliştirmek | Ayrı kullanıcı izni/açık rıza (KVKK m. 5/1). İzin verilmemesi temel uygulama kullanımını etkilemez. |
 
 Google ile girişte kimlik doğrulaması için gereken tanımlayıcılar ve Google tarafından sağlanan temel hesap bilgileri kullanılabilir. Good4, Gmail, Drive, takvim veya kişiler içeriğine erişim istemez. Şifre ile girişte girilen parola kimlik doğrulama hizmeti tarafından işlenir; parola Good4 kullanıcı profilinde okunabilir metin olarak tutulmaz.
 
 ## 3. Verileri nasıl elde ediyoruz?
 
-Veriler; kayıt ve profil alanlarına sizin tarafınızdan girilmesi, Good4'u kullanmanız, destek veya geri bildirim göndermeniz ve Google ile giriş seçeneğini kullanmanız yoluyla elde edilir. Bildirim izni verdiğinizde, uygulama kurulumu için üretilen push token'ı ve platform/izin durumu bildirim teslimi amacıyla alınır; tercihlerinizi uygulamak için bildirim ayarlarınız saklanır. Uygulama ve altyapı sağlayıcıları hizmet sırasında oturum, bağlantı, cihaz ve güvenlik kayıtları oluşturabilir. Bildirim tesliminde Firebase/Google altyapısı kullanılır. Hedeflenen Good4 V2 mobil paketlerinde uygulama analitiği ve çökme tanılama SDK'ları bulunmaz. İsteğe bağlı profil alanlarının doldurulmaması veya bildirim izninin verilmemesi, yalnızca ilgili isteğe bağlı özelliği etkileyebilir.
+Veriler; kayıt ve profil alanlarına sizin tarafınızdan girilmesi, Good4'u kullanmanız, destek veya geri bildirim göndermeniz ve Google ile giriş seçeneğini kullanmanız yoluyla elde edilir. Bildirim izni verdiğinizde, uygulama kurulumu için üretilen push token'ı ve platform/izin durumu bildirim teslimi amacıyla alınır; tercihlerinizi uygulamak için bildirim ayarlarınız saklanır. Uygulama ve altyapı sağlayıcıları hizmet sırasında oturum, bağlantı, cihaz ve güvenlik kayıtları oluşturabilir. Bildirim tesliminde Firebase/Google altyapısı kullanılır. Firebase Analytics yalnız isteğe bağlı kullanım analitiği izniyle kullanılır; tercih Hesap Ayarları’ndan değiştirilebilir. Firebase Crashlytics ve reklam kimliğine dayalı takip kullanılmaz. İsteğe bağlı profil alanlarının doldurulmaması veya bildirim izninin verilmemesi, yalnızca ilgili isteğe bağlı özelliği etkileyebilir.
 
 ## 4. Alıcı grupları ve paylaşım amaçları
 
-- **Google Firebase / Google Cloud hizmetleri:** kimlik doğrulama, uygulama altyapısı, veri saklama ve sunucu işlevleri için hizmet sağlayıcı sıfatıyla. Uygulamada Firebase Authentication, Firestore ve Storage kullanılır. Hedeflenen Good4 V2 mobil paketlerinde Firebase Analytics ve Crashlytics SDK'ları bulunmaz.
+- **Google Firebase / Google Cloud hizmetleri:** kimlik doğrulama, uygulama altyapısı, veri saklama ve sunucu işlevleri için hizmet sağlayıcı sıfatıyla. Uygulamada Firebase Authentication, Firestore ve Storage kullanılır. Firebase Analytics yalnız isteğe bağlı kullanım analitiği izniyle kullanılır; tercih Hesap Ayarları’ndan değiştirilebilir. Firebase Crashlytics ve reklam kimliğine dayalı takip kullanılmaz.
 - **Katıldığınız topluluk veya etkinlik düzenleyicisi:** ilgili etkinliğin kaydı ve katılımını yönetmek için gerekli sınırlı bilgiler (örneğin görünen ad, kayıt ve check-in durumu).
 - **İlgili topluluk veya işletme:** kullandığınız teklif/kupon işlemini doğrulamak için gerekli işlem bilgileri.
 - **Yetkili kamu kurumları ve yargı mercileri:** kanuni yükümlülük veya usulüne uygun talep bulunması hâlinde.
@@ -60,7 +60,7 @@ Yetkisiz erişim, kayıp, değişiklik ve kötüye kullanım risklerini azaltmak
 
 Good4 V2 web uygulamasında Firebase Authentication'ın `browserLocalPersistence` oturum saklama özelliği kullanılır. Bu, web oturum bilgisini tarayıcının `localStorage` alanında tutar ve oturumun tarayıcı kapatıldıktan sonra da açık kalmasını sağlar. Bu depolama web hesabına giriş için gereklidir.
 
-Good4 V2 web uygulamasında reklam takibi amacıyla kullanılan bir çerez yapılandırması bulunmamaktadır. Hedeflenen Good4 V2 mobil paketlerinde Firebase Analytics ve Firebase Crashlytics SDK'ları bulunmaz. Tarayıcı ayarlarından site verilerini silebilir veya engelleyebilirsiniz; bu durumda oturum kapanabilir ya da tekrar giriş yapmanız gerekebilir.
+Good4 V2 web uygulamasında reklam takibi amacıyla kullanılan bir çerez yapılandırması bulunmamaktadır. Firebase Analytics yalnız isteğe bağlı kullanım analitiği izniyle kullanılır; tercih Hesap Ayarları’ndan değiştirilebilir. Firebase Crashlytics ve reklam kimliğine dayalı takip kullanılmaz. Tarayıcı ayarlarından site verilerini silebilir veya engelleyebilirsiniz; bu durumda oturum kapanabilir ya da tekrar giriş yapmanız gerekebilir.
 
 ## 8. KVKK kapsamındaki haklar ve başvuru
 
@@ -87,6 +87,6 @@ Bu metin kişisel veri işleme hakkında bilgilendirme içindir; üyelik sözle�
 1. Firebase Console'da Firestore `eur3`, Storage `US-EAST1` ve dağıtılmış Functions `europe-west1` doğrulandı; Authentication için Google'ın ABD işleme açıklaması esas alındı. Faturalandırma adresini, sözleşme tarafı Google tüzel kişisini ve diğer hizmetlerin/alt işleyenlerin kapsamını sözleşme kayıtlarından teyit et.
 2. Good4 hesabında Google Cloud Veri İşleme Eki'nin kabul kaydını ve KVKK m. 9 aktarım dayanağını belgeyle teyit et. Türk standart sözleşmesi kullanılacaksa iki tarafın imzasını tamamla, imzadan itibaren beş iş günü içinde KVKK'ya bildir ve bildirim alındısını sakla. Hazırlık: `docs/legal/google-kvkk-aktarim-dosyasi-taslak.md`.
 3. Hesap silme callable'ının emulator testi geçti (32 Functions testi). Cloud Functions'a dağıt, yayın paketinde gerçek hesapla uçtan uca dene; kullanıcıya özel Storage nesnesi/ek V1 koleksiyonu olmadığını canlı envanterle teyit et ve kalan saklama istisnalarıyla sürelerini belirleyip uygula.
-4. Uygulama mağazalarındaki veri beyanlarını yayınlanacak Android ve iOS paketleriyle karşılaştır. Hedeflenen Good4 V2 yayın hedeflerinden Firebase Analytics/Crashlytics SDK'ları kaldırıldı; mağazalara gönderilecek son paketlerde bulunmadığını ve mağaza beyanlarının bunu yansıttığını doğrula. Bu SDK'lar yeniden eklenirse hukuki sebep ve gerekiyorsa kullanıcı tercihi akışını önceden belirle.
+4. Son Android/iOS paketlerinde Analytics başlangıçta kapalı mı, ayrı izin akışı ve ayarlardan geri çekme çalışıyor mu doğrula. Güncellenmiş gizlilik metnini mobil sürümden önce yayınla; mağaza beyanlarını kullanım verisi, kurulum/cihaz tanımlayıcıları ve yaklaşık bölge verileriyle eşleştir. Crashlytics ve reklam takibinin kapalı kaldığını doğrula.
 5. Veri kategorisine göre saklama ve imha sürelerini belirle; anonimleştirilmiş ortak işlem kayıtları için süre ve gerekçeyi de uygulama akışlarıyla eşleştir.
 6. Son metni KVKK ve tüketici hukuku konusunda çalışan hukuk uzmanına incelet.

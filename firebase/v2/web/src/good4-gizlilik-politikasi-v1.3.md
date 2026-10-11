@@ -18,7 +18,7 @@ tarafından sunulmaktadır.
 
 ## 1. İşlenen Bilgiler
 
-Good4'te kullanılan özelliklere bağlı olarak aşağıdaki bilgiler işlenebilir:
+Good4'da kullanılan özelliklere bağlı olarak aşağıdaki bilgiler işlenebilir:
 
 * ad ve soyad veya görünen ad,
 * hesap e-posta adresi,
@@ -38,7 +38,7 @@ Good4'te kullanılan özelliklere bağlı olarak aşağıdaki bilgiler işlenebi
 * güvenlik, işlem ve denetim kayıtları,
 * hizmetin sunulması sırasında teknik hizmet sağlayıcılar tarafından işlenebilen bağlantı ve güvenlik verileri.
 
-Good4'ün standart üyelik ve uygulama kullanım süreçlerinde **T.C. kimlik numarası toplanmaz.**
+Good4'un standart üyelik ve uygulama kullanım süreçlerinde **T.C. kimlik numarası toplanmaz.**
 
 KVKK kapsamında veri sorumlusuna yapılan resmî başvurularda mevzuat gereği kimliğin doğrulanmasına yönelik farklı bilgiler talep edilebilir.
 
@@ -65,7 +65,7 @@ Kişisel veriler ve diğer kullanıcı bilgileri;
 * teknik sorunların tespit edilmesi,
 * yetkisiz erişim ve kötüye kullanımın önlenmesi,
 * kullanıcı destek ve geri bildirim taleplerinin değerlendirilmesi,
-* Good4'ün hukuki yükümlülüklerinin yerine getirilmesi ve haklarının korunması
+* Good4'un hukuki yükümlülüklerinin yerine getirilmesi ve haklarının korunması
 
 amaçlarıyla kullanılabilir.
 
@@ -73,7 +73,7 @@ Good4, kişisel verilerin işlenmesini ilgili amaçla bağlantılı, sınırlı 
 
 ## 3. Öğrenci E-Postası Doğrulaması
 
-Good4'ün ilgili özelliklerinde kullanıcıdan öğrencilik durumunun doğrulanabilmesi amacıyla `.edu.tr` uzantılı bir e-posta adresi istenebilir.
+Good4'un ilgili özelliklerinde kullanıcıdan öğrencilik durumunun doğrulanabilmesi amacıyla `.edu.tr` uzantılı bir e-posta adresi istenebilir.
 
 Bu süreç kapsamında;
 
@@ -167,9 +167,9 @@ Bildirimlerde kilit ekranına mesaj içeriği gönderilmez; yalnızca genel bir 
 
 ## 8. Teknik Hizmetler ve Üçüncü Taraf Sağlayıcılar
 
-Good4'ün çalıştırılması amacıyla üçüncü taraf teknik hizmetlerden yararlanılır.
+Good4'un çalıştırılması amacıyla üçüncü taraf teknik hizmetlerden yararlanılır.
 
-Good4'ün mevcut teknik altyapısında kullanılan başlıca hizmetler arasında:
+Good4'un mevcut teknik altyapısında kullanılan başlıca hizmetler arasında:
 
 * **Firebase Authentication:** kullanıcı hesabı ve kimlik doğrulama,
 * **Cloud Firestore:** uygulama ve kullanıcı verilerinin saklanması,
@@ -185,7 +185,7 @@ yer alabilir.
 
 Firebase ve Google altyapıları hizmetin sunulması sırasında IP adresi, user-agent ve benzeri teknik bağlantı veya güvenlik bilgilerini işleyebilir. Good4 uygulama kodu bu IP adreslerini kullanıcı profiline veya Firestore kullanıcı kayıtlarına ayrıca kaydetmemektedir.
 
-Mevcut Good4 sürümünde Firebase Analytics, Firebase Crashlytics, reklam SDK'ları veya reklam kimliğine dayalı takip kullanıldığı tespit edilmemiştir. Bu durum değişirse ilgili gizlilik metinleri ve mağaza beyanları güncellenir.
+İsteğe bağlı kullanım analitiği, yalnız kullanıcı izin verdiğinde Firebase Analytics üzerinden işlenir. Tıklamalar, işlem sonuçları, uygulama kurulum/oturum tanımlayıcıları, uygulama sürümü ve cihaz/işletim sistemi bilgileri ile IP’den türetilen yaklaşık bölge bilgileri işlenebilir. E-posta, telefon, Firebase kullanıcı kimliği, içerik kimlikleri, mesaj, arama metni ve doğrulama/kupon kodları analytics event’lerine eklenmez. Reklam kimliği toplama ve reklam kişiselleştirme kapalıdır. İzin Hesap Ayarları’ndan geri alınabilir; yeni toplama durur ve cihazdaki analytics verisi sıfırlanır. Daha önce sunucuya ulaşmış veriler bu işlemle geriye dönük silinmez. Firebase Crashlytics kullanılmaz.
 
 Good4 ayrıca özelliklerin çalıştırılması amacıyla harita, hava durumu veya kullanıcının seçimiyle açılan dış hizmetlerden yararlanabilir. Bu hizmetlere yapılan bağlantılar sırasında ilgili sağlayıcı bağlantının teknik bilgilerini işleyebilir.
 
@@ -193,7 +193,7 @@ Good4 bu hizmetlerin kullanımı kapsamında gerekli olmayan kullanıcı kimlik 
 
 ## 9. Kişisel Verilerin Yurt Dışında İşlenmesi ve Aktarılması
 
-Good4'ün kullandığı bazı teknik hizmet sağlayıcıların altyapıları Türkiye dışında bulunmaktadır.
+Good4'un kullandığı bazı teknik hizmet sağlayıcıların altyapıları Türkiye dışında bulunmaktadır.
 
 Özellikle Firebase Authentication ve diğer bazı Google/Firebase hizmetlerinin kullanılması nedeniyle, hizmetin sunulması için gerekli belirli kişisel veriler ve teknik bağlantı bilgileri yurt dışında bulunan sistemlerde işlenebilir veya yurt dışından erişilebilir hale gelebilir.
 
@@ -209,7 +209,7 @@ Good4 tarafından kullanılan hizmet sağlayıcılar, veri konumları veya aktar
 
 ## 10. Harita, Hava Durumu ve Dış Bağlantılar
 
-Good4'ün kampüs haritası özelliğinde kullanıcının GPS konumu yerine sabit kampüs veya hedef koordinatları kullanılabilir.
+Good4'un kampüs haritası özelliğinde kullanıcının GPS konumu yerine sabit kampüs veya hedef koordinatları kullanılabilir.
 
 Hava durumu özelliğinde de kullanıcının cihaz konumu yerine önceden belirlenmiş kampüs koordinatları hava durumu hizmetine gönderilebilir.
 
@@ -324,7 +324,7 @@ KVKK kapsamındaki hakların tamamı, veri işleme faaliyetlerinin hukuki sebepl
 
 ## 17. Politikanın Güncellenmesi
 
-Good4'ün sunduğu özellikler, kullandığı teknik hizmetler veya kişisel veri işleme faaliyetleri değişirse bu Gizlilik Politikası güncellenebilir.
+Good4'un sunduğu özellikler, kullandığı teknik hizmetler veya kişisel veri işleme faaliyetleri değişirse bu Gizlilik Politikası güncellenebilir.
 
 Kullanıcıların gizlilik haklarını önemli ölçüde etkileyen değişiklikler uygun yöntemlerle kullanıcılara bildirilir.
 

@@ -1,5 +1,7 @@
 package com.good4.notification
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
@@ -91,36 +93,44 @@ private fun NotificationsContent(
                 }
             }
         }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            state.error?.let { error -> item(key = "error") {
-                Text(error.asString(), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = onRetry) { Text(stringResource(Res.string.notification_retry)) }
-            } }
-            if (state.loading) item(key = "loading") { CircularProgressIndicator() }
-            if (!state.loading && state.notifications.isEmpty()) item(key = "empty") {
-                Text(stringResource(if (state.supported) Res.string.notification_empty else Res.string.notification_staging_unavailable))
-            }
-            items(state.notifications, key = { it.id }) { notification ->
-                ElevatedCard(onClick = { onSelect(notification) }, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row {
-                            Text(notification.data.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                            if (notification.data.readAt == 0L) Text(stringResource(Res.string.notification_unread), color = MaterialTheme.colorScheme.primary)
-                        }
-                        Text(notification.data.body, style = MaterialTheme.typography.bodyMedium)
-                        val local = Instant.fromEpochSeconds(notification.data.createdAt).toLocalDateTime(TimeZone.of("Europe/Istanbul"))
-                        Text("${local.date} ${local.time.toString().take(5)}", style = MaterialTheme.typography.labelSmall)
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            if (state.loading && state.notifications.isEmpty()) {
+                Good4LoadingState()
+            } else {
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    state.error?.let { error -> item(key = "error") {
+                        Text(error.asString(), color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = onRetry) { Text(stringResource(Res.string.notification_retry)) }
+                    } }
+                    if (state.loading) item(key = "loading") {
+                        Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp))
                     }
-                }
-            }
-            if (state.nextCursor != null || state.loadingMore || state.pageError != null) item(key = "next-page") {
-                if (!state.loading && state.pageError == null) {
-                    LaunchedEffect(state.nextCursor) { onLoadMore() }
-                }
-                if (state.loadingMore) CircularProgressIndicator()
-                state.pageError?.let {
-                    Text(it.asString(), color = MaterialTheme.colorScheme.error)
-                    TextButton(onClick = onLoadMore) { Text(stringResource(Res.string.notification_retry)) }
+                    if (!state.loading && state.notifications.isEmpty()) item(key = "empty") {
+                        Text(stringResource(if (state.supported) Res.string.notification_empty else Res.string.notification_staging_unavailable))
+                    }
+                    items(state.notifications, key = { it.id }) { notification ->
+                        ElevatedCard(onClick = { onSelect(notification) }, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row {
+                                    Text(notification.data.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                                    if (notification.data.readAt == 0L) Text(stringResource(Res.string.notification_unread), color = MaterialTheme.colorScheme.primary)
+                                }
+                                Text(notification.data.body, style = MaterialTheme.typography.bodyMedium)
+                                val local = Instant.fromEpochSeconds(notification.data.createdAt).toLocalDateTime(TimeZone.of("Europe/Istanbul"))
+                                Text("${local.date} ${local.time.toString().take(5)}", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                    if (state.nextCursor != null || state.loadingMore || state.pageError != null) item(key = "next-page") {
+                        if (!state.loading && state.pageError == null) {
+                            LaunchedEffect(state.nextCursor) { onLoadMore() }
+                        }
+                        if (state.loadingMore) Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp))
+                        state.pageError?.let {
+                            Text(it.asString(), color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = onLoadMore) { Text(stringResource(Res.string.notification_retry)) }
+                        }
+                    }
                 }
             }
         }

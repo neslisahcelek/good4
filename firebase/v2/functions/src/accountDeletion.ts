@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   FieldValue,
   type DocumentReference,
@@ -34,6 +35,28 @@ async function replaceMatchingField(
     const batch = database.batch();
     page.docs.forEach((document) => batch.update(document.ref, field, replacement));
     await batch.commit();
+  }
+}
+
+/** Four-digit coupon document IDs are reused, so verify ownership after the query. */
+async function removeCommunityCouponCodeReferences(database: Firestore, uid: string): Promise<void> {
+  for (const field of ["studentId", "redeemedBy"] as const) {
+    const query = database.collection("communityCouponCodes").where(field, "==", uid);
+    while (true) {
+      const page = await query.limit(DELETE_PAGE_SIZE).get();
+      if (page.empty) break;
+
+      await database.runTransaction(async (transaction) => {
+        const codes = await transaction.getAll(...page.docs.map((document) => document.ref));
+        for (const code of codes) {
+          if (code.get("studentId") === uid) {
+            transaction.delete(code.ref);
+          } else if (code.get("redeemedBy") === uid) {
+            transaction.update(code.ref, "redeemedBy", DELETED_ACCOUNT_MARKER);
+          }
+        }
+      });
+    }
   }
 }
 
@@ -227,7 +250,15 @@ export async function beginAccountDeletion(database: Firestore, uid: string): Pr
   await database.runTransaction(async (transaction) => {
     const userRef = database.doc(`users/${uid}`);
     const user = await transaction.get(userRef);
+    const testConfigRef = database.doc("app_config/admin_edu_test");
+    const testConfig = await transaction.get(testConfigRef);
+    if (testConfig.get("uid") === uid) transaction.delete(testConfigRef);
     if (user.exists) transaction.update(userRef, { status: "deleting", updatedAt: FieldValue.serverTimestamp() });
+    // Account windows contain the UID in their key. Keep recipient/global mail
+    // windows intact so deleting an account cannot reset shared delivery quotas.
+    for (const key of [`eduMail:account:${uid}`, `eduMailRequest:${uid}`]) {
+      transaction.delete(database.doc(`rateLimits/${createHash("sha256").update(key).digest("hex")}`));
+    }
   });
 }
 
@@ -287,7 +318,7 @@ export async function eraseAccountData(
   );
 
   await deleteMatchingDocuments(database, database.collection("communityCouponClaims").where("studentId", "==", uid));
-  await deleteMatchingDocuments(database, database.collection("communityCouponCodes").where("studentId", "==", uid));
+  await removeCommunityCouponCodeReferences(database, uid);
   await replaceMatchingField(database, database.collection("communityCouponRedemptions").where("studentId", "==", uid), "studentId");
   await replaceMatchingField(database, database.collection("communityCouponRedemptions").where("redeemedBy", "==", uid), "redeemedBy");
   await deleteMatchingDocuments(database, database.collection("campaignClaims").where("studentId", "==", uid));

@@ -10,6 +10,8 @@ test("business verification routes 4, 6 and 8 digits and preserves leading zeroe
   assert.equal(couponCodeRoute("0012"), "communityCoupon");
   assert.equal(couponCodeRoute("123456"), "legacy");
   assert.equal(couponCodeRoute("12345678"), "campaign");
+  assert.equal(normalizeCouponCode("ab12 cd34"), "AB12CD34");
+  assert.equal(couponCodeRoute("AB12CD34"), "campaign");
   for (const code of ["", "123", "12345", "1234567", "abcd"])
     assert.equal(couponCodeRoute(code), null);
 });

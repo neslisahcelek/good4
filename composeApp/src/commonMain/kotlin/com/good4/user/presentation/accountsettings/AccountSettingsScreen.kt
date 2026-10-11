@@ -95,6 +95,10 @@ import good4.composeapp.generated.resources.profile_university_label
 import good4.composeapp.generated.resources.schedule_settings_selection_hint
 import good4.composeapp.generated.resources.university_dropdown_empty
 import good4.composeapp.generated.resources.university_placeholder
+import good4.composeapp.generated.resources.campus_test_title
+import good4.composeapp.generated.resources.campus_test_disconnected
+import good4.composeapp.generated.resources.campus_test_disconnecting
+import good4.composeapp.generated.resources.campus_test_disconnect
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -105,12 +109,14 @@ fun AccountSettingsScreen(
     mode: AccountSettingsMode,
     modifier: Modifier = Modifier,
     viewModel: AccountSettingsViewModel = koinViewModel(),
+    eduViewModel: com.good4.eduverification.EduVerificationViewModel = koinViewModel(),
     academicSelectionPrompt: Boolean = false,
     onAcademicSelectionSaved: () -> Unit = {},
     onBackClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val eduState by eduViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val errorText = state.errorMessage?.asString()
     val infoText = state.infoMessage?.asString()
@@ -259,6 +265,10 @@ fun AccountSettingsScreen(
         listOf("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf")
     }
 
+    androidx.lifecycle.compose.LifecycleResumeEffect(mode) {
+        if (com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2) eduViewModel.refresh()
+        onPauseOrDispose { }
+    }
     LaunchedEffect(mode) {
         viewModel.refresh(mode)
     }
@@ -505,6 +515,8 @@ fun AccountSettingsScreen(
 
 
             // Google and Apple accounts have no password to reset.
+            if (eduState.testAvailable) CampusTestSettings(eduState, eduViewModel)
+
             if (state.hasPasswordSignIn) ProfileSectionCard(verticalSpacing = 14.dp) {
                 AccountSettingsSectionHeader(
                     icon = Icons.Filled.Email,
@@ -550,6 +562,10 @@ fun AccountSettingsScreen(
                         }
                     }
                 }
+            }
+
+            if (mode == AccountSettingsMode.STUDENT) {
+                ProfileSectionCard { com.good4.analytics.AnalyticsPreference() }
             }
 
             ProfileSectionCard(verticalSpacing = 14.dp) {
@@ -743,5 +759,55 @@ private fun AccountSettingsScreenPreview() {
             onBackClick = {},
             onLogout = {}
         )
+    }
+}
+
+
+@Composable
+private fun CampusTestSettings(
+    state: com.good4.eduverification.EduVerificationState,
+    viewModel: com.good4.eduverification.EduVerificationViewModel
+) {
+    CampusTestSettingsContent(state, viewModel::onOptInChange, viewModel::onEmailChange,
+        viewModel::sendCode, viewModel::onCodeChange, viewModel::confirmCode,
+        viewModel::changeEmail, viewModel::disconnectTest)
+}
+
+@Composable
+private fun CampusTestSettingsContent(
+    state: com.good4.eduverification.EduVerificationState,
+    onOptInChange: (Boolean) -> Unit, onEmailChange: (String) -> Unit,
+    onSendCode: () -> Unit, onCodeChange: (String) -> Unit, onConfirmCode: () -> Unit,
+    onChangeEmail: () -> Unit, onDisconnect: () -> Unit
+) {
+    ProfileSectionCard(verticalSpacing = 14.dp) {
+        Text(stringResource(good4.composeapp.generated.resources.Res.string.campus_test_title), fontWeight = FontWeight.SemiBold)
+        Text(state.email, color = TextSecondary)
+        if (state.campusAccessAllowed) {
+            com.good4.eduverification.EduVerifiedBadge(state.verifiedEmail, accessSource = state.accessSource)
+        } else {
+            Text(stringResource(good4.composeapp.generated.resources.Res.string.campus_test_disconnected), color = TextSecondary)
+            com.good4.eduverification.EduVerificationCard(state, onOptInChange = onOptInChange,
+                onEmailChange = onEmailChange, onSendCode = onSendCode, onCodeChange = onCodeChange,
+                onConfirmCode = onConfirmCode, onChangeEmail = onChangeEmail)
+        }
+        if (state.campusAccessAllowed || state.codeSentTo != null) {
+            TextButton(onClick = onDisconnect, enabled = !state.isDisconnecting && !state.isSending && !state.isConfirming) {
+                Text(stringResource(if (state.isDisconnecting) good4.composeapp.generated.resources.Res.string.campus_test_disconnecting
+                    else good4.composeapp.generated.resources.Res.string.campus_test_disconnect))
+            }
+        }
+        state.loadError?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error) }
+        if (state.campusAccessAllowed) state.errorMessage?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error) }
+    }
+}
+
+@Preview
+@Composable
+private fun CampusTestSettingsPreview() {
+    com.good4.core.presentation.Good4Theme {
+        CampusTestSettingsContent(com.good4.eduverification.EduVerificationState(isLoading = false,
+            testAvailable = true, email = "admin@example.com", campusAccessAllowed = true,
+            accessSource = "admin_test"), {}, {}, {}, {}, {}, {}, {})
     }
 }

@@ -1,5 +1,9 @@
 package com.good4.social
 
+import com.good4.core.presentation.components.Good4LoadingState
+
+import com.good4.analytics.*
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +42,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +69,7 @@ import com.good4.core.presentation.ClosetOfferAccent
 import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.UiText
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import good4.composeapp.generated.resources.*
@@ -81,6 +87,7 @@ fun SocialScreen(
     viewModel: SocialHomeViewModel = koinViewModel(),
     eduViewModel: CampusEmailVerificationViewModel = koinViewModel()
 ) {
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val eduState by eduViewModel.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
@@ -89,33 +96,35 @@ fun SocialScreen(
     var createAfterVerification by rememberSaveable { mutableStateOf(false) }
     // Coming back from a detail, the form or a chat refreshes both lists and the badges.
     LifecycleResumeEffect(Unit) {
-        viewModel.load()
-        if (tab == 1) viewModel.loadMine()
+        viewModel.onResume(showMine = tab == 1)
         eduViewModel.onResume()
         onPauseOrDispose { eduViewModel.onPause() }
     }
-    LaunchedEffect(tab) { if (tab == 1) viewModel.loadMine() }
-    LaunchedEffect(eduState.verifiedEmail) {
+    LaunchedEffect(eduState.verifiedEmail, showVerification) {
         if (eduState.verifiedEmail != null && showVerification) {
             showVerification = false
-            viewModel.load()
+            viewModel.refreshAfterVerification()
         }
     }
     val me = state.me
-    LaunchedEffect(me?.eduVerified, me?.termsAccepted, createAfterVerification) {
-        if (!createAfterVerification || me == null || !me.eduVerified) return@LaunchedEffect
+    LaunchedEffect(me?.campusAccessAllowed, me?.termsAccepted, createAfterVerification) {
+        if (!createAfterVerification || me == null || !me.campusAccessAllowed) return@LaunchedEffect
         createAfterVerification = false
         // Without accepted rules the screen itself shows them first; the student taps create again after.
         if (me.termsAccepted) onCreate()
     }
     SocialContent(
-        state = state, tab = tab, onTab = { tab = it }, onBack = onBack, onOpenActivity = onOpenActivity,
+        state = state, tab = tab, onTab = {
+            tab = it
+            if (it == 1) viewModel.loadMine(forceRefresh = false)
+        }, onBack = onBack, onOpenActivity = { analytics.click(Interaction.SOCIAL_OPEN_ACTIVITY); onOpenActivity(it) },
         onCreate = {
-            if (me?.eduVerified == true) onCreate()
+            analytics.click(Interaction.SOCIAL_NEW)
+            if (me?.campusAccessAllowed == true) onCreate()
             else { createAfterVerification = true; showVerification = true }
         },
-        onOpenInbox = onOpenInbox, onOpenChat = onOpenChat, onSelectKind = viewModel::selectKind, onLoadMore = viewModel::loadMore,
-        onRetry = viewModel::load, onRetryMine = viewModel::loadMine, onAcceptTerms = viewModel::acceptTerms,
+        onOpenInbox = { analytics.click(Interaction.SOCIAL_INBOX); onOpenInbox() }, onOpenChat = onOpenChat, onSelectKind = viewModel::selectKind, onLoadMore = viewModel::loadMore,
+        onRetry = { viewModel.load() }, onRetryMine = { viewModel.loadMine() }, onAcceptTerms = viewModel::acceptTerms,
         onUpdateProfile = viewModel::updateProfile, onProfilePhotoError = viewModel::profilePhotoError
     )
 
@@ -161,14 +170,14 @@ internal fun SocialContent(
     val me = state.me
     var showProfile by rememberSaveable { mutableStateOf(false) }
     // Browsing is open to every student; creating needs the school address and the rules.
-    val needsTerms = me != null && me.enabled && me.eduVerified && !me.termsAccepted
+    val needsTerms = me != null && me.enabled && me.campusAccessAllowed && !me.termsAccepted
     Good4Scaffold(
         topBar = {
             Good4TopBar(
                 title = stringResource(Res.string.social_title),
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.social_back)) } },
                 actions = {
-                    if (me?.eduVerified == true && me.termsAccepted) {
+                    if (me?.campusAccessAllowed == true && me.termsAccepted) {
                         Surface(
                             modifier = Modifier.padding(end = 8.dp), shape = RoundedCornerShape(50), color = SurfaceDefault,
                             border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.55f)), shadowElevation = 1.dp
@@ -178,7 +187,7 @@ internal fun SocialContent(
                             }
                         }
                     }
-                    if (me?.eduVerified == true) {
+                    if (me?.campusAccessAllowed == true) {
                         Surface(
                             modifier = Modifier.padding(end = 8.dp), shape = RoundedCornerShape(50), color = SurfaceDefault,
                             border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.55f)), shadowElevation = 1.dp
@@ -215,7 +224,7 @@ internal fun SocialContent(
     ) { padding ->
         Box(Modifier.fillMaxSize().background(AppBackground).padding(padding)) {
             when {
-                me == null && state.isLoading -> SocialCenteredProgress()
+                me == null && state.isLoading -> Good4LoadingState()
                 me == null -> CenteredState(state.loadError?.asString() ?: stringResource(Res.string.social_yuklenemedi),
                     stringResource(Res.string.social_retry), onRetry)
                 !me.enabled -> CenteredState(stringResource(Res.string.social_error_disabled))
@@ -229,7 +238,11 @@ internal fun SocialContent(
                         tab, onTab, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                     if (tab == 0) FeedGrid(state, onOpenActivity, onSelectKind, onLoadMore, onRetry)
-                    else MineList(state, me, onOpenActivity, onOpenChat, onRetryMine)
+                    else Column(Modifier.fillMaxSize()) {
+                        if (state.mineRefreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
+                        if (state.mineError != null && state.mine != null) SocialLoadError(state.mineError, onRetryMine)
+                        MineList(state, onOpenActivity, onOpenChat, onRetryMine)
+                    }
                 }
             }
         }
@@ -262,15 +275,19 @@ private fun FeedGrid(
         modifier = Modifier.fillMaxSize()
     ) {
         item(key = "filters", span = { GridItemSpan(maxLineSpan) }) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SmallToggle(stringResource(Res.string.social_all), state.kind == null) { onSelectKind(null) }
-                SmallToggle(stringResource(Res.string.social_kind_social), state.kind == "social") { onSelectKind("social") }
-                SmallToggle(stringResource(Res.string.social_kind_sport), state.kind == "sport") { onSelectKind("sport") }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallToggle(stringResource(Res.string.social_all), state.kind == null) { onSelectKind(null) }
+                    SmallToggle(stringResource(Res.string.social_kind_social), state.kind == "social") { onSelectKind("social") }
+                    SmallToggle(stringResource(Res.string.social_kind_sport), state.kind == "sport") { onSelectKind("sport") }
+                }
+                if (state.isRefreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (state.loadError != null && state.activities.isNotEmpty()) SocialLoadError(state.loadError, onRetry)
             }
         }
         when {
             state.isLoading -> item(key = "loading", span = { GridItemSpan(maxLineSpan) }) {
-                Box(Modifier.fillMaxWidth().padding(48.dp)) { SocialCenteredProgress() }
+                Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(48.dp))
             }
             state.loadError != null && state.activities.isEmpty() -> item(key = "error", span = { GridItemSpan(maxLineSpan) }) {
                 CenteredState(state.loadError.asString(), stringResource(Res.string.social_retry), onRetry)
@@ -284,10 +301,16 @@ private fun FeedGrid(
                 SocialPosterCard(activity, onClick = { onOpenActivity(activity.id) })
             }
         }
-        if (state.nextAfter != null && !state.isLoading) {
+        if (state.loadMoreError != null) {
+            item(key = "more-error", span = { GridItemSpan(maxLineSpan) }) {
+                SocialLoadError(state.loadMoreError, onLoadMore)
+            }
+        }
+        if (state.nextAfter != null && !state.isLoading && state.loadMoreError == null) {
             item(key = "more", span = { GridItemSpan(maxLineSpan) }) {
-                TextButton(onClick = onLoadMore, enabled = !state.isLoadingMore) {
-                    Text(stringResource(Res.string.social_load_more), color = MaterialTheme.colorScheme.primary)
+                TextButton(onClick = onLoadMore, enabled = !state.isLoadingMore && !state.isRefreshing) {
+                    Text(stringResource(if (state.isLoadingMore) Res.string.social_admin_loading else Res.string.social_load_more),
+                        color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -297,14 +320,13 @@ private fun FeedGrid(
 @Composable
 private fun MineList(
     state: SocialHomeState,
-    me: SocialMe,
     onOpenActivity: (String) -> Unit,
     onOpenChat: (String) -> Unit,
     onRetry: () -> Unit
 ) {
     val mine = state.mine
     when {
-        mine == null && state.mineLoading -> SocialCenteredProgress()
+        mine == null && state.mineLoading -> Good4LoadingState()
         mine == null -> CenteredState(state.mineError?.asString() ?: stringResource(Res.string.social_yuklenemedi),
             stringResource(Res.string.social_retry), onRetry)
         mine.organized.isEmpty() && mine.joined.isEmpty() -> ClosetEmptyState(
@@ -362,6 +384,14 @@ private fun MineList(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SocialLoadError(error: UiText, onRetry: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(error.asString(), color = MaterialTheme.colorScheme.error)
+        TextButton(onClick = onRetry) { Text(stringResource(Res.string.social_retry)) }
     }
 }
 

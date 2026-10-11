@@ -1,12 +1,13 @@
 package com.good4.core.presentation.sessionrestore
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,12 +72,7 @@ private fun SessionRestoreScreen(
         verticalArrangement = Arrangement.Center
     ) {
         if (state.isLoading) {
-            CircularProgressIndicator(color = TextPrimary)
-            Text(
-                text = stringResource(Res.string.loading),
-                color = TextPrimary,
-                modifier = Modifier.padding(top = 12.dp)
-            )
+            Good4LoadingState(label = stringResource(Res.string.loading))
         } else {
             Text(
                 text = stringResource(Res.string.session_restore_title),

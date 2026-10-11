@@ -1,5 +1,7 @@
 package com.good4.student.presentation.home
 
+import com.good4.analytics.*
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -75,6 +77,8 @@ fun StudentHomeScreenRoot(
     onNavigateToSocial: () -> Unit = {},
     onNavigateToEditHome: (Boolean) -> Unit = {}
 ) {
+    com.good4.analytics.AnalyticsConsentPrompt()
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
     val navItems = listOf(
         BottomNavItem(
             title = stringResource(Res.string.student_home),
@@ -125,6 +129,7 @@ fun StudentHomeScreenRoot(
     }
 
     fun editHome() {
+        analytics.click(Interaction.HOME_EDIT)
         menuOpen = false
         editHomeRequested = true
     }
@@ -174,6 +179,7 @@ fun StudentHomeScreenRoot(
                     NavigationBarItem(
                         selected = if (index == 1) menuOpen else selectedItemIndex == 0 && !menuOpen,
                         onClick = {
+                            analytics.click(if (index == 1) Interaction.MENU_OPEN else Interaction.HOME_OPEN)
                             if (index == 1) {
                                 menuInitialShortcutId = null
                                 menuOpen = true
@@ -227,6 +233,7 @@ fun StudentHomeScreenRoot(
                         homeShortcuts = layoutState.layout.visible.mapNotNull { id -> layoutState.shortcuts.firstOrNull { it.id == id } },
                         onEditHomeClick = ::editHome,
                         onMenuShortcutClick = { shortcut ->
+                            analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.shortcut(shortcut.id))
                             val url = shortcut.externalUrl
                             if (url != null) uriHandler.openUri(url)
                             else {
@@ -235,22 +242,25 @@ fun StudentHomeScreenRoot(
                             }
                         },
                         onCommunitiesClick = {
+                            analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.COMMUNITIES)
                             val managed = communityState.communities.filter { communityState.access.active && it.id in communityState.access.communityIds }
                             if (managed.size == 1) communityViewModel.select(managed.first()) else communityViewModel.back()
                             selectedItemIndex = 2
                         },
-                        onProfileClick = onNavigateToProfile,
-                        onNotificationsClick = onNavigateToNotifications,
-                        onCalendarClick = onNavigateToCalendar,
-                        onClassScheduleClick = onNavigateToClassSchedule,
-                        onCampusClosetClick = onNavigateToCampusCloset,
-                        onSocialClick = onNavigateToSocial,
-                        onCampusMapClick = { selectedItemIndex = 3 },
+                        onProfileClick = { analytics.click(Interaction.PROFILE_OPEN); onNavigateToProfile() },
+                        onNotificationsClick = { analytics.click(Interaction.NOTIFICATIONS_OPEN); onNavigateToNotifications() },
+                        onCalendarClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.ACADEMIC_CALENDAR); onNavigateToCalendar() },
+                        onClassScheduleClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CLASS_SCHEDULE); onNavigateToClassSchedule() },
+                        onCampusClosetClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_CLOSET); onNavigateToCampusCloset() },
+                        onSocialClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.SOCIAL_ACTIVITIES); onNavigateToSocial() },
+                        onCampusMapClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_MAP); selectedItemIndex = 3 },
                         onDailyMenuClick = { meal ->
+                            analytics.click(Interaction.DINING_SELECT, AnalyticsTarget.valueOf(meal.name))
                             dailyMenuMeal = meal
                             selectedItemIndex = 4
                         },
                         onReservationCardClick = {
+                            if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.SUSPENDED_MEALS)
                             // V2 has its own campaign-based flow; the V1 reservation tab reads collections V2 denies.
                             if (AppEnvironment.firebaseBackend == FirebaseBackend.V2) selectedItemIndex = 5
                             else showReservationsTab()

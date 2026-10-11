@@ -55,7 +55,7 @@ Good4 kapsamında hizmetin niteliğine ve kullanılan özelliğe göre aşağıd
 * Bölüm bilgisi
 * Sınıf bilgisi
 
-Good4'ün standart hesap oluşturma ve uygulama kullanım süreçlerinde **T.C. kimlik numarası işlenmez.**
+Good4'un standart hesap oluşturma ve uygulama kullanım süreçlerinde **T.C. kimlik numarası işlenmez.**
 
 ### 3.2. İletişim Bilgileri
 
@@ -108,7 +108,7 @@ Bu bilgiler kuponun kullanıcının hesabına tanımlanması, geçerliliğinin k
 
 ### 3.6. Rezervasyon Bilgileri
 
-Good4'ün ilgili sürümünde rezervasyon veya rezervasyon talebi özelliğinin kullanıma sunulması halinde;
+Good4'un ilgili sürümünde rezervasyon veya rezervasyon talebi özelliğinin kullanıma sunulması halinde;
 
 * rezervasyon veya talep bilgisi,
 * ilgili işletme veya hizmet,
@@ -364,7 +364,7 @@ görüntüleyebilir.
 
 ## 6.3. Teknik Hizmet Sağlayıcılar
 
-Good4'ün çalışmasını sağlamak amacıyla kişisel veriler; bulut altyapısı, barındırma, veri tabanı, kimlik doğrulama, güvenlik ve benzeri teknik hizmetleri sunan hizmet sağlayıcılar tarafından Good4 adına işlenebilir.
+Good4'un çalışmasını sağlamak amacıyla kişisel veriler; bulut altyapısı, barındırma, veri tabanı, kimlik doğrulama, güvenlik ve benzeri teknik hizmetleri sunan hizmet sağlayıcılar tarafından Good4 adına işlenebilir.
 
 Bu hizmet sağlayıcılarla yalnızca ilgili teknik hizmetin sunulması için gerekli kişisel veriler paylaşılır.
 
@@ -539,7 +539,7 @@ Açık rıza gerektirmeyen ve KVKK'nın 5 inci maddesinin ikinci fıkrasında be
 
 # 13. Metnin Güncellenmesi
 
-Good4'ün sunduğu özelliklerde, kişisel veri işleme faaliyetlerinde, kullanılan teknik altyapıda veya ilgili mevzuatta değişiklik olması halinde bu Aydınlatma Metni güncellenebilir.
+Good4'un sunduğu özelliklerde, kişisel veri işleme faaliyetlerinde, kullanılan teknik altyapıda veya ilgili mevzuatta değişiklik olması halinde bu Aydınlatma Metni güncellenebilir.
 
 Yeni bir kişisel veri işleme amacı ortaya çıkması halinde ilgili kullanıcılar yeni veri işleme faaliyeti başlamadan önce uygun şekilde bilgilendirilir.
 

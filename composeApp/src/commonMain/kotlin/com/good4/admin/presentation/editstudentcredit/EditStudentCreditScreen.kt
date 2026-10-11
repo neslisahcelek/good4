@@ -1,5 +1,7 @@
 package com.good4.admin.presentation.editstudentcredit
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -136,7 +137,7 @@ fun EditStudentCreditScreen(
                     Text(stringResource(Res.string.admin_users_override_dialog_confirm))
                 }
                 if (state.isUpdating) {
-                    CircularProgressIndicator(color = TextPrimary)
+                    Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp))
                 }
             }
         }

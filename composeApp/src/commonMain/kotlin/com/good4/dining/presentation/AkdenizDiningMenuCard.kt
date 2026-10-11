@@ -1,5 +1,7 @@
 package com.good4.dining.presentation
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -102,10 +103,7 @@ fun AkdenizDiningMenuCard(
             Column(modifier = Modifier.padding(18.dp)) {
             when {
                 state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = PrimaryGreen
-                    )
+                    Good4LoadingState(modifier = Modifier.fillMaxWidth())
                 }
 
                 state.menu == null -> {

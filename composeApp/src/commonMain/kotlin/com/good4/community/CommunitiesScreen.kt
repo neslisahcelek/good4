@@ -1,5 +1,9 @@
 package com.good4.community
 
+import com.good4.core.presentation.components.Good4LoadingState
+
+import com.good4.analytics.*
+
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -82,6 +86,7 @@ fun CommunitiesScreen(
     initialEventId: String = "",
     initialShowTicket: Boolean = false
 ) {
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -160,6 +165,8 @@ fun CommunitiesScreen(
         }
     }
     LifecycleResumeEffect(community?.id, state.canManage) {
+        today = currentCampusDate()
+        now = eventNow()
         viewModel.resumeUpdates()
         if (community == null) {
             viewModel.refreshCommunities()
@@ -317,7 +324,8 @@ fun CommunitiesScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     items(state.featuredCoupons, key = { "coupon-${it.entry.id}" }) { coupon ->
-                                        StudentCouponCard(coupon.entry, communityName = coupon.community.data.name) {
+                                        StudentCouponCard(coupon.entry, today = now.date, communityName = coupon.community.data.name) {
+                                            analytics.click(Interaction.COUPON_OPEN)
                                             pendingFeaturedEvent = coupon
                                             viewModel.select(coupon.community, coupon.entry.id)
                                         }
@@ -358,6 +366,7 @@ fun CommunitiesScreen(
                         } else {
                             items(filtered, key = { "community-${it.id}" }) { item ->
                                 CommunityListCard(community = item, studentStyle = true, onClick = {
+                                    analytics.click(Interaction.COMMUNITY_OPEN)
                                     tab = 0
                                     viewModel.select(item)
                                 })
@@ -408,6 +417,7 @@ fun CommunitiesScreen(
                                 FeaturedCommunityEventsCarousel(
                                     events = featuredEvents,
                                     onEventClick = { featured ->
+                                        analytics.click(Interaction.EVENT_OPEN)
                                         pendingFeaturedEvent = featured
                                         viewModel.select(featured.community, featured.entry.id)
                                     }
@@ -467,6 +477,7 @@ fun CommunitiesScreen(
                                 community = item,
                                 studentStyle = studentView,
                                 onClick = {
+                                    if (!managerView) analytics.click(Interaction.COMMUNITY_OPEN)
                                     tab = 0
                                     viewModel.select(item)
                                 }
@@ -595,6 +606,17 @@ fun CommunitiesScreen(
                         if (managerView && tab == 0 && eventFilter == 2) filtered.sortedByDescending { it.data.date + it.data.time }
                         else filtered
                     }
+                    val selectedCouponsError = state.selectedCouponsError
+                    if (tab == 1 && selectedCouponsError != null) {
+                        item(key = "community-coupons-error") {
+                            NoticeCard(
+                                selectedCouponsError.asString(),
+                                ErrorRed,
+                                actionLabel = stringResource(Res.string.campus_closet_retry),
+                                onAction = { viewModel.select(community) }
+                            )
+                        }
+                    }
                     if (tab == 1 && !managerView && entries.isNotEmpty()) {
                         item {
                             LazyRow(
@@ -602,13 +624,13 @@ fun CommunitiesScreen(
                                 contentPadding = PaddingValues(end = 4.dp)
                             ) {
                                 items(entries, key = { it.id }) { entry ->
-                                    StudentCouponCard(entry = entry, onClick = { detail = entry })
+                                    StudentCouponCard(entry = entry, today = now.date, onClick = { analytics.click(Interaction.COUPON_OPEN); detail = entry })
                                 }
                             }
                         }
                     } else {
                         items(entries, key = { it.id }) { entry ->
-                            if (studentView && tab == 0) StudentEventRow(entry, entry.id in state.registeredEventIds, now) { detail = entry }
+                            if (studentView && tab == 0) StudentEventRow(entry, entry.id in state.registeredEventIds, now) { analytics.click(Interaction.EVENT_OPEN); detail = entry }
                             else CommunityEntryCard(
                                 entry = entry,
                                 registrationCount = state.registrationsByEntry[entry.id]?.size,
@@ -623,11 +645,11 @@ fun CommunitiesScreen(
                                     editor = entry.data
                                 },
                                 onUnpublish = { pendingRemoval = entry },
-                                onClick = { detail = entry }
+                                onClick = { if (!managerView) analytics.click(if (entry.data.kind == "coupon") Interaction.COUPON_OPEN else Interaction.EVENT_OPEN); detail = entry }
                             )
                         }
                     }
-                    if (!state.loading && state.error == null && entries.isEmpty()) {
+                    if (!state.loading && state.error == null && entries.isEmpty() && (tab != 1 || selectedCouponsError == null)) {
                         item {
                             val managerEventTitle = when (eventFilter) {
                                 0 -> stringResource(Res.string.community_yaklasan_etkinlik_yok)
@@ -653,15 +675,8 @@ fun CommunitiesScreen(
                     }
                 }
                 if (state.loading) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                        }
+                    item(key = "loading") {
+                        Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(24.dp))
                     }
                 }
                 state.error?.let { error ->
@@ -1641,10 +1656,9 @@ private fun EntryRemovalConfirmation(
 }
 
 @Composable
-private fun StudentCouponCard(entry: CommunityEntry, communityName: String? = null, onClick: () -> Unit) {
+private fun StudentCouponCard(entry: CommunityEntry, today: LocalDate, communityName: String? = null, onClick: () -> Unit) {
     val data = entry.data
     val isFreeItem = data.discountType == "freeItem"
-    val today = remember { Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul")).date }
     val deadline = couponDeadline(data.date, today)
     val urgent = deadline == CouponDeadline.Today || deadline == CouponDeadline.Tomorrow
     val stubColor = if (isFreeItem) SurfaceMuted else PistachioGreen

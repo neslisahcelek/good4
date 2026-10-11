@@ -241,10 +241,3 @@ internal fun SocialPrimaryButton(text: String, onClick: () -> Unit, enabled: Boo
         else Text(text, fontWeight = FontWeight.SemiBold)
     }
 }
-
-@Composable
-internal fun SocialCenteredProgress() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
-}

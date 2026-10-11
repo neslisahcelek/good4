@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.BorderStroke
@@ -86,7 +88,7 @@ internal fun CampusClosetMyListingsContent(
     var listingToRemove by remember { mutableStateOf<MarketListing?>(null) }
     ListScaffold(stringResource(Res.string.campus_closet_ilanlarim), onBack) {
         when {
-            state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
+            state.isLoading -> Good4LoadingState()
             state.loadError != null -> CenteredState(state.loadError, stringResource(Res.string.campus_closet_retry), onRetry)
             state.listings.isEmpty() -> ClosetEmptyState(Icons.Outlined.Inventory2, stringResource(Res.string.campus_closet_dolabin_henuz_bos), stringResource(Res.string.campus_closet_ilk_ilanini_paylas_artik_kullanmadigin_urunler_kampuste_yeni_birine))
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -206,7 +208,7 @@ internal fun CampusClosetInboxContent(
         IconButton(onClick = onOpenBlocked) { Icon(Icons.Outlined.Block, stringResource(Res.string.campus_closet_engellediklerin), tint = TextSecondary) }
     }) {
         when {
-            state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
+            state.isLoading -> Good4LoadingState()
             state.loadError != null -> CenteredState(state.loadError, stringResource(Res.string.campus_closet_retry), onRetry)
             state.conversations.isEmpty() -> ClosetEmptyState(Icons.AutoMirrored.Outlined.Chat, stringResource(Res.string.campus_closet_konusma_burada_baslar), stringResource(Res.string.campus_closet_begendigin_bir_ilanin_saticisina_yaz_urun_ve_bulusma_ayrintilarini))
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -268,7 +270,7 @@ fun CampusClosetFavoritesScreen(
     LifecycleResumeEffect(Unit) { viewModel.load(); onPauseOrDispose { } }
     ListScaffold(stringResource(Res.string.campus_closet_kaydedilenler), onBack) {
         when {
-            state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
+            state.isLoading -> Good4LoadingState()
             state.loadError != null -> CenteredState(state.loadError!!, stringResource(Res.string.campus_closet_retry), viewModel::load)
             state.listings.isEmpty() -> ClosetEmptyState(
                 Icons.Outlined.FavoriteBorder, stringResource(Res.string.campus_closet_kaydettigin_ilan_yok),
@@ -301,7 +303,7 @@ fun CampusClosetBlockedScreen(
     LifecycleResumeEffect(Unit) { viewModel.load(); onPauseOrDispose { } }
     ListScaffold(stringResource(Res.string.campus_closet_engellediklerin), onBack) {
         when {
-            state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
+            state.isLoading -> Good4LoadingState()
             state.loadError != null -> CenteredState(state.loadError!!, stringResource(Res.string.campus_closet_retry), viewModel::load)
             state.blocked.isEmpty() -> ClosetEmptyState(Icons.Outlined.Block, stringResource(Res.string.campus_closet_engelledigin_kimse_yok), stringResource(Res.string.campus_closet_bir_konusmada_kullaniciyi_engellersen_burada_gorunur_ve_engeli_buradan))
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

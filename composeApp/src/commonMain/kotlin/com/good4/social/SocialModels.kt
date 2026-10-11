@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 data class SocialMe(
     val enabled: Boolean = false,
     val eduVerified: Boolean = false,
+    val campusAccessAllowed: Boolean = eduVerified,
+    val accessSource: String = if (eduVerified) "edu_email" else "none",
     val eduEmail: String? = null,
     val universityName: String? = null,
     val termsAccepted: Boolean = false,
@@ -21,7 +23,7 @@ data class SocialMe(
     /** Requests waiting for the student's answer on their own upcoming activities (summary only). */
     val pendingRequestCount: Int = 0
 ) {
-    val canJoin: Boolean get() = enabled && eduVerified && termsAccepted && suspendedUntil == null
+    val canJoin: Boolean get() = enabled && campusAccessAllowed && termsAccepted && suspendedUntil == null
     val namesShown: Boolean get() = nameMode == "shown"
 }
 

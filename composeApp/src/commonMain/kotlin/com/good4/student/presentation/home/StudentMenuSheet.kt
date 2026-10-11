@@ -1,5 +1,7 @@
 package com.good4.student.presentation.home
 
+import com.good4.analytics.*
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -79,7 +81,8 @@ private data class StudentMenuItem(
     val opensHomeEditor: Boolean = false,
     val opensNumbers: Boolean = false,
     val opensFeedback: Boolean = false,
-    val url: String? = null
+    val url: String? = null,
+    val shortcut: HomeShortcut? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,6 +94,7 @@ internal fun StudentMenuSheet(
     reviewViewModel: StoreReviewViewModel = koinViewModel(),
     feedbackViewModel: FeedbackViewModel = koinViewModel()
 ) {
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
     var numbersOpen by rememberSaveable(initialShortcut) { mutableStateOf(initialShortcut == HomeShortcut.PHONE_NUMBERS) }
     var feedbackOpen by rememberSaveable(initialShortcut) { mutableStateOf(initialShortcut == HomeShortcut.FEEDBACK) }
     LaunchedEffect(initialShortcut) {
@@ -102,6 +106,7 @@ internal fun StudentMenuSheet(
     val menuItems = listOf(HomeShortcut.TOP_UP, HomeShortcut.TENNIS, HomeShortcut.PHONE_NUMBERS, HomeShortcut.FEEDBACK).map { shortcut ->
         val appearance = shortcut.appearance()
         StudentMenuItem(
+            shortcut = shortcut,
             title = appearance.title,
             icon = appearance.icon,
             accent = if (appearance.accent == BrandGreen) MaterialTheme.colorScheme.primary else appearance.accent,
@@ -196,7 +201,11 @@ internal fun StudentMenuSheet(
                         }
                         StudentMenuCard(
                             item = item,
-                            onClick = onItemClick
+                            onClick = onItemClick?.let { click -> {
+                                // The editor callback is already measured once by the home root.
+                                if (!item.opensHomeEditor) analytics.click(Interaction.MENU_SHORTCUT, item.shortcut?.let { AnalyticsTarget.shortcut(it.id) })
+                                click()
+                            } }
                         )
                     }
                 }

@@ -9,7 +9,7 @@ import {
   requestEduVerificationService as requestService,
   requestCampusEmailCodeService, confirmCampusEmailCodeService,
 } from "./eduVerification.js";
-import { brevoVerificationSender } from "./verificationEmail.js";
+import { brevoVerificationSender, VerificationEmailDeliveryError } from "./verificationEmail.js";
 import { hasVerifiedCampusEmail } from "./campusEmailVerification.js";
 import { ensureStudentProfileService } from "./studentAuth.js";
 
@@ -188,25 +188,40 @@ test("Brevo adapter posts Turkish transactional content with timeout and safe fa
   for (const field of [body.textContent, body.htmlContent]) {
     assert.match(field, /123456/); assert.match(field, /10 dakika geçerli/);
   }
-  for (const transport of [
-    (async () => new Response("sensitive provider body", { status: 500 })) as typeof fetch,
-    (async () => { throw new Error("sensitive transport error"); }) as typeof fetch,
-    (async () => { throw new DOMException("timed out", "TimeoutError"); }) as typeof fetch,
-  ]) {
+  for (const [transport, definitelyRejected] of [
+    [(async () => new Response("sensitive provider body", { status: 400 })) as typeof fetch, true],
+    [(async () => new Response("sensitive provider body", { status: 429 })) as typeof fetch, true],
+    [(async () => new Response("sensitive provider body", { status: 408 })) as typeof fetch, false],
+    [(async () => new Response("sensitive provider body", { status: 500 })) as typeof fetch, false],
+    [(async () => { throw new Error("sensitive transport error"); }) as typeof fetch, false],
+    [(async () => { throw new DOMException("timed out", "TimeoutError"); }) as typeof fetch, false],
+  ] as const) {
     await assert.rejects(brevoVerificationSender(() => "unit-test-placeholder", transport)(eduEmail, "123456"),
-      (error: { message?: string }) => error.message === "EDU_EMAIL_SEND_FAILED");
+      (error: unknown) => error instanceof VerificationEmailDeliveryError
+        && error.message === "EDU_EMAIL_SEND_FAILED" && error.definitelyRejected === definitelyRejected);
   }
+  await assert.rejects(brevoVerificationSender(() => "", transport)(eduEmail, "123456"),
+    (error: unknown) => error instanceof VerificationEmailDeliveryError && error.definitelyRejected);
+  await assert.rejects(brevoVerificationSender(() => { throw new Error("secret unavailable"); }, transport)(eduEmail, "123456"),
+    (error: unknown) => error instanceof VerificationEmailDeliveryError && error.definitelyRejected);
 });
 
 test("failed delivery preserves the previous code, cooldown and send allowance", async () => {
   const now = Date.now();
-  const failed = { send: async () => { throw new Error("provider unavailable"); } };
+  const failed = { send: async () => { throw new VerificationEmailDeliveryError(true); } };
   await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, failed), /EDU_EMAIL_SEND_FAILED/);
   assert.equal((await db.doc(`eduVerifications/${uid}`).get()).exists, false);
   await requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, deps);
   const before = (await db.doc(`eduVerifications/${uid}`).get()).data();
   const code = await sentCode();
   await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 181_000, failed), /EDU_EMAIL_SEND_FAILED/);
+  assert.deepEqual((await db.doc(`eduVerifications/${uid}`).get()).data(), before);
+  const totalLimit = db.doc(rateLimitPath("eduMail:total"));
+  const count = (await totalLimit.get()).get("count");
+  await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now + 181_000, {
+    send: async () => { throw new VerificationEmailDeliveryError(false); },
+  }), /EDU_EMAIL_SEND_FAILED/);
+  assert.equal((await totalLimit.get()).get("count"), count + 1);
   assert.deepEqual((await db.doc(`eduVerifications/${uid}`).get()).data(), before);
   assert.deepEqual(await confirmCampusEmailCodeService(db, uid, { code }, now + 182_000), { outcome: "verified", email: eduEmail });
   assert.ok(hasVerifiedCampusEmail(await db.doc(`users/${uid}`).get()));
@@ -314,7 +329,7 @@ test("failed sends refund every allowance even near quota exhaustion", async () 
   await Promise.all(keys.map((key, index) => db.doc(rateLimitPath(key)).set({
     key, count: counts[index], resetAt: Timestamp.fromMillis(now + 3_600_000),
   })));
-  const failed = { send: async () => { throw new Error("provider unavailable"); } };
+  const failed = { send: async () => { throw new VerificationEmailDeliveryError(true); } };
   for (let attempt = 0; attempt < 4; attempt++) {
     await assert.rejects(requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, failed), /EDU_EMAIL_SEND_FAILED/);
     for (const [index, key] of keys.entries()) {
@@ -325,6 +340,8 @@ test("failed sends refund every allowance even near quota exhaustion", async () 
   for (const [index, key] of keys.entries()) {
     assert.equal((await db.doc(rateLimitPath(key)).get()).get("count"), counts[index]! + 1);
   }
+  // Definite delivery failures refund mail quota, but never the shared attempt window.
+  await assert.rejects(requestEduVerificationService(db, uid, { email: eduEmail }, now), /EDU_CODE_REQUEST_LIMIT/);
 });
 
 for (const rollover of [false, true]) {
@@ -336,7 +353,7 @@ for (const rollover of [false, true]) {
     const started = new Promise<void>((resolve) => { entered = resolve; });
     const wait = new Promise<void>((resolve) => { release = resolve; });
     const failed = requestCampusEmailCodeService(db, uid, { email: eduEmail }, now, {
-      send: async () => { entered(); await wait; throw new Error("provider unavailable"); },
+      send: async () => { entered(); await wait; throw new VerificationEmailDeliveryError(true); },
     });
     const rejection = assert.rejects(failed, /EDU_EMAIL_SEND_FAILED/);
     await started;

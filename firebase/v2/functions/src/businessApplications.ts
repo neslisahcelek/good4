@@ -1,7 +1,8 @@
-import { FieldValue, Timestamp, type DocumentData, type DocumentSnapshot, type Firestore } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type DocumentData, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
-import type { ApplicantIdentity } from "./communityApplications.js";
+import { listPendingApplicationPage, requireAccountWithoutRole, requireVerifiedGoogleApplicant,
+  type ApplicantIdentity, type ApplicationPageInput } from "./applicationSupport.js";
 
 // Businesses apply on the staff panel with their own Google account: business name, contact
 // person and phone. Until a Good4 admin approves, the account has no users/{uid} document, so
@@ -51,13 +52,6 @@ export function businessApplicationFromDocument(id: string, data: DocumentData |
   };
 }
 
-/** Accounts carry a single role: students stay students; portal accounts already belong somewhere. */
-function requireAccountWithoutRole(user: DocumentSnapshot): void {
-  if (!user.exists) return;
-  if (user.get("role") === "student") throw new HttpsError("failed-precondition", "STUDENT_ACCOUNT_NOT_ALLOWED");
-  throw new HttpsError("failed-precondition", "ACCOUNT_ALREADY_HAS_ROLE");
-}
-
 export async function getMyBusinessApplication(database: Firestore, uid: string): Promise<BusinessApplicationSummary | null> {
   const application = await database.doc(`businessApplications/${uid}`).get();
   return application.exists ? businessApplicationFromDocument(application.id, application.data()) : null;
@@ -68,13 +62,7 @@ export async function submitBusinessApplicationService(
   identity: ApplicantIdentity,
   input: Record<string, unknown>,
 ): Promise<{ application: BusinessApplicationSummary }> {
-  if (!identity.providers.includes("google.com")) {
-    throw new HttpsError("permission-denied", "GOOGLE_SIGN_IN_REQUIRED");
-  }
-  const email = identity.email?.trim().toLowerCase() ?? "";
-  if (!email || !identity.emailVerified) {
-    throw new HttpsError("failed-precondition", "VERIFIED_EMAIL_REQUIRED");
-  }
+  const email = requireVerifiedGoogleApplicant(identity);
   const businessName = requireNonEmptyString(input.businessName, "businessName", 160);
   const contactName = requireNonEmptyString(input.contactName, "contactName", 120);
   const phone = normalizeBusinessPhone(input.phone);
@@ -113,13 +101,11 @@ export async function submitBusinessApplicationService(
 export async function listBusinessApplicationsService(
   database: Firestore,
   actorUid: string,
-): Promise<{ applications: BusinessApplicationSummary[] }> {
-  await database.runTransaction((transaction) => requireActiveActor(database, transaction, actorUid, ["good4Admin"]));
-  const snapshot = await database.collection("businessApplications").where("status", "==", "pending").limit(200).get();
-  const applications = snapshot.docs
-    .map((document) => businessApplicationFromDocument(document.id, document.data()))
-    .sort((left, right) => (left.createdAt ?? "").localeCompare(right.createdAt ?? ""));
-  return { applications };
+  input: ApplicationPageInput = {},
+): Promise<{ applications: BusinessApplicationSummary[]; nextCursor: string | null }> {
+  const page = await listPendingApplicationPage(database, actorUid, "businessApplications", input);
+  return { applications: page.documents.map((document) => businessApplicationFromDocument(document.id, document.data())),
+    nextCursor: page.nextCursor };
 }
 
 export async function reviewBusinessApplicationService(

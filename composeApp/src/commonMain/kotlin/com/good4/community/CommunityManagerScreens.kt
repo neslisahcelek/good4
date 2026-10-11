@@ -1,5 +1,7 @@
 package com.good4.community
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.StringResource
@@ -234,9 +236,7 @@ private fun ManagerHome(
             }
             if (state.loading) {
                 item(key = "loading") {
-                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
+                    Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(24.dp))
                 }
             } else if (shown.isEmpty()) {
                 item(key = "empty") { EmptyEvents(filter, onCreateEvent) }

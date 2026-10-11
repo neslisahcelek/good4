@@ -493,3 +493,18 @@ test('community coupons expose only published documents; private coupon collecti
     }
   }
 });
+
+
+test('campus test grant and verification are server-only, including on admin profiles', async () => {
+  for (const role of ['student', 'good4Admin']) {
+    const uid = `campus-test-${role}`;
+    await seed(`users/${uid}`, { role, status: 'active', displayName: 'Test', updatedAt: 1 });
+    const db = testEnv.authenticatedContext(uid).firestore();
+    for (const data of [
+      { adminEduTest: { enabled: true, email: 'self@example.com', grantId: 'forged' } },
+      { adminEduTestVerification: { email: 'self@example.com', grantId: 'forged', verifiedAt: serverTimestamp() } },
+      { adminEduTestGeneration: 0 },
+    ]) await assertFails(updateDoc(doc(db, `users/${uid}`), data));
+    await assertFails(setDoc(doc(db, 'app_config/admin_edu_test'), { uid }));
+  }
+});

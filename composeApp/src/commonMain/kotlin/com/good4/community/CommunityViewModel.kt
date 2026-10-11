@@ -1,5 +1,7 @@
 package com.good4.community
 
+import com.good4.analytics.*
+
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import com.good4.core.presentation.UiText
@@ -31,6 +33,7 @@ data class CommunityState(
     val featuredEvents: List<CommunityFeaturedEvent> = emptyList(),
     val featuredCoupons: List<CommunityFeaturedEvent> = emptyList(),
     val couponsError: UiText? = null,
+    val selectedCouponsError: UiText? = null,
     val featuredEventsLoading: Boolean = false,
     val featuredEventsError: String? = null,
     val selectedCategoryId: String = "",
@@ -93,7 +96,7 @@ internal fun CommunityState.withStudentRegistration(entryId: String, registered:
     )
 }
 
-class CommunityViewModel(private val repository: CommunityRepository, private val admission: EventAdmissionGateway = NativeEventAdmissionGateway) : ViewModel() {
+class CommunityViewModel(private val repository: CommunityRepository, private val admission: EventAdmissionGateway = NativeEventAdmissionGateway, private val analytics: AnalyticsTracker = NoOpAnalyticsTracker) : ViewModel() {
     private val mutable = MutableStateFlow(CommunityState())
     val state = mutable.asStateFlow()
     private var couponCountdownJob: Job? = null
@@ -108,6 +111,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     private var updatesVisible = false
     private var visibleStudentEventId: String? = null
     private var selectionGeneration = 0
+    private var loadingGeneration = 0
 
     init {
         load()
@@ -115,6 +119,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
             repository.authStateFlow.collect { user ->
                 if (user?.uid != observedUserId) {
                     selectionGeneration++
+                    loadingGeneration++
                     couponIssueJob?.cancel()
                     couponCountdownJob?.cancel()
                     observedUserId = user?.uid
@@ -180,6 +185,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     }
 
     fun load(silent: Boolean = false) {
+        val generation = ++loadingGeneration
+        val uid = repository.currentUserId
         loadingJob?.cancel()
         loadingJob = viewModelScope.launch {
             if (!silent) mutable.update { it.copy(loading = true, error = null) }
@@ -188,17 +195,19 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val access = repository.access()
                 val businesses = repository.businesses()
                 val blocked = loadBlockedCommunityIds()
+                val visibleCommunities = communities.filterNot { c -> c.id in blocked && c.id !in access.communityIds }
                 val coupons = try {
-                    repository.featuredCoupons(communities)
+                    repository.featuredCoupons(visibleCommunities)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
                     null
                 }
+                if (generation != loadingGeneration || uid != repository.currentUserId) return@launch
                 mutable.update {
                     it.copy(
                         // Managers always keep their own community, even if it was blocked earlier.
-                        communities = communities.filterNot { c -> c.id in blocked && c.id !in access.communityIds },
+                        communities = visibleCommunities,
                         blockedCommunityIds = blocked,
                         access = access,
                         businesses = businesses,
@@ -212,6 +221,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
+                if (generation != loadingGeneration || uid != repository.currentUserId) return@launch
                 // A failed background refresh keeps the list that is already on screen.
                 if (!silent) mutable.update { it.copy(loading = false, error = e.message) }
             }
@@ -251,7 +261,10 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     }
 
     fun select(community: Community, targetEventId: String? = null) {
+        if (community.id in mutable.value.blockedCommunityIds && community.id !in mutable.value.access.communityIds) return
         selectionGeneration++
+        val generation = ++loadingGeneration
+        val uid = repository.currentUserId
         couponIssueJob?.cancel()
         couponCountdownJob?.cancel()
         loadingJob?.cancel()
@@ -263,6 +276,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 entriesCursor = null,
                 loading = true,
                 error = null,
+                selectedCouponsError = null,
                 generatedCouponCode = null,
                 generatedCouponEntryId = null,
                 couponCodeSeconds = 0,
@@ -287,9 +301,18 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val access = repository.access()
                 val manager = access.active && community.id in access.communityIds
                 val page = repository.entryPage(community.id, manager)
-                val target = targetEventId?.takeIf { id -> page.first.none { it.id == id } }
+                // An unavailable coupon query must not hide successfully loaded events.
+                val coupons = try {
+                    repository.couponEntries(community.id)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    null
+                }
+                val loadedEntries = page.first + coupons.orEmpty()
+                val target = targetEventId?.takeIf { id -> loadedEntries.none { it.id == id } }
                     ?.let { repository.publishedEntry(community.id, it) }
-                val entries = if (target == null) page.first else page.first + target
+                val entries = loadedEntries + listOfNotNull(target)
                 val following = repository.isFollowing(community.id)
                 val events = entries.filter { it.data.kind == "event" && it.data.status == "published" }
                 val registrations = if (manager) {
@@ -298,11 +321,13 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val registered = if (manager) emptySet() else {
                     events.filter { repository.isRegistered(community.id, it.id) }.mapTo(mutableSetOf()) { it.id }
                 }
+                if (generation != loadingGeneration || uid != repository.currentUserId) return@launch
                 mutable.update {
                     it.copy(
                         access = access,
                         entries = entries,
                         entriesCursor = page.second,
+                        selectedCouponsError = if (coupons == null) UiText.StringResourceId(Res.string.community_coupon_load_error) else null,
                         isFollowing = following,
                         registrationsByEntry = registrations,
                         registeredEventIds = registered,
@@ -311,7 +336,11 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 }
                 if (manager && updatesVisible) startRegistrationUpdates(community.id)
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { mutable.update { it.copy(loading = false, error = communityErrorMessage(e)) } }
+            catch (e: Exception) {
+                if (generation == loadingGeneration && uid == repository.currentUserId) {
+                    mutable.update { it.copy(loading = false, error = communityErrorMessage(e)) }
+                }
+            }
         }
     }
 
@@ -320,20 +349,28 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         val community = snapshot.selected ?: return
         val cursor = snapshot.entriesCursor ?: return
         if (snapshot.loading) return
+        val generation = ++loadingGeneration
+        val uid = repository.currentUserId
         mutable.update { it.copy(loading = true) }
         loadingJob = viewModelScope.launch {
             try {
                 val page = repository.entryPage(community.id, snapshot.canManage, cursor)
                 val registered = if (snapshot.canManage) emptySet() else page.first.filter { repository.isRegistered(community.id, it.id) }.mapTo(mutableSetOf()) { it.id }
+                if (generation != loadingGeneration || uid != repository.currentUserId) return@launch
                 mutable.update { it.copy(entries = (it.entries + page.first).distinctBy { entry -> entry.id }, entriesCursor = page.second, registeredEventIds = it.registeredEventIds + registered, loading = false) }
                 if (snapshot.canManage && updatesVisible) startRegistrationUpdates(community.id)
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { mutable.update { it.copy(loading = false, error = communityErrorMessage(e)) } }
+            catch (e: Exception) {
+                if (generation == loadingGeneration && uid == repository.currentUserId) {
+                    mutable.update { it.copy(loading = false, error = communityErrorMessage(e)) }
+                }
+            }
         }
     }
 
     fun back() {
         selectionGeneration++
+        loadingGeneration++
         couponIssueJob?.cancel()
         couponCountdownJob?.cancel()
         loadingJob?.cancel()
@@ -341,6 +378,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         mutable.update {
             it.copy(
                 selected = null,
+                selectedCouponsError = null,
                 error = null,
                 loading = false,
                 entries = emptyList(),
@@ -375,7 +413,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
             state.copy(
                 blockedCommunityIds = blocked,
                 communities = state.communities.filterNot { it.id == community.id },
-                featuredEvents = state.featuredEvents.filterNot { it.community.id == community.id }
+                featuredEvents = state.featuredEvents.filterNot { it.community.id == community.id },
+                featuredCoupons = state.featuredCoupons.filterNot { it.community.id == community.id }
             )
         }
     }
@@ -536,6 +575,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         if (entry.id in mutable.value.registrationLoadingIds) return
         val next = entry.id !in mutable.value.registeredEventIds
         val studentV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2 && !mutable.value.canManage
+        val tracking = if (studentV2) analytics.click(if (next) Interaction.EVENT_REGISTER else Interaction.EVENT_UNREGISTER) else null
         val requestGeneration = selectionGeneration
         val userId = repository.currentUserId
         mutable.update {
@@ -548,6 +588,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         viewModelScope.launch {
             try {
                 repository.setRegistration(community.id, entry, next)
+                analytics.result(tracking, InteractionStatus.SUCCESS)
                 if (requestGeneration != selectionGeneration || userId != repository.currentUserId) return@launch
                 mutable.update {
                     if (studentV2) it.withStudentRegistration(entry.id, next, showFeedback = visibleStudentEventId == entry.id) else it.copy(
@@ -562,6 +603,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 } else closeTicket()
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 if (requestGeneration != selectionGeneration || userId != repository.currentUserId) return@launch
                 mutable.update { it.copy(registrationLoadingIds = it.registrationLoadingIds - entry.id, cancellingRegistrationIds = it.cancellingRegistrationIds - entry.id, error = e.message) }
             }
@@ -571,6 +613,8 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
     fun createCouponCode(entry: CommunityEntry) {
         val community = mutable.value.selected ?: return
         if (mutable.value.codeGenerating) return
+        val tracking = if (AppEnvironment.firebaseBackend == FirebaseBackend.V2 && !mutable.value.canManage)
+            analytics.click(Interaction.COUPON_ISSUE) else null
         val generation = selectionGeneration
         val uid = repository.currentUserId
         couponIssueJob?.cancel()
@@ -592,6 +636,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 } else {
                     CommunityCouponIssue("issued", repository.createCouponCode(community.id, entry))
                 }
+                analytics.result(tracking, if (result.outcome in setOf("issued", "already_issued")) InteractionStatus.SUCCESS else InteractionStatus.ERROR)
                 if (generation != selectionGeneration || uid != repository.currentUserId) return@launch
                 mutable.update {
                     it.copy(
@@ -623,6 +668,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 if (generation == selectionGeneration && uid == repository.currentUserId) {
                     mutable.update {
                         it.copy(

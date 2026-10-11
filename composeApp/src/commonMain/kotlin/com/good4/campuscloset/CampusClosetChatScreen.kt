@@ -1,5 +1,7 @@
 package com.good4.campuscloset
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -145,7 +147,7 @@ internal fun CampusClosetChatContent(
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when {
-                    state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.Center))
+                    state.isLoading -> Good4LoadingState()
                     state.loadError != null -> CenteredState(state.loadError, stringResource(Res.string.campus_closet_geri_don), onBack)
                     else -> LazyColumn(
                         state = listState, contentPadding = PaddingValues(16.dp),

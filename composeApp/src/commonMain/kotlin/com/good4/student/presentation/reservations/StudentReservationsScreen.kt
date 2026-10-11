@@ -1,5 +1,7 @@
 package com.good4.student.presentation.reservations
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -156,12 +157,13 @@ private fun StudentReservationsContent(
                 .background(AppBackground)
                 .padding(paddingValues)
         ) {
-            if (eduState != null && !eduState.isVerified) {
+            if (eduState != null && !eduState.campusAccessAllowed) {
                 EduGate(state = eduState, actions = eduActions)
             } else {
                 if (eduState != null) {
                     EduVerifiedBadge(
                         email = eduState.verifiedEmail,
+                        accessSource = eduState.accessSource,
                         modifier = Modifier.padding(start = 20.dp, end = 16.dp, top = 10.dp)
                     )
                 }
@@ -209,12 +211,7 @@ private fun StudentReservationsContent(
 
                 when {
                     state.isLoading && displayReservations.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = TextPrimary)
-                        }
+                        Good4LoadingState()
                     }
 
                     displayReservations.isEmpty() -> {
@@ -286,16 +283,14 @@ internal data class EduGateActions(
 @Composable
 private fun EduGate(state: EduVerificationState, actions: EduGateActions) {
     when {
-        state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = TextPrimary)
-        }
+        state.isLoading -> Good4LoadingState()
 
         state.loadError != null -> Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(state.loadError, color = TextSecondary, textAlign = TextAlign.Center)
+            Text(state.loadError.asString(), color = TextSecondary, textAlign = TextAlign.Center)
             TextButton(onClick = actions.onRetry) { Text("Tekrar dene") }
         }
 

@@ -248,3 +248,21 @@ test("only a Good4 admin can end a campaign, and ended campaigns issue no codes"
     (error: unknown) => error instanceof Error && error.message === "CAMPAIGN_NOT_PUBLISHED",
   );
 });
+
+
+test("only code-verified admin testers can claim student benefits; disconnection closes issuance", async () => {
+  await seedBase();
+  const uid = "test-admin";
+  const ref = db.doc(`users/${uid}`);
+  const grant = { enabled: true, email: "admin@example.com", grantId: "grant" };
+  await ref.set({ role: "good4Admin", status: "active", adminEduTest: grant });
+  await assert.rejects(issueCampaignCodeService(db, uid, { campaignId: "campaign-1" }), /EDU_VERIFICATION_REQUIRED/);
+  await ref.update({ adminEduTestVerification: { email: grant.email, grantId: grant.grantId, verifiedAt: Timestamp.now() } });
+  const issued = await issueCampaignCodeService(db, uid, { campaignId: "campaign-1" });
+  assert.equal(issued.outcome, "issued");
+  await ref.update({ adminEduTestVerification: FieldValue.delete() });
+  await assert.rejects(issueCampaignCodeService(db, uid, { campaignId: "campaign-1" }), /EDU_VERIFICATION_REQUIRED/);
+  assert.equal((await db.doc(`campaignClaims/campaign-1_${uid}`).get()).exists, true);
+  await ref.update({ eduVerified: true, eduEmail: "admin@ogr.akdeniz.edu.tr" });
+  await assert.rejects(issueCampaignCodeService(db, uid, { campaignId: "campaign-1" }), /EDU_VERIFICATION_REQUIRED/);
+});

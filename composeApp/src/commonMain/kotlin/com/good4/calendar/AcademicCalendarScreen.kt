@@ -1,5 +1,7 @@
 package com.good4.calendar
 
+import com.good4.core.presentation.components.Good4LoadingState
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,7 +28,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -163,7 +164,7 @@ fun AcademicCalendarScreen(
                 Text(formatDate(selectedDate), color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
                 when {
-                    state.loading -> Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
+                    state.loading -> Good4LoadingState(modifier = Modifier.fillMaxWidth().height(100.dp))
                     state.failed -> EmptyCalendarMessage("Takvim şu anda yüklenemedi.")
                     selectedEvents.isEmpty() -> EmptyCalendarMessage("Bu tarihte akademik takvim kaydı yok.")
                     else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { selectedEvents.forEach { CalendarEventCard(it) } }

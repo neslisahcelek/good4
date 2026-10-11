@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
+import { Timestamp } from "firebase-admin/firestore";
+import { requireActiveApplicantForApproval } from "./applicationSupport.js";
 import { getPortalContextService } from "./adminPortal.js";
 import {
   listBusinessApplicationsService,
@@ -53,6 +55,7 @@ test("a Google account without a role applies and the panel shows only its own a
 test("applications require Google, a verified e-mail and the three fields", async () => {
   await assert.rejects(submitBusinessApplicationService(db, { ...googleApplicant, providers: ["password"] }, form), /GOOGLE_SIGN_IN_REQUIRED/);
   await assert.rejects(submitBusinessApplicationService(db, { ...googleApplicant, emailVerified: false }, form), /VERIFIED_EMAIL_REQUIRED/);
+  await assert.rejects(submitBusinessApplicationService(db, { ...googleApplicant, disabled: true }, form), /ACCOUNT_NOT_ACTIVE/);
   await assert.rejects(submitBusinessApplicationService(db, googleApplicant, { ...form, businessName: " " }), /BUSINESSNAME/);
   await assert.rejects(submitBusinessApplicationService(db, googleApplicant, { ...form, contactName: "" }), /CONTACTNAME/);
   await assert.rejects(submitBusinessApplicationService(db, googleApplicant, { ...form, phone: "12" }), /PHONE_INVALID/);
@@ -89,9 +92,38 @@ test("only admins list and review; approval creates the business, owner and memb
   await submitBusinessApplicationService(db, googleApplicant, form);
   await assert.rejects(listBusinessApplicationsService(db, "business-applicant"), /ACCOUNT_NOT_ACTIVE/);
   await assert.rejects(reviewBusinessApplicationService(db, "business-applicant", { applicationId: "business-applicant", decision: "approve" }), /ACCOUNT_NOT_ACTIVE/);
+  const approval = { applicationId: "business-applicant", decision: "approve" };
+  let identityReads = 0;
+  const disabledIdentity = async () => { identityReads++; return { disabled: true }; };
+  await assert.rejects(requireActiveApplicantForApproval(db, "business-applicant", approval, disabledIdentity), /ACCOUNT_NOT_ACTIVE/);
+  assert.equal(identityReads, 0, "admin authorization must precede the target Auth read");
+  await assert.rejects(requireActiveApplicantForApproval(db, "admin-1", approval, disabledIdentity), /APPLICANT_ACCOUNT_NOT_ACTIVE/);
+  await assert.rejects(requireActiveApplicantForApproval(db, "admin-1", approval, async () => {
+    throw Object.assign(new Error("private Auth details"), { code: "auth/user-not-found" });
+  }), /APPLICANT_ACCOUNT_NOT_FOUND/);
+  await assert.rejects(requireActiveApplicantForApproval(db, "admin-1", approval, async () => {
+    throw new Error("private Auth transport details");
+  }), /APPLICANT_ACCOUNT_CHECK_FAILED/);
+  await requireActiveApplicantForApproval(db, "admin-1", { ...approval, decision: "reject" }, disabledIdentity);
+  assert.equal(identityReads, 1, "rejecting an unavailable applicant must not read Auth");
+  await requireActiveApplicantForApproval(db, "admin-1", approval, async () => ({ disabled: false }));
 
   const { applications } = await listBusinessApplicationsService(db, "admin-1");
   assert.deepEqual(applications.map((item) => item.id), ["business-applicant"]);
+  assert.equal((await listBusinessApplicationsService(db, "admin-1")).nextCursor, null);
+  await db.doc("businessApplications/business-applicant").update({ createdAt: Timestamp.fromMillis(2000) });
+  for (const [id, milliseconds] of [["z-oldest", 1000], ["a-boundary", 1500], ["m-same-time", 1500]] as const) {
+    await db.doc(`businessApplications/${id}`).set({ status: "pending", createdAt: Timestamp.fromMillis(milliseconds) });
+  }
+  const first = await listBusinessApplicationsService(db, "admin-1", { limit: 2 });
+  assert.deepEqual(first.applications.map((item) => item.id), ["z-oldest", "a-boundary"]);
+  assert.ok(first.nextCursor);
+  await db.doc("businessApplications/a-boundary").delete();
+  const next = await listBusinessApplicationsService(db, "admin-1", { limit: 2, cursor: first.nextCursor });
+  assert.deepEqual(next.applications.map((item) => item.id), ["m-same-time", "business-applicant"]);
+  assert.equal((await listBusinessApplicationsService(db, "admin-1", { limit: 2, cursor: next.nextCursor })).nextCursor, null);
+  await assert.rejects(listBusinessApplicationsService(db, "admin-1", { cursor: "invalid" }), /APPLICATION_CURSOR_INVALID/);
+  await assert.rejects(listBusinessApplicationsService(db, "admin-1", { limit: 201 }), /APPLICATION_PAGE_LIMIT_INVALID/);
 
   const result = await reviewBusinessApplicationService(db, "admin-1", { applicationId: "business-applicant", decision: "approve" });
   assert.equal(result.status, "approved");

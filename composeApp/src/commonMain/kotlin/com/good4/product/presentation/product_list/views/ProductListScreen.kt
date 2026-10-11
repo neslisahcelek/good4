@@ -1,5 +1,9 @@
 package com.good4.product.presentation.product_list.views
 
+import com.good4.core.presentation.components.Good4LoadingState
+
+import com.good4.analytics.*
+
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -38,7 +42,6 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -166,10 +169,10 @@ fun ProductListScreenRoot(
     val socialCount by socialBadge.count.collectAsStateWithLifecycle()
     val showsSocial = HomeShortcut.SOCIAL_ACTIVITIES in homeShortcuts
     LifecycleResumeEffect(showsSocial) {
-        if (showsSocial && socialBadge.shouldRefresh()) {
+        if (showsSocial) {
             scope.launch {
                 try {
-                    socialRepository.summary()
+                    socialRepository.refreshFromHome()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
@@ -277,10 +280,7 @@ fun ProductListScreen(
         ) {
             when {
                 state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = PrimaryGreen
-                    )
+                    Good4LoadingState()
                 }
 
                 else -> Column(Modifier.fillMaxSize()) {
@@ -584,6 +584,7 @@ private fun HomeAdvertisementBanner(
     feedbackViewModel: FeedbackViewModel = koinViewModel()
 ) {
     val uriHandler = LocalUriHandler.current
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
     // An uploaded image is always shown, Good4's own promotions included; the "Reklam alanı" card only fills in without one.
     val isPlaceholder = banner.imageUrl.isBlank()
     val feedbackState by feedbackViewModel.state.collectAsStateWithLifecycle()
@@ -598,6 +599,7 @@ private fun HomeAdvertisementBanner(
             .clip(RoundedCornerShape(18.dp))
             .background(SurfaceMuted)
             .then(if (!isPlaceholder && banner.targetUrl.isNotBlank()) Modifier.clickable {
+                analytics.click(Interaction.BANNER_OPEN)
                 uriHandler.openUri(banner.targetUrl)
             } else Modifier)
     ) {

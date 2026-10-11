@@ -1,19 +1,15 @@
-import { FieldValue, Timestamp, type DocumentData, type DocumentSnapshot, type Firestore } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type DocumentData, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { requireActiveActor, requireNonEmptyString } from "./shared.js";
+import { listPendingApplicationPage, requireAccountWithoutRole, requireVerifiedGoogleApplicant,
+  type ApplicantIdentity, type ApplicationPageInput } from "./applicationSupport.js";
+export type { ApplicantIdentity } from "./applicationSupport.js";
 
 // Communities apply on the web panel with their own Google account; a Good4 admin approves
 // the application, which creates the community and makes that account its manager.
 // Applications live in communityApplications/{applicantUid}, so each account has at most one.
 
 export type CommunityApplicationStatus = "pending" | "approved" | "rejected";
-
-export interface ApplicantIdentity {
-  uid: string;
-  email?: string;
-  emailVerified: boolean;
-  providers: string[];
-}
 
 export interface CommunityApplicationSummary {
   id: string;
@@ -61,13 +57,6 @@ function applicationFromDocument(id: string, data: DocumentData | undefined): Co
   };
 }
 
-/** Accounts carry a single role: a student account must stay a student, a portal account already has an organization. */
-function requireAccountWithoutRole(user: DocumentSnapshot): void {
-  if (!user.exists) return;
-  if (user.get("role") === "student") throw new HttpsError("failed-precondition", "STUDENT_ACCOUNT_NOT_ALLOWED");
-  throw new HttpsError("failed-precondition", "ACCOUNT_ALREADY_HAS_ROLE");
-}
-
 export async function getMyCommunityApplicationService(
   database: Firestore,
   uid: string,
@@ -87,13 +76,7 @@ export async function submitCommunityApplicationService(
   identity: ApplicantIdentity,
   input: Record<string, unknown>,
 ): Promise<{ status: "pending" }> {
-  if (!identity.providers.includes("google.com")) {
-    throw new HttpsError("permission-denied", "GOOGLE_SIGN_IN_REQUIRED");
-  }
-  const email = identity.email?.trim().toLowerCase() ?? "";
-  if (!email || !identity.emailVerified) {
-    throw new HttpsError("failed-precondition", "VERIFIED_EMAIL_REQUIRED");
-  }
+  const email = requireVerifiedGoogleApplicant(identity);
   const communityName = requireNonEmptyString(input.communityName, "communityName", 160);
   const university = requireNonEmptyString(input.university, "university", 160);
   const applicantName = requireNonEmptyString(input.applicantName, "applicantName", 120);
@@ -135,13 +118,11 @@ export async function submitCommunityApplicationService(
 export async function listCommunityApplicationsService(
   database: Firestore,
   actorUid: string,
-): Promise<{ applications: CommunityApplicationSummary[] }> {
-  await database.runTransaction((transaction) => requireActiveActor(database, transaction, actorUid, ["good4Admin"]));
-  const snapshot = await database.collection("communityApplications").where("status", "==", "pending").limit(200).get();
-  const applications = snapshot.docs
-    .map((document) => applicationFromDocument(document.id, document.data()))
-    .sort((left, right) => (left.createdAt ?? "").localeCompare(right.createdAt ?? ""));
-  return { applications };
+  input: ApplicationPageInput = {},
+): Promise<{ applications: CommunityApplicationSummary[]; nextCursor: string | null }> {
+  const page = await listPendingApplicationPage(database, actorUid, "communityApplications", input);
+  return { applications: page.documents.map((document) => applicationFromDocument(document.id, document.data())),
+    nextCursor: page.nextCursor };
 }
 
 export async function reviewCommunityApplicationService(

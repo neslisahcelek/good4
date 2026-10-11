@@ -5,7 +5,7 @@ const sections = [
     id: "madde-1",
     title: "1. Taraflar ve sözleşmenin konusu",
     paragraphs: [
-      "İşbu Üyelik ve Kullanım Sözleşmesi (“Sözleşme”), Good4 mobil uygulaması ve Good4 ile bağlantılı çevrim içi hizmetlerin sağlayıcısı Ahmetcan Kılınç (“Good4”) ile Good4’ta hesap oluşturan veya yetkili hesabıyla hizmetlerden yararlanan kişi (“Kullanıcı”) arasında kurulur.",
+      "İşbu Üyelik ve Kullanım Sözleşmesi (“Sözleşme”), Good4 mobil uygulaması ve Good4 ile bağlantılı çevrim içi hizmetlerin sağlayıcısı Ahmetcan Kılınç (“Good4”) ile Good4’da hesap oluşturan veya yetkili hesabıyla hizmetlerden yararlanan kişi (“Kullanıcı”) arasında kurulur.",
       "Sözleşme; Good4 hesabının oluşturulması ve kullanılması, hizmetlerin işleyişi ve Kullanıcıların Good4 üzerinden sunduğu içeriklere ilişkin koşulları düzenler. Kullanıcı, hesap açarken veya hizmete erişirken bu Sözleşmeyi elektronik ortamda kabul ederek Sözleşmenin tarafı olur.",
     ],
   },
@@ -30,10 +30,10 @@ const sections = [
     id: "madde-4",
     title: "4. Kullanıcı içerikleri ve yasaklı davranışlar",
     paragraphs: [
-      "İşletme veya topluluk temsilcilerinin Good4’a eklediği ad, metin, logo, fotoğraf, afiş, etkinlik, kampanya ve benzeri materyaller “Kullanıcı İçeriği” sayılır. İçeriği sağlayan Kullanıcı, içeriği sunmaya ve Good4’ta yayımlamaya yetkili olduğunu; içeriğin doğru, yürürlükteki mevzuata uygun ve üçüncü kişilerin haklarını ihlal etmeyen nitelikte olduğunu kabul eder.",
+      "İşletme veya topluluk temsilcilerinin Good4’a eklediği ad, metin, logo, fotoğraf, afiş, etkinlik, kampanya ve benzeri materyaller “Kullanıcı İçeriği” sayılır. İçeriği sağlayan Kullanıcı, içeriği sunmaya ve Good4’da yayımlamaya yetkili olduğunu; içeriğin doğru, yürürlükteki mevzuata uygun ve üçüncü kişilerin haklarını ihlal etmeyen nitelikte olduğunu kabul eder.",
       "Kullanıcı, içeriğinde kişisel veri veya üçüncü kişilere ait görsel ve materyal kullanmadan önce gerekli hukuki dayanağa ve izinlere sahip olmalıdır.",
     ],
-    listIntro: "Good4’ta aşağıdaki içerik ve davranışlara izin verilmez:",
+    listIntro: "Good4’da aşağıdaki içerik ve davranışlara izin verilmez:",
     bullets: [
       "tehdit, taciz, zorbalık, şantaj, nefret söylemi veya kişileri hedef gösterme;",
       "hukuka aykırı, müstehcen ya da çocukların güvenliğini tehlikeye düşüren içerik;",
@@ -71,7 +71,7 @@ const sections = [
     id: "madde-8",
     title: "8. İşletmeler, kampanyalar ve rezervasyonlar",
     paragraphs: [
-      "Good4’ta üçüncü taraf işletmelerin tanıtımları, kampanyaları, kuponları veya rezervasyon işlevleri yer alabilir. Kampanyanın ve kuponun geçerlilik süresi ile kullanım koşulları, ilgili işletmenin sunduğu açıklamalara göre belirlenir. Rezervasyonun kesinleşip kesinleşmediği, Good4 ekranında veya ilgili işletmenin Kullanıcıya gönderdiği bildirimde açıklanır.",
+      "Good4’da üçüncü taraf işletmelerin tanıtımları, kampanyaları, kuponları veya rezervasyon işlevleri yer alabilir. Kampanyanın ve kuponun geçerlilik süresi ile kullanım koşulları, ilgili işletmenin sunduğu açıklamalara göre belirlenir. Rezervasyonun kesinleşip kesinleşmediği, Good4 ekranında veya ilgili işletmenin Kullanıcıya gönderdiği bildirimde açıklanır.",
       "Good4’un ilgili işlemde satıcı veya hizmet sağlayıcı olduğu açıkça belirtilmedikçe, işletmenin sunduğu mal veya hizmete ilişkin işlem Kullanıcı ile ilgili işletme arasındadır. Bu hüküm, Good4’un kendi rolünden veya yürürlükteki mevzuattan doğan yükümlülüklerini ya da Kullanıcının emredici tüketici haklarını ortadan kaldırmaz veya sınırlandırmaz.",
       "İşletmelere sunulan ücretli reklam veya tanıtım hizmetlerinin bedel, yayın süresi, faturalandırma ve diğer ticari koşulları ayrıca yapılacak yazılı anlaşmada belirlenir. Bu Sözleşme tek başına ücretli reklam siparişi oluşturmaz.",
     ],

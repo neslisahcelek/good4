@@ -3,6 +3,8 @@
 Bu doküman, projede geliştirme yaparken **uyulması gereken genel kurallar**ı ve projeye **yeni bir kullanıcı tipi** (ör. `ADMIN2`, `MODERATOR`, `PARTNER`) eklerken hangi yapıları kullanman gerektiğini özetler. Aynı zamanda ortak bileşenler, tema/renk/strings gibi genel bilgiler içerir.
 
 ## 0) Genel geliştirme kuralları
+- **Tasarım standardı**: Yeni tasarım yaparken varsayılan/standart Material görünümünü hiçbir zaman kullanmayın. HeroUI görsel dilini Good4’un tema token’larına uyarlayın; kart, dialog, buton ve diğer kontrollerin görünümünü açıkça tasarlayın. Mevcut ortak bileşenler bu kurala uyuyorsa yeniden kullanın. Tasarım kaynağı: [UI_DESIGN.md](docs/UI_DESIGN.md).
+- **Marka yazımı ve okunuşu**: Uygulamanın adı `Good4`, okunuşu **“good four” (gud for)** şeklindedir. Türkçe ekleri bu okunuşa göre yazın: `Good4’u`, `Good4’un`, `Good4’a`, `Good4’da`, `Good4’dan`. Mobil/web arayüzleri, bildirimler, e-postalar ve belgelerde aynı kuralı uygulayın; marka yazımını ve teknik adları (paket, dosya yolu, Firebase proje kimliği, URL) değiştirmeyin.
 - **Tek kaynak**: Color, string, ikon gibi değerleri mümkün olduğunca tek yerden yönet.
 - **Hardcode yok**: UI metinleri `strings.xml` üzerinden alınmalı.
 - **Tema uyumu**: Yeni ekranlar `Background / InkBlack / MintGreen / LimeGreen / SoftGray / Surface / BrickRed` paletine uymalı.
@@ -236,3 +238,8 @@ Firebase Console'da ilgili Android uygulamasının altına şu parmak izlerinin 
   `-keep class com.google.android.libraries.identity.googleid.** { *; }`
 
 
+## 12) Merkezi kampüs erişim politikası
+- Kampüs Dolabı, Sosyal ve Askıda Yemek erişimini yalnız `firebase/v2/functions/src/campusAccess.ts` üzerinden değerlendirin (`requireCampusAccess` / `resolveCampusAccess`). Özelliklere ayrı admin/UID/e-posta bypass koşulları eklemeyin.
+- Gerçek edu kanıtı (`eduVerified`, `eduEmail`, `eduEmailClaims`) ile erişim kararını (`campusAccessAllowed`, `accessSource`) karıştırmayın. Admin testi gerçek okul doğrulaması alanlarını değiştirmez.
+- Mobil UI sunucudan gelen erişim/test durumunu tüketir; yerel role göre yetki üretmez. Bağlantı kaldırma ve doğrulama değişiminde UID/sürüm kontrollü önbellek geçersizleştirmesini koruyun.
+- Bu alanı değiştirmeden önce [merkezi politika dokümanını](docs/CAMPUS_ACCESS_POLICY.md) okuyun. Test yetkisi yönetimi, sessionId, kotalar, bağlantı kaldırma ve yayın kuralları burada tanımlıdır.

@@ -42,14 +42,18 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
 import com.good4.campuscloset.minutesAndSeconds
+import com.good4.core.presentation.Good4Theme
+import good4.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Shown on Askıda Yemek until the student proves an @ogr.akdeniz.edu.tr address. */
 @Composable
 fun EduVerificationCard(
     state: EduVerificationState,
-    title: String = "Askıda Yemek üniversite öğrencilerine özel",
-    description: String = "Rezervasyon yapıp kod alabilmek için okul e-postanızı (@ogr.akdeniz.edu.tr) doğrulamanız gerekiyor.",
-    optInLabel: String = "Edu mailimi aktif ederek Askıda Yemek'ten faydalanmak istiyorum",
+    title: String? = null,
+    description: String? = null,
+    optInLabel: String? = null,
     onOptInChange: (Boolean) -> Unit,
     onEmailChange: (String) -> Unit,
     onSendCode: () -> Unit,
@@ -76,14 +80,14 @@ fun EduVerificationCard(
                 Icon(Icons.Outlined.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    title,
+                    if (state.testAvailable) stringResource(Res.string.campus_test_title) else title ?: stringResource(Res.string.edu_verification_title),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
             }
             Text(
-                description,
+                if (state.testAvailable) stringResource(Res.string.campus_test_description) else description ?: stringResource(Res.string.edu_verification_description),
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 color = TextSecondary
@@ -103,7 +107,7 @@ fun EduVerificationCard(
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    optInLabel,
+                    optInLabel ?: stringResource(Res.string.edu_verification_opt_in),
                     fontSize = 14.sp,
                     lineHeight = 18.sp,
                     color = TextPrimary
@@ -115,17 +119,17 @@ fun EduVerificationCard(
                     value = state.email,
                     onValueChange = onEmailChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Okul e-posta adresiniz") },
-                    placeholder = { Text("ad.soyad@ogr.akdeniz.edu.tr") },
+                    label = { Text(stringResource(Res.string.campus_email_address_label)) },
+                    placeholder = { Text(stringResource(Res.string.campus_email_address_example)) },
                     singleLine = true,
-                    enabled = !state.isSending,
+                    enabled = !state.isSending && !state.testAvailable,
                     colors = fieldColors,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Send),
                     keyboardActions = KeyboardActions(onSend = { onSendCode() })
                 )
                 Button(
                     onClick = onSendCode,
-                    enabled = !state.isSending && state.email.isNotBlank(),
+                    enabled = !state.isSending && state.resendSeconds == 0 && state.email.isNotBlank(),
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = buttonColors,
                     shape = RoundedCornerShape(12.dp)
@@ -133,14 +137,14 @@ fun EduVerificationCard(
                     if (state.isSending) {
                         CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
                     } else {
-                        Text("Doğrulama kodu gönder", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(Res.string.edu_verification_send_code), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
             state.codeSentTo?.let { sentTo ->
                 Text(
-                    "6 haneli kod $sentTo adresine gönderildi. Gelen kutunuzda yoksa gereksiz (spam) klasörüne de bakın.",
+                    stringResource(Res.string.edu_verification_sent_to, sentTo),
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     color = TextSecondary
@@ -149,7 +153,7 @@ fun EduVerificationCard(
                     value = state.code,
                     onValueChange = onCodeChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Doğrulama kodu") },
+                    label = { Text(stringResource(Res.string.edu_verification_code_label)) },
                     singleLine = true,
                     enabled = !state.isConfirming,
                     colors = fieldColors,
@@ -166,16 +170,17 @@ fun EduVerificationCard(
                     if (state.isConfirming) {
                         CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
                     } else {
-                        Text("Doğrula", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(Res.string.edu_verification_confirm), fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TextButton(onClick = onChangeEmail, enabled = !state.isConfirming) {
-                        Text("E-postayı değiştir", color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(Res.string.campus_email_change_address), color = MaterialTheme.colorScheme.primary)
                     }
                     TextButton(onClick = onSendCode, enabled = state.resendSeconds == 0 && !state.isSending) {
                         Text(
-                            if (state.resendSeconds > 0) "Tekrar gönder (${minutesAndSeconds(state.resendSeconds)})" else "Kodu tekrar gönder",
+                            if (state.resendSeconds > 0) stringResource(Res.string.edu_verification_resend_in, minutesAndSeconds(state.resendSeconds))
+                            else stringResource(Res.string.edu_verification_resend),
                             color = if (state.resendSeconds > 0) TextSecondary else MaterialTheme.colorScheme.primary
                         )
                     }
@@ -183,21 +188,35 @@ fun EduVerificationCard(
             }
 
             state.errorMessage?.let {
-                Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                Text(it.asString(), fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
             }
         }
     }
 }
 
 @Composable
-fun EduVerifiedBadge(email: String?, modifier: Modifier = Modifier) {
+fun EduVerifiedBadge(email: String?, modifier: Modifier = Modifier, accessSource: String = "edu_email") {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Outlined.Verified, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
         Text(
-            if (email.isNullOrBlank()) "Üniversite e-postanız doğrulandı" else "$email doğrulandı",
+            if (accessSource == "admin_test") stringResource(Res.string.campus_test_verified)
+            else if (email.isNullOrBlank()) stringResource(Res.string.edu_verification_verified)
+            else stringResource(Res.string.edu_verification_verified_email, email),
             fontSize = 12.sp,
             color = TextSecondary
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun EduVerificationCardPreview() {
+    Good4Theme {
+        EduVerificationCard(
+            state = EduVerificationState(isLoading = false, optedIn = true),
+            onOptInChange = {}, onEmailChange = {}, onSendCode = {},
+            onCodeChange = {}, onConfirmCode = {}, onChangeEmail = {}
         )
     }
 }

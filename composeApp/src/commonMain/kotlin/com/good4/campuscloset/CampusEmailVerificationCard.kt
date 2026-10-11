@@ -31,25 +31,25 @@ fun CampusEmailVerificationCard(
     onConfirmCode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val busy = state.isSending || state.isConfirming
+    val busy = state.isLoading || state.isSending || state.isConfirming
     Card(modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
         border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.55f))) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             when {
                 state.verifiedEmail != null -> {
-                    ClosetSectionHeading(stringResource(Res.string.campus_closet_e_postan_onaylandi), Icons.Outlined.School)
+                    ClosetSectionHeading(stringResource(if (state.testAvailable) Res.string.campus_test_verified else Res.string.campus_closet_e_postan_onaylandi), Icons.Outlined.School)
                     Text(stringResource(Res.string.campus_email_verified_ready), color = MaterialTheme.colorScheme.primary)
                 }
                 state.sentTo == null -> {
-                    ClosetSectionHeading(stringResource(Res.string.campus_email_title), Icons.Outlined.School,
-                        stringResource(Res.string.campus_email_code_intro))
+                    ClosetSectionHeading(stringResource(if (state.testAvailable) Res.string.campus_test_title else Res.string.campus_email_title), Icons.Outlined.School,
+                        stringResource(if (state.testAvailable) Res.string.campus_test_description else Res.string.campus_email_code_intro))
                     OutlinedTextField(
                         value = state.email, onValueChange = onEmailChange,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text(stringResource(Res.string.campus_email_address_label)) },
                         placeholder = { Text(stringResource(Res.string.campus_email_address_example)) },
-                        singleLine = true, enabled = !busy,
+                        singleLine = true, enabled = !busy && !state.testAvailable,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                     )
                     Button(onClick = onSendCode, enabled = !busy && state.resendSeconds == 0 && state.email.isNotBlank(),
@@ -58,7 +58,7 @@ fun CampusEmailVerificationCard(
                             else if (state.resendSeconds > 0) stringResource(Res.string.campus_email_code_resend_in, minutesAndSeconds(state.resendSeconds))
                             else stringResource(Res.string.campus_email_code_send), fontWeight = FontWeight.SemiBold)
                     }
-                    Text(stringResource(Res.string.campus_email_code_hint), color = TextSecondary)
+                    if (!state.testAvailable) Text(stringResource(Res.string.campus_email_code_hint), color = TextSecondary)
                 }
                 else -> {
                     ClosetSectionHeading(stringResource(Res.string.campus_email_code_title), Icons.Outlined.MarkEmailUnread)
@@ -76,7 +76,7 @@ fun CampusEmailVerificationCard(
                     } else if (state.code.length == 6 && !state.codeBlocked) {
                         TextButton(onClick = onConfirmCode, enabled = !busy) { Text(stringResource(Res.string.campus_email_code_confirm)) }
                     }
-                    TextButton(onClick = { openCampusOutlook() }) { Text(stringResource(Res.string.campus_email_open_outlook)) }
+                    if (!state.testAvailable) TextButton(onClick = { openCampusOutlook() }) { Text(stringResource(Res.string.campus_email_open_outlook)) }
                     TextButton(onClick = onSendCode, enabled = !busy && state.resendSeconds == 0) {
                         Text(if (state.resendSeconds > 0) stringResource(Res.string.campus_email_code_resend_in, minutesAndSeconds(state.resendSeconds))
                             else stringResource(Res.string.campus_closet_tekrar_gonder))
@@ -97,7 +97,7 @@ internal fun minutesAndSeconds(seconds: Int): String =
 @org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 private fun CampusEmailCodePreview() {
-    MaterialTheme {
+    com.good4.core.presentation.Good4Theme {
         CampusEmailVerificationCard(
             state = CampusEmailVerificationState(email = "123@ogr.akdeniz.edu.tr", sentTo = "123@ogr.akdeniz.edu.tr", resendSeconds = 60),
             onEmailChange = {}, onSendCode = {}, onChangeEmail = {}, onCodeChange = {}, onConfirmCode = {}

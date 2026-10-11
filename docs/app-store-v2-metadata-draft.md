@@ -113,6 +113,15 @@ cannklnc7@gmail.com · https://good4tr.com/
 
 Apple sign-in: [Confirm the friend team's Apple Developer capability and Firebase provider are configured, then verify sign-in on the signed release build before submission.]
 
+## İsteğe bağlı Analytics güncellemesi (11 Ekim 2026)
+
+Mobil etkileşim takibi kullanıcı izni verilene kadar kapalıdır. Kullanım analitiği tercihi Hesap Ayarları’ndan değiştirilebilir. Firebase Analytics’e yalnız kataloglanmış tıklama ve işlem sonuçları gönderilir; SDK ayrıca kurulum/oturum, cihaz/işletim sistemi ve IP’den türetilen yaklaşık bölge bilgilerini işler. Analytics event’lerine Firebase UID, e-posta, telefon, mesaj, arama metni veya kod eklenmez. Bu verileri tamamen anonim olarak beyan etmeyin; kurulum tanımlayıcısı aynı cihazın etkileşimlerini ilişkilendirebilir.
+
+- App Store: Device ID, Product Interaction, Other Usage Data ve Coarse Location kategorilerini **Analytics** amacıyla, isteğe bağlı toplanan ve kurulumla ilişkilendirilebilen veri olarak son SDK manifestleriyle karşılaştırın. Reklam amaçlı tracking yoktur; mevcut işlevsel kategoriler korunur.
+- Google Play: App interactions, Device or other IDs ve Approximate location kategorilerini Analytics amacıyla ve isteğe bağlı toplama olarak son SDK açıklamalarıyla karşılaştırın. Platformun hizmet sağlayıcı aktarım kurallarına göre beyanı doğrulayın.
+- IDFA/AD_ID toplama ve reklam kişiselleştirme kapalıdır; Crashlytics eklenmemiştir. Analytics izni bildirim izninden ayrıdır.
+- Güncellenmiş gizlilik sayfasını **mobil sürümden önce** yayınlayın. Console özel boyutları ve gerçek staging DebugView doğrulaması için [Analytics rehberini](ANALYTICS.md) kullanın. Bu dokümanın değişmesi canlı metni veya mağaza beyanını güncellemez.
+
 ## Ekran görüntüsü listesi
 
 Yalnızca yeni V2 paketinden alınmış gerçek ekran görüntüleri kullanılmalı: öğrenci ana sayfası, topluluklar, etkinlik ayrıntısı, yemekhane/akademik takvim ve hesap ayarları. Eski Askıda Yemek veya Destekçi ekranlarını gösteren 1.0.0 görselleri kaldırılmalı.

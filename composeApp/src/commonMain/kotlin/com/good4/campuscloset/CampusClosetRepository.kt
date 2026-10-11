@@ -46,15 +46,33 @@ class CampusClosetRepository(
     private var prefetch: Deferred<MarketFeed>? = null
     private var prefetchUid: String? = null
     private var prefetchStartedAt = 0L
+    private var accessRevision = 0L
+    private fun syncAccess() {
+        val revision = com.good4.eduverification.CampusAccessSession.revision(currentUid)
+        if (revision != accessRevision) {
+            accessRevision = revision
+            prefetch?.cancel()
+            prefetch = null
+            prefetchStartedAt = 0
+            saveCampusClosetFeedCache(null)
+        }
+    }
     private fun now() = Clock.System.now().toEpochMilliseconds()
 
-    private suspend inline fun <reified T> call(name: String, data: JsonObject = JsonObject(emptyMap())): T =
-        json.decodeFromJsonElement(callV2Function(name, data))
+    private suspend inline fun <reified T> call(name: String, data: JsonObject = JsonObject(emptyMap())): T {
+        val uid = currentUid
+        val revision = com.good4.eduverification.CampusAccessSession.revision(uid)
+        val result = json.decodeFromJsonElement<T>(callV2Function(name, data))
+        if (currentUid != uid || com.good4.eduverification.CampusAccessSession.revision(uid) != revision)
+            throw CancellationException("Campus access changed")
+        return result
+    }
 
     suspend fun summary(): MarketMe = call<MarketSummary>("getMarketSummary").me.also { badge.update(it.unreadCount) }
 
     /** [query] is searched on the server across every listing, not just the loaded page. */
     override suspend fun feed(category: String?, before: String?, query: String?): MarketFeed {
+        syncAccess()
         val uid = currentUid ?: throw CancellationException("Campus Closet session ended")
         val firstPage = category == null && before == null && query.isNullOrBlank()
         if (firstPage) {
@@ -100,6 +118,7 @@ class CampusClosetRepository(
      * the on-device copy, so tapping Kampüs Dolabı shows listings without waiting.
      */
     suspend fun refreshFromHome() {
+        syncAccess()
         val uid = currentUid ?: return
         if (now() - prefetchStartedAt < PREFETCH_INTERVAL_MS && prefetchUid == uid) {
             summary()
@@ -113,12 +132,15 @@ class CampusClosetRepository(
     }
 
     override fun cachedFeed(): MarketFeed? {
+        syncAccess()
         val uid = currentUid ?: return null
         val cached = runCatching {
             loadCampusClosetFeedCache()?.let { json.decodeFromString(CachedCampusClosetFeed.serializer(), it) }
         }.getOrNull() ?: return null
         if (cached.uid != uid || now() - cached.savedAtMillis !in 0..CAMPUS_CLOSET_FEED_CACHE_MAX_AGE_MS) return null
-        return cached.feed
+        val status = com.good4.eduverification.CampusAccessSession.status(uid)
+        return if (status != null && !status.campusAccessAllowed) cached.feed.copy(me = cached.feed.me.copy(
+            campusAccessAllowed = false, accessSource = "none", eduVerified = status.verified)) else cached.feed
     }
 
     private fun ensureCurrentAccount(uid: String) {

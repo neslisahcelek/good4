@@ -55,6 +55,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.firestore)
+            implementation(libs.firebase.analytics)
             implementation(libs.firebase.auth)
             implementation(libs.firebase.messaging)
             implementation(libs.firebase.storage.ktx)
@@ -191,4 +192,14 @@ dependencies {
     debugImplementation(compose.uiTooling)
     debugImplementation(libs.firebase.appcheck.debug)
     "prodImplementation"(platform(libs.firebase.bom))
+}
+
+// A persisted SDK opt-in must not enable collection in emulator or production debug builds.
+androidComponents {
+    onVariants { variant ->
+        val staging = variant.productFlavors.any { it.second == "staging" }
+        val emulator = staging && variant.buildType == "debug" &&
+            providers.gradleProperty("good4.useFirebaseEmulators").orElse("true").get().toBoolean()
+        variant.manifestPlaceholders.put("analyticsDeactivated", (emulator || (!staging && variant.buildType == "debug")).toString())
+    }
 }

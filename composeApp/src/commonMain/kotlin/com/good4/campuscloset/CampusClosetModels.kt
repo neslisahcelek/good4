@@ -40,6 +40,8 @@ data class MarketListing(
 data class MarketMe(
     val enabled: Boolean = true,
     val eduVerified: Boolean = false,
+    val campusAccessAllowed: Boolean = eduVerified,
+    val accessSource: String = if (eduVerified) "edu_email" else "none",
     val eduEmail: String? = null,
     val universityName: String? = null,
     val termsAccepted: Boolean = false,

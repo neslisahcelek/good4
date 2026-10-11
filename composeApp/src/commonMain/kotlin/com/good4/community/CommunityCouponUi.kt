@@ -119,7 +119,7 @@ internal fun CommunityCouponCodeContent(
 @Preview
 @Composable
 private fun CommunityCouponCodePreview() {
-    MaterialTheme {
+    com.good4.core.presentation.Good4Theme {
         Surface {
             CommunityCouponCodeContent("0042", 599, false, null, false, {})
         }

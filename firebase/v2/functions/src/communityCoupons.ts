@@ -16,6 +16,7 @@ import {
   clearFailedAttempts,
 } from "./rateLimit.js";
 const TTL = 600000;
+const PAGE_SIZE = 100;
 export function communityCouponDay(nowMillis: number): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Istanbul",
@@ -279,6 +280,12 @@ export async function listCommunityCouponsService(
   input: Record<string, unknown> = {},
 ) {
   const cursor = input.cursor == null ? null : id(input.cursor);
+  const businessesCursor = input.businessesCursor == null ? null : id(input.businessesCursor);
+  for (const field of ["businessesOnly", "includeBusinesses"] as const) {
+    if (input[field] != null && typeof input[field] !== "boolean") {
+      throw new HttpsError("invalid-argument", `${field.toUpperCase()}_INVALID`);
+    }
+  }
   return database.runTransaction(async (transaction) => {
     const org = await requireOrganizationContext(
       database,
@@ -291,26 +298,31 @@ export async function listCommunityCouponsService(
       .collection("communityCoupons")
       .where("communityId", "==", org.id)
       .orderBy(FieldPath.documentId())
-      .limit(100);
+      .limit(PAGE_SIZE);
     if (cursor) {
       query = query.startAfter(cursor);
     }
+    let businessesQuery = database
+      .collection("organizations")
+      .where("type", "==", "business")
+      .where("status", "==", "active")
+      .orderBy(FieldPath.documentId())
+      .limit(PAGE_SIZE);
+    if (businessesCursor) {
+      businessesQuery = businessesQuery.startAfter(businessesCursor);
+    }
     const [coupons, businesses] = await Promise.all([
-      transaction.get(query),
-      transaction.get(
-        database
-          .collection("organizations")
-          .where("type", "==", "business")
-          .where("status", "==", "active"),
-      ),
+      input.businessesOnly === true ? Promise.resolve(null) : transaction.get(query),
+      input.includeBusinesses === false ? Promise.resolve(null) : transaction.get(businessesQuery),
     ]);
     return {
-      coupons: coupons.docs.map(communityCouponSummary),
-      nextCursor: coupons.size === 100 ? coupons.docs.at(-1)!.id : null,
-      businesses: businesses.docs.map((businessDocument) => ({
+      coupons: coupons?.docs.map(communityCouponSummary) ?? [],
+      nextCursor: coupons?.size === PAGE_SIZE ? coupons.docs.at(-1)!.id : null,
+      businessesNextCursor: businesses?.size === PAGE_SIZE ? businesses.docs.at(-1)!.id : null,
+      businesses: businesses?.docs.map((businessDocument) => ({
         id: businessDocument.id,
         name: String(businessDocument.get("name") ?? ""),
-      })),
+      })) ?? [],
     };
   });
 }
