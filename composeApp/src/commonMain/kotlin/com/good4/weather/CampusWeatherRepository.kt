@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 data class CampusWeatherDto(
     val temperature: Double? = null,
     val label: String? = null,
+    val symbolCode: String? = null,
     val source: String? = null,
     val updatedAtMillis: Long? = null
 )

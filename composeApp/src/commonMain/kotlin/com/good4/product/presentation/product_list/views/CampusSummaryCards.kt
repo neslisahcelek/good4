@@ -31,10 +31,15 @@ import kotlinx.datetime.TimeZone
 import kotlin.math.roundToInt
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.akdeniz_campus_weather
+import good4.composeapp.generated.resources.akdeniz_campus_weather_day_courts
 import good4.composeapp.generated.resources.akdeniz_campus_weather_night
+import good4.composeapp.generated.resources.akdeniz_campus_weather_night_palms
+import good4.composeapp.generated.resources.akdeniz_campus_weather_rain
+import good4.composeapp.generated.resources.akdeniz_campus_weather_sunset
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
-private data class CampusWeather(val temperature: String, val label: String)
+private data class CampusWeather(val temperature: String, val label: String, val rainy: Boolean = false)
 
 // Process-wide so returning to the home tab reuses the last reading instead of
 // hitting Firestore and showing "Yükleniyor…" on every visit.
@@ -61,7 +66,7 @@ private object CampusWeatherCache {
     private suspend fun fetch(repository: CampusWeatherRepository, now: Long): CampusWeather? = try {
         repository.current()
             ?.takeIf { it.temperature != null && now - (it.updatedAtMillis ?: 0L) < STALE_AFTER_MILLIS }
-            ?.let { CampusWeather("${it.temperature!!.roundToInt()}°", it.label ?: "Hava durumu") }
+            ?.let { CampusWeather("${it.temperature!!.roundToInt()}°", it.label ?: "Hava durumu", isRainy(it.symbolCode)) }
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (_: Exception) {
@@ -73,12 +78,38 @@ private object CampusWeatherCache {
 private val AntalyaSunriseMinutes = intArrayOf(445, 430, 400, 365, 335, 325, 335, 355, 380, 400, 425, 445)
 private val AntalyaSunsetMinutes = intArrayOf(1055, 1085, 1110, 1135, 1160, 1180, 1180, 1155, 1120, 1085, 1055, 1045)
 
-/** True between sunset and sunrise in Antalya, when the evening campus photo is shown. */
-private fun isCampusNight(): Boolean {
+/** MET Norway symbol codes with falling water ("lightrain", "rainshowers_day", "heavyrainandthunder"…). */
+internal fun isRainy(symbolCode: String?): Boolean {
+    val base = symbolCode?.substringBefore('_')?.lowercase() ?: return false
+    return "rain" in base || "sleet" in base || "thunder" in base
+}
+
+/** A campus photo and where to crop it in the short card. */
+internal data class CampusPhoto(val image: DrawableResource, val verticalBias: Float)
+
+private val DayPhotos = listOf(
+    CampusPhoto(Res.drawable.akdeniz_campus_weather, 0f),
+    CampusPhoto(Res.drawable.akdeniz_campus_weather_day_courts, 0.25f)
+)
+private val EveningPhotos = listOf(
+    // The evening photos are tall; crop towards the bottom so the road and palms stay in view.
+    CampusPhoto(Res.drawable.akdeniz_campus_weather_night, 0.8f),
+    CampusPhoto(Res.drawable.akdeniz_campus_weather_sunset, 0.45f),
+    CampusPhoto(Res.drawable.akdeniz_campus_weather_night_palms, 0.35f)
+)
+private val RainPhoto = CampusPhoto(Res.drawable.akdeniz_campus_weather_rain, 0.35f)
+
+/** Rain wins; otherwise day or evening by Antalya sunrise and sunset, one photo per day so it doesn't flicker. */
+internal fun campusPhotoFor(rainy: Boolean, minutesOfDay: Int, month: Int, dayOfYear: Int): CampusPhoto {
+    if (rainy) return RainPhoto
+    val night = minutesOfDay < AntalyaSunriseMinutes[month - 1] || minutesOfDay >= AntalyaSunsetMinutes[month - 1]
+    val pool = if (night) EveningPhotos else DayPhotos
+    return pool[dayOfYear % pool.size]
+}
+
+private fun currentCampusPhoto(rainy: Boolean): CampusPhoto {
     val now = Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Istanbul"))
-    val minutes = now.hour * 60 + now.minute
-    val month = now.monthNumber - 1
-    return minutes < AntalyaSunriseMinutes[month] || minutes >= AntalyaSunsetMinutes[month]
+    return campusPhotoFor(rainy, now.hour * 60 + now.minute, now.monthNumber, now.dayOfYear)
 }
 
 @Composable
@@ -91,11 +122,13 @@ internal fun CampusSummaryCards(
     val cachedWeather = CampusWeatherCache.latest
     var temperature by remember { mutableStateOf(cachedWeather?.temperature ?: "—") }
     var weatherLabel by remember { mutableStateOf(cachedWeather?.label ?: "Yükleniyor…") }
+    var rainy by remember { mutableStateOf(cachedWeather?.rainy ?: false) }
     LaunchedEffect(Unit) {
         val weather = CampusWeatherCache.load(weatherRepository)
         if (weather != null) {
             temperature = weather.temperature
             weatherLabel = weather.label
+            rainy = weather.rainy
         } else {
             weatherLabel = "Şu an alınamıyor"
         }
@@ -107,13 +140,10 @@ internal fun CampusSummaryCards(
     ) {
         Surface(Modifier.weight(1f).height(168.dp), shape = RoundedCornerShape(16.dp), color = PrimaryGreen, shadowElevation = 1.dp) {
             Box {
-                val night = isCampusNight()
+                val photo = currentCampusPhoto(rainy)
                 Image(
-                    painter = painterResource(
-                        if (night) Res.drawable.akdeniz_campus_weather_night else Res.drawable.akdeniz_campus_weather
-                    ),
-                    // The evening photo is tall; crop towards the bottom so the palm-lined road stays in view.
-                    alignment = if (night) BiasAlignment(0f, 0.8f) else Alignment.Center,
+                    painter = painterResource(photo.image),
+                    alignment = BiasAlignment(0f, photo.verticalBias),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize()

@@ -631,6 +631,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             "CampusWeatherDto" -> com.good4.weather.CampusWeatherDto(
                 temperature = document.getAsDouble("temperature"),
                 label = document.getOrNull("label"),
+                symbolCode = document.getOrNull("symbolCode"),
                 source = document.getOrNull("source"),
                 updatedAtMillis = document.getOrNull<Long>("updatedAtMillis")
             ) as T
