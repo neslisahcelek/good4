@@ -59,7 +59,7 @@ private fun DiscountsContent(state: DiscountState, onBack: () -> Unit, onRefresh
             item(key = "hint") { Text(stringResource(Res.string.discount_hint), color = TextSecondary) }
             state.error?.let { error -> item(key = "error") { Text(error.asString(), color = MaterialTheme.colorScheme.error) } }
             if (state.loading) item(key = "loading") { Text(stringResource(Res.string.discount_loading), color = TextSecondary) }
-            if (!state.loading && state.discounts.isEmpty()) item(key = "empty") { Text(stringResource(Res.string.discount_empty), color = TextSecondary) }
+            if (!state.loading && state.error == null && state.discounts.isEmpty()) item(key = "empty") { Text(stringResource(Res.string.discount_empty), color = TextSecondary) }
             items(state.discounts, key = Discount::id) { discount -> DiscountCard(discount) { onSelect(discount) } }
             if (state.nextCursor != null) item(key = "more") { DiscountButton(stringResource(Res.string.discount_more), !state.loading, onMore) }
             item(key = "refresh") { DiscountButton(stringResource(Res.string.discount_refresh), !state.loading, onRefresh) }

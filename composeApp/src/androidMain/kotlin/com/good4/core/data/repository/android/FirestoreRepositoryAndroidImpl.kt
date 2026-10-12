@@ -3,6 +3,7 @@ package com.good4.core.data.repository.android
 import com.good4.code.data.dto.CodeDto
 import com.good4.core.data.repository.DocumentWithId
 import com.good4.core.data.repository.FirestoreRepository
+import com.good4.core.data.repository.TimestampPageCursor
 import com.good4.core.domain.Error
 import com.good4.core.domain.NetworkError
 import com.good4.core.domain.Result
@@ -49,12 +50,23 @@ class FirestoreRepositoryAndroidImpl(
             query = query.whereGreaterThanOrEqualTo(field, com.google.firebase.Timestamp(seconds, 0)).orderBy(field)
         }
         query = query.orderBy(com.google.firebase.firestore.FieldPath.documentId())
-        cursor?.let { query = query.startAfter(firestore.collection(collectionPath).document(it).get().await()) }
+        cursor?.let {
+            query = if (minimumTimestamp != null) {
+                val boundary = TimestampPageCursor.decode(it)
+                query.startAfter(com.google.firebase.Timestamp(boundary.seconds, boundary.nanoseconds), boundary.id)
+            } else query.startAfter(firestore.collection(collectionPath).document(it).get().await())
+        }
         val documents = query.limit(pageSize).get().await().documents
         val items = documents.map { document ->
             DocumentWithId(document.id, decodeFromJsonString(convertMapToJsonString(document.data ?: emptyMap()), clazz))
         }
-        Result.Success(com.good4.core.data.repository.DocumentPage(items, documents.lastOrNull()?.id.takeIf { documents.size.toLong() == pageSize }))
+        val nextCursor = documents.lastOrNull()?.takeIf { documents.size.toLong() == pageSize }?.let { document ->
+            if (minimumTimestamp != null) {
+                val timestamp = document.getTimestamp(minimumTimestamp.first) ?: error("Missing timestamp sort value")
+                TimestampPageCursor(timestamp.seconds, timestamp.nanoseconds, document.id).encode()
+            } else document.id
+        }
+        Result.Success(com.good4.core.data.repository.DocumentPage(items, nextCursor))
     } catch (e: Exception) { Result.Error(NetworkError(e.message ?: "Page load failed")) }
 
     private val json = Json {

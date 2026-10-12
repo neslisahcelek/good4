@@ -3,6 +3,9 @@ package com.good4.core.data.repository
 import com.good4.code.data.dto.CodeDto
 import com.good4.core.domain.Error
 import com.good4.core.domain.Result
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
 data class DocumentWithId<T>(
@@ -22,6 +25,16 @@ data class DocumentWithId<T>(
 data class DocumentPage<T>(val items: List<DocumentWithId<T>>, val nextCursor: String?)
 data class NumericPageCursor(val value: Long, val id: String)
 data class NumericDocumentPage<T>(val items: List<DocumentWithId<T>>, val nextCursor: NumericPageCursor?)
+
+/** Keep the original ordering values even if the boundary document changes or becomes unreadable. */
+@Serializable
+internal data class TimestampPageCursor(val seconds: Long, val nanoseconds: Int, val id: String) {
+    fun encode(): String = Json.encodeToString(this)
+
+    companion object {
+        fun decode(value: String): TimestampPageCursor = Json.decodeFromString(value)
+    }
+}
 
 interface FirestoreRepository {
     /** Descending numeric field + document ID order, without fetching the cursor document again. */

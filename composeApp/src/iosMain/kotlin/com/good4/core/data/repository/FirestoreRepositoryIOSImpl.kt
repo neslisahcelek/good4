@@ -50,10 +50,21 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             query = query.where { field greaterThanOrEqualTo Timestamp(seconds, 0) }.orderBy(field)
         }
         query = query.orderBy(dev.gitlive.firebase.firestore.FieldPath.documentId)
-        cursor?.let { query = query.startAfter(firestore.collection(collectionPath).document(it).get()) }
+        cursor?.let {
+            query = if (minimumTimestamp != null) {
+                val boundary = TimestampPageCursor.decode(it)
+                query.startAfter(Timestamp(boundary.seconds, boundary.nanoseconds), boundary.id)
+            } else query.startAfter(firestore.collection(collectionPath).document(it).get())
+        }
         val documents = query.limit(pageSize).get().documents
+        val nextCursor = documents.lastOrNull()?.takeIf { documents.size.toLong() == pageSize }?.let { document ->
+            if (minimumTimestamp != null) {
+                val timestamp = document.get<Timestamp>(minimumTimestamp.first)
+                TimestampPageCursor(timestamp.seconds, timestamp.nanoseconds, document.id).encode()
+            } else document.id
+        }
         Result.Success(DocumentPage(documents.map { DocumentWithId(it.id, decodeDocumentSnapshot(it, clazz)) },
-            documents.lastOrNull()?.id.takeIf { documents.size.toLong() == pageSize }))
+            nextCursor))
     } catch (e: Exception) { Result.Error(NetworkError(e.message ?: "Page load failed")) }
 
     override suspend fun <T : Any> addDocument(

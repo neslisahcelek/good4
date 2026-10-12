@@ -12,6 +12,7 @@ import { createAccountRequestScope } from "../accountRequestScope";
 import {
   discountDates,
   discountNumbers,
+  discountSaveError,
   istanbulDateTime,
 } from "../businessDiscountForm";
 import {
@@ -139,6 +140,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
   }, [uid, load]);
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     const current = scope.current.start(uid);
     if (!current) return;
     setBusy(true);
@@ -159,10 +161,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
       setNotice("İndirim kaydedildi.");
       await load();
     } catch (failure) {
-      if (current())
-        setError(
-          failure instanceof Error ? failure.message : "İndirim kaydedilemedi.",
-        );
+      if (current()) setError(discountSaveError(failure));
     } finally {
       if (current()) setBusy(false);
     }
@@ -251,6 +250,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Başlık
             <input
+              disabled={busy}
               required
               maxLength={100}
               value={form.title}
@@ -262,6 +262,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Yüzde indirim
             <input
+              disabled={busy}
               required
               type="number"
               min="1"
@@ -276,6 +277,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Kapsam ve koşullar
             <textarea
+              disabled={busy}
               required
               maxLength={2000}
               rows={4}
@@ -288,6 +290,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Google Maps konum bağlantısı (isteğe bağlı)
             <input
+              disabled={busy}
               type="url"
               maxLength={2048}
               placeholder="https://maps.app.goo.gl/…"
@@ -304,6 +307,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Başlangıç
             <input
+              disabled={busy}
               required
               type="datetime-local"
               value={form.startsAt}
@@ -315,6 +319,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Son kullanım tarihi
             <input
+              disabled={busy}
               required
               type="datetime-local"
               value={form.endsAt}
@@ -326,6 +331,7 @@ export function BusinessDiscountsAdmin({ uid }: { uid: string }) {
           <label>
             Toplam kullanım limiti
             <input
+              disabled={busy}
               type="number"
               min="1"
               max="1000000"
