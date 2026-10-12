@@ -1,3 +1,4 @@
+import { BusinessDiscountsAdmin } from "./components/BusinessDiscountsAdmin";
 import { normalizeCouponCode as normalizeCode, couponCodeRoute, formatCommunityCouponDate } from "./communityCouponCode";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { createAccountRequestScope } from "./accountRequestScope";
@@ -263,6 +264,7 @@ type RedeemResult = {
   campaignId?: string;
   campaignTitle?: string;
   couponTitle?: string;
+  discountConditions?: string;
   communityName?: string;
   discountLabel?: string;
 };
@@ -279,7 +281,7 @@ type BusinessRedemption = {
   campaignId: string;
   campaignTitle: string;
   redeemedAt: Date | null;
-  source: "campaign" | "communityCoupon";
+  source: "campaign" | "communityCoupon" | "businessDiscount";
   communityName: string;
   discountLabel: string;
 };
@@ -294,7 +296,7 @@ const listBusinessRedemptions = httpsCallable<
   {
     redemptions: Array<{
       id: string;
-      source: "campaign" | "communityCoupon";
+      source: "campaign" | "communityCoupon" | "businessDiscount";
       code: string;
       title: string;
       communityName: string;
@@ -826,7 +828,7 @@ function BusinessUsageList({ items, compact = false }: { items: BusinessRedempti
     return (
       <EmptyState
         title="Henüz kullanım yok"
-        description="Topluluk kuponları ve Askıda Yemek kodları doğrulandığında burada görünecek."
+        description="Topluluk kuponları, İndirimler ve Askıda Yemek kodları doğrulandığında burada görünecek."
       />
     );
   }
@@ -844,7 +846,7 @@ function BusinessUsageList({ items, compact = false }: { items: BusinessRedempti
             <div role="cell" data-label="Kampanya">
               <strong>{item.campaignTitle}</strong>
               <small>
-                {item.source === "communityCoupon" ? "Topluluk kuponu" : "Askıda Yemek"}
+                {item.source === "communityCoupon" ? "Topluluk kuponu" : item.source === "businessDiscount" ? "İndirimler" : "Askıda Yemek"}
                 {item.communityName ? ` · ${item.communityName}` : ""}
                 {item.discountLabel ? ` · ${item.discountLabel}` : ""}
               </small>
@@ -935,6 +937,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
         [
           response.data.couponTitle ?? response.data.campaignTitle,
           response.data.communityName,
+          response.data.discountConditions,
           response.data.discountLabel ? `${response.data.discountLabel} uygula` : "",
         ]
           .filter(Boolean)
@@ -1002,7 +1005,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
           <section className="community-stat-grid business-stat-grid" aria-label="İşletme kullanım özeti">
             <StatCard label="Listelenen bugünkü kullanım" value={usageLoading ? "—" : todayUsage} detail="Yüklenen kayıtlardaki bugünkü V2 kodları" />
             <StatCard label="Listelenen bu ay" value={usageLoading ? "—" : monthUsage} detail="Yüklenen kayıtlardaki bu ayın V2 kodları" />
-            <StatCard label="Listelenen doğrulama" value={usageLoading ? "—" : redemptions.length} detail="Son 100 topluluk kuponu ve son 100 Askıda Yemek kullanımı" />
+            <StatCard label="Listelenen doğrulama" value={usageLoading ? "—" : redemptions.length} detail="Topluluk kuponu, İndirimler ve Askıda Yemek için kaynak başına son 100 kullanım" />
           </section>
           <Card className="business-recent-card">
             <div className="business-card-heading"><div><h2>Son Kullanımlar</h2><p>En son doğrulanan V2 kampanya kodları.</p></div><Button variant="ghost" onClick={() => setSection("usage")}>Tümünü gör</Button></div>
@@ -1070,7 +1073,7 @@ function VerificationPanel({ user, context }: { user: User; context: BusinessCon
 
       {section === "usage" ? (
         <div className="business-page">
-          <PageHeader title="Kullanımlar" description="Son 100 topluluk kuponu ve son 100 Askıda Yemek kullanımını incele." action={<Button variant="primary" icon="verify" onClick={() => setSection("verify")}>Kupon Doğrula</Button>} />
+          <PageHeader title="Kullanımlar" description="Topluluk kuponu, İndirimler ve Askıda Yemek için kaynak başına son 100 kullanımını incele." action={<Button variant="primary" icon="verify" onClick={() => setSection("verify")}>Kupon Doğrula</Button>} />
           {usageError ? <div className="inline-message inline-message--error" role="alert">{usageError}</div> : null}
           <Card className="business-usage-card">
             <div className="business-usage-toolbar">
@@ -2034,7 +2037,7 @@ function CommunityEntryCard({
   );
 }
 
-type AdminTab = "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
+type AdminTab = "discounts" | "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
 
 // "Load more" buttons belong to the tab that lists those records.
 const LOAD_MORE_TABS: Record<string, AdminTab[]> = {
@@ -2873,6 +2876,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
           />
         )}
         {!loading && data && tab === "notifications" && <NotificationAdmin key={user.uid} uid={user.uid} communities={data.communities} />}
+
+        {tab === "discounts" && <BusinessDiscountsAdmin key={user.uid} uid={user.uid} />}
 
         {!loading && data && tab === "coupons" && (
           <section className="admin-section" aria-labelledby="pending-coupons-title">

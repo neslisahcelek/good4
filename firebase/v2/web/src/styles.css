@@ -1128,3 +1128,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .cost-controls h3 { margin: 0 0 4px; }
 .cost-controls__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .admin-section > .admin-card + .admin-card { margin-top: 16px; }
+
+.discount-admin-form { display: grid; gap: 1rem; max-width: 760px; }
+.discount-admin-form label { display: grid; gap: .5rem; font-weight: 600; }
+.discount-admin-form input, .discount-admin-form select, .discount-admin-form textarea { width: 100%; padding: .85rem; border: 1px solid var(--border, #deded8); border-radius: 12px; background: var(--surface, #fff); color: inherit; font: inherit; box-sizing: border-box; }
+.discount-admin-form textarea { resize: vertical; }

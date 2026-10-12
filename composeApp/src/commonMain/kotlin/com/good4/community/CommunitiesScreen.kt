@@ -1660,112 +1660,26 @@ private fun StudentCouponCard(entry: CommunityEntry, today: LocalDate, community
     val data = entry.data
     val isFreeItem = data.discountType == "freeItem"
     val deadline = couponDeadline(data.date, today)
-    val urgent = deadline == CouponDeadline.Today || deadline == CouponDeadline.Tomorrow
-    val stubColor = if (isFreeItem) SurfaceMuted else PistachioGreen
-    val stubInk = if (isFreeItem) DraftAccent else MaterialTheme.colorScheme.primary
-    val dashColor = BorderMuted
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.width(316.dp).height(104.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = SurfaceDefault,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMuted.copy(alpha = 0.35f))
-    ) {
-        Row(Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.width(84.dp).fillMaxHeight().background(stubColor),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                if (isFreeItem) {
-                    Icon(Icons.Outlined.CardGiftcard, contentDescription = null, tint = stubInk, modifier = Modifier.size(26.dp))
-                } else {
-                    val amount = stringResource(
-                        if (data.discountType == "fixed") Res.string.community_coupon_stub_fixed
-                        else Res.string.community_coupon_stub_percentage,
-                        data.discountValue
-                    )
-                    Text(
-                        amount,
-                        fontSize = if (amount.length > 5) 20.sp else 26.sp,
-                        lineHeight = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = stubInk,
-                        maxLines = 1
-                    )
-                }
-                Text(
-                    stringResource(if (isFreeItem) Res.string.community_coupon_stub_free else Res.string.community_coupon_stub_discount),
-                    fontSize = 12.sp,
-                    color = stubInk
-                )
-            }
-            // Perforation between the stub and the body.
-            androidx.compose.foundation.Canvas(Modifier.width(1.5.dp).fillMaxHeight()) {
-                drawLine(
-                    color = dashColor,
-                    start = androidx.compose.ui.geometry.Offset(size.width / 2, 0f),
-                    end = androidx.compose.ui.geometry.Offset(size.width / 2, size.height),
-                    strokeWidth = size.width,
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        if (isFreeItem && data.freeItem.isNotBlank()) data.freeItem else data.title,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        listOfNotNull(data.location.takeIf { it.isNotBlank() }, communityName?.takeIf { it.isNotBlank() })
-                            .joinToString(" · "),
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (deadline != null) {
-                        Icon(
-                            Icons.Outlined.Schedule,
-                            contentDescription = null,
-                            tint = if (urgent) DraftAccent else TextSecondary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            couponDeadlineText(deadline),
-                            fontSize = 12.sp,
-                            fontWeight = if (urgent) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (urgent) DraftAccent else TextSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        Spacer(Modifier.weight(1f))
-                    }
-                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary) {
-                        Text(
-                            stringResource(Res.string.community_coupon_get_code),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
+    com.good4.core.presentation.components.CouponTicketCard(
+        title = if (isFreeItem && data.freeItem.isNotBlank()) data.freeItem else data.title,
+        subtitle = listOfNotNull(
+            data.location.takeIf { it.isNotBlank() },
+            communityName?.takeIf { it.isNotBlank() }
+        ).joinToString(" · "),
+        amount = if (isFreeItem) null else stringResource(
+            if (data.discountType == "fixed") Res.string.community_coupon_stub_fixed
+            else Res.string.community_coupon_stub_percentage,
+            data.discountValue
+        ),
+        stubLabel = stringResource(
+            if (isFreeItem) Res.string.community_coupon_stub_free
+            else Res.string.community_coupon_stub_discount
+        ),
+        deadlineLabel = deadline?.let { couponDeadlineText(it) },
+        urgent = deadline == CouponDeadline.Today || deadline == CouponDeadline.Tomorrow,
+        actionLabel = stringResource(Res.string.community_coupon_get_code),
+        onClick = onClick
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

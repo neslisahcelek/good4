@@ -1,3 +1,6 @@
+import { couponDay as communityCouponDay } from "./couponClock.js";
+export { couponDay as communityCouponDay } from "./couponClock.js";
+import { redeemBusinessDiscountInTransaction } from "./businessDiscounts.js";
 import { randomInt } from "node:crypto";
 import {
   FieldPath,
@@ -17,16 +20,6 @@ import {
 } from "./rateLimit.js";
 const TTL = 600000;
 const PAGE_SIZE = 100;
-export function communityCouponDay(nowMillis: number): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(nowMillis);
-  const partValue = (type: string) => parts.find((item) => item.type === type)!.value;
-  return `${partValue("year")}-${partValue("month")}-${partValue("day")}`;
-}
 function id(value: unknown): string {
   const result = requireNonEmptyString(value, "id", 128);
   if (!/^[A-Za-z0-9_-]+$/.test(result)) {
@@ -539,6 +532,12 @@ export async function redeemCommunityCouponCodeService(
     if (code.get("expiresAt").toMillis() <= nowMillis || code.get("status") !== "issued") {
       return { outcome: "expired" };
     }
+    // Community coupons and Good4 discounts share one business-scoped code pool.
+    if (code.get("source") === "businessDiscount") {
+      return redeemBusinessDiscountInTransaction(
+        database, transaction, business, code, actorUid, nowMillis,
+      );
+    }
     const couponId = code.get("couponId");
     const studentId = code.get("studentId");
     const day = communityCouponDay(nowMillis);
@@ -615,7 +614,7 @@ export async function redeemCommunityCouponCodeService(
 export async function listBusinessRedemptionsService(database: Firestore, actorUid: string) {
   return database.runTransaction(async (transaction) => {
     const org = await requireOrganizationContext(database, transaction, actorUid, "business");
-    const [meals, coupons] = await Promise.all([
+    const [meals, coupons, discounts] = await Promise.all([
       transaction.get(
         database
           .collection("redemptions")
@@ -626,6 +625,13 @@ export async function listBusinessRedemptionsService(database: Firestore, actorU
       transaction.get(
         database
           .collection("communityCouponRedemptions")
+          .where("organizationId", "==", org.id)
+          .orderBy("redeemedAt", "desc")
+          .limit(100),
+      ),
+      transaction.get(
+        database
+          .collection("businessDiscountRedemptions")
           .where("organizationId", "==", org.id)
           .orderBy("redeemedAt", "desc")
           .limit(100),
@@ -656,6 +662,15 @@ export async function listBusinessRedemptionsService(database: Firestore, actorU
           code: "",
           title: String(item.get("title") ?? ""),
           communityName: String(item.get("communityName") ?? ""),
+          discountLabel: String(item.get("discountLabel") ?? ""),
+          redeemedAt: item.get("redeemedAt").toDate().toISOString(),
+        })),
+        ...discounts.docs.map((item) => ({
+          id: item.id,
+          source: "businessDiscount",
+          code: "",
+          title: String(item.get("title") ?? ""),
+          communityName: "",
           discountLabel: String(item.get("discountLabel") ?? ""),
           redeemedAt: item.get("redeemedAt").toDate().toISOString(),
         })),

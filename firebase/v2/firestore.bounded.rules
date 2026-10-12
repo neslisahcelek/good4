@@ -133,6 +133,14 @@ service cloud.firestore {
       }
     }
 
+    match /businessDiscounts/{discountId} {
+      allow get: if signedIn() && resource.data.status == 'published';
+      allow list: if boundedList() && signedIn() && resource.data.status == 'published';
+      allow write: if false;
+    }
+    match /businessDiscountClaims/{id} { allow read, write: if false; }
+    match /businessDiscountRedemptions/{id} { allow read, write: if false; }
+
     match /communityCoupons/{couponId} {
       allow get: if signedIn() && resource.data.status == 'published';
       allow list: if boundedList() && signedIn() && resource.data.status == 'published';

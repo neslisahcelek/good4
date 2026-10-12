@@ -75,6 +75,8 @@ val commonModule = module {
     single { AcademicCalendarRepository(get<FirestoreRepository>()) }
     single { FeedbackRepository(get<FirestoreRepository>(), get<AuthRepository>()) }
     single { com.good4.eduverification.EduVerificationRepository(get<FirestoreRepository>(), get<AuthRepository>()) }
+    single<com.good4.discounts.DiscountDataSource> { com.good4.discounts.DiscountRepository(get(), get()) }
+    viewModel { com.good4.discounts.DiscountViewModel(get()) }
     single { com.good4.campuscloset.CampusClosetBadge() }
     single { com.good4.campuscloset.CampusEmailVerificationRepository(get<AuthRepository>()) }
     single { com.good4.campuscloset.CampusClosetRepository(get<AuthRepository>(), get()) }

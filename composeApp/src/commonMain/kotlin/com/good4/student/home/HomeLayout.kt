@@ -12,6 +12,7 @@ enum class HomeShortcut(val id: String, val defaultVisible: Boolean) {
     CLASS_SCHEDULE("classSchedule", true),
     SOCIAL_ACTIVITIES("socialActivities", true),
     CAMPUS_CLOSET("campusCloset", true),
+    DISCOUNTS("discounts", true),
     CAMPUS_MAP("campusMap", true),
     ACADEMIC_CALENDAR("academicCalendar", true),
     SUSPENDED_MEALS("suspendedMeals", true),
@@ -34,6 +35,7 @@ fun availableHomeShortcuts(
     if (role != UserRole.STUDENT) emptyList()
     else HomeShortcut.entries.filter {
         (it != HomeShortcut.SUSPENDED_MEALS || suspendedMealsEnabled)
+            && (it != HomeShortcut.DISCOUNTS || com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2)
             && (it != HomeShortcut.CAMPUS_CLOSET || campusClosetEnabled)
             && (it != HomeShortcut.SOCIAL_ACTIVITIES || socialActivitiesEnabled)
     }

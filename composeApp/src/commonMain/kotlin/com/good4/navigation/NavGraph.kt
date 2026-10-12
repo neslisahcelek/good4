@@ -311,6 +311,7 @@ fun Good4NavGraph(
                 onNavigateToCalendar = {
                     navController.navigate(Route.AcademicCalendar)
                 },
+                onNavigateToDiscounts = { navController.navigate(Route.Discounts) },
                 onNavigateToCampusCloset = {
                     navController.navigate(Route.CampusCloset)
                 },
@@ -345,6 +346,10 @@ fun Good4NavGraph(
                     navController.navigate(Route.StudentAccountSettings(academicSelectionPrompt = true))
                 }
             )
+        }
+
+        composable<Route.Discounts> {
+            com.good4.discounts.DiscountsScreen(onBack = { navController.popBackStack() })
         }
 
         composable<Route.CampusCloset> {

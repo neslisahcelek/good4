@@ -11,7 +11,7 @@ beforeEach(async () => {
   await Promise.all([
     ...[
       "app_config", "users", "organizations", "events", "campaignClaims", "campaignCodes",
-      "communityCouponClaims", "communityCouponCodes", "communityCouponRedemptions", "communityCoupons", "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
+      "businessDiscountClaims", "businessDiscountRedemptions", "businessDiscounts", "communityCouponClaims", "communityCouponCodes", "communityCouponRedemptions", "communityCoupons", "redemptions", "feedbackSubmissions", "auditLogs", "legacyTestRedemptions",
       "communities", "codes", "orders", "businesses", "community_access",
       "eduEmailClaims", "eduVerifications", "campusEmailVerifications", "mail", "communityApplications",
       "pushDevices", "notificationJobs", "notificationDispatches", "rateLimits",
@@ -208,4 +208,28 @@ test("account deletion clears its campus test selector without removing another 
   await config.set({ uid });
   await beginAccountDeletion(db, uid);
   assert.equal((await config.get()).exists, false);
+});
+
+
+test("discount account deletion erases claims/shared codes, anonymizes history and preserves public offers", async () => {
+  await Promise.all([
+    db.doc(`users/${uid}`).set({ role: "student", status: "active" }),
+    db.doc("businessDiscounts/discount").set({ status: "published", redemptionCount: 1 }),
+    db.doc("businessDiscountClaims/claim").set({ studentId: uid, discountId: "discount" }),
+    db.doc("communityCouponCodes/business_0012").set({ source: "businessDiscount", studentId: uid }),
+    db.doc("communityCouponCodes/business_0013").set({ source: "businessDiscount", studentId: "survivor", redeemedBy: uid }),
+    db.doc("businessDiscountRedemptions/history").set({ studentId: uid, redeemedBy: uid, discountId: "discount", discountLabel: "%20 indirim" }),
+    db.doc("auditLogs/discount-created").set({ actorUid: uid, targetId: "discount", action: "businessDiscount.created" }),
+  ]);
+  await eraseAccountData(db, legacyTestDb, uid);
+  assert.equal((await db.doc("businessDiscountClaims/claim").get()).exists, false);
+  assert.equal((await db.doc("communityCouponCodes/business_0012").get()).exists, false);
+  assert.equal((await db.doc("communityCouponCodes/business_0013").get()).get("studentId"), "survivor");
+  assert.equal((await db.doc("communityCouponCodes/business_0013").get()).get("redeemedBy"), "deleted-account");
+  const history = await db.doc("businessDiscountRedemptions/history").get();
+  assert.equal(history.get("studentId"), "deleted-account");
+  assert.equal(history.get("redeemedBy"), "deleted-account");
+  assert.equal(history.get("discountLabel"), "%20 indirim");
+  assert.equal((await db.doc("businessDiscounts/discount").get()).get("redemptionCount"), 1);
+  assert.equal((await db.doc("auditLogs/discount-created").get()).get("actorUid"), "deleted-account");
 });

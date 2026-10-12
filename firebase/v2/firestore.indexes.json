@@ -375,6 +375,22 @@
     {
       "collectionGroup": "communityApplications", "queryScope": "COLLECTION",
       "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "businessDiscounts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "endsAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "businessDiscountRedemptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "redeemedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

@@ -285,7 +285,7 @@ export function BusinessAppShell({
   );
 }
 
-export type AdminSection = "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback"
+export type AdminSection = "discounts" | "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback"
   | "businesses" | "communities" | "market" | "social" | "audit";
 
 export function AdminAppShell({
@@ -333,6 +333,7 @@ export function AdminAppShell({
           { id: "ads", icon: "megaphone", label: "Ana Sayfa Reklamı" },
         ] },
         { label: "Kurumlar", items: [
+          { id: "discounts", icon: "coupons", label: "İndirimler" },
           { id: "businesses", icon: "store", label: "İşletmeler", count: badge(counts.businesses) },
           { id: "communities", icon: "users", label: "Topluluklar", count: badge(counts.communities) },
         ] },

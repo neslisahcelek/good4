@@ -317,6 +317,9 @@ export async function eraseAccountData(
     database.collectionGroup("attendance").where("userId", "==", uid),
   );
 
+  await deleteMatchingDocuments(database, database.collection("businessDiscountClaims").where("studentId", "==", uid));
+  await replaceMatchingField(database, database.collection("businessDiscountRedemptions").where("studentId", "==", uid), "studentId");
+  await replaceMatchingField(database, database.collection("businessDiscountRedemptions").where("redeemedBy", "==", uid), "redeemedBy");
   await deleteMatchingDocuments(database, database.collection("communityCouponClaims").where("studentId", "==", uid));
   await removeCommunityCouponCodeReferences(database, uid);
   await replaceMatchingField(database, database.collection("communityCouponRedemptions").where("studentId", "==", uid), "studentId");

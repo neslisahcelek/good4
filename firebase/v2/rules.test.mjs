@@ -508,3 +508,23 @@ test('campus test grant and verification are server-only, including on admin pro
     await assertFails(setDoc(doc(db, 'app_config/admin_edu_test'), { uid }));
   }
 });
+
+
+test('students read only published business discounts; codes, claims and history remain server-private', async () => {
+  await seed('users/student-discount', { role: 'student', status: 'active', eduVerified: false });
+  await seed('businessDiscounts/published', { status: 'published', discountValue: 20 });
+  await seed('businessDiscounts/ended', { status: 'ended' });
+  const db = testEnv.authenticatedContext('student-discount').firestore();
+  await assertSucceeds(getDoc(doc(db, 'businessDiscounts/published')));
+  await assertSucceeds(getDocs(query(collection(db, 'businessDiscounts'), where('status', '==', 'published'))));
+  await assertFails(getDoc(doc(db, 'businessDiscounts/ended')));
+  await assertFails(getDocs(collection(db, 'businessDiscounts')));
+  await assertFails(setDoc(doc(db, 'businessDiscounts/new'), { status: 'published' }));
+  await assertFails(updateDoc(doc(db, 'businessDiscounts/published'), { discountValue: 100 }));
+  await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'businessDiscounts/published')));
+  for (const name of ['businessDiscountClaims', 'businessDiscountRedemptions', 'communityCouponCodes']) {
+    await seed(`${name}/private`, { studentId: 'student-discount' });
+    await assertFails(getDoc(doc(db, `${name}/private`)));
+    await assertFails(setDoc(doc(db, `${name}/new`), { studentId: 'student-discount' }));
+  }
+});

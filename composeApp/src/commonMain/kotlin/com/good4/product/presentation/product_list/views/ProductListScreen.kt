@@ -135,6 +135,7 @@ import kotlin.time.Duration.Companion.seconds
 private fun defaultHomeShortcuts(): List<HomeShortcut> = HomeShortcut.entries.filter {
     it.defaultVisible
         && (it != HomeShortcut.SUSPENDED_MEALS || config.ReleaseFeatures.suspendedMeals)
+        && (it != HomeShortcut.DISCOUNTS || com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2)
         && (it != HomeShortcut.CAMPUS_CLOSET || config.ReleaseFeatures.campusCloset)
         && (it != HomeShortcut.SOCIAL_ACTIVITIES || config.ReleaseFeatures.socialActivities)
 }
@@ -151,6 +152,7 @@ fun ProductListScreenRoot(
     onCalendarClick: () -> Unit = {},
     onCampusMapClick: () -> Unit = {},
     onClassScheduleClick: () -> Unit = {},
+    onDiscountsClick: () -> Unit = {},
     onCampusClosetClick: () -> Unit = {},
     onSocialClick: () -> Unit = {},
     onDailyMenuClick: (DailyMeal) -> Unit = {},
@@ -223,6 +225,7 @@ fun ProductListScreenRoot(
         onCalendarClick = onCalendarClick,
         onCampusMapClick = onCampusMapClick,
         onClassScheduleClick = onClassScheduleClick,
+        onDiscountsClick = onDiscountsClick,
         onCampusClosetClick = onCampusClosetClick,
         campusClosetUnread = closetUnread,
         onSocialClick = onSocialClick,
@@ -251,6 +254,7 @@ fun ProductListScreen(
     onCalendarClick: () -> Unit = {},
     onCampusMapClick: () -> Unit = {},
     onClassScheduleClick: () -> Unit = {},
+    onDiscountsClick: () -> Unit = {},
     onCampusClosetClick: () -> Unit = {},
     campusClosetUnread: Int = 0,
     onSocialClick: () -> Unit = {},
@@ -329,6 +333,7 @@ fun ProductListScreen(
                                 onCalendarClick = onCalendarClick,
                                 onCampusMapClick = onCampusMapClick,
                                 onClassScheduleClick = onClassScheduleClick,
+                                onDiscountsClick = onDiscountsClick,
                                 onCampusClosetClick = onCampusClosetClick,
                                 campusClosetUnread = campusClosetUnread,
                                 onSocialClick = onSocialClick,
@@ -764,6 +769,7 @@ private fun HomeQuickActions(
     onCalendarClick: () -> Unit,
     onCampusMapClick: () -> Unit,
     onClassScheduleClick: () -> Unit,
+    onDiscountsClick: () -> Unit = {},
     onCampusClosetClick: () -> Unit,
     campusClosetUnread: Int,
     onSocialClick: () -> Unit,
@@ -786,6 +792,7 @@ private fun HomeQuickActions(
                 HomeShortcut.CAMPUS_MAP -> onCampusMapClick
                 HomeShortcut.ACADEMIC_CALENDAR -> onCalendarClick
                 HomeShortcut.SUSPENDED_MEALS -> onReservationsClick
+                HomeShortcut.DISCOUNTS -> onDiscountsClick
                 HomeShortcut.CAMPUS_CLOSET -> onCampusClosetClick
                 HomeShortcut.SOCIAL_ACTIVITIES -> onSocialClick
                 else -> ({ onMenuShortcutClick(shortcut) })

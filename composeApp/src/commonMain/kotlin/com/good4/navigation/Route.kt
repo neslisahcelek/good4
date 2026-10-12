@@ -53,6 +53,9 @@ sealed class Route {
     data object Notifications : Route()
 
     @Serializable
+    data object Discounts : Route()
+
+    @Serializable
     data object CampusCloset : Route()
 
     @Serializable

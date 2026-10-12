@@ -73,6 +73,7 @@ fun StudentHomeScreenRoot(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToCalendar: () -> Unit = {},
     onNavigateToClassSchedule: () -> Unit = {},
+    onNavigateToDiscounts: () -> Unit = {},
     onNavigateToCampusCloset: () -> Unit = {},
     onNavigateToSocial: () -> Unit = {},
     onNavigateToEditHome: (Boolean) -> Unit = {}
@@ -251,6 +252,7 @@ fun StudentHomeScreenRoot(
                         onNotificationsClick = { analytics.click(Interaction.NOTIFICATIONS_OPEN); onNavigateToNotifications() },
                         onCalendarClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.ACADEMIC_CALENDAR); onNavigateToCalendar() },
                         onClassScheduleClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CLASS_SCHEDULE); onNavigateToClassSchedule() },
+                        onDiscountsClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.shortcut("discounts")); onNavigateToDiscounts() },
                         onCampusClosetClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_CLOSET); onNavigateToCampusCloset() },
                         onSocialClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.SOCIAL_ACTIVITIES); onNavigateToSocial() },
                         onCampusMapClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_MAP); selectedItemIndex = 3 },

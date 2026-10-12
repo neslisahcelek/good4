@@ -1,3 +1,4 @@
+import { saveBusinessDiscountService, endBusinessDiscountService, listBusinessDiscountsService, issueBusinessDiscountCodeService } from "./businessDiscounts.js";
 import { disconnectCampusTestService } from "./campusAccess.js";
 import { saveCommunityCouponService, endCommunityCouponService, listCommunityCouponsService, reviewCommunityCouponService, issueCommunityCouponCodeService, redeemCommunityCouponCodeService, listBusinessRedemptionsService } from "./communityCoupons.js";
 import { brevoApiKey, isDemoMailEmulator } from "./verificationEmail.js";
@@ -1021,3 +1022,27 @@ export const listBusinessRedemptions = onCall(readOptions, async (request) => {
 
 export const disconnectCampusTest = onCall(callableOptions, async (request) =>
   disconnectCampusTestService(db, requireAuthenticatedUid(request.auth?.uid)));
+
+export const saveBusinessDiscount = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "saveBusinessDiscount", 10);
+  return saveBusinessDiscountService(db, uid, request.data ?? {});
+});
+
+export const endBusinessDiscount = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "endBusinessDiscount", 10);
+  return endBusinessDiscountService(db, uid, request.data ?? {});
+});
+
+export const listBusinessDiscounts = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "listBusinessDiscounts", 30);
+  return listBusinessDiscountsService(db, uid, request.data ?? {});
+});
+
+export const issueBusinessDiscountCode = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "issueBusinessDiscountCode", 20);
+  return issueBusinessDiscountCodeService(db, uid, request.data ?? {});
+});

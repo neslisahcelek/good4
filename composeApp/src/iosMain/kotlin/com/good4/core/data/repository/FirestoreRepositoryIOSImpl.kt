@@ -553,6 +553,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "V2OrganizationDto" to com.good4.community.V2OrganizationDto.serializer(),
         "V2MembershipDto" to com.good4.community.V2MembershipDto.serializer(),
         "V2UserRoleDto" to com.good4.community.V2UserRoleDto.serializer(),
+        "BusinessDiscountDto" to com.good4.discounts.BusinessDiscountDto.serializer(),
         "V2CommunityCouponDto" to com.good4.community.V2CommunityCouponDto.serializer(),
         "V2EventDto" to com.good4.community.V2EventDto.serializer(),
         "V2EventRegistrationDto" to com.good4.community.V2EventRegistrationDto.serializer(),
@@ -596,6 +597,15 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
             "V2OrganizationDto" -> decodeV2OrganizationDto(document) as T
             "V2MembershipDto" -> decodeV2MembershipDto(document) as T
             "V2UserRoleDto" -> com.good4.community.V2UserRoleDto(role = document.getOrNull("role") ?: "") as T
+            "BusinessDiscountDto" -> com.good4.discounts.BusinessDiscountDto(
+                mapsUrl = document.getOrNull("mapsUrl") ?: "",
+                businessId = document.getOrNull("businessId") ?: "", businessName = document.getOrNull("businessName") ?: "",
+                title = document.getOrNull("title") ?: "", conditions = document.getOrNull("conditions") ?: "",
+                discountValue = document.getAsInt("discountValue") ?: 0, totalLimit = document.getAsInt("totalLimit"),
+                redemptionCount = document.getAsInt("redemptionCount") ?: 0, version = document.getAsInt("version") ?: 0,
+                startsAt = document.getEpochSeconds("startsAt") ?: 0, endsAt = document.getEpochSeconds("endsAt") ?: 0,
+                status = document.getOrNull("status") ?: ""
+            ) as T
             "V2CommunityCouponDto" -> com.good4.community.V2CommunityCouponDto(
                 communityId = document.getOrNull("communityId") ?: "",
                 communityName = document.getOrNull("communityName") ?: "",
