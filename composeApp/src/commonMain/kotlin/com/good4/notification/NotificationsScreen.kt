@@ -161,19 +161,19 @@ private fun NotificationPreferencesContent(
                 PreferenceRow(
                     stringResource(Res.string.notification_event_updates),
                     stringResource(Res.string.notification_event_updates_description),
-                    state.preferences.eventUpdates, !state.saving && !state.loading
+                    state.preferences.eventUpdates, !state.saving && !state.loading && state.preferencesLoaded
                 ) { onPreferences(state.preferences.copy(eventUpdates = it)) }
                 HorizontalDivider(color = BorderMuted)
                 PreferenceRow(
                     stringResource(Res.string.notification_reminders),
                     stringResource(Res.string.notification_reminders_description),
-                    state.preferences.reminders, !state.saving && !state.loading
+                    state.preferences.reminders, !state.saving && !state.loading && state.preferencesLoaded
                 ) { onPreferences(state.preferences.copy(reminders = it)) }
                 HorizontalDivider(color = BorderMuted)
                 PreferenceRow(
                     stringResource(Res.string.notification_announcements),
                     stringResource(Res.string.notification_announcements_description),
-                    state.preferences.announcements, !state.saving && !state.loading
+                    state.preferences.announcements, !state.saving && !state.loading && state.preferencesLoaded
                 ) { onPreferences(state.preferences.copy(announcements = it)) }
             }
         }
@@ -221,18 +221,6 @@ private fun PreferenceRow(title: String, description: String, checked: Boolean, 
     }
 }
 
-@Composable
-fun NotificationPermissionEducation(onEnabled: () -> Unit = {}) {
-    val requested by PushSignals.education.collectAsStateWithLifecycle()
-    val launcher = rememberNotificationPermissionLauncher()
-    if (requested) AlertDialog(
-        onDismissRequest = PushSignals::dismissEducation,
-        title = { Text(stringResource(Res.string.notification_permission_title)) },
-        text = { Text(stringResource(Res.string.notification_permission_body)) },
-        confirmButton = { TextButton(onClick = { PushSignals.dismissEducation(); onEnabled(); launcher.request { PushSignals.refresh() } }) { Text(stringResource(Res.string.notification_enable)) } },
-        dismissButton = { TextButton(onClick = PushSignals::dismissEducation) { Text(stringResource(Res.string.notification_later)) } }
-    )
-}
 @Preview
 @Composable
 private fun NotificationsPreview() {

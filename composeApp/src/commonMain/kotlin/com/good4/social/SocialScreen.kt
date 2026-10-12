@@ -267,6 +267,23 @@ private fun FeedGrid(
     onLoadMore: () -> Unit,
     onRetry: () -> Unit
 ) {
+    if (!state.isLoading && state.loadError == null && state.activities.isEmpty() &&
+        state.nextAfter == null && state.loadMoreError == null
+    ) {
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp)) {
+                FeedFilters(state, onSelectKind, onRetry)
+            }
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                ClosetEmptyState(
+                    Icons.Outlined.EventAvailable,
+                    stringResource(Res.string.social_empty_title),
+                    stringResource(Res.string.social_empty_text)
+                )
+            }
+        }
+        return
+    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
@@ -275,15 +292,7 @@ private fun FeedGrid(
         modifier = Modifier.fillMaxSize()
     ) {
         item(key = "filters", span = { GridItemSpan(maxLineSpan) }) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SmallToggle(stringResource(Res.string.social_all), state.kind == null) { onSelectKind(null) }
-                    SmallToggle(stringResource(Res.string.social_kind_social), state.kind == "social") { onSelectKind("social") }
-                    SmallToggle(stringResource(Res.string.social_kind_sport), state.kind == "sport") { onSelectKind("sport") }
-                }
-                if (state.isRefreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
-                if (state.loadError != null && state.activities.isNotEmpty()) SocialLoadError(state.loadError, onRetry)
-            }
+            FeedFilters(state, onSelectKind, onRetry)
         }
         when {
             state.isLoading -> item(key = "loading", span = { GridItemSpan(maxLineSpan) }) {
@@ -293,9 +302,11 @@ private fun FeedGrid(
                 CenteredState(state.loadError.asString(), stringResource(Res.string.social_retry), onRetry)
             }
             state.activities.isEmpty() -> item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
-                Box(Modifier.fillMaxWidth().padding(top = 24.dp)) {
-                    ClosetEmptyState(Icons.Outlined.EventAvailable, stringResource(Res.string.social_empty_title), stringResource(Res.string.social_empty_text))
-                }
+                ClosetEmptyState(
+                    Icons.Outlined.EventAvailable,
+                    stringResource(Res.string.social_empty_title),
+                    stringResource(Res.string.social_empty_text)
+                )
             }
             else -> items(state.activities, key = { it.id }) { activity ->
                 SocialPosterCard(activity, onClick = { onOpenActivity(activity.id) })
@@ -314,6 +325,23 @@ private fun FeedGrid(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FeedFilters(
+    state: SocialHomeState,
+    onSelectKind: (String?) -> Unit,
+    onRetry: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SmallToggle(stringResource(Res.string.social_all), state.kind == null) { onSelectKind(null) }
+            SmallToggle(stringResource(Res.string.social_kind_social), state.kind == "social") { onSelectKind("social") }
+            SmallToggle(stringResource(Res.string.social_kind_sport), state.kind == "sport") { onSelectKind("sport") }
+        }
+        if (state.isRefreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (state.loadError != null && state.activities.isNotEmpty()) SocialLoadError(state.loadError, onRetry)
     }
 }
 

@@ -26,8 +26,8 @@ Düzeltme sonrası kalan davranış bulgusu yok. Mimari/refactor geçişinde ek 
 - Son sunucu/kural testleri yalnız demo-good4-v2 ve ayrı Firestore 8395 üzerinde çalıştırıldı; önizleme 8285 testlere verilmedi.
 - Sunucu testinin ilk turundaki tek emülatör transaction-closed hatası temiz emülatörde test değiştirilmeden giderildi; son sonuç 91/91.
 - Canlıda yedi servis ACTIVE, iki yeni indeks READY; panel paketi doğrulandı. Gerçek öğrenci kodu canlıda tüketilmedi. Simülatör demo ve mobil mağaza yayını ayrı tutuldu.
-- git diff --check ve hedefli sır/yerel ayar taraması yapılır; commit index’i korunacak kaynaklardan ayrı hazırlanır.
+- git diff --check ve hedefli sır/yerel ayar taraması geçti; commit index’i korunacak kaynaklardan ayrı hazırlandı.
 
 ## Karar
 
-İndirimler değişikliği commit’e hazır. upstream/main’deki gizlilik, bildirim/analitik ve Sosyal düzeltmeleri birleştirilerek gönderilecek; birleşmiş mobil/web derlemeleri ayrıca kontrol edilecek.
+İndirimler değişikliği 99e68b2 commit’ine kaydedildi. upstream/main (1c43ec5) üzerindeki dört commit çatışmasız birleştirildi. Birleşmiş sürümde iOS Simulator/Android ProdDebug Kotlin derlemeleri ve 123/123 birim testi başarılı; functions TypeScript ve web üretim derlemeleri başarılı; web testleri 9/9, bildirim ve hesap silme sunucu testleri 24/24 geçti. Son sunucu testleri de demo-good4-v2 / 8395 üzerinde çalıştırıldı. Kapsam dışı bekleyen dosyaların SHA-256 değerleri değişmedi. Gönderim öncesi kalan engelleyici bulgu yok.

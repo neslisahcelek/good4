@@ -31,6 +31,7 @@ class NotificationsViewModelTest {
         override suspend fun notification(id: String): StudentNotification? { singleIds += id; return single(id) }
         override suspend fun preferences() = NotificationPreferencesDto()
         override suspend fun savePreferences(value: NotificationPreferencesDto) = Unit
+        override suspend fun enableAnnouncements() = Unit
         override suspend fun markRead(ids: Set<String>) { readIds += ids }
         override suspend fun syncDevice() = PushSnapshot()
     }

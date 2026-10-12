@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 data class NotificationsState(
     val notifications: List<StudentNotification> = emptyList(),
     val preferences: NotificationPreferencesDto = NotificationPreferencesDto(),
+    val preferencesLoaded: Boolean = false,
     val loading: Boolean = false, val saving: Boolean = false, val permission: Boolean = false,
     val supported: Boolean = true, val error: UiText? = null,
     val loadingMore: Boolean = false, val nextCursor: NumericPageCursor? = null,
@@ -61,13 +62,17 @@ class NotificationsViewModel(private val repository: NotificationDataSource) : V
             try {
                 val page = repository.inbox()
                 val notifications = page.items
-                val preferences = repository.preferences()
+                val preferences = try { repository.preferences() }
+                    catch (e: CancellationException) { throw e }
+                    catch (_: Exception) { null }
                 // The inbox remains usable even if APNs/FCM registration is temporarily unavailable.
                 val permission = try { repository.syncDevice().permission } catch (e: CancellationException) { throw e } catch (_: Exception) { mutable.value.permission }
                 if (repository.currentUserId == uid && generation == requestGeneration) {
                     fetchedCount = page.fetchedCount
-                    mutable.update { it.copy(notifications = preserveRead(notifications, it.notifications), preferences = preferences,
-                        permission = permission, loading = false, nextCursor = page.nextCursor) }
+                    mutable.update { it.copy(notifications = preserveRead(notifications, it.notifications),
+                        preferences = preferences ?: it.preferences, preferencesLoaded = preferences != null,
+                        permission = permission, loading = false, nextCursor = page.nextCursor,
+                        error = if (preferences == null) UiText.StringResourceId(Res.string.notification_load_failed) else null) }
                     NotificationInbox.update(mutable.value.notifications.any { it.data.readAt == 0L })
                 }
             } catch (e: CancellationException) { throw e }
@@ -159,11 +164,24 @@ class NotificationsViewModel(private val repository: NotificationDataSource) : V
     }
     /** "Bildirimleri aç" in the permission dialog is the student's opt-in to Good4 announcements too. */
     fun enableAnnouncements() {
-        val current = mutable.value.preferences
-        if (!current.announcements) savePreferences(current.copy(announcements = true))
+        if (mutable.value.saving || mutable.value.preferences.announcements) return
+        val uid = repository.currentUserId ?: return
+        viewModelScope.launch {
+            mutable.update { it.copy(saving = true, error = null) }
+            try {
+                repository.enableAnnouncements()
+                if (repository.currentUserId == uid) mutable.update {
+                    it.copy(preferences = it.preferences.copy(announcements = true), saving = false)
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { if (repository.currentUserId == uid) mutable.update {
+                it.copy(saving = false, error = UiText.StringResourceId(Res.string.notification_save_failed))
+            } }
+        }
     }
 
     fun savePreferences(value: NotificationPreferencesDto) {
+        if (!mutable.value.preferencesLoaded) { refresh(); return }
         if (mutable.value.saving) return
         val uid = repository.currentUserId
         viewModelScope.launch {

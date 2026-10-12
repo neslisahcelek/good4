@@ -567,7 +567,6 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                         followLoading = false,
                         followedCommunityIds = if (next) state.followedCommunityIds + community.id else state.followedCommunityIds - community.id,
                     ) }
-                    if (next) com.good4.notification.PushSignals.suggestPermission()
                     refreshFollowing(force = true)
                 }
             } catch (e: CancellationException) { throw e }
@@ -607,7 +606,6 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                     )
                 }
                 if (next) {
-                    com.good4.notification.PushSignals.suggestPermission()
                     if (!studentV2) showTicket(entry)
                 } else closeTicket()
             } catch (e: CancellationException) { throw e }

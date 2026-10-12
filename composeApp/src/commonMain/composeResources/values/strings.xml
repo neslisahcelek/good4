@@ -466,6 +466,8 @@
     <string name="notification_permission_title">Bildirimleri açalım mı?</string>
     <string name="notification_permission_body">Takip ettiğin toplulukların yeni etkinlikleri, kayıtlı olduğun etkinliklerin hatırlatmaları ve günün menüsü gibi Good4 duyuruları telefonuna gelsin. \n\nHangilerini alacağını Bildirimler ekranından istediğin zaman değiştirebilirsin.</string>
     <string name="notification_enable">Bildirimleri aç</string>
+    <string name="notification_home_title">Good4’dan haberin olsun</string>
+    <string name="notification_home_description">Önemli duyurular ve yeni sürümlerden haberdar ol.</string>
     <string name="notification_later">Daha sonra</string>
     <string name="community_load_more">Daha fazla etkinlik yükle</string>
 
@@ -1407,7 +1409,7 @@
     <string name="analytics_consent_optional">İsteğe bağlı</string>
     <string name="analytics_consent_description">Kullanım ve cihaz verilerini paylaşarak Good4’u geliştirmemize yardımcı olur musun?</string>
     <string name="analytics_details_title">Hangi veriler işlenir?</string>
-    <string name="analytics_consent_details">Hangi özelliklerin kullanıldığını anlamak için tıklamalar ve işlem sonuçları ölçülür. Kurulum, oturum ve cihaz bilgileri de işlenir. E-posta, mesaj ve doğrulama kodları gönderilmez. \nBu tercih isteğe bağlıdır. Hesap Ayarları’ndan istediğin zaman kapatabilirsin.</string>
+    <string name="analytics_consent_details">Hangi özelliklerin kullanıldığını anlamak için tıklamalar ve işlem sonuçları ölçülür. Kurulum, oturum ve cihaz bilgileri de işlenir. E-posta, mesaj ve doğrulama kodları gönderilmez. \n\nBu tercih isteğe bağlıdır. Hesap Ayarları’ndan istediğin zaman kapatabilirsin.</string>
     <string name="analytics_details_expanded">Ayrıntılar gösteriliyor</string>
     <string name="analytics_details_collapsed">Ayrıntılar gizli</string>
     <string name="analytics_allow">İzin ver</string>

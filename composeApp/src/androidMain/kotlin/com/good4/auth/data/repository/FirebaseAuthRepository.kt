@@ -173,6 +173,7 @@ class FirebaseAuthRepository : AuthRepository {
                 com.good4.notification.CampusPushNotifications.beforeSignOut(currentUser?.uid)
             }
             com.good4.notification.PushSession.detach()
+            com.good4.social.SocialSession.end()
             firebaseAuth.signOut()
             com.good4.notification.PushSession.detaching = false
             Result.Success(Unit)

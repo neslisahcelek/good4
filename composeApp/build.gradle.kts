@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -201,5 +202,16 @@ androidComponents {
         val emulator = staging && variant.buildType == "debug" &&
             providers.gradleProperty("good4.useFirebaseEmulators").orElse("true").get().toBoolean()
         variant.manifestPlaceholders.put("analyticsDeactivated", (emulator || (!staging && variant.buildType == "debug")).toString())
+    }
+}
+
+// String record offsets are compiled into native code. Track the records too,
+// so a changed resource file cannot be paired with a cached native compilation.
+val composeStringRecords = layout.buildDirectory.dir("generated/compose/resourceGenerator/preparedResources")
+tasks.withType<KotlinNativeCompile>().configureEach {
+    if (name.startsWith("compileKotlin")) {
+        inputs.files(composeStringRecords.map { fileTree(it).include("**/*.cvr") })
+            .withPropertyName("composeStringRecords")
+            .withPathSensitivity(PathSensitivity.RELATIVE)
     }
 }

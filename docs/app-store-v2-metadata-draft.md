@@ -6,16 +6,17 @@
 
 **Tanıtım metni**
 
-Kampüs Dolabı'nda öğrenciler arasında elden teslim ikinci el alışverişi. Toplulukları keşfet, yemekhane menüsünü gör ve öğününü puanla.
+Kampüste plan yap, Sosyal ile buluş! Kampüs Dolabı'nda öğrenciler arası elden teslim ikinci el alışverişi, topluluklar ve yemekhane menüsü Good4'da.
 
 **Alt başlık önerisi**
 
-Kampüs, topluluklar ve menü
+Kampüs, Sosyal, dolap ve menü
 
 **Açıklama**
 
 Good4, Akdeniz Üniversitesi öğrencileri için kampüs yaşamını kolaylaştıran bir uygulamadır.
 
+- **Sosyal:** Kampüste spor, kahve buluşması, ders çalışma veya masa oyunları için etkinlik planla, paylaşılan buluşmalara katıl ve kabul edilen eşleşmelerle birebir sohbet et.
 - **Kampüs Dolabı:** .edu.tr e-posta adresini doğrulamış öğrenciler, ikinci el eşya ilanı yayınlayabilir ve kendi kampüslerinde elden teslim için birbirleriyle iletişime geçebilir. Good4 satışın tarafı değildir; uygulama içinde ödeme almaz veya işlemez ve satıştan komisyon almaz. Ödeme ve teslimat kullanıcılar arasında, uygulama dışında gerçekleşir.
 - Öğrenci topluluklarını ve yayımladıkları etkinlikleri keşfet.
 - Etkinliklere kayıt ol ve katılım bilgilerini takip et.
@@ -31,9 +32,10 @@ Good4 hesabını uygulama içinden yönetebilir ve silebilirsin. Soruların içi
 
 **Sürüm yenilikleri / What's New**
 
-Kampüs Dolabı açıldı! .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kendi kampüslerinde elden teslim için ilana koyabilir. Good4 ödeme almaz ve satıştan komisyon almaz.
-
-Topluluklar yenilendi. Yemekhane öğünlerine puan verme ve diğer öğrencilerin değerlendirmelerini görme özelliği eklendi. Bildirim tercihleri de geliştirildi.
+- Good4 Sosyal Açıldı: Kampüste spor, kahve, ders veya oyun için buluşma planla, etkinliklere katıl ve kabul edilen isteklerle birebir sohbet et!
+- Kampüs Dolabı: .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kampüste elden teslim için ilana koyabilir. Good4 ödeme almaz ve komisyonsuzdur.
+- Topluluklar & Menü: Öğrenci toplulukları yenilendi. Güncel yemekhane menüsünü görüntüleme ve öğünleri puanlama özelliği eklendi.
+- Bildirim tercihleri ve performans geliştirmeleri yapıldı.
 
 **Anahtar kelimeler önerisi**
 
@@ -65,6 +67,8 @@ Push notifications are optional. They can cover new events from followed communi
 
 Account deletion is available in Profile > Account Settings > Delete Account. The Terms of Use, Privacy Policy, and KVKK notice are linked in Account Settings and during registration.
 
+Optional in-app usage analytics is integrated using Firebase Analytics. Data collection is disabled by default and requires in-app consent on the initial student home screen. Users can opt out or change their preference anytime in Profile > Account Settings. Only pre-defined non-PII UI interactions (feature, screen, action, target, status) and installation-level diagnostics are collected. No user IDs, emails, messages, or free text are sent to Analytics. IDFA and advertising tracking are permanently disabled; the app does not track users across apps or websites owned by other companies (ATT prompt is not applicable).
+
 Review access: [Insert a working V2 student demo account and password in the secure App Review sign-in fields. Do not put credentials in this note or in Git.] The account must be verified and have sample events available. If a special setup step is needed, describe it here before submission.
 
 ## Google Play Store metaverisi
@@ -77,6 +81,7 @@ Kampüsünde öğrencilerle elden teslim, komisyonsuz ikinci el alışveriş yap
 
 Good4, Akdeniz Üniversitesi öğrencileri için kampüs yaşamını kolaylaştırır.
 
+- **Sosyal:** Kampüste spor, kahve, ders veya oyun için etkinlik planla, buluşmalara katıl ve kabul edilen isteklerle birebir sohbet et.
 - **Kampüs Dolabı:** Yalnızca .edu.tr e-posta adresini doğrulamış öğrencilere açıktır. İkinci el eşya ilanı yayınla ve kendi kampüsünde elden teslim için diğer öğrencilerle iletişime geç. Good4 satışın tarafı değildir; uygulama içinde ödeme almaz veya işlemez ve satıştan komisyon almaz. Ödeme ve teslimat kullanıcılar arasında, uygulama dışında gerçekleşir.
 - Öğrenci topluluklarını ve etkinliklerini keşfet.
 - Etkinliklere kaydol; katılım bilgilerini takip et.
@@ -93,9 +98,10 @@ Hesabını uygulama içinden yönetebilir ve silebilirsin. Destek için uygulama
 
 **Sürüm yenilikleri / What's New**
 
-Kampüs Dolabı açıldı! .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kendi kampüslerinde elden teslim için ilana koyabilir. Good4 ödeme almaz ve satıştan komisyon almaz.
-
-Topluluklar yenilendi. Yemekhane öğünlerine puan verme ve diğer öğrencilerin değerlendirmelerini görme özelliği eklendi. Bildirim tercihleri de geliştirildi.
+- Good4 Sosyal Açıldı: Kampüste spor, kahve, ders veya oyun için buluşma planla, etkinliklere katıl ve kabul edilen isteklerle birebir sohbet et!
+- Kampüs Dolabı: .edu.tr adresini doğrulamış öğrenciler, ikinci el eşyalarını kampüste elden teslim için ilana koyabilir. Good4 ödeme almaz ve komisyonsuzdur.
+- Topluluklar & Menü: Öğrenci toplulukları yenilendi. Güncel yemekhane menüsünü görüntüleme ve öğünleri puanlama özelliği eklendi.
+- Bildirim tercihleri ve performans geliştirmeleri yapıldı.
 
 **Gizlilik Politikası URL'si**
 
@@ -117,8 +123,45 @@ Apple sign-in: [Confirm the friend team's Apple Developer capability and Firebas
 
 Mobil etkileşim takibi kullanıcı izni verilene kadar kapalıdır. Kullanım analitiği tercihi Hesap Ayarları’ndan değiştirilebilir. Firebase Analytics’e yalnız kataloglanmış tıklama ve işlem sonuçları gönderilir; SDK ayrıca kurulum/oturum, cihaz/işletim sistemi ve IP’den türetilen yaklaşık bölge bilgilerini işler. Analytics event’lerine Firebase UID, e-posta, telefon, mesaj, arama metni veya kod eklenmez. Bu verileri tamamen anonim olarak beyan etmeyin; kurulum tanımlayıcısı aynı cihazın etkileşimlerini ilişkilendirebilir.
 
-- App Store: Device ID, Product Interaction, Other Usage Data ve Coarse Location kategorilerini **Analytics** amacıyla, isteğe bağlı toplanan ve kurulumla ilişkilendirilebilen veri olarak son SDK manifestleriyle karşılaştırın. Reklam amaçlı tracking yoktur; mevcut işlevsel kategoriler korunur.
-- Google Play: App interactions, Device or other IDs ve Approximate location kategorilerini Analytics amacıyla ve isteğe bağlı toplama olarak son SDK açıklamalarıyla karşılaştırın. Platformun hizmet sağlayıcı aktarım kurallarına göre beyanı doğrulayın.
+### 1. Apple App Store Connect: "App Privacy" (Nutrition Labels) Formu
+
+Apple App Store Connect > **App Privacy** bölümünde mevcut 6 fonksiyonel veri türü (Email, Name, Phone, User ID, Photos/Videos, Other User Content) korunmalı; Analytics nedeniyle `iosApp/iosApp/PrivacyInfo.xcprivacy` ile tam uyumlu şu 4 kategori eklenmelidir:
+
+| Veri Kategorisi | Apple Veri Türü | Amaç (Purpose) | İlişkilendirme (Linked) | Takip (Tracking) | İsteğe Bağlılık |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Identifiers** | **Device ID** *(Firebase App-Instance ID)* | **Analytics** | **Yes** *(Kurulumla ilişkili)* | **No** *(Çapraz takip yok)* | **Yes** *(Kullanıcı iznine bağlı)* |
+| **Usage Data** | **Product Interaction** *(Tıklama ve sonuçlar)* | **Analytics** | **Yes** | **No** | **Yes** |
+| **Usage Data** | **Other Usage Data** *(Oturum ve telemetri)* | **Analytics** | **Yes** | **No** | **Yes** |
+| **Location** | **Coarse Location** *(IP kaynaklı yaklaşık konum)* | **Analytics** | **Yes** | **No** | **Yes** |
+
+> **Apple Takip (Tracking) Sorusu:** *"Do you or your third-party partners use this data for tracking purposes across apps and websites?"* -> **NO (HAYIR)**. (Reklam veya veri komisyoncularıyla veri paylaşımı yoktur; ATT izni gerekmez).
+
+### 2. Google Play Console: "Data Safety" (Veri Güvenliği) Formu
+
+Google Play Console > **Veri Güvenliği (Data Safety)** anketinde Analytics nedeniyle güncellenecek alanlar:
+
+1. **Konum > Yaklaşık Konum (Approximate Location):**
+   - Toplanıyor mu: **Evet** (Firebase Analytics tarafından IP'den türetilir).
+   - Paylaşılıyor mu: **Hayır** (Firebase yalnızca teknik servis sağlayıcıdır).
+   - Geçici işlem mi (Ephemeral): **Hayır** (GA4 saklama süresi 2 ay).
+   - Zorunlu mu: **Hayır (İsteğe bağlı, kullanıcı iznine bağlı)**.
+   - Amaç: **Analitik (Analytics)**.
+2. **Uygulama Etkinliği > Uygulama Etkileşimleri (App Interactions):**
+   - Toplanıyor mu: **Evet** (`interaction_click`, `interaction_result`).
+   - Paylaşılıyor mu: **Hayır**.
+   - Geçici işlem mi: **Hayır**.
+   - Zorunlu mu: **Hayır (İsteğe bağlı)**.
+   - Amaç: **Analitik (Analytics)**.
+3. **Cihaz veya Diğer Kimlikler (Device or other IDs):**
+   - Toplanıyor mu: **Evet** (Firebase App-Instance ID).
+   - Paylaşılıyor mu: **Hayır**.
+   - Geçici işlem mi: **Hayır**.
+   - Zorunlu mu: **Hayır (İsteğe bağlı)**.
+   - Amaç: **Analitik (Analytics)**.
+4. **Reklam Kimliği (Advertising ID / AAID) Beyanı:**
+   - *"Uygulamanız reklam kimliği (AAID) kullanıyor mu?"* -> **HAYIR** (`google_analytics_adid_collection_enabled = false`, reklam SDK'sı ve izni yoktur).
+
+### 3. Genel Kontroller
 - IDFA/AD_ID toplama ve reklam kişiselleştirme kapalıdır; Crashlytics eklenmemiştir. Analytics izni bildirim izninden ayrıdır.
 - Güncellenmiş gizlilik sayfasını **mobil sürümden önce** yayınlayın. Console özel boyutları ve gerçek staging DebugView doğrulaması için [Analytics rehberini](ANALYTICS.md) kullanın. Bu dokümanın değişmesi canlı metni veya mağaza beyanını güncellemez.
 
