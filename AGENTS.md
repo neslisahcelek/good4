@@ -34,11 +34,14 @@ Yeni bir kullanıcı tipi eklerken aşağıdaki yapıları aynı kalıpla çoğa
 - `composeApp/src/commonMain/kotlin/com/good4/user/domain/UserRole.kt`
     - Yeni role ekle: ör. `ADMIN2("admin2")`
 
-### 2.2 Navigation
+### 2.2 Navigation & Analytics Screen Tracking
 - `composeApp/src/commonMain/kotlin/com/good4/navigation/Route.kt`
     - Yeni route ekle: `data object NewUserHome : Route()`
+- `composeApp/src/commonMain/kotlin/com/good4/analytics/AnalyticsTracker.kt`
+    - Yeni ekranı `AnalyticsScreen` enum'ına ekle: ör. `NEW_USER_HOME("new_user", "new_user_home")`
 - `composeApp/src/commonMain/kotlin/com/good4/navigation/NavGraph.kt`
     - `composable<Route.NewUserHome>` ekle
+    - `LaunchedEffect(currentEntry?.destination)` içindeki `when` bloğuna rota eşlemesini ekle: `dest.hasRoute<Route.NewUserHome>() -> AnalyticsScreen.NEW_USER_HOME`
     - `navigateToHome` içinde `when (userRole)` güncelle
 
 ### 2.3 Home Screen (Alt menü)
@@ -166,6 +169,7 @@ ProductFormFields(
 - **UI** sadece state’i tüketmeli.
 - Renk/strings hardcoded yapılmamalı.
 - Yeni role eklerken: Route + NavGraph + UserRole + HomeScreen eş zamanlı güncellenmeli.
+- **Analytics & Screen Tracking**: Yeni rota/ekran eklendiğinde `AnalyticsScreen` ve `NavGraph` ekran takibi güncellenmeli. ViewModel'da kritik aksiyonlar `Interaction` ve `AnalyticsTarget` katalog enum'larıyla (`analytics.click()`, `analytics.result()`) izlenmeli, ViewModel'a `analytics: AnalyticsTracker = NoOpAnalyticsTracker` verilip `Modules.kt`'de `analytics = get()` tanımlanmalı. KVKK gereği serbest metin veya ID kesinlikle gönderilmemeli.
 
 ## 8) Data / Repository / DTO kuralları
 - **DTO** modelleri Firestore/Network ham verisini temsil eder.

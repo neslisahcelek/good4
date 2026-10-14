@@ -34,6 +34,8 @@ Bu skill, repodaki `AGENTS.md` ile birlikte okunur. Çelişki varsa kullanıcı 
 - Kategori, durum ve hata metnini repository içinde kullanıcı metni olarak üretme. Compose kaynaklarını `composeApp/src/commonMain/composeResources/values/strings.xml` içinde tut; paleti `Colors.kt` üzerinden kullan.
 - Ekran için mevcut ortak bileşenleri önce ara: `ProfileComponents`, `ProductFormFields`, `ProductListCard`, `StatCard`, `ImagePreviewBox`, `ButtonStandards`.
 - Navigasyon değişikliğinde `Route`, NavGraph, `UserRole`, role home ve logout/geri dönüş akışlarını birlikte güncelle. Yeni role için benzer student/business/admin örneklerini izle.
+- Yeni ekran eklerken `AnalyticsScreen` (`AnalyticsTracker.kt`) kataloğuna ekle ve `NavGraph` içindeki `LaunchedEffect(currentEntry?.destination)` rota eşlemesine bağla. Ekran alt sekmeleri varsa (ör. `NavigationBar`) tab geçişinde `analytics.screenView(...)` çağır.
+- Ekranın iş akışlarında kritik buton, form ve sonuçları `Interaction` ve `AnalyticsTarget` katalog enum'ları üzerinden izle; ViewModel'e `analytics: AnalyticsTracker = NoOpAnalyticsTracker` enjekte et ve `Modules.kt` içinde `analytics = get()` tanımla. KVKK gereği serbest kullanıcı metni veya ID gönderme.
 - Lazy list öğelerine stabil `key` ekle. Görünürlük/scroll state'ini ViewModel iş state'inin yerine koyma.
 - Önemli yeni Compose ekranlarında Preview ekle; birden fazla ekranda yinelenen yapıyı ortaklaştır.
 
@@ -94,3 +96,4 @@ Somut tetikleyiciler için [11 Ekim kupon/başvuru kalıpları](../../../docs/RE
 - Transaction, retry, cursor, kota ve paralel başarısızlık senaryoları doğru mu?
 - Firestore DTO serializer/decoder, rules ve canonical schema gereken yerlerde eşleşiyor mu?
 - Gerekli Info.plist, flavor ve kaynak güncellemeleri yapıldı mı?
+- Yeni ekran eklendiyse `AnalyticsScreen` ve `NavGraph` screen tracking eşlendi mi; ViewModel etkileşimleri kataloglanmış enum'larla bağlandı mı?

@@ -97,6 +97,9 @@ class SuspendedMealsViewModel(
                 val active = _state.value.activeCode ?: break
                 if (Clock.System.now().toEpochMilliseconds() >= active.expiresAtMillis) break
                 if (repository.codeStatus(code) == "redeemed") {
+                    analytics.click(Interaction.MEAL_CODE_REDEEM)?.let {
+                        analytics.result(it, InteractionStatus.SUCCESS)
+                    }
                     _state.update { it.copy(activeCode = active.copy(redeemed = true)) }
                     break
                 }

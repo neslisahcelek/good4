@@ -86,6 +86,10 @@ class AnalyticsInteractionViewModel(private val tracker: AnalyticsTracker) : Vie
     fun click(interaction: Interaction, target: AnalyticsTarget? = null) {
         tracker.click(interaction, target)
     }
+
+    fun screenView(screen: AnalyticsScreen) {
+        tracker.screenView(screen)
+    }
 }
 
 class AnalyticsConsentViewModel(private val tracker: AnalyticsTracker) : ViewModel() {

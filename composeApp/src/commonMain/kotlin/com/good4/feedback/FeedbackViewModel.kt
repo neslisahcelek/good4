@@ -2,6 +2,10 @@ package com.good4.feedback
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.good4.analytics.AnalyticsTracker
+import com.good4.analytics.Interaction
+import com.good4.analytics.InteractionStatus
+import com.good4.analytics.NoOpAnalyticsTracker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -18,7 +22,10 @@ data class FeedbackUiState(
         get() = subject.trim().length in 3..120 && message.trim().length in 10..2000 && !isSubmitting
 }
 
-class FeedbackViewModel(private val repository: FeedbackRepository) : ViewModel() {
+class FeedbackViewModel(
+    private val repository: FeedbackRepository,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
+) : ViewModel() {
     private val _state = MutableStateFlow(FeedbackUiState())
     val state = _state.asStateFlow()
 
@@ -37,12 +44,15 @@ class FeedbackViewModel(private val repository: FeedbackRepository) : ViewModel(
     fun submit() {
         val current = _state.value
         if (!current.canSubmit) return
+        val tracking = analytics.click(Interaction.FEEDBACK_SUBMIT)
         viewModelScope.launch {
             _state.update { it.copy(isSubmitting = true, errorMessage = null) }
             try {
                 repository.submit(current.subject, current.message)
+                analytics.result(tracking, InteractionStatus.SUCCESS)
                 _state.update { it.copy(isSubmitting = false, isSubmitted = true) }
             } catch (error: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 _state.update {
                     it.copy(
                         isSubmitting = false,

@@ -2,6 +2,10 @@ package com.good4.eduverification
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.good4.analytics.AnalyticsTracker
+import com.good4.analytics.Interaction
+import com.good4.analytics.InteractionStatus
+import com.good4.analytics.NoOpAnalyticsTracker
 import com.good4.campuscloset.isCampusStudentEmail
 import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.*
@@ -34,7 +38,8 @@ data class EduVerificationState(
 )
 
 class EduVerificationViewModel(
-    private val repository: EduVerificationSource
+    private val repository: EduVerificationSource,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EduVerificationState())
@@ -105,8 +110,10 @@ class EduVerificationViewModel(
     fun sendCode() {
         val snapshot = _state.value
         if (snapshot.isLoading || snapshot.isSending || snapshot.isConfirming || snapshot.isDisconnecting || snapshot.resendSeconds > 0) return
+        val tracking = analytics.click(Interaction.EDU_VERIFY_REQUEST)
         val email = snapshot.email.trim()
         if (!snapshot.testAvailable && !isCampusStudentEmail(email)) {
+            analytics.result(tracking, InteractionStatus.VALIDATION_ERROR)
             _state.update { it.copy(errorMessage = UiText.StringResourceId(Res.string.campus_closet_yalnizca_ogr_akdeniz_edu_tr_uzantili_ogrenci_adresleri_kabul)) }
             return
         }
@@ -117,6 +124,7 @@ class EduVerificationViewModel(
             try {
                 val result = repository.requestCode(email)
                 if (operationGeneration != operationVersion || repository.currentUid != owner) return@launch
+                analytics.result(tracking, InteractionStatus.SUCCESS)
                 when (result) {
                     is EduCodeRequestResult.AlreadyVerified -> _state.update {
                         it.copy(isSending = false, isVerified = !snapshot.testAvailable, campusAccessAllowed = true, accessSource = if (snapshot.testAvailable) "admin_test" else "edu_email", verifiedEmail = result.email)
@@ -129,6 +137,7 @@ class EduVerificationViewModel(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 if (operationGeneration == operationVersion && repository.currentUid == owner) _state.update { it.copy(isSending = false, errorMessage = eduVerificationErrorMessage(error)) }
             }
         }
@@ -137,7 +146,9 @@ class EduVerificationViewModel(
     fun confirmCode() {
         val snapshot = _state.value
         if (snapshot.isLoading || snapshot.isConfirming || snapshot.isSending || snapshot.isDisconnecting) return
+        val tracking = analytics.click(Interaction.EDU_VERIFY_CONFIRM)
         if (snapshot.code.length != 6) {
+            analytics.result(tracking, InteractionStatus.VALIDATION_ERROR)
             _state.update { it.copy(errorMessage = UiText.StringResourceId(Res.string.edu_verification_code_format)) }
             return
         }
@@ -150,6 +161,7 @@ class EduVerificationViewModel(
                 if (operationGeneration != operationVersion || repository.currentUid != owner) return@launch
                 val message = when (result) {
                     is EduCodeConfirmResult.Verified -> {
+                        analytics.result(tracking, InteractionStatus.SUCCESS)
                         countdown?.cancel()
                         _state.update {
                             it.copy(
@@ -162,15 +174,24 @@ class EduVerificationViewModel(
                         }
                         return@launch
                     }
-                    is EduCodeConfirmResult.InvalidCode ->
+                    is EduCodeConfirmResult.InvalidCode -> {
+                        analytics.result(tracking, InteractionStatus.VALIDATION_ERROR)
                         UiText.StringResourceId(Res.string.campus_email_code_wrong, arrayOf(result.attemptsLeft))
-                    EduCodeConfirmResult.Expired -> UiText.StringResourceId(Res.string.campus_email_code_expired)
-                    EduCodeConfirmResult.TooManyAttempts -> UiText.StringResourceId(Res.string.campus_email_code_limit)
+                    }
+                    EduCodeConfirmResult.Expired -> {
+                        analytics.result(tracking, InteractionStatus.ERROR)
+                        UiText.StringResourceId(Res.string.campus_email_code_expired)
+                    }
+                    EduCodeConfirmResult.TooManyAttempts -> {
+                        analytics.result(tracking, InteractionStatus.ERROR)
+                        UiText.StringResourceId(Res.string.campus_email_code_limit)
+                    }
                 }
                 _state.update { it.copy(isConfirming = false, errorMessage = message) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 if (operationGeneration == operationVersion && repository.currentUid == owner) _state.update { it.copy(isConfirming = false, errorMessage = eduVerificationErrorMessage(error)) }
             }
         }
@@ -178,13 +199,18 @@ class EduVerificationViewModel(
 
     fun disconnectTest() {
         if (_state.value.isDisconnecting || _state.value.isSending || _state.value.isConfirming) return
+        val tracking = analytics.click(Interaction.EDU_VERIFY_DISCONNECT)
         _state.update { it.copy(isDisconnecting = true, errorMessage = null) }
         viewModelScope.launch {
             try {
                 repository.disconnectTest()
+                analytics.result(tracking, InteractionStatus.SUCCESS)
                 refresh()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { _state.update { it.copy(isDisconnecting = false, errorMessage = eduVerificationErrorMessage(error)) } }
+            catch (error: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
+                _state.update { it.copy(isDisconnecting = false, errorMessage = eduVerificationErrorMessage(error)) }
+            }
         }
     }
 

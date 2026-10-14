@@ -2,6 +2,10 @@ package com.good4.review
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.good4.analytics.AnalyticsTracker
+import com.good4.analytics.Interaction
+import com.good4.analytics.InteractionStatus
+import com.good4.analytics.NoOpAnalyticsTracker
 import com.good4.core.presentation.UiText
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.store_review_not_configured
@@ -30,7 +34,8 @@ class StoreReviewViewModel(
     private val enabled: Boolean = automaticReviewEnabled(),
     private val openStore: suspend () -> StoreOpenResult = { openReviewStore() },
     private val contentWaitMs: Long = REVIEW_CONTENT_WAIT_MS,
-    private val idleWaitMs: Long = REVIEW_IDLE_WAIT_MS
+    private val idleWaitMs: Long = REVIEW_IDLE_WAIT_MS,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
 ) : ViewModel() {
     private val exposure = MutableStateFlow(ReviewExposure())
     private val idle = MutableStateFlow(false)
@@ -56,8 +61,14 @@ class StoreReviewViewModel(
                         if (coordinator.isEligible(version)) {
                             runCatching {
                                 launcher?.requestReview {
-                                    generation == requestGeneration && exposure.value == available && idle.value && enabled &&
+                                    val proceed = generation == requestGeneration && exposure.value == available && idle.value && enabled &&
                                         coordinator.recordAttempt(version)
+                                    if (proceed) {
+                                        analytics.click(Interaction.STORE_REVIEW_PROMPT)?.let {
+                                            analytics.result(it, InteractionStatus.SUCCESS)
+                                        }
+                                    }
+                                    proceed
                                 }
                             }
                         }
@@ -91,12 +102,18 @@ class StoreReviewViewModel(
 
     fun openStore() {
         if (_state.value.isOpening) return
+        val tracking = analytics.click(Interaction.STORE_REVIEW_OPEN)
         _state.update { it.copy(isOpening = true, error = null) }
         viewModelScope.launch {
             val result = try { openStore.invoke() }
             catch (error: CancellationException) { throw error }
             catch (_: Exception) { StoreOpenResult.FAILED }
-            if (result == StoreOpenResult.OPENED) coordinator.onManualStoreOpened(version)
+            if (result == StoreOpenResult.OPENED) {
+                coordinator.onManualStoreOpened(version)
+                analytics.result(tracking, InteractionStatus.SUCCESS)
+            } else {
+                analytics.result(tracking, InteractionStatus.ERROR)
+            }
             _state.update {
                 it.copy(isOpening = false, error = when (result) {
                     StoreOpenResult.OPENED -> null

@@ -208,9 +208,9 @@ class SocialActivityViewModel(private val repository: SocialRepository, private 
         _state.update { it.copy(requestNote = "") }
     }
 
-    fun withdraw() = perform { repository.withdraw(activityId) }
+    fun withdraw() = perform(Interaction.SOCIAL_WITHDRAW) { repository.withdraw(activityId) }
 
-    fun cancelActivity() = perform {
+    fun cancelActivity() = perform(Interaction.SOCIAL_CANCEL) {
         repository.cancel(activityId)
         _state.update { it.copy(info = UiText.StringResourceId(Res.string.social_cancelled_info)) }
     }
@@ -257,7 +257,10 @@ data class SocialRequestsState(
     val error: UiText? = null
 )
 
-class SocialRequestsViewModel(private val repository: SocialRepository) : ViewModel() {
+class SocialRequestsViewModel(
+    private val repository: SocialRepository,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
+) : ViewModel() {
     private val _state = MutableStateFlow(SocialRequestsState())
     val state = _state.asStateFlow()
     private var activityId = ""
@@ -275,10 +278,16 @@ class SocialRequestsViewModel(private val repository: SocialRepository) : ViewMo
 
     fun respond(requesterUid: String, accept: Boolean) {
         if (_state.value.busyUid != null) return
+        val target = if (accept) AnalyticsTarget.ACCEPT else AnalyticsTarget.REJECT
+        val tracking = analytics.click(Interaction.SOCIAL_REQUEST_RESPOND, target)
         viewModelScope.launch {
             _state.update { it.copy(busyUid = requesterUid, error = null) }
             attempt { repository.respond(activityId, requesterUid, accept) }
-                .onFailure { error -> _state.update { it.copy(error = socialErrorMessage(error)) } }
+                .onSuccess { analytics.result(tracking, InteractionStatus.SUCCESS) }
+                .onFailure { error ->
+                    analytics.result(tracking, InteractionStatus.ERROR)
+                    _state.update { it.copy(error = socialErrorMessage(error)) }
+                }
             refresh()
             _state.update { it.copy(busyUid = null) }
         }
@@ -320,7 +329,10 @@ data class SocialChatState(
     val info: UiText? = null
 )
 
-class SocialChatViewModel(private val repository: SocialRepository) : ViewModel() {
+class SocialChatViewModel(
+    private val repository: SocialRepository,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
+) : ViewModel() {
     private val _state = MutableStateFlow(SocialChatState())
     val state = _state.asStateFlow()
     private var conversationId = ""
@@ -383,7 +395,7 @@ class SocialChatViewModel(private val repository: SocialRepository) : ViewModel(
     fun send() {
         val text = _state.value.draft.trim()
         if (text.isEmpty()) return
-        runSend(clearDraft = true) { repository.sendMessage(conversationId, text) }
+        runSend(clearDraft = true, interaction = Interaction.SOCIAL_CHAT_MESSAGE) { repository.sendMessage(conversationId, text) }
     }
 
     fun block() = runSend(clearDraft = false) {
@@ -403,17 +415,22 @@ class SocialChatViewModel(private val repository: SocialRepository) : ViewModel(
 
     fun clearInfo() = _state.update { it.copy(info = null) }
 
-    private fun runSend(clearDraft: Boolean, block: suspend () -> Unit) {
+    private fun runSend(clearDraft: Boolean, interaction: Interaction? = null, block: suspend () -> Unit) {
         if (_state.value.sending) return
+        val tracking = interaction?.let { analytics.click(it) }
         viewModelScope.launch {
             _state.update { it.copy(sending = true, error = null) }
             attempt { block() }
                 .onSuccess {
+                    analytics.result(tracking, InteractionStatus.SUCCESS)
                     markActivity()
                     _state.update { it.copy(sending = false, draft = if (clearDraft) "" else it.draft) }
                     refresh(full = true)
                 }
-                .onFailure { error -> _state.update { it.copy(sending = false, error = socialErrorMessage(error)) } }
+                .onFailure { error ->
+                    analytics.result(tracking, InteractionStatus.ERROR)
+                    _state.update { it.copy(sending = false, error = socialErrorMessage(error)) }
+                }
         }
     }
 }

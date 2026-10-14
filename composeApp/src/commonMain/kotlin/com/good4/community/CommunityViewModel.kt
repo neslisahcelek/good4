@@ -556,11 +556,13 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
         val community = mutable.value.selected ?: return
         if (mutable.value.followLoading) return
         val next = !mutable.value.isFollowing
+        val tracking = analytics.click(if (next) Interaction.COMMUNITY_FOLLOW else Interaction.COMMUNITY_UNFOLLOW, AnalyticsTarget.COMMUNITIES)
         val uid = repository.currentUserId
         viewModelScope.launch {
             mutable.update { it.copy(followLoading = true, error = null) }
             try {
                 repository.setFollowing(community.id, next)
+                analytics.result(tracking, InteractionStatus.SUCCESS)
                 if (repository.currentUserId == uid) {
                     mutable.update { state -> state.copy(
                         isFollowing = if (state.selected?.id == community.id) next else state.isFollowing,
@@ -571,6 +573,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 }
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) {
+                analytics.result(tracking, InteractionStatus.ERROR)
                 if (repository.currentUserId == uid) {
                     mutable.update { it.copy(followLoading = false, error = "Takip tercihi kaydedilemedi. Tekrar deneyin.") }
                 }

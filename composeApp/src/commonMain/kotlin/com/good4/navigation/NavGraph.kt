@@ -5,6 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.good4.analytics.AnalyticsInteractionViewModel
+import com.good4.analytics.AnalyticsScreen
 import com.good4.notification.NotificationsViewModel
 import com.good4.notification.PushSignals
 import androidx.compose.ui.Modifier
@@ -75,7 +77,51 @@ fun Good4NavGraph(
     val pushManager = androidx.compose.runtime.remember(primaryAuth) { com.good4.notification.PushRegistrationManager(primaryAuth) }
     val pushDestination by com.good4.notification.CampusPushNotifications.pending.collectAsStateWithLifecycle()
     val configRepo: AppConfigRepository = koinInject()
+    val analytics: AnalyticsInteractionViewModel = koinViewModel()
     val resumeScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    LaunchedEffect(currentEntry?.destination) {
+        val dest = currentEntry?.destination ?: return@LaunchedEffect
+        val screen = when {
+            dest.hasRoute<Route.Splash>() -> AnalyticsScreen.SPLASH
+            dest.hasRoute<Route.ForceUpdate>() -> AnalyticsScreen.FORCE_UPDATE
+            dest.hasRoute<Route.Login>() -> AnalyticsScreen.LOGIN
+            dest.hasRoute<Route.StudentRegister>() -> AnalyticsScreen.STUDENT_REGISTER
+            dest.hasRoute<Route.BusinessRegister>() -> AnalyticsScreen.BUSINESS_REGISTER
+            dest.hasRoute<Route.EmailVerification>() -> AnalyticsScreen.EMAIL_VERIFICATION
+            dest.hasRoute<Route.SessionRestore>() -> AnalyticsScreen.SESSION_RESTORE
+            dest.hasRoute<Route.StudentHome>() -> AnalyticsScreen.STUDENT_HOME
+            dest.hasRoute<Route.EditHome>() -> AnalyticsScreen.EDIT_HOME
+            dest.hasRoute<Route.AcademicCalendar>() -> AnalyticsScreen.ACADEMIC_CALENDAR
+            dest.hasRoute<Route.ClassSchedule>() -> AnalyticsScreen.CLASS_SCHEDULE
+            dest.hasRoute<Route.StudentProfile>() -> AnalyticsScreen.STUDENT_PROFILE
+            dest.hasRoute<Route.StudentAccountSettings>() -> AnalyticsScreen.ACCOUNT_SETTINGS
+            dest.hasRoute<Route.Notifications>() -> AnalyticsScreen.NOTIFICATIONS
+            dest.hasRoute<Route.Discounts>() -> AnalyticsScreen.DISCOUNTS
+            dest.hasRoute<Route.CampusCloset>() -> AnalyticsScreen.CAMPUS_CLOSET
+            dest.hasRoute<Route.CampusClosetListing>() -> AnalyticsScreen.CAMPUS_CLOSET_LISTING
+            dest.hasRoute<Route.CampusClosetNewListing>() -> AnalyticsScreen.CAMPUS_CLOSET_NEW_LISTING
+            dest.hasRoute<Route.CampusClosetMyListings>() -> AnalyticsScreen.CAMPUS_CLOSET_MY_LISTINGS
+            dest.hasRoute<Route.CampusClosetInbox>() -> AnalyticsScreen.CAMPUS_CLOSET_INBOX
+            dest.hasRoute<Route.CampusClosetFavorites>() -> AnalyticsScreen.CAMPUS_CLOSET_FAVORITES
+            dest.hasRoute<Route.CampusClosetBlocked>() -> AnalyticsScreen.CAMPUS_CLOSET_BLOCKED
+            dest.hasRoute<Route.CampusClosetChat>() -> AnalyticsScreen.CAMPUS_CLOSET_CHAT
+            dest.hasRoute<Route.Social>() -> AnalyticsScreen.SOCIAL
+            dest.hasRoute<Route.SocialCreate>() -> AnalyticsScreen.SOCIAL_CREATE
+            dest.hasRoute<Route.SocialActivity>() -> AnalyticsScreen.SOCIAL_ACTIVITY
+            dest.hasRoute<Route.SocialRequests>() -> AnalyticsScreen.SOCIAL_REQUESTS
+            dest.hasRoute<Route.SocialInbox>() -> AnalyticsScreen.SOCIAL_INBOX
+            dest.hasRoute<Route.SocialChat>() -> AnalyticsScreen.SOCIAL_CHAT
+            dest.hasRoute<Route.BusinessHome>() -> AnalyticsScreen.BUSINESS_HOME
+            dest.hasRoute<Route.BusinessProfile>() -> AnalyticsScreen.BUSINESS_PROFILE
+            dest.hasRoute<Route.BusinessAccountSettings>() -> AnalyticsScreen.BUSINESS_ACCOUNT_SETTINGS
+            dest.hasRoute<Route.AdminHome>() -> AnalyticsScreen.ADMIN_HOME
+            dest.hasRoute<Route.AdminProfile>() -> AnalyticsScreen.ADMIN_PROFILE
+            dest.hasRoute<Route.AdminAccountSettings>() -> AnalyticsScreen.ADMIN_ACCOUNT_SETTINGS
+            else -> null
+        }
+        screen?.let { analytics.screenView(it) }
+    }
 
     LifecycleResumeEffect(currentEntry?.destination) {
         val dest = currentEntry?.destination

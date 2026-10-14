@@ -216,7 +216,13 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
 
     fun updateStatus(action: String) {
         val listingId = _state.value.detail?.listing?.id ?: return
-        runAction {
+        val target = when (action) {
+            "sell" -> AnalyticsTarget.SOLD
+            "reserve" -> AnalyticsTarget.RESERVE
+            "remove" -> AnalyticsTarget.REMOVE
+            else -> null
+        }
+        runAction(Interaction.CLOSET_STATUS_UPDATE, target) {
             repository.updateListingStatus(listingId, action)
             if (action == "remove") _state.update { it.copy(removed = true) } else load(listingId)
         }
@@ -246,7 +252,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
 
     fun updatePrice(price: Int) {
         val listingId = _state.value.detail?.listing?.id ?: return
-        runAction {
+        runAction(Interaction.CLOSET_PRICE_UPDATE) {
             repository.updatePrice(listingId, price)
             _state.update { state ->
                 state.copy(
@@ -259,7 +265,7 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
 
     fun renew() {
         val listingId = _state.value.detail?.listing?.id ?: return
-        runAction {
+        runAction(Interaction.CLOSET_RENEW) {
             repository.renew(listingId)
             load(listingId)
             _state.update { it.copy(message = UiText.StringResourceId(Res.string.campus_closet_ilan_30_gun_daha_yayinda)) }
@@ -283,9 +289,9 @@ class CampusClosetListingViewModel(private val repository: CampusClosetRepositor
     fun consumeNavigation() = _state.update { it.copy(openConversationId = null) }
     fun clearMessage() = _state.update { it.copy(message = null) }
 
-    private fun runAction(interaction: Interaction? = null, block: suspend () -> Unit) {
+    private fun runAction(interaction: Interaction? = null, target: AnalyticsTarget? = null, block: suspend () -> Unit) {
         if (_state.value.busy) return
-        val tracking = interaction?.let { analytics.click(it) }
+        val tracking = interaction?.let { analytics.click(it, target) }
         viewModelScope.launch {
             _state.update { it.copy(busy = true, message = null) }
             attempt { block() }
@@ -488,7 +494,10 @@ data class CampusClosetChatState(
     val info: UiText? = null
 )
 
-class CampusClosetChatViewModel(private val repository: CampusClosetRepository) : ViewModel() {
+class CampusClosetChatViewModel(
+    private val repository: CampusClosetRepository,
+    private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
+) : ViewModel() {
     private val _state = MutableStateFlow(CampusClosetChatState())
     val state = _state.asStateFlow()
     private var conversationId: String = ""
@@ -566,12 +575,16 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
     fun send() {
         val text = _state.value.draft.trim()
         if (text.isEmpty() || _state.value.sending) return
-        runSend(clearDraft = true) { repository.sendMessage(conversationId, text) }
+        runSend(clearDraft = true, interaction = Interaction.CLOSET_MESSAGE_SEND) { repository.sendMessage(conversationId, text) }
     }
 
-    fun sendOffer(percent: Int) = runSend(clearDraft = false) { repository.sendOffer(conversationId, percent) }
+    fun sendOffer(percent: Int) = runSend(clearDraft = false, interaction = Interaction.CLOSET_OFFER) { repository.sendOffer(conversationId, percent) }
 
-    fun respondOffer(accept: Boolean) = runSend(clearDraft = false) { repository.respondOffer(conversationId, accept) }
+    fun respondOffer(accept: Boolean) = runSend(
+        clearDraft = false,
+        interaction = Interaction.CLOSET_OFFER_RESPOND,
+        target = if (accept) AnalyticsTarget.ACCEPT else AnalyticsTarget.REJECT
+    ) { repository.respondOffer(conversationId, accept) }
 
     fun block() = runSend(clearDraft = false) {
         repository.block(conversationId)
@@ -590,17 +603,22 @@ class CampusClosetChatViewModel(private val repository: CampusClosetRepository) 
 
     fun clearInfo() = _state.update { it.copy(info = null) }
 
-    private fun runSend(clearDraft: Boolean, block: suspend () -> Unit) {
+    private fun runSend(clearDraft: Boolean, interaction: Interaction? = null, target: AnalyticsTarget? = null, block: suspend () -> Unit) {
         if (_state.value.sending) return
+        val tracking = interaction?.let { analytics.click(it, target) }
         viewModelScope.launch {
             _state.update { it.copy(sending = true, error = null) }
             attempt { block() }
                 .onSuccess {
+                    analytics.result(tracking, InteractionStatus.SUCCESS)
                     markActivity()
                     _state.update { it.copy(sending = false, draft = if (clearDraft) "" else it.draft) }
                     refresh(full = _state.value.messages.isEmpty())
                 }
-                .onFailure { error -> _state.update { it.copy(sending = false, error = campusClosetErrorMessage(error)) } }
+                .onFailure { error ->
+                    analytics.result(tracking, InteractionStatus.ERROR)
+                    _state.update { it.copy(sending = false, error = campusClosetErrorMessage(error)) }
+                }
         }
     }
 }

@@ -128,4 +128,39 @@ class AnalyticsTrackerTest {
         assertEquals(AnalyticsTarget.CLASS_SCHEDULE, AnalyticsTarget.shortcut("classSchedule"))
         assertEquals(AnalyticsTarget.ALL, AnalyticsTarget.category(null))
     }
+
+    @Test fun screenViewLogsCataloguedParametersWhenGranted() {
+        val sink = Transport()
+        val tracker = DeviceAnalyticsTracker(Storage(AnalyticsConsent.GRANTED), sink, true)
+        tracker.screenView(AnalyticsScreen.CAMPUS_CLOSET)
+        assertEquals(1, sink.events.size)
+        val (name, params) = sink.events.first()
+        assertEquals("screen_view", name)
+        assertEquals("closet_feed", params["screen_name"])
+        assertEquals("closet_feed", params["screen_class"])
+        assertEquals("closet_feed", params["screen"])
+        assertEquals("campus_closet", params["feature"])
+    }
+
+    @Test fun screenViewSuppressedWithoutConsent() {
+        val sink = Transport()
+        val tracker = DeviceAnalyticsTracker(Storage(AnalyticsConsent.UNKNOWN), sink, true)
+        tracker.screenView(AnalyticsScreen.STUDENT_HOME)
+        assertTrue(sink.events.isEmpty())
+        tracker.setConsent(AnalyticsConsent.DENIED)
+        tracker.screenView(AnalyticsScreen.STUDENT_HOME)
+        assertTrue(sink.events.isEmpty())
+    }
+
+    @Test fun newInteractionsAndTargetsProduceCataloguedParameters() {
+        val sink = Transport()
+        val tracker = DeviceAnalyticsTracker(Storage(AnalyticsConsent.GRANTED), sink, true)
+        tracker.click(Interaction.EDU_VERIFY_REQUEST)
+        tracker.click(Interaction.CLOSET_STATUS_UPDATE, AnalyticsTarget.SOLD)
+        tracker.click(Interaction.SOCIAL_REQUEST_RESPOND, AnalyticsTarget.ACCEPT)
+        assertEquals(3, sink.events.size)
+        assertEquals(mapOf("feature" to "edu_verification", "screen" to "edu_verification", "action" to "request_code"), sink.events[0].second)
+        assertEquals(mapOf("feature" to "campus_closet", "screen" to "closet_listing", "action" to "update_status", "target" to "sold"), sink.events[1].second)
+        assertEquals(mapOf("feature" to "social", "screen" to "social_requests", "action" to "respond_request", "target" to "accept"), sink.events[2].second)
+    }
 }

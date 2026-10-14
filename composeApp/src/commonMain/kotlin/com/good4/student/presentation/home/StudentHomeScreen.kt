@@ -183,6 +183,7 @@ fun StudentHomeScreenRoot(
                         selected = if (index == 1) menuOpen else selectedItemIndex == 0 && !menuOpen,
                         onClick = {
                             analytics.click(if (index == 1) Interaction.MENU_OPEN else Interaction.HOME_OPEN)
+                            analytics.screenView(if (index == 1) AnalyticsScreen.STUDENT_MENU else AnalyticsScreen.STUDENT_HOME)
                             if (index == 1) {
                                 menuInitialShortcutId = null
                                 menuOpen = true
