@@ -1,0 +1,62 @@
+name: Weekly Good4 Analytics Report
+
+on:
+  schedule:
+    # Her Cumartesi Türkiye saatiyle 09:00 (UTC 06:00)
+    - cron: '0 6 * * 6'
+  workflow_dispatch: # GitHub web arayüzünden manuel tetikleme desteği
+
+permissions:
+  contents: write
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # Kilitlenme ve kota aşımını önleyen üst sınır
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Firebase Admin SDK (if service account configured)
+        run: |
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            npm install firebase-admin --no-save
+          fi
+
+      - name: Run Safe Analytics Report Generator
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: good4tr-v2
+        run: |
+          node tools/generate-weekly-report.mjs
+
+      - name: Commit and Push (Strictly Single Report File Only)
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Yalnızca oluşturulan HTML raporunu stage et (diğer hiçbir dosyaya dokunma)
+          TODAY=$(date +'%Y-%m-%d')
+          REPORT_FILE="docs/reports/good4-analytics-report-${TODAY}.html"
+
+          if [ -f "$REPORT_FILE" ]; then
+            git add "$REPORT_FILE"
+            if git diff --staged --quiet; then
+              echo "No changes to commit for today's report."
+            else
+              git commit -m "docs(analytics): automated weekly production report for ${TODAY}"
+              git push origin main
+              echo "Report successfully pushed to main branch."
+            fi
+          else
+            echo "Report file $REPORT_FILE was not found."
+            exit 1
+          fi
