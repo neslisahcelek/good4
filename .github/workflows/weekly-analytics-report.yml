@@ -2,8 +2,8 @@ name: Weekly Good4 Analytics Report
 
 on:
   schedule:
-    # Her Cumartesi Türkiye saatiyle 09:00 (UTC 06:00)
-    - cron: '0 6 * * 6'
+    # Her Cuma akşamı Türkiye saatiyle 23:00 (UTC 20:00)
+    - cron: '0 20 * * 5'
   workflow_dispatch: # GitHub web arayüzünden manuel tetikleme desteği
 
 permissions:
