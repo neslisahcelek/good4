@@ -72,6 +72,11 @@ skills-lock.json
 !.agents/skills/good4-pre-release/SKILL.md
 !.agents/skills/good4-pre-release/agents/
 !.agents/skills/good4-pre-release/agents/openai.yaml
+!.agents/skills/good4-store-compliance/
+!.agents/skills/good4-store-compliance/SKILL.md
+!.agents/skills/good4-store-compliance/agents/
+!.agents/skills/good4-store-compliance/agents/openai.yaml
+!.claude/skills/good4-store-compliance
 
 # CocoaPods
 iosApp/Pods/

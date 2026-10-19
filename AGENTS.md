@@ -247,3 +247,13 @@ Firebase Console'da ilgili Android uygulamasının altına şu parmak izlerinin 
 - Gerçek edu kanıtı (`eduVerified`, `eduEmail`, `eduEmailClaims`) ile erişim kararını (`campusAccessAllowed`, `accessSource`) karıştırmayın. Admin testi gerçek okul doğrulaması alanlarını değiştirmez.
 - Mobil UI sunucudan gelen erişim/test durumunu tüketir; yerel role göre yetki üretmez. Bağlantı kaldırma ve doğrulama değişiminde UID/sürüm kontrollü önbellek geçersizleştirmesini koruyun.
 - Bu alanı değiştirmeden önce [merkezi politika dokümanını](docs/CAMPUS_ACCESS_POLICY.md) okuyun. Test yetkisi yönetimi, sessionId, kotalar, bağlantı kaldırma ve yayın kuralları burada tanımlıdır.
+
+## 13) App Store ve Google Play Store uyumluluk kuralları (`good4-store-compliance`)
+- **İki Mağaza Perspektifi**: Mağaza gönderim öncesi denetimler Apple App Store Review Guidelines ve Google Play Developer Program Policies'i birlikte ele almalıdır.
+- **Kritik Ret Engelleri**:
+  - **Gizlilik & Veri**: Canlı HTTPS gizlilik politikası (`https://good4tr-v2.web.app/gizlilik-politikasi`), in-app bağlantı, iOS `PrivacyInfo.xcprivacy` ve Google Play Data Safety form beyanlarının kodla tam uyumu.
+  - **Hesap Silme**: Hem iOS hem Android'de self-serve hesap silme (`Profile > AccountSettingsScreen > ProfileDeleteAccountButton`), iOS Sign in with Apple token iptali (`revokeAppleTokenIfNeeded()`) ve Google Play için harici web hesap silme bağlantısı.
+  - **İkinci El / Fiziksel Model (IAP İstisnası)**: Kampüs Dolabı elden teslim modelidir; Good4 ödeme almaz, komisyonsuzdur. İnceleme notlarında IAP atlatması sanılmaması için bu model açıkça belirtilmelidir.
+  - **UGC & Moderasyon**: Topluluk ve Kampüs Dolabı içeriklerinde şikayet et (report) ve kullanıcı engelle (block) işlevleri eksiksiz sunulmalıdır.
+  - **Reviewer Erişimi**: Kampüs Dolabı ve Sosyal'in incelenebilmesi için hem App Store Connect hem Google Play Console App Access alanında doğrulanmış `.edu.tr` demo hesabı sağlanmalıdır.
+

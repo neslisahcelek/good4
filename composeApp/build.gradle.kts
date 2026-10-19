@@ -117,8 +117,13 @@ android {
         applicationId = "com.good4"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 21
-        versionName = "1.1.7"
+        versionCode = providers.gradleProperty("good4.versionCode")
+            .map { it.toInt() }
+            .orElse(21)
+            .get()
+        versionName = providers.gradleProperty("good4.versionName")
+            .orElse("1.1.7")
+            .get()
     }
 
     flavorDimensions += "env"

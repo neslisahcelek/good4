@@ -1,0 +1,4 @@
+interface:
+  display_name: "Good4 Store Compliance Agent"
+  short_description: "App Store ve Google Play Store retlerini önleme denetimi ve aksiyon planı"
+  default_prompt: "$good4-store-compliance ile değişiklikleri App Store ve Google Play Store gereksinimlerine göre denetle ve uyumluluk raporu hazırla."

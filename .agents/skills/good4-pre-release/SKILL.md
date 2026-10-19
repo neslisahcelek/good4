@@ -17,7 +17,7 @@ Amaç, yayın adayını gerçekten denetlemek ve eksikleri somut kanıtla göste
 
 ## Store review öncesi: dar kapsam
 
-Bu modu diğer kontrollerden önce seç. Kullanıcı “store review öncesi”, “App Store'a göndermeden önce” veya “Google Play incelemesi öncesi” kontrol isterse yalnız [kaynak kodu inceleme rehberini](references/store-review.md) uygula ve o rehberin kısa raporuyla bitir.
+Bu modu diğer kontrollerden önce seç. Kullanıcı “store review öncesi”, “App Store'a göndermeden önce” veya “Google Play incelemesi öncesi” kontrol isterse [kaynak kodu inceleme rehberini](references/store-review.md) ve [good4-store-compliance](../good4-store-compliance/SKILL.md) standartlarını uygula ve o rehberin formatıyla bitir.
 
 - Bu modda aşağıdaki sürüm/ortam, derleme/paket, backend, cihaz, mağaza bilgileri ve kapsamlı yayın kararı bölümlerini çalıştırma. Build, archive, imza, test komutu, gizlilik politikası/beyan denetimi, canlı Firebase sorgusu, mağaza Console erişimi veya dış URL kontrolü yapma.
 - Başlangıç okumalarını repo talimatları, hedef diff, ilgili kaynaklar ve `good4-code-review` ile sınırla. Diğer skill'leri yalnız değişen kodu anlamak için gerektiğinde yükle; genel yayın denetimini başlatma.

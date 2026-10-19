@@ -1,19 +1,33 @@
-# Store review öncesi kaynak kodu incelemesi
+# Store review öncesi kaynak kodu ve uyumluluk incelemesi
 
-Amaç, değişen iOS/Android kodunda reviewer'ın uygulamayı kullanmasını engelleyebilecek somut sorunları bulmaktır. Bu inceleme build, gizlilik politikası veya kapsamlı yayın hazırlığı denetimi içermez.
+Bu rehber, değişen iOS ve Android kodunda ve yapılandırmasında Apple App Store ve Google Play Store inceleme görevlilerinin (reviewer) uygulamayı reddetmesine yol açabilecek sorunları denetler. 
+
+Tam kapsamlı mağaza gereksinimleri ve aksiyon planı için **[good4-store-compliance](../../good4-store-compliance/SKILL.md)** skill'indeki REQ-01..REQ-20 denetim standartları esas alınır.
 
 ## Kapsam ve kontroller
 
-- İstenen platformun HEAD ve çalışma ağacı diff'ini belirle. Son yayın referansı kullanıcıdan veya mevcut güvenilir bilgiden biliniyorsa onu esas al; yoksa açık bir commit aralığı varsayımı belirt. Referans bulmak için mağaza/remote servis araştırmasına girişme ve kapsamı tüm repoya genişletme.
-- `good4-code-review` ile hedef diff'i ve davranışı anlamak için gerekli yakın tüketicileri incele. Öncelik crash/null/index hataları, takılan loading, görünmeyen hata/retry, bozuk buton ve eksik navigasyondur.
-- Değişen giriş/doğrulama/rol akışlarında reviewer'ın ilgili ekranlara ulaşmasını kesebilecek kararları izle. Test hesabıyla giriş yapma veya hesap bilgisi isteme; kaynakta görülen koşulları raporla.
-- Değişen update akışında sürüm karşılaştırması, soft/force ayrımı, geri dönüş, timeout ve mağazadan dönüş/lifecycle davranışını kaynak üzerinden incele. Canlı flag/config değerlerini okumaya veya değiştirmeye çalışma.
-- Yeni kullanıcı içeriği/hesap ekranı varsa şikâyet, engelleme ve hesap silme gibi mevcut kullanıcı aksiyonlarının ilgili ekrandan erişilebilirliğini ve event → ViewModel → repository zincirini kontrol et. Bunu genel politika/hukuk uygunluğu audit'ine dönüştürme.
-- Değişen iOS kodunda expect/actual, DI, native callback, DTO serializer ve platform izin akışlarının eksik bağlanmasını kontrol et. Metadata, screenshot, SDK uyumluluk takvimi ve production yapılandırması bu modun kapsamı değildir.
-- Yalnız inceleme istenmişse kodu değiştirme. Düzeltme ayrıca yetkilendirilmişse kapsam içindeki bulguları giderip diff'i yeniden incele; build/test ayrıca istenmedikçe çalıştırma. Kozmetik refactor önerilerini gönderim engeli sayma.
+1. **Hedef Kapsam ve Diff**:
+   - İstenen platformun (iOS / Android / Her ikisi) HEAD ve çalışma ağacı diff'ini belirle.
+   - Son yayın referansı biliniyorsa commit aralığını netleştir.
 
-## Kısa rapor
+2. **Kritik Mağaza Ret Noktaları (REQ Kontrol Listesi)**:
+   - **Çökme ve Null Güvenliği (REQ-05)**: KMP DTO mapping'lerinde null-safety (`?:` fallback), `kotlinx.serialization` model uyumsuzlukları, takılan sonsuz loading/spinner durumları, offline/hata anında kullanıcıya gösterilmeyen retry UI'ı.
+   - **Giriş ve Reviewer Erişimi (REQ-06, REQ-09)**: Reviewer'ın ilgili ekranlara (Kampüs Dolabı, Sosyal, vb.) ulaşmasını engelleyen login/doğrulama duvarları. Reviewer demo hesabının gereksinimlerini tespit et.
+   - **Hesap Silme (REQ-07)**: Yeni profil/hesap akışlarında self-serve "Hesabımı Sil" butonunun (`ProfileDeleteAccountButton`, `DeleteAccountConfirmDialog`) erişilebilirliği ve iOS'ta Sign in with Apple token iptali (`revokeAppleTokenIfNeeded()`). Google Play için web silme linki varlığı.
+   - **Ödeme ve İkinci El Modeli (REQ-08)**: Kampüs Dolabı veya etkinliklerde harici ödeme/IAP atlatması izlenimi veren buton veya metin olmaması (Good4 komisyonsuz, ödemesiz elden teslim modelidir).
+   - **Kullanıcı İçeriği (UGC) ve Moderasyon (REQ-13)**: Kampüs Dolabı ilanları veya Sosyal etkinlik paylaşımlarında şikayet et (report), kullanıcı engelle (block) butonları ve EULA/Kullanım Sözleşmesi bağlantılarının varlığı.
+   - **Platform Ayrımı ve İzole UI (REQ-12)**: iOS ekranlarında veya metinlerinde "Android", "Play Store" ibarelerinin veya Android sistem ikonlarının yer almaması.
+   - **Sosyal Giriş Eşitliği (REQ-19)**: iOS tarafında Google ile giriş varsa, Sign in with Apple butonunun (`AppleSignInButton`) eşit görünürlükte bulunması.
+   - **İzin Açıklamaları ve Bildirimler (REQ-02, REQ-03)**: `Info.plist` içinde `NSCameraUsageDescription` vb. anahtarların açık ve amaca uygun olması; Android'de `POST_NOTIFICATIONS` ve Photo Picker uyumu.
 
-Önce somut sorunları önem sırasıyla dosya/satır, tetikleyen koşul, kullanıcı etkisi ve düzeltmeyle ver. Ardından incelenen platform/commit aralığını ve kaynak incelemesinin sınırını belirt. Bulgu yoksa “İncelenen kodda store review açısından engel bulunmadı” de; bunu uygulamanın bütünüyle yayına hazır olduğu veya mağazadan kesin kabul alacağı şeklinde sunma.
+3. **İnceleme Sınırları**:
+   - Yalnız inceleme istenmişse kodu değiştirme. Düzeltme talep edilmişse bulguları giderip diff'i yenile.
+   - Mağaza ret riski taşımayan kozmetik refactor önerilerini ret engeli olarak sunma.
 
-Kapsam dışındaki build, cihaz, Console, backend ve gizlilik kontrollerini eksik işler listesine dönüştürme; yalnız kaynak kodu incelendiğini tek cümleyle belirt.
+## Rapor Formatı
+
+Raporu [good4-store-compliance](../../good4-store-compliance/SKILL.md) formatına uygun olarak sun:
+- **Özet:** Genel ret riski ve değerlendirilen platformlar.
+- **Bulgular (REQ-XX):** Tespit edilen somut riskler, dosya/satır numaraları, Apple Guideline / Google Play Policy atıfları ve düzeltme adımları.
+- **Öncelik Sırası:** İncelemeyi doğrudan durduracak (crash, account deletion, login wall) kritik engellerden düşüğe sıralama.
+- **Store Review Notları:** App Store Connect ve Google Play Console için hazırlanmış İngilizce/Türkçe inceleme notu taslağı.
