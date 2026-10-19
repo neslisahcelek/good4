@@ -25,6 +25,9 @@ class NotificationsViewModelTest {
         val cursors = mutableListOf<NumericPageCursor?>()
         val singleIds = mutableListOf<String>()
         val readIds = mutableListOf<Set<String>>()
+        val deletedIds = mutableListOf<Set<String>>()
+        var deleteAllCalled = false
+        var deleteFails = false
         var page: suspend (NumericPageCursor?) -> NotificationPage = { NotificationPage(emptyList(), null, 0) }
         var single: suspend (String) -> StudentNotification? = { notification(it, 500) }
         override suspend fun inbox(cursor: NumericPageCursor?): NotificationPage { cursors += cursor; return page(cursor) }
@@ -33,6 +36,14 @@ class NotificationsViewModelTest {
         override suspend fun savePreferences(value: NotificationPreferencesDto) = Unit
         override suspend fun enableAnnouncements() = Unit
         override suspend fun markRead(ids: Set<String>) { readIds += ids }
+        override suspend fun delete(ids: Set<String>) {
+            if (deleteFails) error("network_error")
+            deletedIds += ids
+        }
+        override suspend fun deleteAll() {
+            if (deleteFails) error("network_error")
+            deleteAllCalled = true
+        }
         override suspend fun syncDevice() = PushSnapshot()
     }
 
@@ -123,6 +134,71 @@ class NotificationsViewModelTest {
             assertEquals(5, source.cursors.size)
             assertEquals(100, vm.state.value.notifications.size)
             assertNull(vm.state.value.nextCursor)
+        } finally { store.clear(); Dispatchers.resetMain() }
+    }
+
+    @Test fun deleteSingleNotificationRemovesItAndUpdatesUnreadAndCallsSource() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val store = ViewModelStore()
+        try {
+            val source = Source()
+            source.page = {
+                NotificationPage(listOf(notification("first", 20), notification("second", 10)), null, 2)
+            }
+            val vm = NotificationsViewModel(source).also { store.put("inbox", it) }
+            runCurrent(); vm.refresh(); runCurrent()
+            assertEquals(2, vm.state.value.notifications.size)
+            vm.select(vm.state.value.notifications.first())
+            assertEquals("first", vm.state.value.selected?.id)
+
+            vm.delete("first")
+            runCurrent()
+
+            assertEquals(listOf("second"), vm.state.value.notifications.map { it.id })
+            assertNull(vm.state.value.selected)
+            assertEquals(listOf(setOf("first")), source.deletedIds)
+        } finally { store.clear(); Dispatchers.resetMain() }
+    }
+
+    @Test fun deleteAllNotificationsClearsInboxAndUnread() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val store = ViewModelStore()
+        try {
+            val source = Source()
+            source.page = {
+                NotificationPage(listOf(notification("first", 20), notification("second", 10)), null, 2)
+            }
+            val vm = NotificationsViewModel(source).also { store.put("inbox", it) }
+            runCurrent(); vm.refresh(); runCurrent()
+            assertEquals(2, vm.state.value.notifications.size)
+            assertTrue(NotificationInbox.hasUnseen.value)
+
+            vm.deleteAll()
+            runCurrent()
+
+            assertTrue(vm.state.value.notifications.isEmpty())
+            assertFalse(NotificationInbox.hasUnseen.value)
+            assertTrue(source.deleteAllCalled)
+        } finally { store.clear(); Dispatchers.resetMain() }
+    }
+
+    @Test fun deleteFailureRollsBackNotificationsAndShowsError() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val store = ViewModelStore()
+        try {
+            val source = Source()
+            source.page = {
+                NotificationPage(listOf(notification("first", 20)), null, 1)
+            }
+            val vm = NotificationsViewModel(source).also { store.put("inbox", it) }
+            runCurrent(); vm.refresh(); runCurrent()
+            source.deleteFails = true
+
+            vm.delete("first")
+            runCurrent()
+
+            assertEquals(listOf("first"), vm.state.value.notifications.map { it.id })
+            assertNotNull(vm.state.value.error)
         } finally { store.clear(); Dispatchers.resetMain() }
     }
 

@@ -162,6 +162,38 @@ class NotificationsViewModel(private val repository: NotificationDataSource) : V
         } catch (e: CancellationException) { throw e }
         catch (_: Exception) { if (repository.currentUserId == uid) mutable.update { it.copy(error = UiText.StringResourceId(Res.string.notification_save_failed)) } }
     }
+    fun delete(id: String) = viewModelScope.launch {
+        val uid = repository.currentUserId ?: return@launch
+        val original = mutable.value.notifications
+        val updated = original.filterNot { it.id == id }
+        mutable.update { it.copy(notifications = updated, selected = if (it.selected?.id == id) null else it.selected) }
+        NotificationInbox.update(updated.any { it.data.readAt == 0L })
+        try {
+            repository.delete(setOf(id))
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) {
+            if (repository.currentUserId == uid) {
+                mutable.update { it.copy(notifications = original, error = UiText.StringResourceId(Res.string.notification_delete_failed)) }
+                NotificationInbox.update(original.any { it.data.readAt == 0L })
+            }
+        }
+    }
+    fun deleteAll() = viewModelScope.launch {
+        val uid = repository.currentUserId ?: return@launch
+        if (mutable.value.notifications.isEmpty()) return@launch
+        val original = mutable.value.notifications
+        mutable.update { it.copy(notifications = emptyList(), selected = null, nextCursor = null) }
+        NotificationInbox.update(false)
+        try {
+            repository.deleteAll()
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) {
+            if (repository.currentUserId == uid) {
+                mutable.update { it.copy(notifications = original, error = UiText.StringResourceId(Res.string.notification_delete_failed)) }
+                NotificationInbox.update(original.any { it.data.readAt == 0L })
+            }
+        }
+    }
     /** "Bildirimleri aç" in the permission dialog is the student's opt-in to Good4 announcements too. */
     fun enableAnnouncements() {
         if (mutable.value.saving || mutable.value.preferences.announcements) return

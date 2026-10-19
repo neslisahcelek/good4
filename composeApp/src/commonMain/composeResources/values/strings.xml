@@ -469,6 +469,11 @@
     <string name="notification_home_title">Good4’dan haberin olsun</string>
     <string name="notification_home_description">Önemli duyurular ve yeni sürümlerden haberdar ol.</string>
     <string name="notification_later">Daha sonra</string>
+    <string name="notification_delete">Sil</string>
+    <string name="notification_delete_all">Tümünü sil</string>
+    <string name="notification_delete_confirm_title">Bildirimleri Sil</string>
+    <string name="notification_delete_confirm_message">Tüm bildirimleri silmek istediğinden emin misin? Bu işlem geri alınamaz.</string>
+    <string name="notification_delete_failed">Bildirim silinemedi. Tekrar dene.</string>
     <string name="community_load_more">Daha fazla etkinlik yükle</string>
 
     <!-- Kampüs Dolabı -->

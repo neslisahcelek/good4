@@ -114,6 +114,56 @@ export async function markNotificationsReadService(database: Firestore, uid: str
   return { saved: true };
 }
 
+export async function deleteNotificationsService(database: Firestore, uid: string, input: Record<string, unknown>) {
+  await database.runTransaction((transaction) => requireActiveActor(database, transaction, uid));
+  const collection = database.collection(`users/${uid}/notifications`);
+  const all = input.all === true;
+  const expired = input.expired === true;
+  const olderThanSeconds = typeof input.olderThanSeconds === "number" ? input.olderThanSeconds : null;
+
+  if (all) {
+    const docs = (await collection.limit(500).get()).docs;
+    if (docs.length > 0) {
+      const batch = database.batch();
+      docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    return { deletedCount: docs.length };
+  }
+
+  if (expired || olderThanSeconds !== null) {
+    const cutoff = olderThanSeconds ?? Math.floor(Date.now() / 1000) - 7 * 86400;
+    const docs = (await collection.where("createdAt", "<=", cutoff).limit(500).get()).docs;
+    if (docs.length > 0) {
+      const batch = database.batch();
+      docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    return { deletedCount: docs.length };
+  }
+
+  if (input.notificationIds !== undefined) {
+    if (!Array.isArray(input.notificationIds) || input.notificationIds.length > 100) {
+      throw new HttpsError("invalid-argument", "NOTIFICATION_IDS_INVALID");
+    }
+    const safeIds = [...new Set(input.notificationIds.map((value) => id(value, "notificationId", 256)))];
+    if (safeIds.length > 0) {
+      const batch = database.batch();
+      safeIds.forEach((notificationId) => batch.delete(collection.doc(notificationId)));
+      await batch.commit();
+    }
+    return { deletedCount: safeIds.length };
+  }
+
+  if (input.notificationId !== undefined) {
+    const safeId = id(input.notificationId, "notificationId", 256);
+    await collection.doc(safeId).delete();
+    return { deletedCount: 1 };
+  }
+
+  throw new HttpsError("invalid-argument", "INVALID_INPUT");
+}
+
 async function validateAnnouncement(database: Firestore, uid: string, input: Record<string, unknown>): Promise<NotificationJob> {
   await requireGood4Admin(database, uid);
   const title = requireNonEmptyString(input.title, "title", 120);

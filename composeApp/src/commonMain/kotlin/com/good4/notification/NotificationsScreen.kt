@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.Alignment
@@ -38,19 +39,37 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: NotificationsViewModel, o
     val state by viewModel.state.collectAsStateWithLifecycle()
     val launcher = rememberNotificationPermissionLauncher()
     LaunchedEffect(Unit) { viewModel.refresh() }
-    NotificationsContent(state, onBack, viewModel::select, { viewModel.read() }, viewModel::savePreferences,
-        { launcher.openSettings() }, viewModel::refresh, viewModel::loadMore)
+    NotificationsContent(
+        state = state,
+        onBack = onBack,
+        onSelect = viewModel::select,
+        onReadAll = { viewModel.read() },
+        onDelete = viewModel::delete,
+        onDeleteAll = viewModel::deleteAll,
+        onPreferences = viewModel::savePreferences,
+        onSettings = { launcher.openSettings() },
+        onRetry = viewModel::refresh,
+        onLoadMore = viewModel::loadMore
+    )
     state.selected?.let { notification ->
         AlertDialog(
             onDismissRequest = viewModel::closeDetail,
             title = { Text(notification.data.title) },
             text = { Text(notification.data.body) },
             confirmButton = {
-                if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
-                    TextButton(onClick = { onOpenEvent(notification) }) {
-                        Text(stringResource(if (notification.data.kind == "eventReminder") Res.string.notification_open_ticket else Res.string.notification_open_event))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = { viewModel.delete(notification.id) },
+                        colors = ButtonDefaults.textButtonColors(contentColor = ErrorRed)
+                    ) {
+                        Text(stringResource(Res.string.notification_delete))
                     }
-                } else TextButton(onClick = viewModel::closeDetail) { Text(stringResource(Res.string.notification_close)) }
+                    if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
+                        TextButton(onClick = { onOpenEvent(notification) }) {
+                            Text(stringResource(if (notification.data.kind == "eventReminder") Res.string.notification_open_ticket else Res.string.notification_open_event))
+                        }
+                    } else TextButton(onClick = viewModel::closeDetail) { Text(stringResource(Res.string.notification_close)) }
+                }
             },
             dismissButton = {
                 if (notification.data.eventId.isNotBlank() && notification.data.kind != "eventCancelled") {
@@ -64,11 +83,43 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: NotificationsViewModel, o
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NotificationsContent(
-    state: NotificationsState, onBack: () -> Unit, onSelect: (StudentNotification) -> Unit,
-    onReadAll: () -> Unit, onPreferences: (NotificationPreferencesDto) -> Unit,
-    onSettings: () -> Unit, onRetry: () -> Unit, onLoadMore: () -> Unit
+    state: NotificationsState,
+    onBack: () -> Unit,
+    onSelect: (StudentNotification) -> Unit,
+    onReadAll: () -> Unit,
+    onDelete: (String) -> Unit,
+    onDeleteAll: () -> Unit,
+    onPreferences: (NotificationPreferencesDto) -> Unit,
+    onSettings: () -> Unit,
+    onRetry: () -> Unit,
+    onLoadMore: () -> Unit
 ) {
     var showPreferences by rememberSaveable { mutableStateOf(false) }
+    var showDeleteAllConfirm by rememberSaveable { mutableStateOf(false) }
+
+    if (showDeleteAllConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllConfirm = false },
+            title = { Text(stringResource(Res.string.notification_delete_confirm_title)) },
+            text = { Text(stringResource(Res.string.notification_delete_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteAllConfirm = false
+                        onDeleteAll()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = ErrorRed)
+                ) {
+                    Text(stringResource(Res.string.notification_delete_all))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllConfirm = false }) {
+                    Text(stringResource(Res.string.notification_close))
+                }
+            }
+        )
+    }
     if (showPreferences && state.supported) {
         ModalBottomSheet(
             onDismissRequest = { showPreferences = false },
@@ -86,6 +137,16 @@ private fun NotificationsContent(
             Text(stringResource(Res.string.notification_title), Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall)
             IconButton(onClick = onReadAll, enabled = state.supported && state.notifications.any { it.data.readAt == 0L }) {
                 Icon(Icons.Filled.DoneAll, stringResource(Res.string.notification_read_all))
+            }
+            IconButton(
+                onClick = { showDeleteAllConfirm = true },
+                enabled = state.supported && state.notifications.isNotEmpty()
+            ) {
+                Icon(
+                    Icons.Filled.DeleteOutline,
+                    stringResource(Res.string.notification_delete_all),
+                    tint = if (state.notifications.isNotEmpty()) TextPrimary else TextSecondary
+                )
             }
             if (state.supported) {
                 IconButton(onClick = { showPreferences = true }) {
@@ -111,9 +172,26 @@ private fun NotificationsContent(
                     items(state.notifications, key = { it.id }) { notification ->
                         ElevatedCard(onClick = { onSelect(notification) }, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(notification.data.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                                    if (notification.data.readAt == 0L) Text(stringResource(Res.string.notification_unread), color = MaterialTheme.colorScheme.primary)
+                                    if (notification.data.readAt == 0L) {
+                                        Text(
+                                            stringResource(Res.string.notification_unread),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(end = 4.dp)
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { onDelete(notification.id) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.DeleteOutline,
+                                            contentDescription = stringResource(Res.string.notification_delete),
+                                            tint = TextSecondary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
                                 Text(notification.data.body, style = MaterialTheme.typography.bodyMedium)
                                 val local = Instant.fromEpochSeconds(notification.data.createdAt).toLocalDateTime(TimeZone.of("Europe/Istanbul"))
@@ -225,7 +303,11 @@ private fun PreferenceRow(title: String, description: String, checked: Boolean, 
 @Composable
 private fun NotificationsPreview() {
     com.good4.core.presentation.Good4Theme {
-        NotificationsContent(NotificationsState(notifications = listOf(StudentNotification("preview", NotificationDto(title = "Etkinlik", body = "Kampüs etkinliği", createdAt = 1790000000)))), {}, {}, {}, {}, {}, {}, {})
+        NotificationsContent(
+            state = NotificationsState(notifications = listOf(StudentNotification("preview", NotificationDto(title = "Etkinlik", body = "Kampüs etkinliği", createdAt = 1790000000)))),
+            onBack = {}, onSelect = {}, onReadAll = {}, onDelete = {}, onDeleteAll = {},
+            onPreferences = {}, onSettings = {}, onRetry = {}, onLoadMore = {}
+        )
     }
 }
 

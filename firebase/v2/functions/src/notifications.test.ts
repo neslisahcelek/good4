@@ -3,7 +3,7 @@ import { after, beforeEach, test } from "node:test";
 import { FieldPath, Timestamp } from "firebase-admin/firestore";
 import { db, legacyTestDb } from "./firebase.js";
 import { cancelEventService, saveEventService } from "./events.js";
-import { enqueueNotification, markNotificationsReadService, prepareEventReminders, processNotificationPage,
+import { deleteNotificationsService, enqueueNotification, markNotificationsReadService, prepareEventReminders, processNotificationPage,
   registerPushDeviceService, sendAnnouncementService, unregisterPushDeviceService, updateNotificationPreferencesService,
   type NotificationJob } from "./notifications.js";
 
@@ -313,4 +313,30 @@ test("numeric inbox cursors retain equal-time notifications even after the curso
   assert.equal(ids[0], "item-060");
   assert.equal(ids.at(-1), "item-000");
   assert.equal(ids.includes("new-push"), false);
+});
+
+test("delete notifications supports single, multiple, all and expired cleanups without crossing account boundaries", async () => {
+  const batch = db.batch();
+  const now = Math.floor(Date.now() / 1000);
+  for (let i = 0; i < 10; i++) {
+    batch.set(db.doc(`users/student/notifications/n-${i}`), { createdAt: now - (i * 86400), readAt: 0 });
+  }
+  batch.set(db.doc("users/other/notifications/n-other"), { createdAt: now, readAt: 0 });
+  await batch.commit();
+
+  await deleteNotificationsService(db, "student", { notificationId: "n-0" });
+  assert.equal((await db.doc("users/student/notifications/n-0").get()).exists, false);
+
+  await deleteNotificationsService(db, "student", { notificationIds: ["n-1", "n-2"] });
+  assert.equal((await db.doc("users/student/notifications/n-1").get()).exists, false);
+  assert.equal((await db.doc("users/student/notifications/n-2").get()).exists, false);
+
+  await deleteNotificationsService(db, "student", { expired: true });
+  assert.equal((await db.doc("users/student/notifications/n-8").get()).exists, false);
+  assert.equal((await db.doc("users/student/notifications/n-9").get()).exists, false);
+  assert.equal((await db.doc("users/student/notifications/n-3").get()).exists, true);
+
+  await deleteNotificationsService(db, "student", { all: true });
+  assert.equal((await db.collection("users/student/notifications").get()).empty, true);
+  assert.equal((await db.doc("users/other/notifications/n-other").get()).exists, true);
 });

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -126,7 +128,7 @@ internal fun StudentMenuSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.78f)
+                .fillMaxHeight(if (feedbackOpen) 0.92f else 0.78f)
                 .padding(top = 10.dp)
         ) {
             if (feedbackOpen) {
@@ -228,7 +230,9 @@ private fun FeedbackForm(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .navigationBarsPadding()
+            .imePadding(),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         StoreReviewCard(state = reviewState, onReview = onReview)
@@ -297,7 +301,7 @@ private fun FeedbackForm(
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Deneyimini, önerini veya karşılaştığın sorunu yazabilirsin.") },
             supportingText = { Text("${state.message.length}/2000") },
-            minLines = 5,
+            minLines = 4,
             maxLines = 8,
             enabled = !state.isSubmitting,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
@@ -338,7 +342,7 @@ private fun FeedbackForm(
             fontSize = 12.sp,
             lineHeight = 17.sp
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(28.dp))
     }
 }
 

@@ -16,6 +16,8 @@ import kotlinx.serialization.json.*
 
 data class NotificationPage(val items: List<StudentNotification>, val nextCursor: NumericPageCursor?, val fetchedCount: Int)
 
+const val NOTIFICATION_EXPIRY_SECONDS = 7 * 86_400L
+
 interface NotificationDataSource {
     val currentUserId: String?
     val authStateFlow: Flow<AuthUser?>
@@ -26,6 +28,8 @@ interface NotificationDataSource {
     suspend fun savePreferences(value: NotificationPreferencesDto)
     suspend fun enableAnnouncements()
     suspend fun markRead(ids: Set<String>)
+    suspend fun delete(ids: Set<String>)
+    suspend fun deleteAll()
     suspend fun syncDevice(): PushSnapshot
 }
 
@@ -46,16 +50,31 @@ class NotificationRepository(private val store: FirestoreRepository, private val
         )) {
             is Result.Success -> {
                 val blocked = loadBlockedCommunityIds()
-                NotificationPage(result.data.items.map { StudentNotification(it.id, it.data) }
-                    .filter { it.data.organizationId !in blocked }, result.data.nextCursor, result.data.items.size)
+                val nowSeconds = Clock.System.now().epochSeconds
+                val cutoff = nowSeconds - NOTIFICATION_EXPIRY_SECONDS
+                val items = result.data.items.map { StudentNotification(it.id, it.data) }
+                val validItems = items.filter { it.data.organizationId !in blocked && it.data.createdAt > cutoff }
+                val expiredIds = items.filter { it.data.createdAt <= cutoff }.map { it.id }.toSet()
+                if (expiredIds.isNotEmpty()) {
+                    try { delete(expiredIds) } catch (_: Exception) {}
+                }
+                NotificationPage(
+                    validItems,
+                    if (items.any { it.data.createdAt <= cutoff }) null else result.data.nextCursor,
+                    validItems.size
+                )
             }
             is Result.Error -> error("notification_load_failed")
         }
     }
     override suspend fun notification(id: String): StudentNotification? {
         val uid = currentUserId ?: return null
+        val nowSeconds = Clock.System.now().epochSeconds
+        val cutoff = nowSeconds - NOTIFICATION_EXPIRY_SECONDS
         return when (val result = store.getDocument("users/$uid/notifications", id, NotificationDto::class)) {
-            is Result.Success -> StudentNotification(id, result.data).takeIf { it.data.organizationId !in loadBlockedCommunityIds() }
+            is Result.Success -> StudentNotification(id, result.data).takeIf {
+                it.data.organizationId !in loadBlockedCommunityIds() && it.data.createdAt > cutoff
+            }
             is Result.Error -> null
         }
     }
@@ -93,6 +112,19 @@ class NotificationRepository(private val store: FirestoreRepository, private val
         if (ids.isEmpty()) return
         callV2Function("markNotificationsRead", buildJsonObject {
             put("notificationIds", buildJsonArray { ids.forEach { add(it) } })
+        })
+    }
+    override suspend fun delete(ids: Set<String>) {
+        if (!supported || currentUserId == null) return
+        if (ids.isEmpty()) return
+        callV2Function("deleteNotifications", buildJsonObject {
+            put("notificationIds", buildJsonArray { ids.forEach { add(it) } })
+        })
+    }
+    override suspend fun deleteAll() {
+        if (!supported || currentUserId == null) return
+        callV2Function("deleteNotifications", buildJsonObject {
+            put("all", true)
         })
     }
     override suspend fun syncDevice(): PushSnapshot = PushSession.mutex.withLock {

@@ -12,7 +12,7 @@ import { getFunctions } from "firebase-admin/functions";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onTaskDispatched } from "firebase-functions/v2/tasks";
 import { resumeNotificationJobService, registerPushDeviceService as registerNotificationPushDeviceService, unregisterPushDeviceService as unregisterNotificationPushDeviceService, updateNotificationPreferencesService,
-  markNotificationsReadService, previewAnnouncementService, sendAnnouncementService,
+  markNotificationsReadService, deleteNotificationsService, previewAnnouncementService, sendAnnouncementService,
   notificationHistoryService, processNotificationPage, prepareEventReminders } from "./notifications.js";
 import { getAuth } from "firebase-admin/auth";
 import { randomUUID } from "node:crypto";
@@ -930,6 +930,8 @@ export const updateNotificationPreferences = onCall(callableOptions, async (requ
   updateNotificationPreferencesService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
 export const markNotificationsRead = onCall(callableOptions, async (request) =>
   markNotificationsReadService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
+export const deleteNotifications = onCall(callableOptions, async (request) =>
+  deleteNotificationsService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
 export const previewAnnouncement = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 6);
   return previewAnnouncementService(db, uid, request.data ?? {});

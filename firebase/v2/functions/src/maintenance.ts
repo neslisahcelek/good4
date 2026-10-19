@@ -33,6 +33,20 @@ export async function cleanupTechnicalRecords(database: Firestore, bucket?: Buck
     records.docs.forEach((record) => { batch.delete(record.ref); deleted++; });
     if (!records.empty) await batch.commit();
   }
+  const notificationCutoff = Math.floor((now - 7 * 86400000) / 1000);
+  try {
+    const oldNotifications = await database.collectionGroup("notifications")
+      .where("createdAt", "<=", notificationCutoff)
+      .limit(500)
+      .get();
+    if (!oldNotifications.empty) {
+      const batch = database.batch();
+      oldNotifications.docs.forEach((doc) => { batch.delete(doc.ref); deleted++; });
+      await batch.commit();
+    }
+  } catch (error) {
+    console.warn("Notifications collectionGroup cleanup deferred:", error);
+  }
   if (bucket) {
     const banners = await database.getAll(...[1, 2, 3, 4].map((slot) => database.doc(`app_config/${slot === 1 ? "home_banner" : `home_banner_${slot}`}`)));
     const active = new Set<string>();
