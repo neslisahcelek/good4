@@ -44,7 +44,17 @@ if [ -n "${JAVA_HOME:-}" ]; then
     export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
-# ── 3. Build environment info ───────────────────────────────────────────────────
+# ── 3. Auto-increment build number in Xcode Cloud ──────────────────────────────
+if [[ -n "${CI_BUILD_NUMBER:-}" ]]; then
+    # Base build number in repo is 19. Each Xcode Cloud run increments CI_BUILD_NUMBER (1, 2, ...)
+    NEW_BUILD_NUM=$((19 + CI_BUILD_NUMBER))
+    echo "Updating build number to $NEW_BUILD_NUM (base 19 + CI_BUILD_NUMBER $CI_BUILD_NUMBER)..."
+    cd "$IOS_DIR"
+    xcrun agvtool new-version -all "$NEW_BUILD_NUM" || true
+    cd "$REPO_ROOT"
+fi
+
+# ── 4. Build environment info ───────────────────────────────────────────────────
 echo "Xcode version: $(xcodebuild -version | head -1)"
 echo "macOS version: $(sw_vers -productVersion)"
 if command -v java >/dev/null 2>&1; then
