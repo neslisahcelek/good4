@@ -18,7 +18,8 @@ import kotlinx.serialization.json.put
 data class NotificationDto(
     val kind: String = "", val title: String = "", val body: String = "",
     val organizationId: String = "", val eventId: String = "",
-    val createdAt: Long = 0, val readAt: Long = 0
+    val createdAt: Long = 0, val readAt: Long = 0,
+    val deletedAt: Long = 0
 )
 data class StudentNotification(val id: String, val data: NotificationDto)
 @Serializable

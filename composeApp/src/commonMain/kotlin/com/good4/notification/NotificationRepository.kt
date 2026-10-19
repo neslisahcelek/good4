@@ -53,10 +53,10 @@ class NotificationRepository(private val store: FirestoreRepository, private val
                 val nowSeconds = Clock.System.now().epochSeconds
                 val cutoff = nowSeconds - NOTIFICATION_EXPIRY_SECONDS
                 val items = result.data.items.map { StudentNotification(it.id, it.data) }
-                val validItems = items.filter { it.data.organizationId !in blocked && it.data.createdAt > cutoff }
-                val expiredIds = items.filter { it.data.createdAt <= cutoff }.map { it.id }.toSet()
-                if (expiredIds.isNotEmpty()) {
-                    try { delete(expiredIds) } catch (_: Exception) {}
+                val validItems = items.filter {
+                    it.data.organizationId !in blocked &&
+                    it.data.createdAt > cutoff &&
+                    it.data.deletedAt == 0L
                 }
                 NotificationPage(
                     validItems,
@@ -73,7 +73,9 @@ class NotificationRepository(private val store: FirestoreRepository, private val
         val cutoff = nowSeconds - NOTIFICATION_EXPIRY_SECONDS
         return when (val result = store.getDocument("users/$uid/notifications", id, NotificationDto::class)) {
             is Result.Success -> StudentNotification(id, result.data).takeIf {
-                it.data.organizationId !in loadBlockedCommunityIds() && it.data.createdAt > cutoff
+                it.data.organizationId !in loadBlockedCommunityIds() &&
+                it.data.createdAt > cutoff &&
+                it.data.deletedAt == 0L
             }
             is Result.Error -> null
         }

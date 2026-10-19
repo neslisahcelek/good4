@@ -118,25 +118,13 @@ export async function deleteNotificationsService(database: Firestore, uid: strin
   await database.runTransaction((transaction) => requireActiveActor(database, transaction, uid));
   const collection = database.collection(`users/${uid}/notifications`);
   const all = input.all === true;
-  const expired = input.expired === true;
-  const olderThanSeconds = typeof input.olderThanSeconds === "number" ? input.olderThanSeconds : null;
+  const now = Math.floor(Date.now() / 1000);
 
   if (all) {
-    const docs = (await collection.limit(500).get()).docs;
+    const docs = (await collection.limit(500).get()).docs.filter((doc) => (doc.get("deletedAt") ?? 0) === 0);
     if (docs.length > 0) {
       const batch = database.batch();
-      docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
-    }
-    return { deletedCount: docs.length };
-  }
-
-  if (expired || olderThanSeconds !== null) {
-    const cutoff = olderThanSeconds ?? Math.floor(Date.now() / 1000) - 7 * 86400;
-    const docs = (await collection.where("createdAt", "<=", cutoff).limit(500).get()).docs;
-    if (docs.length > 0) {
-      const batch = database.batch();
-      docs.forEach((doc) => batch.delete(doc.ref));
+      docs.forEach((doc) => batch.set(doc.ref, { deletedAt: now }, { merge: true }));
       await batch.commit();
     }
     return { deletedCount: docs.length };
@@ -149,7 +137,7 @@ export async function deleteNotificationsService(database: Firestore, uid: strin
     const safeIds = [...new Set(input.notificationIds.map((value) => id(value, "notificationId", 256)))];
     if (safeIds.length > 0) {
       const batch = database.batch();
-      safeIds.forEach((notificationId) => batch.delete(collection.doc(notificationId)));
+      safeIds.forEach((notificationId) => batch.set(collection.doc(notificationId), { deletedAt: now }, { merge: true }));
       await batch.commit();
     }
     return { deletedCount: safeIds.length };
@@ -157,7 +145,7 @@ export async function deleteNotificationsService(database: Firestore, uid: strin
 
   if (input.notificationId !== undefined) {
     const safeId = id(input.notificationId, "notificationId", 256);
-    await collection.doc(safeId).delete();
+    await collection.doc(safeId).set({ deletedAt: now }, { merge: true });
     return { deletedCount: 1 };
   }
 
@@ -295,7 +283,7 @@ async function deliverToUser(database: Firestore, jobId: string, uid: string, jo
     if (user.get("status") !== "active") return false;
     transaction.set(delivery, { uid }, { merge: true });
     if (!existing.exists) transaction.create(inbox, { kind: job.kind, title: job.title, body: job.body,
-      organizationId: job.organizationId, eventId: job.eventId, createdAt: Math.floor(Date.now() / 1000), readAt: 0 });
+      organizationId: job.organizationId, eventId: job.eventId, createdAt: Math.floor(Date.now() / 1000), readAt: 0, deletedAt: 0 });
     return true;
   });
   if (!canDeliver) return;
