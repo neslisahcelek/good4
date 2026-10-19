@@ -241,7 +241,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\nif [ -z \"$JAVA_HOME\" ] || [ ! -x \"$JAVA_HOME/bin/java\" ]; then\n    if [ -d \"$HOME/.jdk/Contents/Home\" ]; then\n        export JAVA_HOME=\"$HOME/.jdk/Contents/Home\"\n    elif [ -x \"/usr/libexec/java_home\" ]; then\n        export JAVA_HOME=\"$(/usr/libexec/java_home -v 17 2>/dev/null || /usr/libexec/java_home 2>/dev/null || true)\"\n    fi\nfi\nif [ -n \"$JAVA_HOME\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\nfi\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
 			showEnvVarsInLog = 0;
 		};
 		FIRE00012F30FC02007C3994 /* [Firebase] Archive Symbols Preflight */ = {

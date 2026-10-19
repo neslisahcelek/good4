@@ -9,8 +9,12 @@ fi
 case "${1:?Expected preflight or verify}" in
   preflight)
     if [[ -z "${FIREBASE_SOURCE_FIRESTORE:-}" ]]; then
-      echo "error: Quit Xcode and reopen with bash iosApp/scripts/open-xcode.sh. Firestore's prebuilt frameworks have no vendor dSYMs. For CLI/Cloud builds, set FIREBASE_SOURCE_FIRESTORE=1 before resolving packages and archiving." >&2
-      exit 1
+      if [[ "${CI:-}" = "true" || "${CI:-}" = "TRUE" || "${CI:-}" = "1" ]]; then
+        export FIREBASE_SOURCE_FIRESTORE=1
+      else
+        echo "error: Quit Xcode and reopen with bash iosApp/scripts/open-xcode.sh. Firestore's prebuilt frameworks have no vendor dSYMs. For CLI/Cloud builds, set FIREBASE_SOURCE_FIRESTORE=1 before resolving packages and archiving." >&2
+        exit 1
+      fi
     fi
     ;;
   verify)
