@@ -16,7 +16,9 @@ enum Good4AppCheck {
             AppCheck.setAppCheckProviderFactory(Good4AppAttestProviderFactory())
             #endif
             #if DEBUG
-            if Bundle.main.bundleIdentifier == "com.good4.iosApp.test" {
+            let shouldUseEmulators = ProcessInfo.processInfo.environment["USE_FIREBASE_EMULATORS"] == "true"
+                || ProcessInfo.processInfo.arguments.contains("-useEmulators")
+            if shouldUseEmulators && Bundle.main.bundleIdentifier == "com.good4.iosApp.test" {
                 let options = FirebaseOptions(googleAppID: "1:123456789:ios:0000000000000000", gcmSenderID: "123456789")
                 options.apiKey = "ADemoKeyForTheLocalFirebaseEmulatorOnly"
                 options.projectID = "demo-good4-v2"

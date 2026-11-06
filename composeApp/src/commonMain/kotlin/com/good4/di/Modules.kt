@@ -85,7 +85,7 @@ val commonModule = module {
     single { com.good4.social.SocialBadge() }
     single { com.good4.social.SocialRepository(get<AuthRepository>(), get()) }
     single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
-    single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
+    single { com.good4.quiz.data.QuizRepository() }
 
     viewModel { LoginViewModel(get<AuthRepository>(), get<UserRepository>(), get<StartupSessionCache>()) }
     viewModel {
@@ -194,6 +194,27 @@ val commonModule = module {
     viewModel { com.good4.social.SocialRequestsViewModel(get(), analytics = get()) }
     viewModel { com.good4.social.SocialInboxViewModel(get()) }
     viewModel { com.good4.social.SocialChatViewModel(get(), analytics = get()) }
+    viewModel { params ->
+        com.good4.quiz.presentation.play.QuizPlayerViewModel(
+            sessionId = params.get(),
+            repository = get(),
+            authRepository = get(),
+            analytics = get()
+        )
+    }
+    viewModel { params ->
+        com.good4.quiz.presentation.host.QuizHostViewModel(
+            sessionId = params.get(),
+            repository = get(),
+            analytics = get()
+        )
+    }
+    viewModel { params ->
+        com.good4.quiz.presentation.host.QuizReportViewModel(
+            sessionId = params.get(),
+            repository = get()
+        )
+    }
     viewModel {
         AccountSettingsViewModel(
             get<AuthRepository>(),

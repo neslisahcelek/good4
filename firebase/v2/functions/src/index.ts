@@ -1,4 +1,21 @@
 import { saveBusinessDiscountService, endBusinessDiscountService, listBusinessDiscountsService, issueBusinessDiscountCodeService } from "./businessDiscounts.js";
+import {
+  saveQuizService,
+  listQuizzesService,
+  getQuizService,
+  deleteQuizService,
+  startQuizSessionService,
+  joinQuizSessionService,
+  setQuizLockService,
+  startQuizGameService,
+  submitQuizAnswerService,
+  revealQuizQuestionService,
+  nextQuizQuestionService,
+  kickQuizPlayerService,
+  cancelQuizSessionService,
+  getQuizReportService,
+  cleanupQuizDataService,
+} from "./quiz.js";
 import { disconnectCampusTestService } from "./campusAccess.js";
 import { saveCommunityCouponService, endCommunityCouponService, listCommunityCouponsService, reviewCommunityCouponService, issueCommunityCouponCodeService, redeemCommunityCouponCodeService, listBusinessRedemptionsService } from "./communityCoupons.js";
 import { brevoApiKey, isDemoMailEmulator } from "./verificationEmail.js";
@@ -175,6 +192,9 @@ const socialDeps: SocialDeps = {
 
 const readOptions = { ...callableOptions, maxInstances: 3 };
 async function limitRequest(uid: string, group: string, limit: number) {
+  if (process.env.FUNCTIONS_EMULATOR === "true") {
+    limit = Math.max(limit, 120);
+  }
   await db.runTransaction((transaction) => assertRateLimit(db, transaction, { key: `${group}:${uid}`, limit, windowSeconds: 60 }));
 }
 export const billingBudgetNotification = onMessagePublished({ topic: "good4-billing-budget", region: "europe-west1", maxInstances: 1, retry: true }, async (event) => {
@@ -301,19 +321,19 @@ export const redeemLegacyTestCoupon = onCall(callableOptions, async (request) =>
 
 export const getBusinessContext = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "panel", 30);
   return getBusinessContextService(db, uid);
 });
 
 export const getPortalContext = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "panel", 30);
   return getPortalContextService(db, uid);
 });
 
 export const getAdminDashboard = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "panel", 30);
   return getAdminDashboardService(db, legacyTestDb, uid, request.data ?? {});
 });
 
@@ -422,7 +442,7 @@ export const uploadCommunityEventImage = onCall({
 
 export const getCommunityPortalDashboard = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "panel", 30);
   return getCommunityPortalDashboardService(db, legacyTestDb, uid, request.data ?? {});
 });
 
@@ -456,7 +476,7 @@ export const submitCommunityApplication = onCall(callableOptions, async (request
 
 export const listCommunityApplications = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "communityApplications", 30);
   return listCommunityApplicationsService(db, uid, request.data ?? {});
 });
 
@@ -482,7 +502,7 @@ export const submitBusinessApplication = onCall(callableOptions, async (request)
 
 export const listBusinessApplications = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "businessApplications", 30);
   return listBusinessApplicationsService(db, uid, request.data ?? {});
 });
 
@@ -931,13 +951,13 @@ export const updateNotificationPreferences = onCall(callableOptions, async (requ
 export const markNotificationsRead = onCall(callableOptions, async (request) =>
   markNotificationsReadService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
 export const previewAnnouncement = onCall(readOptions, async (request) => {
-  const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 6);
+  const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 30);
   return previewAnnouncementService(db, uid, request.data ?? {});
 });
 export const sendAnnouncement = onCall(callableOptions, async (request) =>
   sendAnnouncementService(db, requireAuthenticatedUid(request.auth?.uid), request.data ?? {}));
 export const getNotificationHistory = onCall(readOptions, async (request) => {
-  const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 6);
+  const uid = requireAuthenticatedUid(request.auth?.uid); await limitRequest(uid, "panel", 30);
   return notificationHistoryService(db, uid);
 });
 
@@ -970,7 +990,7 @@ export const scheduleEventReminders = onSchedule({
 
 export const getCommunityEventParticipants = onCall(readOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  await limitRequest(uid, "panel", 6);
+  await limitRequest(uid, "panel", 30);
   return getCommunityEventParticipantsService(db, uid, request.data ?? {});
 });
 
@@ -1045,4 +1065,101 @@ export const issueBusinessDiscountCode = onCall(callableOptions, async (request)
   const uid = requireAuthenticatedUid(request.auth?.uid);
   await limitRequest(uid, "issueBusinessDiscountCode", 20);
   return issueBusinessDiscountCodeService(db, uid, request.data ?? {});
+});
+
+export const saveQuiz = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "saveQuiz", 20);
+  return saveQuizService(db, uid, request.data ?? {});
+});
+
+export const listQuizzes = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "listQuizzes", 30);
+  return listQuizzesService(db, uid, request.data ?? {});
+});
+
+export const getQuiz = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "getQuiz", 30);
+  return getQuizService(db, uid, request.data ?? {});
+});
+
+export const deleteQuiz = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "deleteQuiz", 10);
+  return deleteQuizService(db, uid, request.data ?? {});
+});
+
+export const startQuizSession = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "startQuizSession", 10);
+  return startQuizSessionService(db, uid, request.data ?? {});
+});
+
+export const joinQuizSession = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "joinQuizSession", 30);
+  return joinQuizSessionService(db, uid, request.data ?? {});
+});
+
+export const setQuizLock = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "setQuizLock", 30);
+  return setQuizLockService(db, uid, request.data ?? {});
+});
+
+export const startQuizGame = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "startQuizGame", 10);
+  return startQuizGameService(db, uid, request.data ?? {});
+});
+
+export const submitQuizAnswer = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "submitQuizAnswer", 60);
+  return submitQuizAnswerService(db, uid, request.data ?? {});
+});
+
+export const revealQuizQuestion = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "revealQuizQuestion", 60);
+  return revealQuizQuestionService(db, uid, request.data ?? {});
+});
+
+export const nextQuizQuestion = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "nextQuizQuestion", 60);
+  return nextQuizQuestionService(db, uid, request.data ?? {});
+});
+
+export const kickQuizPlayer = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "kickQuizPlayer", 30);
+  return kickQuizPlayerService(db, uid, request.data ?? {});
+});
+
+export const cancelQuizSession = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "cancelQuizSession", 10);
+  return cancelQuizSessionService(db, uid, request.data ?? {});
+});
+
+export const getQuizReport = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "getQuizReport", 20);
+  return getQuizReportService(db, uid, request.data ?? {});
+});
+
+export const cleanupQuizSessions = onSchedule({
+  schedule: "every 2 hours",
+  timeZone: "Europe/Istanbul",
+  region: "europe-west1",
+  memory: "512MiB",
+  timeoutSeconds: 300,
+  maxInstances: 1,
+}, async () => {
+  if (productionJobsEnabled() && !(await optionalJobsAllowed(db))) return;
+  const counts = await cleanupQuizDataService(db, Date.now());
+  console.log("quizData cleanup", counts);
 });

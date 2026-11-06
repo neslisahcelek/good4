@@ -120,4 +120,13 @@ sealed class Route {
 
     @Serializable
     data object AdminAccountSettings : Route()
+
+    @Serializable
+    data class QuizPlay(val sessionId: String) : Route()
+
+    @Serializable
+    data class QuizHost(val sessionId: String) : Route()
+
+    @Serializable
+    data class QuizReport(val sessionId: String) : Route()
 }

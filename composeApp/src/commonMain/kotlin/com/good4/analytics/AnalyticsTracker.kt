@@ -50,7 +50,10 @@ enum class AnalyticsScreen(val feature: String, val value: String) {
     BUSINESS_ACCOUNT_SETTINGS("business", "business_account_settings"),
     ADMIN_HOME("admin", "admin_home"),
     ADMIN_PROFILE("admin", "admin_profile"),
-    ADMIN_ACCOUNT_SETTINGS("admin", "admin_account_settings")
+    ADMIN_ACCOUNT_SETTINGS("admin", "admin_account_settings"),
+    QUIZ_PLAY("quiz", "quiz_play"),
+    QUIZ_HOST("quiz", "quiz_host"),
+    QUIZ_REPORT("quiz", "quiz_report")
 }
 
 /** Only catalogued values can cross the analytics boundary. Never accept user text or IDs. */
@@ -127,7 +130,15 @@ enum class Interaction(val feature: String, val screen: String, val action: Stri
     FEEDBACK_SUBMIT("feedback", "feedback", "submit_feedback"),
     STORE_REVIEW_PROMPT("review", "store_review", "show_prompt"),
     STORE_REVIEW_OPEN("review", "store_review", "open_store"),
-    SCHEDULE_PROFILE_SET("schedule", "academic_selection", "save_profile");
+    SCHEDULE_PROFILE_SET("schedule", "academic_selection", "save_profile"),
+    QUIZ_JOIN("quiz", "quiz_play", "join"),
+    QUIZ_SUBMIT_ANSWER("quiz", "quiz_play", "submit_answer"),
+    QUIZ_HOST_START("quiz", "quiz_host", "start_game"),
+    QUIZ_HOST_NEXT("quiz", "quiz_host", "next_question"),
+    QUIZ_HOST_REVEAL("quiz", "quiz_host", "reveal_question"),
+    QUIZ_HOST_LOCK("quiz", "quiz_host", "toggle_lock"),
+    QUIZ_HOST_KICK("quiz", "quiz_host", "kick_player"),
+    QUIZ_HOST_CANCEL("quiz", "quiz_host", "cancel_session");
 
     internal fun parameters(target: AnalyticsTarget?) = buildMap {
         put("feature", feature); put("screen", screen); put("action", action)

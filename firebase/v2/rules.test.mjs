@@ -528,3 +528,67 @@ test('students read only published business discounts; codes, claims and history
     await assertFails(setDoc(doc(db, `${name}/new`), { studentId: 'student-discount' }));
   }
 });
+
+test('live quiz security rules enforce follower access, hide correctIndex, and keep write client-closed', async () => {
+  await seed('users/host-1', { role: 'student', status: 'active' });
+  await seed('users/student-follower', { role: 'student', status: 'active' });
+  await seed('users/stranger', { role: 'student', status: 'active' });
+  await seed('organizations/comm-1', { type: 'community', status: 'active' });
+  await seed('organizations/comm-1/members/host-1', { role: 'manager', status: 'active' });
+  await seed('organizations/comm-1/followers/student-follower', { userId: 'student-follower' });
+
+  await seed('quizSessions/s1', {
+    organizationId: 'comm-1',
+    hostUid: 'host-1',
+    status: 'question',
+  });
+  await seed('quizSessions/s1/questions/0', {
+    text: 'Soru 1',
+    correctIndex: 2,
+    options: ['A', 'B', 'C', 'D'],
+  });
+  await seed('quizSessions/s1/players/student-follower', {
+    userId: 'student-follower',
+    nickname: 'Follower',
+    score: 100,
+  });
+  await seed('quizSessions/s1/counters/lobby', { playerCount: 1 });
+  await seed('quizActive/comm-1', { sessionId: 's1' });
+  await seed('quizReports/s1', { organizationId: 'comm-1', title: 'Rapor' });
+
+  const followerDb = testEnv.authenticatedContext('student-follower').firestore();
+  const strangerDb = testEnv.authenticatedContext('stranger').firestore();
+  const hostDb = testEnv.authenticatedContext('host-1').firestore();
+
+  // Follower can read session document
+  await assertSucceeds(getDoc(doc(followerDb, 'quizSessions/s1')));
+  // Stranger (non-follower) cannot read session document
+  await assertFails(getDoc(doc(strangerDb, 'quizSessions/s1')));
+
+  // Client cannot read questions subcollection (protects correctIndex)
+  await assertFails(getDoc(doc(followerDb, 'quizSessions/s1/questions/0')));
+  await assertFails(getDoc(doc(hostDb, 'quizSessions/s1/questions/0')));
+
+  // Player can read only their own player document
+  await assertSucceeds(getDoc(doc(followerDb, 'quizSessions/s1/players/student-follower')));
+  await assertFails(getDocs(collection(followerDb, 'quizSessions/s1/players')));
+  await assertFails(getDoc(doc(strangerDb, 'quizSessions/s1/players/student-follower')));
+
+  // Host can read player collection and counters
+  await assertSucceeds(getDocs(collection(hostDb, 'quizSessions/s1/players')));
+  await assertSucceeds(getDoc(doc(hostDb, 'quizSessions/s1/counters/lobby')));
+  // Player cannot read counters
+  await assertFails(getDoc(doc(followerDb, 'quizSessions/s1/counters/lobby')));
+
+  // Client cannot write to session or subcollections
+  await assertFails(setDoc(doc(followerDb, 'quizSessions/s2'), { status: 'lobby' }));
+  await assertFails(updateDoc(doc(followerDb, 'quizSessions/s1'), { status: 'finished' }));
+  await assertFails(setDoc(doc(followerDb, 'quizSessions/s1/players/student-follower'), { score: 9999 }));
+  await assertFails(setDoc(doc(followerDb, 'quizSessions/s1/answers/0_student-follower'), { option: 2 }));
+
+  // quizActive, quizReports, and quizzes are closed to direct client reads
+  await assertFails(getDoc(doc(followerDb, 'quizActive/comm-1')));
+  await assertFails(getDoc(doc(followerDb, 'quizReports/s1')));
+  await assertFails(getDoc(doc(hostDb, 'quizReports/s1')));
+  await assertFails(getDocs(collection(hostDb, 'organizations/comm-1/quizzes')));
+});

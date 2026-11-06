@@ -1,6 +1,7 @@
 package com.good4.core.util
 
 import platform.Foundation.NSBundle
+import platform.Foundation.NSProcessInfo
 import kotlin.experimental.ExperimentalNativeApi
 
 @OptIn(ExperimentalNativeApi::class)
@@ -11,7 +12,8 @@ actual object AppEnvironment {
     actual val isDebug: Boolean
         get() = Platform.isDebugBinary
 
-    actual val useFirebaseEmulators: Boolean get() = isDebug && NSBundle.mainBundle.bundleIdentifier == "com.good4.iosApp.test"
+    actual val useFirebaseEmulators: Boolean
+        get() = isDebug && NSProcessInfo.processInfo.environment["USE_FIREBASE_EMULATORS"] == "true"
     actual val firebaseEmulatorHost: String get() = "127.0.0.1"
     actual val firebaseProjectId: String
         get() = if (useFirebaseEmulators) "demo-good4-v2" else when (NSBundle.mainBundle.bundleIdentifier) {

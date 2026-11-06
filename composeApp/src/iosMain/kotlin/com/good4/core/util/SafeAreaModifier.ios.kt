@@ -1,5 +1,6 @@
 package com.good4.core.util
 
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
@@ -19,4 +20,4 @@ actual fun Modifier.topSafeAreaPadding(): Modifier {
 }
 
 @Composable
-actual fun Modifier.keyboardPadding(): Modifier = this
+actual fun Modifier.keyboardPadding(): Modifier = this.imePadding()

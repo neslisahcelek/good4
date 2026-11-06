@@ -120,6 +120,10 @@ service cloud.firestore {
         // setCommunityFollowing owns the follower document and count in one transaction.
         allow create, update, delete: if false;
       }
+
+      match /quizzes/{quizId=**} {
+        allow read, write: if false;
+      }
     }
 
     match /businessDiscounts/{discountId} {
@@ -239,6 +243,57 @@ service cloud.firestore {
     match /auditLogs/{logId} {
       allow read: if isGood4Admin();
       allow write: if false;
+    }
+
+    match /quizActive/{orgId} {
+      allow read, write: if false;
+    }
+
+    match /quizReports/{sessionId} {
+      allow read, write: if false;
+    }
+
+    match /quizSessions/{sessionId} {
+      allow get, list: if currentUserIsActive()
+        && (resource.data.hostUid == request.auth.uid
+          || isGood4Admin()
+          || isActiveOrganizationMember(resource.data.organizationId)
+          || exists(/databases/$(database)/documents/organizations/$(resource.data.organizationId)/followers/$(request.auth.uid)));
+      allow create, update, delete: if false;
+
+      match /questions/{questionId} {
+        allow read, write: if false;
+      }
+
+      match /players/{userId} {
+        allow get: if currentUserIsActive()
+          && (request.auth.uid == userId
+            || get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow list: if currentUserIsActive()
+          && (get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow create, update, delete: if false;
+      }
+
+      match /nicknames/{nicknameId} {
+        allow read, write: if false;
+      }
+
+      match /answers/{answerId} {
+        allow read, write: if false;
+      }
+
+      match /results/{resultId} {
+        allow read, write: if false;
+      }
+
+      match /counters/{counterId} {
+        allow get, list: if currentUserIsActive()
+          && (get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow create, update, delete: if false;
+      }
     }
 
     match /{document=**} {

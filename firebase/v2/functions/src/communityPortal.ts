@@ -80,7 +80,28 @@ export async function getCommunityContextService(database: Firestore, actorUid: 
   await database.runTransaction((transaction) => requireActiveActor(
     database, transaction, actorUid, ["communityManager", "communityStaff"],
   ));
-  const memberships = await database.collectionGroup("members").where("userId", "==", actorUid).limit(10).get();
+  let memberships: FirebaseFirestore.QuerySnapshot;
+  try {
+    memberships = await database.collectionGroup("members").where("userId", "==", actorUid).limit(10).get();
+  } catch (error) {
+    // If collectionGroup index is building (e.g. in test environment), inspect active community orgs directly.
+    const orgs = await database.collection("organizations").where("type", "==", "community").where("status", "==", "active").limit(20).get();
+    for (const org of orgs.docs) {
+      const member = await org.ref.collection("members").doc(actorUid).get();
+      const role = member.get("role");
+      if (member.exists && member.get("status") === "active" && ["manager", "staff"].includes(role)) {
+        const legacyValue = String(org.get("legacyTestCommunityId") ?? "");
+        return {
+          organizationId: org.id,
+          organizationName: String(org.get("name") ?? "Topluluk"),
+          university: String(org.get("university") ?? ""),
+          legacyTestCommunityId: /^[A-Za-z0-9_-]{1,128}$/.test(legacyValue) ? legacyValue : null,
+          membershipRole: role as "manager" | "staff",
+        };
+      }
+    }
+    throw error;
+  }
   for (const membership of memberships.docs) {
     const role = membership.get("role");
     if (membership.get("status") !== "active" || !["manager", "staff"].includes(role)) continue;
