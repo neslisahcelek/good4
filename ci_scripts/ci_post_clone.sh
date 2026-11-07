@@ -44,14 +44,20 @@ echo "org.gradle.java.home=$JAVA_HOME" >> "$HOME/.gradle/gradle.properties"
 # Pre-compile the iOS framework so xcodebuild can link it smoothly.
 cd "$REPO_ROOT"
 chmod +x gradlew
+echo "Pre-warming Kotlin iOS Arm64 compilation..."
 ./gradlew :composeApp:compileKotlinIosArm64
 
 # ── 3. Resolve Swift Package Manager dependencies ─────────────────────────────
 # Force source-built Firestore so device archives include full dSYMs.
+echo "Resolving Swift Package Manager dependencies..."
 FIREBASE_SOURCE_FIRESTORE=1 xcodebuild \
     -resolvePackageDependencies \
     -project "$IOS_DIR/iosApp.xcodeproj" \
     -scheme "iosApp Prod" \
-    -onlyUsePackageVersionsFromResolvedFile
+    -onlyUsePackageVersionsFromResolvedFile || \
+FIREBASE_SOURCE_FIRESTORE=1 xcodebuild \
+    -resolvePackageDependencies \
+    -project "$IOS_DIR/iosApp.xcodeproj" \
+    -scheme "iosApp Prod"
 
 echo "--- ci_post_clone: Done ---"
