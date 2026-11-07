@@ -75,6 +75,8 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
+import com.good4.quiz.data.QuizRepository
+import com.good4.quiz.presentation.join.LiveQuizCard
 
 @Composable
 fun CommunitiesScreen(
@@ -84,9 +86,12 @@ fun CommunitiesScreen(
     viewModel: CommunityViewModel = koinViewModel(),
     initialOrganizationId: String = "",
     initialEventId: String = "",
-    initialShowTicket: Boolean = false
+    initialShowTicket: Boolean = false,
+    onNavigateToQuizHost: (sessionId: String) -> Unit = {},
+    onNavigateToQuizPlay: (sessionId: String) -> Unit = {}
 ) {
     val analytics: AnalyticsInteractionViewModel = koinViewModel()
+    val quizRepository: QuizRepository = org.koin.compose.koinInject()
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -133,6 +138,11 @@ fun CommunitiesScreen(
     val managerView = state.canManage && !previewAsStudent
     val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
     val studentView = isV2 && !state.canManage && !previewAsStudent
+    val activeQuizSession by (if (community != null && (!managerView || previewAsStudent)) {
+        quizRepository.observeActiveQuizSession(community.id)
+    } else {
+        kotlinx.coroutines.flow.flowOf(null)
+    }).collectAsStateWithLifecycle(null)
     var studentFilter by rememberSaveable(community?.id) { mutableStateOf(StudentEventFilter.UPCOMING) }
     var now by remember { mutableStateOf(eventNow()) }
     val featuredEvents = if (studentView) {
@@ -180,7 +190,8 @@ fun CommunitiesScreen(
             community = community,
             viewModel = viewModel,
             onExit = { if (managerEntryMode) onBack() else viewModel.back() },
-            onPreviewStudent = { previewAsStudent = true }
+            onPreviewStudent = { previewAsStudent = true },
+            onNavigateToQuizHost = onNavigateToQuizHost
         )
         return
     }
@@ -555,6 +566,15 @@ fun CommunitiesScreen(
                             item {
                                 StudentPreviewBanner(onReturnToManagement = { previewAsStudent = false })
                             }
+                        }
+                    }
+                    activeQuizSession?.let { activeSession ->
+                        item(key = "community-active-live-quiz") {
+                            LiveQuizCard(
+                                quizTitle = activeSession.title,
+                                communityName = community.data.name,
+                                onJoinClick = { onNavigateToQuizPlay(activeSession.id) }
+                            )
                         }
                     }
                     item(key = "community-entry-tabs") {

@@ -92,6 +92,7 @@ iosApp/iosApp.xcworkspace/
 **/.firebase/
 /tmp/
 /output/
+firebase/v2/scripts/create-test-community.mjs
 
 # AI review status
 .ai_approved

@@ -131,6 +131,11 @@ service cloud.firestore {
         // setCommunityFollowing owns the follower document and count in one transaction.
         allow create, update, delete: if false;
       }
+
+      match /quizzes/{quizId=**} {
+        allow write, get: if false;
+        allow list: if boundedList() && (false);
+      }
     }
 
     match /businessDiscounts/{discountId} {
@@ -260,6 +265,71 @@ service cloud.firestore {
       allow get: if isGood4Admin();
       allow list: if boundedList() && (isGood4Admin());
       allow write: if false;
+    }
+
+    match /quizActive/{orgId} {
+      allow write, get: if false;
+      allow list: if boundedList() && (false);
+    }
+
+    match /quizReports/{sessionId} {
+      allow write, get: if false;
+      allow list: if boundedList() && (false);
+    }
+
+    match /quizSessions/{sessionId} {
+      allow get: if currentUserIsActive()
+        && (resource.data.hostUid == request.auth.uid
+          || isGood4Admin()
+          || isActiveOrganizationMember(resource.data.organizationId)
+          || exists(/databases/$(database)/documents/organizations/$(resource.data.organizationId)/followers/$(request.auth.uid)));
+      allow list: if boundedList() && currentUserIsActive()
+        && (resource.data.hostUid == request.auth.uid
+          || isGood4Admin()
+          || isActiveOrganizationMember(resource.data.organizationId)
+          || exists(/databases/$(database)/documents/organizations/$(resource.data.organizationId)/followers/$(request.auth.uid)));
+      allow create, update, delete: if false;
+
+      match /questions/{questionId} {
+        allow write, get: if false;
+        allow list: if boundedList() && (false);
+      }
+
+      match /players/{userId} {
+        allow get: if currentUserIsActive()
+          && (request.auth.uid == userId
+            || get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow list: if boundedList() && currentUserIsActive()
+          && (get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow create, update, delete: if false;
+      }
+
+      match /nicknames/{nicknameId} {
+        allow write, get: if false;
+        allow list: if boundedList() && (false);
+      }
+
+      match /answers/{answerId} {
+        allow write, get: if false;
+        allow list: if boundedList() && (false);
+      }
+
+      match /results/{resultId} {
+        allow write, get: if false;
+        allow list: if boundedList() && (false);
+      }
+
+      match /counters/{counterId} {
+        allow get: if currentUserIsActive()
+          && (get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow list: if boundedList() && currentUserIsActive()
+          && (get(/databases/$(database)/documents/quizSessions/$(sessionId)).data.hostUid == request.auth.uid
+            || isGood4Admin());
+        allow create, update, delete: if false;
+      }
     }
 
     match /{document=**} {

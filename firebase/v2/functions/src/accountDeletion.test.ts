@@ -15,6 +15,7 @@ beforeEach(async () => {
       "communities", "codes", "orders", "businesses", "community_access",
       "eduEmailClaims", "eduVerifications", "campusEmailVerifications", "mail", "communityApplications",
       "pushDevices", "notificationJobs", "notificationDispatches", "rateLimits",
+      "quizSessions", "quizReports", "quizActive",
     ].map((collection) => db.recursiveDelete(db.collection(collection))),
     ...["communities", "community_coupon_codes", "community_access", "users"].map((collection) =>
       legacyTestDb.recursiveDelete(legacyTestDb.collection(collection))),
@@ -232,4 +233,21 @@ test("discount account deletion erases claims/shared codes, anonymizes history a
   assert.equal(history.get("discountLabel"), "%20 indirim");
   assert.equal((await db.doc("businessDiscounts/discount").get()).get("redemptionCount"), 1);
   assert.equal((await db.doc("auditLogs/discount-created").get()).get("actorUid"), "deleted-account");
+});
+
+test("account deletion erases live quiz player, answer, and nickname records", async () => {
+  await Promise.all([
+    db.doc(`users/${uid}`).set({ role: "student", status: "active" }),
+    db.doc("quizSessions/session-1/players/" + uid).set({ userId: uid, nickname: "DeleteMe" }),
+    db.doc("quizSessions/session-1/answers/0_" + uid).set({ userId: uid, option: 1 }),
+    db.doc("quizSessions/session-1/nicknames/hash-delete").set({ userId: uid }),
+    db.doc("quizSessions/session-1/players/other-user").set({ userId: "other-user", nickname: "Stay" }),
+  ]);
+
+  await eraseAccountData(db, legacyTestDb, uid);
+
+  assert.equal((await db.doc("quizSessions/session-1/players/" + uid).get()).exists, false);
+  assert.equal((await db.doc("quizSessions/session-1/answers/0_" + uid).get()).exists, false);
+  assert.equal((await db.doc("quizSessions/session-1/nicknames/hash-delete").get()).exists, false);
+  assert.equal((await db.doc("quizSessions/session-1/players/other-user").get()).exists, true);
 });

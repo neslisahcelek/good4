@@ -56,3 +56,55 @@ test('bounded rules keep campus test grant and proof fields server-only', async 
     }
   } finally { await environment.cleanup(); }
 });
+
+test('bounded rules enforce limit on quizSessions and players list queries', async () => {
+  const environment = await initializeTestEnvironment({
+    projectId: 'demo-good4-cost-rules',
+    firestore: {
+      host: '127.0.0.1',
+      port: Number(process.env.FIRESTORE_EMULATOR_HOST?.split(':').at(-1) ?? 8285),
+      rules: await readFile(new URL('./firestore.bounded.rules', import.meta.url), 'utf8'),
+    },
+  });
+  try {
+    await environment.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, 'users/host-1'), { role: 'student', status: 'active' });
+      await setDoc(doc(db, 'users/follower-1'), { role: 'student', status: 'active' });
+      await setDoc(doc(db, 'organizations/comm-1'), { type: 'community', status: 'active' });
+      await setDoc(doc(db, 'organizations/comm-1/followers/follower-1'), { userId: 'follower-1' });
+      await setDoc(doc(db, 'quizSessions/s1'), {
+        organizationId: 'comm-1',
+        hostUid: 'host-1',
+        status: 'lobby',
+      });
+      await setDoc(doc(db, 'quizSessions/s1/players/follower-1'), {
+        userId: 'follower-1',
+        nickname: 'Follower',
+        score: 0,
+      });
+      await setDoc(doc(db, 'quizSessions/s1/counters/lobby'), { playerCount: 1 });
+      await setDoc(doc(db, 'quizSessions/s1/counters/s0'), { a0: 1 });
+    });
+
+    const followerDb = environment.authenticatedContext('follower-1').firestore();
+    const hostDb = environment.authenticatedContext('host-1').firestore();
+
+    // Follower bounded list succeeds, unbounded fails
+    await assertSucceeds(getDocs(query(collection(followerDb, 'quizSessions'), where('organizationId', '==', 'comm-1'), limit(50))));
+    await assertFails(getDocs(query(collection(followerDb, 'quizSessions'), where('organizationId', '==', 'comm-1'))));
+    await assertFails(getDocs(query(collection(followerDb, 'quizSessions'), where('organizationId', '==', 'comm-1'), limit(101))));
+
+    // Host bounded players list succeeds, unbounded fails
+    await assertSucceeds(getDocs(query(collection(hostDb, 'quizSessions/s1/players'), limit(50))));
+    await assertFails(getDocs(collection(hostDb, 'quizSessions/s1/players')));
+    await assertFails(getDocs(query(collection(hostDb, 'quizSessions/s1/players'), limit(101))));
+
+    // Host bounded counters list succeeds, unbounded fails
+    await assertSucceeds(getDocs(query(collection(hostDb, 'quizSessions/s1/counters'), limit(10))));
+    await assertFails(getDocs(collection(hostDb, 'quizSessions/s1/counters')));
+    await assertFails(getDocs(query(collection(hostDb, 'quizSessions/s1/counters'), limit(101))));
+  } finally {
+    await environment.cleanup();
+  }
+});

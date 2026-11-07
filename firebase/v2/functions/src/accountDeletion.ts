@@ -7,6 +7,7 @@ import {
 } from "firebase-admin/firestore";
 import { RATINGS } from "./mealRatings.js";
 import { erasePushDevices } from "./push.js";
+import { eraseQuizDataForUser } from "./quiz.js";
 
 const DELETED_ACCOUNT_MARKER = "deleted-account";
 const DELETE_PAGE_SIZE = 400;
@@ -276,6 +277,7 @@ export async function eraseAccountData(
   const userRef = database.doc(`users/${uid}`);
   await beginAccountDeletion(database, uid);
   await erasePushDevices(database, uid);
+  await eraseQuizDataForUser(database, uid);
   await removeMealVotes(database, uid);
   // Delivery receipts include installation IDs; recursively remove both the account path and children.
   while (true) {

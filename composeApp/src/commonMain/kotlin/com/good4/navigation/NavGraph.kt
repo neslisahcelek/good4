@@ -118,6 +118,9 @@ fun Good4NavGraph(
             dest.hasRoute<Route.AdminHome>() -> AnalyticsScreen.ADMIN_HOME
             dest.hasRoute<Route.AdminProfile>() -> AnalyticsScreen.ADMIN_PROFILE
             dest.hasRoute<Route.AdminAccountSettings>() -> AnalyticsScreen.ADMIN_ACCOUNT_SETTINGS
+            dest.hasRoute<Route.QuizPlay>() -> AnalyticsScreen.QUIZ_PLAY
+            dest.hasRoute<Route.QuizHost>() -> AnalyticsScreen.QUIZ_HOST
+            dest.hasRoute<Route.QuizReport>() -> AnalyticsScreen.QUIZ_REPORT
             else -> null
         }
         screen?.let { analytics.screenView(it) }
@@ -363,6 +366,12 @@ fun Good4NavGraph(
                 },
                 onNavigateToEditHome = { communityManager ->
                     navController.navigate(Route.EditHome(communityManager))
+                },
+                onNavigateToQuizHost = { sessionId ->
+                    navController.navigate(Route.QuizHost(sessionId))
+                },
+                onNavigateToQuizPlay = { sessionId ->
+                    navController.navigate(Route.QuizPlay(sessionId))
                 }
             )
         }
@@ -516,8 +525,18 @@ fun Good4NavGraph(
 
         composable<Route.NotificationEvent> { backStackEntry ->
             val target = backStackEntry.toRoute<Route.NotificationEvent>()
-            com.good4.community.CommunitiesScreen(onBack = { navController.popBackStack() },
-                 initialOrganizationId = target.organizationId, initialEventId = target.eventId, initialShowTicket = target.showTicket)
+            com.good4.community.CommunitiesScreen(
+                onBack = { navController.popBackStack() },
+                initialOrganizationId = target.organizationId,
+                initialEventId = target.eventId,
+                initialShowTicket = target.showTicket,
+                onNavigateToQuizHost = { sessionId ->
+                    navController.navigate(Route.QuizHost(sessionId))
+                },
+                onNavigateToQuizPlay = { sessionId ->
+                    navController.navigate(Route.QuizPlay(sessionId))
+                }
+            )
         }
 
         composable<Route.Notifications> {
@@ -615,6 +634,37 @@ fun Good4NavGraph(
                 mode = AccountSettingsMode.ADMIN,
                 onBackClick = { navController.popBackStack() },
                 onLogout = { navController.navigateToLogin() }
+            )
+        }
+
+        composable<Route.QuizPlay> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.QuizPlay>()
+            val viewModel: com.good4.quiz.presentation.play.QuizPlayerViewModel =
+                koinViewModel(parameters = { org.koin.core.parameter.parametersOf(route.sessionId) })
+            com.good4.quiz.presentation.play.QuizPlayerScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable<Route.QuizHost> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.QuizHost>()
+            val viewModel: com.good4.quiz.presentation.host.QuizHostViewModel =
+                koinViewModel(parameters = { org.koin.core.parameter.parametersOf(route.sessionId) })
+            com.good4.quiz.presentation.host.QuizHostScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() },
+                onViewReport = { sessionId -> navController.navigate(Route.QuizReport(sessionId)) }
+            )
+        }
+
+        composable<Route.QuizReport> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.QuizReport>()
+            val viewModel: com.good4.quiz.presentation.host.QuizReportViewModel =
+                koinViewModel(parameters = { org.koin.core.parameter.parametersOf(route.sessionId) })
+            com.good4.quiz.presentation.host.QuizReportScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
 

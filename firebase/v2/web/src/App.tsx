@@ -1,4 +1,5 @@
 import { BusinessDiscountsAdmin } from "./components/BusinessDiscountsAdmin";
+import { CommunityQuizAdmin } from "./components/CommunityQuizAdmin";
 import { normalizeCouponCode as normalizeCode, couponCodeRoute, formatCommunityCouponDate } from "./communityCouponCode";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { createAccountRequestScope } from "./accountRequestScope";
@@ -768,7 +769,7 @@ function LoginScreen({ portal }: { portal: PortalEntrance }) {
   );
 }
 
-function AccessError({ message }: { message: string }) {
+function AccessError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <main className="centered-page">
       <div className="access-card">
@@ -776,7 +777,12 @@ function AccessError({ message }: { message: string }) {
         <div className="result-icon result-icon--error" aria-hidden="true">!</div>
         <h1>Panele erişilemiyor</h1>
         <p>{message}</p>
-        <button className="secondary-button" onClick={() => void signOut(auth)}>Farklı hesapla giriş yap</button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", width: "100%" }}>
+          {onRetry && (
+            <button className="primary-button" onClick={onRetry}>Tekrar dene</button>
+          )}
+          <button className="secondary-button" onClick={() => void signOut(auth)}>Farklı hesapla giriş yap</button>
+        </div>
       </div>
     </main>
   );
@@ -1136,6 +1142,7 @@ function CommunityPanel({
 }) {
   const [tab, setTab] = useState<CommunitySection>("overview");
   const [data, setData] = useState<CommunityDashboardData | null>(null);
+  const [quizCount, setQuizCount] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState("");
@@ -1392,7 +1399,9 @@ function CommunityPanel({
   const editingEvent = events.find((entry) => entry.id === editingId && entry.kind === "event") ?? null;
 
   function navigate(section: CommunitySection) {
-    if (section === "events" || section === "coupons") resetForm();
+    setError("");
+    setNotice("");
+    if (section === "events" || section === "coupons" || section === "quizzes") resetForm();
     if (section === "events") setEventView("list");
     setTab(section);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1432,7 +1441,7 @@ function CommunityPanel({
       logoUrl={data?.community.logoUrl ?? ""}
       userEmail={user.email ?? ""}
       activeSection={tab}
-      counts={{ events: events.length, coupons: coupons.length }}
+      counts={{ events: events.length, coupons: coupons.length, quizzes: quizCount }}
       onNavigate={navigate}
       onLogout={() => void signOut(auth)}
     >
@@ -1451,7 +1460,7 @@ function CommunityPanel({
             <PageHeader title="Kuponlar" description="Topluluğuna özel işletme kuponlarını oluştur ve yayın durumlarını yönet." />
           ) : null}
 
-          {error ? (
+          {error && tab !== "quizzes" ? (
             <div className="inline-message inline-message--error admin-message" role="alert">{error}</div>
           ) : null}
           {notice ? (
@@ -1901,6 +1910,14 @@ function CommunityPanel({
               )}
             </section>
           ) : null}
+
+          {tab === "quizzes" ? (
+            <CommunityQuizAdmin
+              organizationId={context.organizationId}
+              canManage={context.membershipRole === "manager"}
+              onQuizCountChange={setQuizCount}
+            />
+          ) : null}
         </>
       ) : null}
 
@@ -2284,7 +2301,13 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       setMenuWeekEnd(response.data.diningMenu?.weekEnd ?? "");
       setMenuDays(diningDaysForForm(response.data.diningMenu));
       fillBannerForm(bannerForSlot(response.data, bannerSlot));
-      await Promise.all([loadCommunityApplications(false), loadBusinessApplications(false)]);
+      if (!data) {
+        await Promise.all([loadCommunityApplications(false), loadBusinessApplications(false)]);
+      } else if (tab === "communities") {
+        await loadCommunityApplications(false);
+      } else if (tab === "businesses") {
+        await loadBusinessApplications(false);
+      }
     } catch (requestError) {
       if (isCurrent()) setError(functionErrorMessage(requestError));
     } finally {
@@ -2355,6 +2378,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
     } finally {
       setReviewing("");
       await refresh(false, false);
+      await loadBusinessApplications(false);
     }
   }
 
@@ -2380,6 +2404,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
     } finally {
       setReviewing("");
       await refresh(false, false);
+      await loadCommunityApplications(false);
     }
   }
 
@@ -3491,31 +3516,36 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
   const [requestScope] = useState(createAccountRequestScope);
   const contextRequest = useRef<(() => boolean) | null>(null);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-    requestScope.setAccount(nextUser?.uid ?? null);
-    contextRequest.current = null;
-    setUser(nextUser);
-    setContext(null);
-    setAccessError("");
-    setAuthReady(true);
-
-    if (!nextUser) {
-      setContextLoading(false);
-      return;
-    }
-
+  const loadContext = useCallback((targetUser: User) => {
     setContextLoading(true);
-    const requestIsCurrent = requestScope.start(nextUser.uid)!;
-    const isCurrent = () => requestIsCurrent() && auth.currentUser?.uid === nextUser.uid;
+    setAccessError("");
+    const requestIsCurrent = requestScope.start(targetUser.uid)!;
+    const isCurrent = () => requestIsCurrent() && auth.currentUser?.uid === targetUser.uid;
     contextRequest.current = isCurrent;
     void getPortalContext()
       .then((response) => { if (isCurrent()) setContext(response.data); })
       .catch((error) => { if (isCurrent()) setAccessError(functionErrorMessage(error)); })
       .finally(() => { if (isCurrent()) setContextLoading(false); });
+  }, [requestScope]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      requestScope.setAccount(nextUser?.uid ?? null);
+      contextRequest.current = null;
+      setUser(nextUser);
+      setContext(null);
+      setAccessError("");
+      setAuthReady(true);
+
+      if (!nextUser) {
+        setContextLoading(false);
+        return;
+      }
+
+      loadContext(nextUser);
     });
     return () => { unsubscribe(); requestScope.setAccount(null); contextRequest.current = null; };
-  }, [requestScope]);
+  }, [requestScope, loadContext]);
 
   if (!authReady || contextLoading) {
     return (
@@ -3532,7 +3562,12 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
   }
 
   if (accessError || !context) {
-    return <AccessError message={accessError || "İşletme bilgisi bulunamadı."} />;
+    return (
+      <AccessError
+        message={accessError || "İşletme bilgisi bulunamadı."}
+        onRetry={user ? () => loadContext(user) : undefined}
+      />
+    );
   }
 
   if (context.portalRole === "applicant") {

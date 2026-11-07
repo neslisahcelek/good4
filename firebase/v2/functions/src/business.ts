@@ -20,13 +20,37 @@ export async function getBusinessContextService(
       ["businessOwner", "businessStaff"],
     );
 
-    const membershipsQuery = database
-      .collectionGroup("members")
-      .where("userId", "==", actorUid)
-      .limit(10);
-    const membershipsSnapshot = await transaction.get(membershipsQuery);
+    let membershipsDocs: FirebaseFirestore.DocumentSnapshot[] = [];
+    try {
+      const membershipsQuery = database
+        .collectionGroup("members")
+        .where("userId", "==", actorUid)
+        .limit(10);
+      const membershipsSnapshot = await transaction.get(membershipsQuery);
+      membershipsDocs = membershipsSnapshot.docs;
+    } catch {
+      // Fallback if collectionGroup index is building or unavailable
+      const orgs = await database
+        .collection("organizations")
+        .where("type", "==", "business")
+        .where("status", "==", "active")
+        .limit(20)
+        .get();
+      for (const org of orgs.docs) {
+        const member = await transaction.get(org.ref.collection("members").doc(actorUid));
+        const role = member.get("role");
+        if (member.exists && member.get("status") === "active" && ["owner", "staff"].includes(role)) {
+          return {
+            organizationId: org.id,
+            organizationName: String(org.get("name") ?? "İşletme"),
+            membershipRole: role as "owner" | "staff",
+          };
+        }
+      }
+      throw new HttpsError("permission-denied", "ROLE_NOT_ALLOWED");
+    }
 
-    for (const membership of membershipsSnapshot.docs) {
+    for (const membership of membershipsDocs) {
       const role = membership.get("role");
       if (membership.get("status") !== "active" || !["owner", "staff"].includes(role)) {
         continue;

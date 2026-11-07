@@ -12,7 +12,7 @@ import {
 } from "firebase/functions";
 import type { Firestore } from "firebase/firestore/lite";
 
-const firebaseConfig = {
+const prodConfig = {
   apiKey: "AIzaSyA9OIJZLXKFyzO5C7GZ5RtrQDAGl44fya4",
   authDomain: "good4tr-v2.firebaseapp.com",
   projectId: "good4tr-v2",
@@ -21,10 +21,22 @@ const firebaseConfig = {
   appId: "1:654697131931:web:ceff2acfa4ff4529603b3e",
 };
 
+const testConfig = {
+  apiKey: "AIzaSyAGcqwiTREPcdXQKvcxQHJXfs91oKAxcqQ",
+  authDomain: "good4tr-test.firebaseapp.com",
+  projectId: "good4tr-test",
+  storageBucket: "good4tr-test.firebasestorage.app",
+  messagingSenderId: "449563145023",
+  appId: "1:449563145023:web:cdd45ccf124bcfd819d98a",
+};
+
+const isTestProject = import.meta.env.VITE_FIREBASE_PROJECT === "test" || import.meta.env.VITE_FIREBASE_PROJECT === "staging";
+const firebaseConfig = isTestProject ? testConfig : prodConfig;
+
 const useFirebaseEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
 const app = initializeApp(useFirebaseEmulators ? { apiKey: "demo-api-key", projectId: "demo-good4-v2", appId: "1:123456789:web:demo", authDomain: "localhost" } : firebaseConfig);
 
-if (!useFirebaseEmulators) {
+if (!useFirebaseEmulators && !isTestProject) {
   // Configure App Check before Auth, Functions, or Firestore can issue requests.
   if (import.meta.env.DEV) {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;

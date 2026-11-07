@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "dev": "vite",
+    "dev:test": "VITE_FIREBASE_PROJECT=test vite",
     "build": "tsc -b && vite build --config vite.config.ts",
     "preview": "vite preview"
   },

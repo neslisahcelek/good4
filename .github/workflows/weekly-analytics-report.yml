@@ -26,12 +26,15 @@ jobs:
           node-version: '22'
 
       - name: Install Firebase Admin SDK (if service account configured)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
             npm install firebase-admin --no-save
           fi
 
       - name: Run Safe Analytics Report Generator
+        id: generate
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_PROJECT_ID: good4tr-v2
@@ -43,18 +46,25 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # Yalnızca oluşturulan HTML raporunu stage et (diğer hiçbir dosyaya dokunma)
-          TODAY=$(date +'%Y-%m-%d')
-          REPORT_FILE="docs/reports/good4-analytics-report-${TODAY}.html"
+          # Rapor yolunu script çıktısından al, yoksa docs/reports altındaki en son rapora bak
+          REPORT_FILE="${{ steps.generate.outputs.report_path }}"
+          if [ -z "$REPORT_FILE" ] || [ ! -f "$REPORT_FILE" ]; then
+            REPORT_FILE=$(ls -t docs/reports/good4-analytics-report-*.html 2>/dev/null | head -n 1)
+          fi
 
-          if [ -f "$REPORT_FILE" ]; then
+          if [ -n "$REPORT_FILE" ] && [ -f "$REPORT_FILE" ]; then
             git add "$REPORT_FILE"
             if git diff --staged --quiet; then
-              echo "No changes to commit for today's report."
+              echo "No changes to commit for report: $REPORT_FILE."
             else
-              git commit -m "docs(analytics): automated weekly production report for ${TODAY}"
+              REPORT_DATE="${{ steps.generate.outputs.report_date }}"
+              if [ -z "$REPORT_DATE" ]; then
+                REPORT_DATE=$(basename "$REPORT_FILE" .html | sed 's/good4-analytics-report-//')
+              fi
+              git commit -m "docs(analytics): automated weekly production report for ${REPORT_DATE}"
+              git pull --rebase origin main || true
               git push origin main
-              echo "Report successfully pushed to main branch."
+              echo "Report ($REPORT_FILE) successfully pushed to main branch."
             fi
           else
             echo "Report file $REPORT_FILE was not found."

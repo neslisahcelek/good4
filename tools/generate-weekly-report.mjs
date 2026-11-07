@@ -21,14 +21,13 @@ function trackRead(count = 1) {
 const now = new Date();
 // Format YYYY-MM-DD
 const dateStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' });
-const trMonths = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-];
-const day = now.getDate();
-const month = trMonths[now.getMonth()];
-const year = now.getFullYear();
-const formattedDateTr = `${day} ${month} ${year}`;
+const istanbulDateFormatter = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: 'Europe/Istanbul',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric'
+});
+const formattedDateTr = istanbulDateFormatter.format(now);
 
 console.log(`[INFO] Generating weekly report for date: ${dateStr} (${formattedDateTr})`);
 
@@ -119,6 +118,14 @@ async function main() {
   const stats = fs.statSync(targetPath);
   console.log(`[SUCCESS] Weekly report generated at: ${targetPath} (${Math.round(stats.size / 1024)} KB)`);
   console.log(`[INFO] Total Firestore reads consumed: ${firestoreReadsCount} (Hard cap: ${MAX_ALLOWED_FIRESTORE_READS})`);
+
+  // Write outputs for GitHub Actions if running inside GitHub CI
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `report_path=${targetRelativePath}\nreport_file=good4-analytics-report-${dateStr}.html\nreport_date=${dateStr}\n`
+    );
+  }
 }
 
 main().catch((err) => {

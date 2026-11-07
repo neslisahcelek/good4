@@ -78,3 +78,10 @@ val SocialSportPoster = Color(0xFF0B5A3A)
 val SocialSportLine = Color(0xFFC8EE2E)
 val SocialPoster = Color(0xFFF4EFE4)
 val SocialPosterLine = Color(0xFF0B5A3A)
+
+// Live Quiz tokens
+val QuizAnswerRed = ErrorRed
+val QuizAnswerBlue = Color(0xFF1A73E8)
+val QuizAnswerYellow = AccentYellow
+val QuizAnswerGreen = PrimaryGreen
+

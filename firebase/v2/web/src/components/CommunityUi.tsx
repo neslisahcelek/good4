@@ -1,15 +1,21 @@
 import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 
-export type CommunitySection = "overview" | "events" | "coupons";
+export type CommunitySection = "overview" | "events" | "coupons" | "quizzes";
 export type BusinessSection = "overview" | "verify" | "usage" | "profile";
 
 type IconName = CommunitySection | "verify" | "history" | "profile" | "menu" | "close" | "logout" | "arrow" | "calendar"
-  | "dining" | "dorm" | "heart" | "megaphone" | "message" | "bell" | "store" | "users" | "bag" | "spark" | "panel";
+  | "dining" | "dorm" | "heart" | "megaphone" | "message" | "bell" | "store" | "users" | "bag" | "spark" | "panel"
+  | "trash" | "arrowUp" | "arrowDown" | "plus";
 
 const iconPaths: Record<IconName, ReactNode> = {
   overview: <><path d="M4 13h6V4H4v9Zm0 7h6v-3H4v3Zm10 0h6v-9h-6v9Zm0-16v3h6V4h-6Z" /></>,
   events: <><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" /></>,
   coupons: <><path d="M5 5h14v4a3 3 0 0 0 0 6v4H5v-4a3 3 0 0 0 0-6V5Z" /><path d="M12 8v8" /></>,
+  quizzes: <><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01" /></>,
+  trash: <><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>,
+  arrowUp: <><path d="m18 15-6-6-6 6" /></>,
+  arrowDown: <><path d="m6 9 6 6 6-6" /></>,
+  plus: <><path d="M12 5v14M5 12h14" /></>,
   verify: <><path d="M5 5h14v4a3 3 0 0 0 0 6v4H5v-4a3 3 0 0 0 0-6V5Z" /><path d="m9 12 2 2 4-4" /></>,
   history: <><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6" /><path d="M4 4v4.6h4.6M12 8v4l3 2" /></>,
   profile: <><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /><path d="M5 21a7 7 0 0 1 14 0" /></>,
@@ -55,7 +61,7 @@ type CommunityAppShellProps = {
   logoUrl: string;
   userEmail: string;
   activeSection: CommunitySection;
-  counts: { events: number; coupons: number };
+  counts: { events: number; coupons: number; quizzes?: number };
   onNavigate: (section: CommunitySection) => void;
   onLogout: () => void;
   children: ReactNode;
@@ -233,6 +239,7 @@ export function CommunityAppShell({
         { label: "Yönetim", items: [
           { id: "events", icon: "events", label: "Etkinlikler", count: counts.events },
           { id: "coupons", icon: "coupons", label: "Kuponlar", count: counts.coupons },
+          { id: "quizzes", icon: "quizzes", label: "Quizler", count: counts.quizzes },
         ] },
       ]}
       onNavigate={(itemId) => onNavigate(itemId as CommunitySection)}

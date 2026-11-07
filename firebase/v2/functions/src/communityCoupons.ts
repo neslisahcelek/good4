@@ -65,10 +65,36 @@ async function requireOrganizationContext(
         : ["communityManager"]
       : ["businessOwner", "businessStaff"],
   );
-  const members = await transaction.get(
-    database.collectionGroup("members").where("userId", "==", actorUid).limit(10),
-  );
-  for (const member of members.docs) {
+  let membersDocs: FirebaseFirestore.DocumentSnapshot[] = [];
+  try {
+    const members = await transaction.get(
+      database.collectionGroup("members").where("userId", "==", actorUid).limit(10),
+    );
+    membersDocs = members.docs;
+  } catch {
+    // Fallback if collectionGroup index is building or unavailable
+    const orgs = await database
+      .collection("organizations")
+      .where("type", "==", kind)
+      .where("status", "==", "active")
+      .limit(20)
+      .get();
+    for (const org of orgs.docs) {
+      const member = await transaction.get(org.ref.collection("members").doc(actorUid));
+      if (
+        member.exists &&
+        member.get("status") === "active" &&
+        (kind === "community"
+          ? (readOnly ? ["manager", "staff"] : ["manager"])
+          : ["owner", "staff"]
+        ).includes(member.get("role"))
+      ) {
+        return org;
+      }
+    }
+    throw new HttpsError("permission-denied", "ORGANIZATION_MEMBERSHIP_REQUIRED");
+  }
+  for (const member of membersDocs) {
     const ref = member.ref.parent.parent;
     if (
       !ref ||
