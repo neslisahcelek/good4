@@ -2,19 +2,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-if /usr/bin/pgrep -x Xcode >/dev/null; then
-  echo "Quit Xcode first, then run this script again. Swift package resolution must inherit FIREBASE_SOURCE_FIRESTORE." >&2
-  exit 1
-fi
-
-# Firebase reads this in Package.swift, before any target or scheme runs.
-# Refresh the graph before opening Xcode: a previous binary resolution can leave
-# stale transitive product references even when Package.resolved pins source packages.
 project_path="$script_dir/../iosApp.xcodeproj"
-FIREBASE_SOURCE_FIRESTORE=1 /usr/bin/xcodebuild \
-  -resolvePackageDependencies \
-  -project "$project_path" \
-  -scheme "iosApp Prod" \
-  -onlyUsePackageVersionsFromResolvedFile
 
-/usr/bin/open --env FIREBASE_SOURCE_FIRESTORE=1 "$project_path"
+echo "Opening Good4 iOS project in Xcode..."
+/usr/bin/open "$project_path"

@@ -48,14 +48,8 @@ echo "Pre-warming Kotlin iOS Arm64 compilation..."
 ./gradlew :composeApp:compileKotlinIosArm64
 
 # ── 3. Resolve Swift Package Manager dependencies ─────────────────────────────
-# Force source-built Firestore so device archives include full dSYMs.
 echo "Resolving Swift Package Manager dependencies..."
-FIREBASE_SOURCE_FIRESTORE=1 xcodebuild \
-    -resolvePackageDependencies \
-    -project "$IOS_DIR/iosApp.xcodeproj" \
-    -scheme "iosApp Prod" \
-    -onlyUsePackageVersionsFromResolvedFile || \
-FIREBASE_SOURCE_FIRESTORE=1 xcodebuild \
+xcodebuild \
     -resolvePackageDependencies \
     -project "$IOS_DIR/iosApp.xcodeproj" \
     -scheme "iosApp Prod"

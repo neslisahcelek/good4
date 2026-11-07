@@ -13,10 +13,10 @@ Bu durum için projede şu altyapı hazırlanmıştır:
    - Xcode Cloud runner'ında OpenJDK 17'yi otomatik olarak Adoptium üzerinden indirir ve yapılandırır.
    - Gradle için `JAVA_HOME` ve `~/.gradle/gradle.properties` ayarlarını yapar.
    - `./gradlew :composeApp:compileKotlinIosArm64` ile Kotlin derleyicisini önceden ısıtır.
-   - `FIREBASE_SOURCE_FIRESTORE=1` ile Swift Package Manager bağımlılıklarını kilitli sürümlerle çözer.
+   - Swift Package Manager bağımlılıklarını resmi ikili (binary) sürümlerle hızlıca çözer.
 2. **`ci_scripts/ci_pre_xcodebuild.sh`**:
    - Gizli olan `GoogleService-Info-Prod.plist` dosyasını Xcode Cloud ortam değişkenindeki (`GOOGLE_SERVICE_INFO_PROD_BASE64`) base64 verisinden üretir.
-   - Gerekli derleme ortam bayraklarını (`FIREBASE_SOURCE_FIRESTORE=1`) doğrular.
+   - Projenin build numarasını `agvtool` ile dinamik olarak artırır.
 3. **`iosApp/ci_scripts` symlink**:
    - Xcode Cloud'un projeyi `iosApp/` alt dizininde veya repo kökünde aramasından bağımsız olarak betikleri bulmasını sağlar.
 4. **Xcode Build Phase (`[Kotlin] Embed and Sign Apple Framework`)**:
@@ -47,14 +47,14 @@ Xcode Cloud bağlantısı iki yolla başlatılabilir: **Xcode IDE** üzerinden v
 Aşağıdaki yapılandırmayı uygulayın:
 
 ### 3.1 General (Genel)
-- **Workflow Name**: `Good4 Prod Release` (veya isteğe göre `Good4 TestFlight`)
+- **Workflow Name**: `Good4 Prod Release` (veya `Archive - iOS`)
 - **Primary Repository**: Projenin bağlı olduğu GitHub deposu (`good4`)
 - **Project or Workspace**: `iosApp/iosApp.xcodeproj`
 - **Restrict Editing**: Yalnızca yöneticiler düzenleyebilir olarak seçilebilir.
 
 ### 3.2 Start Conditions (Tetikleyiciler)
 - **Branch Changes**:
-  - **Source Branch**: `main` (veya yayın dalları)
+  - **Source Branch**: `master` veya `main`
   - **Change Type**: `Push Files`
   - *İsteğe bağlı olarak PR (Pull Request) veya Tag tetikleyicisi de eklenebilir.*
 
@@ -74,12 +74,14 @@ Aşağıdaki yapılandırmayı uygulayın:
 
 ## 4. Gerekli Ortam Değişkenleri (Environment Variables)
 
-Xcode Cloud panelinde **Environment** sekmesine gidin ve aşağıdaki değişkenleri ekleyin:
+Xcode Cloud panelinde **Environment** sekmesine gidin ve aşağıdaki değişkeni ekleyin:
 
 | Anahtar (Key) | Değer (Value) | Gizli (Secret) | Açıklama |
 | :--- | :--- | :---: | :--- |
 | `GOOGLE_SERVICE_INFO_PROD_BASE64` | *`<Base64 Değeri>`* | **Evet (Check)** | Firebase Prod konfigürasyonunun base64 şifreli içeriği. |
-| `FIREBASE_SOURCE_FIRESTORE` | `1` | **Hayır** | Firestore ve C++ kütüphanelerinin kaynak kodundan derlenip dSYM üretmesini sağlar. |
+
+> [!NOTE]
+> Proje resmi ikili (binary) Firebase paketlerini (`abseil-cpp-binary`, `grpc-binary`) kullandığından, `FIREBASE_SOURCE_FIRESTORE` gibi ek derleme ortam değişkenlerine ihtiyaç duyulmaz.
 
 > [!IMPORTANT]
 > **`GOOGLE_SERVICE_INFO_PROD_BASE64` Değerini Alma:**
@@ -100,12 +102,12 @@ Eğer deponuz daha önce Xcode Cloud'a bağlanmadıysa:
 
 ---
 
-## 6. İlk Derlemeyi Başlatma ve Doğrulama
+## 6. Derlemeyi Başlatma ve Doğrulama
 
-1. Workflow kaydedildikten sonra **Start Build** butonuna basarak ilk çalıştırmayı tetikleyin.
+1. Workflow kaydedildikten sonra **Start Build** butonuna basarak çalıştırmayı tetikleyin.
 2. Derleme adımlarını izleyin:
    - **Clone**: Depo klonlanır.
    - **ci_post_clone**: OpenJDK 17 kurulur, Gradle ısıtılır, SPM bağımlılıkları çözülür.
-   - **ci_pre_xcodebuild**: `GoogleService-Info-Prod.plist` üretilir ve ortam doğrulanır.
-   - **xcodebuild (Archive)**: KMP framework'ü derlenir, MapLibre & Firestore dSYM'leri eklenir ve `.ipa` arşivi üretilir.
+   - **ci_pre_xcodebuild**: `GoogleService-Info-Prod.plist` üretilir ve build numarası güncellenir.
+   - **xcodebuild (Archive)**: KMP framework'ü derlenir, MapLibre sembolleri eklenir ve `.ipa` arşivi üretilir.
    - **TestFlight**: Arşiv başarıyla App Store Connect / TestFlight'a aktarılır.

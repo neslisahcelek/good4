@@ -29,9 +29,6 @@ if [[ -n "${GOOGLE_SERVICE_INFO_TEST_BASE64:-}" ]]; then
 fi
 
 # ── 2. Environment Variables ────────────────────────────────────────────────────
-# Ensure Firestore source-build flag is set for subsequent steps
-export FIREBASE_SOURCE_FIRESTORE=1
-
 # Ensure JAVA_HOME is set in case xcodebuild invokes gradlew
 if [ -z "${JAVA_HOME:-}" ] || [ ! -x "${JAVA_HOME:-}/bin/java" ]; then
     if [ -x "/usr/libexec/java_home" ] && /usr/libexec/java_home -v 17 >/dev/null 2>&1; then
