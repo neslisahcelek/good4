@@ -160,7 +160,15 @@ type EventDetailTab = "overview" | "participants";
 type EventStatusFilter = "all" | CommunityEntry["status"];
 
 type AdminBusiness = { id: string; name: string; legacyTestBusinessId: string };
-type AdminCommunity = { id: string; name: string; university: string; legacyTestCommunityId: string };
+type AdminCommunity = {
+  id: string;
+  name: string;
+  university: string;
+  legacyTestCommunityId: string;
+  status?: string;
+  listed?: boolean;
+  isTest?: boolean;
+};
 type LegacyBusiness = { id: string; name: string; linked: boolean };
 type PendingCoupon = {
   communityId: string;
@@ -360,9 +368,13 @@ const saveAcademicCalendarEvent = httpsCallable<{
   active: boolean;
 }, AcademicCalendarEvent>(functions, "saveAcademicCalendarEvent");
 const createOrganization = httpsCallable<
-  { name: string; type: "business" | "community"; university?: string; legacyTestBusinessId?: string },
+  { name: string; type: "business" | "community"; university?: string; legacyTestBusinessId?: string; isTest?: boolean; listed?: boolean },
   { organizationId: string }
 >(functions, "createOrganization");
+const setOrganizationListing = httpsCallable<
+  { organizationId: string; listed: boolean; isTest?: boolean },
+  { organizationId: string; listed: boolean; isTest: boolean }
+>(functions, "setOrganizationListing");
 const assignOrganizationMemberByEmail = httpsCallable<
   { organizationId: string; email: string; displayName: string; role: "owner" | "manager" | "staff"; temporaryPassword?: string },
   { organizationId: string; userId: string; created: boolean }
@@ -2209,6 +2221,8 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   const [communityName, setCommunityName] = useState("");
   const [communityUniversity, setCommunityUniversity] = useState("");
   const [creatingCommunity, setCreatingCommunity] = useState(false);
+  const [communityIsTest, setCommunityIsTest] = useState(false);
+  const [togglingCommunityId, setTogglingCommunityId] = useState<string | null>(null);
   const [communityOrganizationId, setCommunityOrganizationId] = useState("");
   const [communityEmail, setCommunityEmail] = useState("");
   const [communityManagerName, setCommunityManagerName] = useState("");
@@ -2533,15 +2547,39 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
         name: communityName.trim(),
         type: "community",
         university: communityUniversity.trim(),
+        isTest: communityIsTest,
+        listed: !communityIsTest,
       });
       setCommunityName("");
       setCommunityUniversity("");
+      setCommunityIsTest(false);
       setNotice("Topluluk oluşturuldu. Şimdi yönetici hesabını atayabilirsiniz.");
       await refresh(false);
     } catch (requestError) {
       setError(functionErrorMessage(requestError));
     } finally {
       setCreatingCommunity(false);
+    }
+  }
+
+  async function handleToggleCommunityListing(community: AdminCommunity) {
+    const isCurrentlyListed = community.listed !== false && !community.isTest;
+    const nextListed = !isCurrentlyListed;
+    setTogglingCommunityId(community.id);
+    setError("");
+    setNotice("");
+    try {
+      await setOrganizationListing({
+        organizationId: community.id,
+        listed: nextListed,
+        isTest: !nextListed,
+      });
+      setNotice(nextListed ? `“${community.name}” mobilde yayına alındı.` : `“${community.name}” mobilde gizlendi (yalnızca yetkili yöneticiler görebilir).`);
+      await refresh(false);
+    } catch (requestError) {
+      setError(functionErrorMessage(requestError));
+    } finally {
+      setTogglingCommunityId(null);
     }
   }
 
@@ -3432,6 +3470,10 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
                 <input id="community-name" value={communityName} onChange={(event) => setCommunityName(event.target.value)} placeholder="Örn. Kadın Girişimciler Topluluğu" required />
                 <label className="field-label field-label-spaced" htmlFor="community-university">Üniversite</label>
                 <input id="community-university" value={communityUniversity} onChange={(event) => setCommunityUniversity(event.target.value)} placeholder="Örn. Akdeniz Üniversitesi" required />
+                <label className="checkbox-field" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", marginBottom: "8px", fontSize: "14px", cursor: "pointer" }}>
+                  <input type="checkbox" checked={communityIsTest} onChange={(event) => setCommunityIsTest(event.target.checked)} />
+                  <span>Test topluluğu olarak oluştur (Öğrencilere gizli)</span>
+                </label>
                 <button className="primary-button" disabled={creatingCommunity || !communityName.trim() || !communityUniversity.trim()}>{creatingCommunity ? "Oluşturuluyor…" : "Topluluğu oluştur"}</button>
               </form>
             </div>
@@ -3459,7 +3501,35 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
               <div className="section-title-row"><div><h2>Aktif topluluklar</h2><p>{data.communities.length} topluluk</p></div></div>
               <div className="business-list">
                 {data.communities.length === 0 ? <div className="empty-state compact-empty"><h3>Henüz topluluk yok</h3></div> : data.communities.map((community) => (
-                  <div key={community.id}><span className="business-avatar">{community.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</span><div><strong>{community.name}</strong><small>{community.university}{community.legacyTestCommunityId ? " · Good4Test bağlı" : ""}</small></div></div>
+                  (() => {
+                    const isListed = community.listed !== false && !community.isTest;
+                    const isBusy = togglingCommunityId === community.id;
+                    return (
+                      <div key={community.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                          <span className="business-avatar">{community.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</span>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                              <strong>{community.name}</strong>
+                              <span className={`status-pill ${isListed ? "status-pill--published" : "status-pill--pending"}`}>
+                                {isListed ? "Mobilde Yayında" : "Gizli / Test"}
+                              </span>
+                            </div>
+                            <small>{community.university}{community.legacyTestCommunityId ? " · Good4Test bağlı" : ""}</small>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="quiet-button compact-button"
+                          style={{ flexShrink: 0 }}
+                          disabled={isBusy}
+                          onClick={() => void handleToggleCommunityListing(community)}
+                        >
+                          {isBusy ? "İşleniyor…" : isListed ? "Mobilde Gizle" : "Mobilde Listele"}
+                        </button>
+                      </div>
+                    );
+                  })()
                 ))}
               </div>
             </div>

@@ -195,7 +195,9 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val access = repository.access()
                 val businesses = repository.businesses()
                 val blocked = loadBlockedCommunityIds()
-                val visibleCommunities = communities.filterNot { c -> c.id in blocked && c.id !in access.communityIds }
+                val visibleCommunities = communities
+                    .filter { c -> (c.data.listed && !c.data.isTest) || c.id in access.communityIds }
+                    .filterNot { c -> c.id in blocked && c.id !in access.communityIds }
                 var couponFailure: String? = null
                 // One quiet retry covers a dropped connection right after the app comes to the front.
                 val coupons = (0..1).firstNotNullOfOrNull { attempt ->
