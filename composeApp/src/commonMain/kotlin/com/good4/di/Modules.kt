@@ -199,6 +199,7 @@ val commonModule = module {
             sessionId = params.get(),
             repository = get(),
             authRepository = get(),
+            activeQuizStore = get(),
             analytics = get()
         )
     }
@@ -206,6 +207,7 @@ val commonModule = module {
         com.good4.quiz.presentation.host.QuizHostViewModel(
             sessionId = params.get(),
             repository = get(),
+            activeQuizStore = get(),
             analytics = get()
         )
     }

@@ -21,6 +21,15 @@ actual fun observeQuizSession(sessionId: String): Flow<QuizSession?> = Firebase.
         if (doc.exists) parseIosQuizSession(doc) else null
     }
 
+actual fun observeActiveQuizSessionForOrg(organizationId: String): Flow<QuizSession?> = Firebase.firestore
+    .collection("quizSessions")
+    .where { "organizationId" equalTo organizationId }
+    .limit(5)
+    .snapshots
+    .map { snapshot ->
+        snapshot.documents.map { parseIosQuizSession(it) }.firstOrNull { it.isActive }
+    }
+
 actual fun observeQuizPlayer(sessionId: String, userId: String): Flow<QuizPlayer?> = Firebase.firestore
     .collection("quizSessions")
     .document(sessionId)

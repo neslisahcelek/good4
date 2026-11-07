@@ -55,12 +55,17 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.good4.core.presentation.components.Good4ConfirmDialog
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.quiz.presentation.components.QuizAnswerButton
+import com.good4.quiz.presentation.components.QuizAnswerShape
 import com.good4.quiz.presentation.components.QuizCountdownBar
 import com.good4.quiz.presentation.components.QuizPodium
 import com.good4.quiz.presentation.components.QuizScoreboard
+import com.good4.quiz.presentation.components.QuizShapeIcon
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -74,13 +79,32 @@ fun QuizPlayerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val uiMessage = state.uiMessage?.asString()
 
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
+
     val isGameActive = state.phase == PlayerScreenPhase.GET_READY ||
         state.phase == PlayerScreenPhase.QUESTION ||
         state.phase == PlayerScreenPhase.SUBMITTED
     com.good4.community.CommunityBackHandler {
-        if (!isGameActive) {
+        if (isGameActive) {
+            showExitConfirmDialog = true
+        } else {
             onBackClick()
         }
+    }
+
+    if (showExitConfirmDialog) {
+        Good4ConfirmDialog(
+            title = stringResource(Res.string.quiz_exit_dialog_title),
+            message = stringResource(Res.string.quiz_exit_dialog_desc),
+            confirmLabel = stringResource(Res.string.quiz_exit_button),
+            dismissLabel = stringResource(Res.string.quiz_stay_in_game),
+            confirmColor = ErrorRed,
+            onConfirm = {
+                showExitConfirmDialog = false
+                onBackClick()
+            },
+            onDismiss = { showExitConfirmDialog = false }
+        )
     }
 
     LaunchedEffect(uiMessage) {
@@ -97,7 +121,13 @@ fun QuizPlayerScreen(
                 title = state.session?.title?.ifBlank { stringResource(Res.string.quiz_title) }
                     ?: stringResource(Res.string.quiz_title),
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = {
+                        if (isGameActive) {
+                            showExitConfirmDialog = true
+                        } else {
+                            onBackClick()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(Res.string.back),
@@ -164,6 +194,11 @@ fun QuizPlayerScreen(
                 }
                 PlayerScreenPhase.CANCELLED -> {
                     CancelledContent(
+                        onExit = onBackClick
+                    )
+                }
+                PlayerScreenPhase.KICKED -> {
+                    QuizKickedContent(
                         onExit = onBackClick
                     )
                 }
@@ -713,6 +748,94 @@ private fun RevealContent(
             }
         }
 
+        val currentQuestion = state.session?.currentQuestion
+        val reveal = state.session?.reveal
+        if (currentQuestion != null && reveal != null) {
+            item(key = "question_summary") {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = SurfaceDefault,
+                    shadowElevation = 2.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = currentQuestion.text,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = TextPrimary
+                        )
+
+                        val correctShape = QuizAnswerShape.fromIndex(reveal.correctIndex)
+                        val correctOptionText = if (currentQuestion.isTrueFalse) {
+                            if (reveal.correctIndex == 0) stringResource(Res.string.quiz_true)
+                            else stringResource(Res.string.quiz_false)
+                        } else {
+                            currentQuestion.options.getOrElse(reveal.correctIndex) { "" }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PrimaryGreen.copy(alpha = 0.12f))
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        ) {
+                            QuizShapeIcon(
+                                shape = correctShape,
+                                modifier = Modifier.size(18.dp),
+                                color = correctShape.color
+                            )
+                            Text(
+                                text = stringResource(Res.string.quiz_correct_answer_label, correctOptionText),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = PrimaryGreen
+                            )
+                        }
+
+                        val myOption = state.selectedOption
+                        if (myOption != null && myOption != reveal.correctIndex) {
+                            val myShape = QuizAnswerShape.fromIndex(myOption)
+                            val myOptionText = if (currentQuestion.isTrueFalse) {
+                                if (myOption == 0) stringResource(Res.string.quiz_true)
+                                else stringResource(Res.string.quiz_false)
+                            } else {
+                                currentQuestion.options.getOrElse(myOption) { "" }
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(ErrorRed.copy(alpha = 0.12f))
+                                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                            ) {
+                                QuizShapeIcon(
+                                    shape = myShape,
+                                    modifier = Modifier.size(18.dp),
+                                    color = myShape.color
+                                )
+                                Text(
+                                    text = stringResource(Res.string.quiz_your_answer_label, myOptionText),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = ErrorRed
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         item(key = "scoreboard") {
             QuizScoreboard(
                 topPlayers = top5,
@@ -830,6 +953,69 @@ private fun CancelledContent(
 
                 Text(
                     text = stringResource(Res.string.quiz_session_cancelled_message),
+                    fontSize = 13.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = onExit,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryGreen,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = stringResource(Res.string.back),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun QuizKickedContent(
+    onExit: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = SurfaceDefault,
+            shadowElevation = 3.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "⛔", fontSize = 40.sp)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = stringResource(Res.string.quiz_kicked_title),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = TextPrimary
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = stringResource(Res.string.quiz_kicked_desc),
                     fontSize = 13.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center

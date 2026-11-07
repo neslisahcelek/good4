@@ -8,6 +8,8 @@ import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.core.data.repository.ProductImageUploadRepositoryAndroid
 import com.good4.core.data.repository.android.FirestoreRepositoryAndroidImpl
+import com.good4.quiz.data.local.ActiveQuizStore
+import com.good4.quiz.data.local.ActiveQuizStoreAndroid
 import com.google.firebase.firestore.FirebaseFirestore
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -25,4 +27,5 @@ actual val platformModule: Module = module {
     single<FirestoreRepository> { FirestoreRepositoryAndroidImpl(get()) }
     single<ProductImageUploadRepository> { ProductImageUploadRepositoryAndroid() }
     single<StartupSessionCache> { StartupSessionCacheAndroid(get()) }
+    single<ActiveQuizStore> { ActiveQuizStoreAndroid(get()) }
 }

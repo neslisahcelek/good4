@@ -366,6 +366,12 @@ fun Good4NavGraph(
                 },
                 onNavigateToEditHome = { communityManager ->
                     navController.navigate(Route.EditHome(communityManager))
+                },
+                onNavigateToQuizHost = { sessionId ->
+                    navController.navigate(Route.QuizHost(sessionId))
+                },
+                onNavigateToQuizPlay = { sessionId ->
+                    navController.navigate(Route.QuizPlay(sessionId))
                 }
             )
         }
@@ -519,8 +525,18 @@ fun Good4NavGraph(
 
         composable<Route.NotificationEvent> { backStackEntry ->
             val target = backStackEntry.toRoute<Route.NotificationEvent>()
-            com.good4.community.CommunitiesScreen(onBack = { navController.popBackStack() },
-                 initialOrganizationId = target.organizationId, initialEventId = target.eventId, initialShowTicket = target.showTicket)
+            com.good4.community.CommunitiesScreen(
+                onBack = { navController.popBackStack() },
+                initialOrganizationId = target.organizationId,
+                initialEventId = target.eventId,
+                initialShowTicket = target.showTicket,
+                onNavigateToQuizHost = { sessionId ->
+                    navController.navigate(Route.QuizHost(sessionId))
+                },
+                onNavigateToQuizPlay = { sessionId ->
+                    navController.navigate(Route.QuizPlay(sessionId))
+                }
+            )
         }
 
         composable<Route.Notifications> {

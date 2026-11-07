@@ -8,6 +8,8 @@ import com.good4.core.data.repository.FirestoreRepository
 import com.good4.core.data.repository.FirestoreRepositoryIOSImpl
 import com.good4.core.data.repository.ProductImageUploadRepository
 import com.good4.core.data.repository.ProductImageUploadRepositoryIOS
+import com.good4.quiz.data.local.ActiveQuizStore
+import com.good4.quiz.data.local.ActiveQuizStoreIOS
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -23,4 +25,5 @@ actual val platformModule: Module = module {
     single<FirestoreRepository> { FirestoreRepositoryIOSImpl() }
     single<ProductImageUploadRepository> { ProductImageUploadRepositoryIOS() }
     single<StartupSessionCache> { StartupSessionCacheIOS() }
+    single<ActiveQuizStore> { ActiveQuizStoreIOS() }
 }

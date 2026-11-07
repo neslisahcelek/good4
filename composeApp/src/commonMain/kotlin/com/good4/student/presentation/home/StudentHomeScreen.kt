@@ -76,7 +76,9 @@ fun StudentHomeScreenRoot(
     onNavigateToDiscounts: () -> Unit = {},
     onNavigateToCampusCloset: () -> Unit = {},
     onNavigateToSocial: () -> Unit = {},
-    onNavigateToEditHome: (Boolean) -> Unit = {}
+    onNavigateToEditHome: (Boolean) -> Unit = {},
+    onNavigateToQuizHost: (String) -> Unit = {},
+    onNavigateToQuizPlay: (String) -> Unit = {}
 ) {
     val analytics: AnalyticsInteractionViewModel = koinViewModel()
     val navItems = listOf(
@@ -228,7 +230,9 @@ fun StudentHomeScreenRoot(
                     onBack = { selectedItemIndex = 0 },
                     managerEntryMode = communityState.access.active && managerEntryHandled,
                     onSwitchToStudent = { selectedItemIndex = 0 },
-                    viewModel = communityViewModel
+                    viewModel = communityViewModel,
+                    onNavigateToQuizHost = onNavigateToQuizHost,
+                    onNavigateToQuizPlay = onNavigateToQuizPlay
                 )
                 0 -> {
                     ProductListScreenRoot(

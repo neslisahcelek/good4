@@ -28,6 +28,24 @@ actual fun observeQuizSession(sessionId: String): Flow<QuizSession?> = callbackF
     awaitClose { listener.remove() }
 }
 
+actual fun observeActiveQuizSessionForOrg(organizationId: String): Flow<QuizSession?> = callbackFlow {
+    val listener = FirebaseFirestore.getInstance()
+        .collection("quizSessions")
+        .whereEqualTo("organizationId", organizationId)
+        .whereIn("status", listOf("lobby", "question", "reveal"))
+        .limit(1)
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(null)
+            } else if (snapshot != null && !snapshot.isEmpty) {
+                trySend(parseAndroidQuizSession(snapshot.documents[0]))
+            } else {
+                trySend(null)
+            }
+        }
+    awaitClose { listener.remove() }
+}
+
 actual fun observeQuizPlayer(sessionId: String, userId: String): Flow<QuizPlayer?> = callbackFlow {
     val listener = FirebaseFirestore.getInstance()
         .collection("quizSessions")

@@ -10,6 +10,7 @@ import com.good4.core.presentation.UiText
 import com.good4.quiz.data.NativeQuizGateway
 import com.good4.quiz.data.QuizGateway
 import com.good4.quiz.data.QuizRepository
+import com.good4.quiz.data.local.ActiveQuizStore
 import com.good4.quiz.data.mapQuizErrorToUiText
 import com.good4.quiz.domain.QuizPlayer
 import com.good4.quiz.domain.QuizSession
@@ -47,6 +48,7 @@ class QuizHostViewModel(
     private val sessionId: String,
     private val repository: QuizRepository,
     private val gateway: QuizGateway = NativeQuizGateway,
+    private val activeQuizStore: ActiveQuizStore? = null,
     private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
 ) : ViewModel() {
 
@@ -72,6 +74,13 @@ class QuizHostViewModel(
                 }
                 .collect { session ->
                     _uiState.update { it.copy(session = session) }
+                    if (session != null) {
+                        if (session.isFinished || session.isCancelled) {
+                            activeQuizStore?.clearActiveSession()
+                        } else {
+                            activeQuizStore?.saveActiveSession(sessionId, "host", session.title)
+                        }
+                    }
                     syncSessionState(session)
                 }
         }
@@ -278,6 +287,7 @@ class QuizHostViewModel(
             analytics.click(Interaction.QUIZ_HOST_CANCEL)
             when (val result = repository.cancelQuizSession(sessionId)) {
                 is Result.Success -> {
+                    activeQuizStore?.clearActiveSession()
                     _uiState.update { it.copy(isCancelling = false) }
                 }
                 is Result.Error -> {

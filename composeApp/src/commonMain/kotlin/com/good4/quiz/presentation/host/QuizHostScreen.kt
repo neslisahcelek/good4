@@ -55,6 +55,7 @@ import com.good4.core.presentation.SurfaceDefault
 import com.good4.core.presentation.SurfaceMuted
 import com.good4.core.presentation.TextPrimary
 import com.good4.core.presentation.TextSecondary
+import com.good4.core.presentation.components.Good4ConfirmDialog
 import com.good4.core.presentation.components.Good4Scaffold
 import com.good4.core.presentation.components.Good4TopBar
 import com.good4.quiz.presentation.components.QuizAnswerShape
@@ -96,72 +97,30 @@ fun QuizHostScreen(
 
     // Kick Player Dialog
     state.playerToKick?.let { player ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissKickDialog,
-            title = {
-                Text(
-                    text = stringResource(Res.string.quiz_host_kick_confirm_title),
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = stringResource(Res.string.quiz_host_kick_confirm_desc, player.nickname),
-                    color = TextSecondary
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = viewModel::confirmKickPlayer,
-                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
-                ) {
-                    Text(stringResource(Res.string.quiz_host_kick_player), color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissKickDialog) {
-                    Text(stringResource(Res.string.back))
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = SurfaceDefault
+        Good4ConfirmDialog(
+            title = stringResource(Res.string.quiz_host_kick_confirm_title),
+            message = stringResource(Res.string.quiz_host_kick_confirm_desc, player.nickname),
+            confirmLabel = stringResource(Res.string.quiz_host_kick_player),
+            dismissLabel = stringResource(Res.string.back),
+            confirmColor = ErrorRed,
+            onConfirm = viewModel::confirmKickPlayer,
+            onDismiss = viewModel::dismissKickDialog
         )
     }
 
     // Cancel Session Dialog
     if (state.showCancelDialog) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissCancelDialog,
-            title = {
-                Text(
-                    text = stringResource(Res.string.quiz_host_cancel_session),
-                    fontWeight = FontWeight.Bold
-                )
+        Good4ConfirmDialog(
+            title = stringResource(Res.string.quiz_host_cancel_session),
+            message = stringResource(Res.string.quiz_host_cancel_confirm_desc),
+            confirmLabel = stringResource(Res.string.quiz_host_cancel_session),
+            dismissLabel = stringResource(Res.string.back),
+            confirmColor = ErrorRed,
+            onConfirm = {
+                viewModel.confirmCancelSession()
+                onBackClick()
             },
-            text = {
-                Text(
-                    text = stringResource(Res.string.quiz_host_cancel_confirm_desc),
-                    color = TextSecondary
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.confirmCancelSession()
-                        onBackClick()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
-                ) {
-                    Text(stringResource(Res.string.quiz_host_cancel_session), color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissCancelDialog) {
-                    Text(stringResource(Res.string.back))
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = SurfaceDefault
+            onDismiss = viewModel::dismissCancelDialog
         )
     }
 

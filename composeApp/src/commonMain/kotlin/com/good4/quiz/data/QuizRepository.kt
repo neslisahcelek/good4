@@ -7,8 +7,10 @@ import com.good4.quiz.domain.QuizJoinResult
 import com.good4.quiz.domain.QuizReport
 import com.good4.quiz.domain.QuizReportQuestionSummary
 import com.good4.quiz.domain.QuizReportRankingItem
+import com.good4.quiz.domain.QuizSession
 import com.good4.quiz.domain.QuizSummary
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
@@ -21,8 +23,15 @@ import kotlinx.serialization.json.put
 import kotlin.random.Random
 
 class QuizRepository(
-    private val json: Json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+    private val json: Json = Json { ignoreUnknownKeys = true; coerceInputValues = true },
+    private val gateway: QuizGateway = NativeQuizGateway
 ) {
+    /**
+     * Observes the active quiz session for a community in real-time.
+     */
+    fun observeActiveQuizSession(organizationId: String): Flow<QuizSession?> =
+        gateway.observeActiveQuizSession(organizationId)
+
     /**
      * Joins a quiz session with the given nickname.
      * Retries up to 2 times with jitter if aborted / contention occurs.

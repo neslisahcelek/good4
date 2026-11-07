@@ -55,6 +55,17 @@ import com.good4.core.presentation.components.StandardButtonLoadingIndicatorSize
 import com.good4.core.presentation.components.Good4ConfirmDialog
 import com.good4.core.presentation.components.Good4NestedScaffold
 import com.good4.core.presentation.components.Good4TopBar
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.good4.core.domain.Result
+import com.good4.quiz.data.QuizRepository
+import com.good4.quiz.domain.QuizSummary
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -87,7 +98,8 @@ internal fun CommunityManagerFlow(
     community: Community,
     viewModel: CommunityViewModel,
     onExit: () -> Unit,
-    onPreviewStudent: () -> Unit
+    onPreviewStudent: () -> Unit,
+    onNavigateToQuizHost: (sessionId: String) -> Unit = {}
 ) {
     var openEventId by rememberSaveable(community.id) { mutableStateOf<String?>(null) }
     val editor = state.eventEditor
@@ -141,7 +153,8 @@ internal fun CommunityManagerFlow(
             onOpenEvent = { viewModel.clearAdmissionMessage(); openEventId = it.id },
             onCreateEvent = { viewModel.openEventEditor() },
             onRetry = { viewModel.select(community) },
-            onLoadMore = viewModel::loadMoreEntries
+            onLoadMore = viewModel::loadMoreEntries,
+            onNavigateToQuizHost = onNavigateToQuizHost
         )
     }
 }
@@ -160,7 +173,8 @@ private fun ManagerHome(
     onOpenEvent: (CommunityEntry) -> Unit,
     onCreateEvent: () -> Unit,
     onRetry: () -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    onNavigateToQuizHost: (sessionId: String) -> Unit = {}
 ) {
     val events = state.entries.filter { it.isEvent() }
     val counts = ManagerFilter.entries.associateWith { f -> events.count { it.matches(f, now) } }
@@ -209,6 +223,12 @@ private fun ManagerHome(
                     StatTile(stringResource(Res.string.community_yaklasan), counts.getValue(ManagerFilter.UPCOMING).toString(), Icons.Outlined.Event, PrimaryGreen, Modifier.weight(1f))
                     StatTile(stringResource(Res.string.community_bu_ay_gelen), monthlyArrivals.toString(), Icons.Outlined.HowToReg, CommunityAttendanceAccent, Modifier.weight(1f))
                 }
+            }
+            item(key = "manager-live-quiz") {
+                ManagerQuizSection(
+                    communityId = community.id,
+                    onNavigateToQuizHost = onNavigateToQuizHost
+                )
             }
             state.error?.let { error ->
                 item(key = "error") { NoticeCard(error, ErrorRed, actionLabel = stringResource(Res.string.campus_closet_retry), onAction = onRetry) }
@@ -1107,4 +1127,236 @@ private fun ManagerEventEditorPreview() {
         onImageChange = {},
         onSubmit = {}
     )
+}
+
+@Composable
+private fun ManagerQuizSection(
+    communityId: String,
+    onNavigateToQuizHost: (sessionId: String) -> Unit,
+    modifier: Modifier = Modifier,
+    quizRepository: QuizRepository = org.koin.compose.koinInject()
+) {
+    val activeSession by quizRepository.observeActiveQuizSession(communityId).collectAsStateWithLifecycle(null)
+    var readyQuizzes by remember(communityId) { mutableStateOf<List<QuizSummary>?>(null) }
+    var isLoadingQuizzes by remember(communityId) { mutableStateOf(false) }
+    var isStarting by remember(communityId) { mutableStateOf(false) }
+    var errorMessage by remember(communityId) { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(communityId, activeSession?.id) {
+        if (activeSession == null) {
+            isLoadingQuizzes = true
+            when (val res = quizRepository.listQuizzes(communityId)) {
+                is Result.Success -> {
+                    readyQuizzes = res.data.filter { it.status == "ready" && it.questionCount > 0 }
+                    isLoadingQuizzes = false
+                }
+                is Result.Error -> {
+                    isLoadingQuizzes = false
+                }
+            }
+        }
+    }
+
+    ClosetCard(modifier = modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            val session = activeSession
+            if (session != null) {
+                val infiniteTransition = rememberInfiniteTransition(label = "mgr_quiz_pulse")
+                val pulseScale by infiniteTransition.animateFloat(
+                    initialValue = 0.85f,
+                    targetValue = 1.25f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 800),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "mgr_pulse_scale"
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(ErrorRed.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .scale(pulseScale)
+                                .clip(CircleShape)
+                                .background(ErrorRed)
+                        )
+                        Text(
+                            text = stringResource(Res.string.quiz_live_badge),
+                            color = ErrorRed,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(Res.string.quiz_manager_quizzes_title),
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Text(
+                    text = session.title.ifBlank { stringResource(Res.string.quiz_title) },
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = TextPrimary
+                )
+
+                Text(
+                    text = stringResource(Res.string.quiz_manager_active_notice),
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+
+                Button(
+                    onClick = { onNavigateToQuizHost(session.id) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(StandardButtonHeight),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryGreen,
+                        contentColor = androidx.compose.ui.graphics.Color.White
+                    )
+                ) {
+                    Icon(
+                        Icons.Outlined.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(Res.string.quiz_manager_resume_button),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TiltedIcon(Icons.Outlined.Quiz, CommunityAccent, size = 32, iconSize = 18)
+                    Text(
+                        text = stringResource(Res.string.quiz_manager_quizzes_title),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                }
+
+                if (isLoadingQuizzes) {
+                    Good4LoadingState(modifier = Modifier.fillMaxWidth().padding(12.dp))
+                } else {
+                    val quizzes = readyQuizzes
+                    if (quizzes.isNullOrEmpty()) {
+                        Text(
+                            text = stringResource(Res.string.quiz_manager_no_ready_quizzes),
+                            color = TextSecondary,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            quizzes.forEach { quiz ->
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = PistachioGreen.copy(alpha = 0.5f),
+                                    border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.2f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = quiz.title,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = TextPrimary,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = stringResource(Res.string.quiz_question_count_format, quiz.questionCount),
+                                                fontSize = 12.sp,
+                                                color = TextSecondary
+                                            )
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Button(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    isStarting = true
+                                                    errorMessage = null
+                                                    when (val res = quizRepository.startQuizSession(communityId, quiz.quizId)) {
+                                                        is Result.Success -> {
+                                                            isStarting = false
+                                                            onNavigateToQuizHost(res.data)
+                                                        }
+                                                        is Result.Error -> {
+                                                            isStarting = false
+                                                            errorMessage = res.error.message
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            enabled = !isStarting,
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = PrimaryGreen,
+                                                contentColor = androidx.compose.ui.graphics.Color.White
+                                            ),
+                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                                        ) {
+                                            if (isStarting) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    strokeWidth = 2.dp,
+                                                    color = androidx.compose.ui.graphics.Color.White
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = stringResource(Res.string.quiz_manager_start_button),
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                errorMessage?.let { error ->
+                    NoticeCard(
+                        error,
+                        ErrorRed,
+                        actionLabel = stringResource(Res.string.campus_closet_retry),
+                        onAction = { errorMessage = null }
+                    )
+                }
+            }
+        }
+    }
 }

@@ -1533,4 +1533,17 @@
     <string name="quiz_error_session_active">Bu toplulukta şu anda zaten aktif bir canlı quiz oturumu bulunuyor.</string>
     <string name="quiz_error_session_not_found">Quiz oturumu bulunamadı.</string>
     <string name="quiz_error_report_not_found">Quiz raporu bulunamadı.</string>
+    <string name="quiz_exit_dialog_title">Canlı Quizden Ayrıl</string>
+    <string name="quiz_exit_dialog_desc">Quiz devam ediyor. Ayrılırsanız soru süresi işlemeye devam eder. Ayrılmak istediğinizden emin misiniz?</string>
+    <string name="quiz_stay_in_game">Oyunda Kal</string>
+    <string name="quiz_kicked_title">Oturumdan Çıkarıldınız</string>
+    <string name="quiz_kicked_desc">Yönetici tarafından bu canlı quiz oturumundan çıkarıldınız.</string>
+    <string name="quiz_manager_quizzes_title">Canlı Quizler</string>
+    <string name="quiz_manager_start_button">Canlı Oturum Başlat</string>
+    <string name="quiz_manager_resume_button">Canlı Oturuma Dön</string>
+    <string name="quiz_manager_no_ready_quizzes">Topluluğunuza ait hazır quiz bulunmuyor. Web panelinden soru seti oluşturup durumunu "Hazır" yapabilirsiniz.</string>
+    <string name="quiz_manager_active_notice">Topluluğunuzda şu anda canlı bir quiz oturumu yürütülüyor.</string>
+    <string name="quiz_question_count_format">%1$d soru</string>
+    <string name="quiz_correct_answer_label">Doğru Cevap: %1$s</string>
+    <string name="quiz_your_answer_label">Senin Cevabın: %1$s</string>
 </resources>

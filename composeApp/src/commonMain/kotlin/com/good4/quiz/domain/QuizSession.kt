@@ -25,6 +25,7 @@ data class QuizSession(
     val isReveal: Boolean get() = phase == QuizPhase.REVEAL
     val isFinished: Boolean get() = phase == QuizPhase.FINISHED
     val isCancelled: Boolean get() = phase == QuizPhase.CANCELLED
+    val isActive: Boolean get() = isLobby || isQuestion || isReveal
 }
 
 @Serializable

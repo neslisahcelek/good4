@@ -11,6 +11,7 @@ import com.good4.core.presentation.UiText
 import com.good4.quiz.data.NativeQuizGateway
 import com.good4.quiz.data.QuizGateway
 import com.good4.quiz.data.QuizRepository
+import com.good4.quiz.data.local.ActiveQuizStore
 import com.good4.quiz.data.mapQuizErrorToUiText
 import com.good4.quiz.domain.QuizPlayer
 import com.good4.quiz.domain.QuizSession
@@ -34,7 +35,8 @@ enum class PlayerScreenPhase {
     SUBMITTED,
     REVEAL,
     FINISHED,
-    CANCELLED
+    CANCELLED,
+    KICKED
 }
 
 data class QuizPlayerUiState(
@@ -57,6 +59,7 @@ class QuizPlayerViewModel(
     private val repository: QuizRepository,
     private val gateway: QuizGateway = NativeQuizGateway,
     private val authRepository: AuthRepository,
+    private val activeQuizStore: ActiveQuizStore? = null,
     private val analytics: AnalyticsTracker = NoOpAnalyticsTracker
 ) : ViewModel() {
 
@@ -100,10 +103,15 @@ class QuizPlayerViewModel(
                 }
                 .collect { player ->
                     _uiState.update { current ->
-                        val newPhase = if (player != null && current.phase == PlayerScreenPhase.ENTER_NICKNAME) {
-                            PlayerScreenPhase.LOBBY
-                        } else current.phase
-                        current.copy(player = player, phase = newPhase)
+                        if (player?.status == "kicked") {
+                            activeQuizStore?.clearActiveSession()
+                            current.copy(player = player, phase = PlayerScreenPhase.KICKED)
+                        } else {
+                            val newPhase = if (player != null && current.phase == PlayerScreenPhase.ENTER_NICKNAME) {
+                                PlayerScreenPhase.LOBBY
+                            } else current.phase
+                            current.copy(player = player, phase = newPhase)
+                        }
                     }
                 }
         }
@@ -112,6 +120,7 @@ class QuizPlayerViewModel(
     private fun syncPhaseWithSession(session: QuizSession?) {
         if (session == null) {
             stopCountdown()
+            activeQuizStore?.clearActiveSession()
             _uiState.update { current ->
                 if (current.phase != PlayerScreenPhase.ENTER_NICKNAME && current.phase != PlayerScreenPhase.FINISHED) {
                     current.copy(phase = PlayerScreenPhase.CANCELLED)
@@ -124,8 +133,10 @@ class QuizPlayerViewModel(
             "lobby" -> {
                 stopCountdown()
                 _uiState.update {
-                    if (it.player != null) it.copy(phase = PlayerScreenPhase.LOBBY)
-                    else it.copy(phase = PlayerScreenPhase.ENTER_NICKNAME)
+                    if (it.player != null) {
+                        if (it.player.status == "kicked") it.copy(phase = PlayerScreenPhase.KICKED)
+                        else it.copy(phase = PlayerScreenPhase.LOBBY)
+                    } else it.copy(phase = PlayerScreenPhase.ENTER_NICKNAME)
                 }
             }
             "question" -> {
@@ -146,10 +157,12 @@ class QuizPlayerViewModel(
             }
             "finished" -> {
                 stopCountdown()
+                activeQuizStore?.clearActiveSession()
                 _uiState.update { it.copy(phase = PlayerScreenPhase.FINISHED) }
             }
             "cancelled" -> {
                 stopCountdown()
+                activeQuizStore?.clearActiveSession()
                 _uiState.update { it.copy(phase = PlayerScreenPhase.CANCELLED) }
             }
         }
@@ -224,6 +237,11 @@ class QuizPlayerViewModel(
             when (val result = repository.joinQuizSession(sessionId, nickname)) {
                 is Result.Success -> {
                     clockOffsetMs = result.data.serverTimeMs - Clock.System.now().toEpochMilliseconds()
+                    activeQuizStore?.saveActiveSession(
+                        sessionId = sessionId,
+                        role = "player",
+                        title = _uiState.value.session?.title.orEmpty()
+                    )
                     _uiState.update {
                         it.copy(
                             isJoining = false,
@@ -265,8 +283,8 @@ class QuizPlayerViewModel(
                     _uiState.update { current ->
                         current.copy(
                             isSubmittingAnswer = false,
-                            selectedOption = if (isAlreadyAnswered) current.selectedOption else null,
-                            phase = if (isAlreadyAnswered) current.phase else PlayerScreenPhase.QUESTION,
+                            selectedOption = if (isAlreadyAnswered) (current.selectedOption ?: optionIndex) else null,
+                            phase = if (isAlreadyAnswered) PlayerScreenPhase.SUBMITTED else PlayerScreenPhase.QUESTION,
                             uiMessage = mapQuizErrorToUiText(result.error.message)
                         )
                     }
