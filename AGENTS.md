@@ -257,3 +257,9 @@ Firebase Console'da ilgili Android uygulamasının altına şu parmak izlerinin 
   - **UGC & Moderasyon**: Topluluk ve Kampüs Dolabı içeriklerinde şikayet et (report) ve kullanıcı engelle (block) işlevleri eksiksiz sunulmalıdır.
   - **Reviewer Erişimi**: Kampüs Dolabı ve Sosyal'in incelenebilmesi için hem App Store Connect hem Google Play Console App Access alanında doğrulanmış `.edu.tr` demo hesabı sağlanmalıdır.
 
+
+## 14) Test Toplulukları ve Görünürlük Politikası (Production Test Communities)
+- **Gizlilik Kuralı**: Production (`good4tr-v2`) ortamında açılan test ve dahili topluluklar kesinlikle normal öğrencilere/kullanıcılara görünmemelidir.
+- **Zorunlu Alanlar**: Test veya gizli topluluk belgelerinde `isTest: true` ve `listed: false` değerleri tanımlanmalıdır.
+- **İstemci Filtreleme**: Mobil uygulamada (`CommunityViewModel`), topluluk listelenirken `(c.data.listed && !c.data.isTest) || c.id in access.communityIds` kuralı uygulanır; böylece normal kullanıcılar test topluluklarını göremezken yalnızca atanmış yöneticiler (`manager`, `staff`) ve adminler kendi topluluklarına erişip test (Canlı Quiz, etkinlik vb.) yapabilir.
+- **Admin Panel Yönetimi**: Good4 Admin panelinde (`firebase/v2/web` -> Topluluklar sekmesi) her topluluğun listelenme durumu (`listed: true / false`, `isTest: true / false`) badge ile gösterilmeli ve tek tıkla ("Mobilde Listele" / "Mobilde Gizle") değiştirilebilmelidir. Yeni topluluk oluşturulurken "Test topluluğu olarak oluştur" seçeneği sunulmalıdır.

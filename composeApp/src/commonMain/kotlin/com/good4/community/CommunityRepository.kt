@@ -33,7 +33,9 @@ data class CommunityDto(
     val university: String = "",
     val description: String = "",
     val logoUrl: String = "",
-    val coverUrl: String = ""
+    val coverUrl: String = "",
+    val listed: Boolean = true,
+    val isTest: Boolean = false
 )
 
 @Serializable
@@ -42,7 +44,8 @@ data class CommunityAccessDto(val communityIds: List<String> = emptyList(), val 
 @Serializable
 data class V2OrganizationDto(
     val name: String = "", val type: String = "", val status: String = "",
-    val university: String = "", val description: String = "", val logoUrl: String = "", val coverUrl: String = ""
+    val university: String = "", val description: String = "", val logoUrl: String = "", val coverUrl: String = "",
+    val listed: Boolean = true, val isTest: Boolean = false
 )
 
 @Serializable
@@ -196,7 +199,7 @@ class CommunityRepository(
     private suspend fun loadCommunities(): List<Community> {
         if (isV2) return when (val result = allPages("organizations", mapOf("type" to "community", "status" to "active"), V2OrganizationDto::class)) {
             is Result.Success -> result.data.map {
-                Community(it.id, CommunityDto(it.data.name, it.data.university, it.data.description, it.data.logoUrl, it.data.coverUrl))
+                Community(it.id, CommunityDto(it.data.name, it.data.university, it.data.description, it.data.logoUrl, it.data.coverUrl, it.data.listed, it.data.isTest))
             }.sortedBy { it.data.name }
             is Result.Error -> error("Topluluklar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.")
         }

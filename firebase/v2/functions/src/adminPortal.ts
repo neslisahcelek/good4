@@ -35,6 +35,9 @@ export interface AdminCommunitySummary {
   name: string;
   university: string;
   legacyTestCommunityId: string;
+  status: string;
+  listed: boolean;
+  isTest: boolean;
 }
 
 export interface LegacyBusinessSummary {
@@ -446,12 +449,15 @@ export async function getAdminDashboardService(
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "tr"));
   const v2Communities = organizations.docs
-    .filter((document) => document.get("type") === "community" && document.get("status") === "active")
+    .filter((document) => document.get("type") === "community" && ["active", "test"].includes(String(document.get("status") ?? "active")))
     .map((document) => ({
       id: document.id,
       name: String(document.get("name") ?? "Topluluk"),
       university: String(document.get("university") ?? ""),
       legacyTestCommunityId: String(document.get("legacyTestCommunityId") ?? ""),
+      status: String(document.get("status") ?? "active"),
+      listed: document.get("listed") !== false,
+      isTest: Boolean(document.get("isTest")),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "tr"));
   const linkedLegacyIds = new Set(businesses.map((business) => business.legacyTestBusinessId).filter(Boolean));

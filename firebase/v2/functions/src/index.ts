@@ -40,6 +40,7 @@ import {
   createCampaignService,
   endCampaignService,
   createOrganizationService,
+  setOrganizationListingService,
 } from "./admin.js";
 import {
   issueCampaignCodeService,
@@ -234,6 +235,11 @@ export const setCommunityFollowing = onCall(callableOptions, async (request) => 
 export const createOrganization = onCall(callableOptions, async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   return createOrganizationService(db, uid, request.data);
+});
+
+export const setOrganizationListing = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return setOrganizationListingService(db, uid, request.data);
 });
 
 export const assignOrganizationMember = onCall(callableOptions, async (request) => {

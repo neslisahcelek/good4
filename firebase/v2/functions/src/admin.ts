@@ -13,6 +13,8 @@ export interface CreateOrganizationInput {
   type: unknown;
   university?: unknown;
   legacyTestBusinessId?: unknown;
+  isTest?: unknown;
+  listed?: unknown;
 }
 
 export async function createOrganizationService(
@@ -51,6 +53,8 @@ export async function createOrganizationService(
       university,
       status: "active",
       followerCount: 0,
+      isTest: input.isTest === true,
+      listed: input.listed === false ? false : input.isTest !== true,
       createdAt: FieldValue.serverTimestamp(),
       createdBy: actorUid,
       updatedAt: FieldValue.serverTimestamp(),
@@ -74,6 +78,50 @@ export async function createOrganizationService(
   });
 
   return { organizationId: organizationRef.id };
+}
+
+export interface SetOrganizationListingInput {
+  organizationId: unknown;
+  listed: unknown;
+  isTest?: unknown;
+}
+
+export async function setOrganizationListingService(
+  database: Firestore,
+  actorUid: string,
+  input: SetOrganizationListingInput,
+): Promise<{ organizationId: string; listed: boolean; isTest: boolean }> {
+  const organizationId = requireNonEmptyString(input.organizationId, "organizationId", 128);
+  if (typeof input.listed !== "boolean") {
+    throw new HttpsError("invalid-argument", "LISTED_BOOLEAN_REQUIRED");
+  }
+  const listed = input.listed;
+  const isTest = typeof input.isTest === "boolean" ? input.isTest : !listed;
+  const organizationRef = database.doc(`organizations/${organizationId}`);
+  const auditRef = database.collection("auditLogs").doc();
+
+  await database.runTransaction(async (transaction) => {
+    await requireActiveActor(database, transaction, actorUid, ["good4Admin"]);
+    const organization = await transaction.get(organizationRef);
+    if (!organization.exists) {
+      throw new HttpsError("not-found", "ORGANIZATION_NOT_FOUND");
+    }
+    transaction.update(organizationRef, {
+      listed,
+      isTest,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    transaction.create(auditRef, {
+      action: "organization.listingUpdated",
+      actorUid,
+      targetType: "organization",
+      targetId: organizationId,
+      metadata: { listed, isTest, name: String(organization.get("name") ?? "") },
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { organizationId, listed, isTest };
 }
 
 export interface AssignOrganizationMemberInput {
