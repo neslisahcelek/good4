@@ -39,6 +39,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -185,6 +186,7 @@ private fun ManagerHome(
     val currentMonth = now.date.toString().take(7)
     val monthlyArrivals = events.filter { it.data.date.startsWith(currentMonth) }
         .sumOf { state.attendanceByEntry[it.id]?.size ?: 0 }
+    val uriHandler = LocalUriHandler.current
 
     Good4NestedScaffold(
         topBar = {
@@ -192,6 +194,11 @@ private fun ManagerHome(
                 title = stringResource(Res.string.community_toplulugum),
                 navigationIcon = { IconButton(onClick = onExit) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.campus_closet_back)) } },
                 actions = {
+                    RoundIconAction(
+                        icon = Icons.Outlined.OpenInBrowser,
+                        description = stringResource(Res.string.community_manager_web_panel_action),
+                        onClick = { uriHandler.openUri(config.ReleaseFeatures.COMMUNITY_PANEL_URL) }
+                    )
                     RoundIconAction(Icons.Outlined.Visibility, stringResource(Res.string.community_ogrencilerin_gordugu_hali), onPreviewStudent)
                 }
             )
@@ -1136,12 +1143,16 @@ private fun ManagerQuizSection(
     modifier: Modifier = Modifier,
     quizRepository: QuizRepository = org.koin.compose.koinInject()
 ) {
-    val activeSession by quizRepository.observeActiveQuizSession(communityId).collectAsStateWithLifecycle(null)
+    val activeSessionFlow = remember(communityId) {
+        quizRepository.observeActiveQuizSession(communityId)
+    }
+    val activeSession by activeSessionFlow.collectAsStateWithLifecycle(null)
     var readyQuizzes by remember(communityId) { mutableStateOf<List<QuizSummary>?>(null) }
     var isLoadingQuizzes by remember(communityId) { mutableStateOf(false) }
     var isStarting by remember(communityId) { mutableStateOf(false) }
     var errorMessage by remember(communityId) { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(communityId, activeSession?.id) {
         if (activeSession == null) {
@@ -1247,16 +1258,33 @@ private fun ManagerQuizSection(
                 }
             } else {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TiltedIcon(Icons.Outlined.Quiz, CommunityAccent, size = 32, iconSize = 18)
-                    Text(
-                        text = stringResource(Res.string.quiz_manager_quizzes_title),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TiltedIcon(Icons.Outlined.Quiz, CommunityAccent, size = 32, iconSize = 18)
+                        Text(
+                            text = stringResource(Res.string.quiz_manager_quizzes_title),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                    }
+                    TextButton(
+                        onClick = { uriHandler.openUri(config.ReleaseFeatures.COMMUNITY_PANEL_URL) },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.quiz_manager_manage_web_button),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = PrimaryGreen
+                        )
+                    }
                 }
 
                 if (isLoadingQuizzes) {
@@ -1270,6 +1298,20 @@ private fun ManagerQuizSection(
                             fontSize = 13.sp,
                             lineHeight = 18.sp
                         )
+                        OutlinedButton(
+                            onClick = { uriHandler.openUri(config.ReleaseFeatures.COMMUNITY_PANEL_URL) },
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+                        ) {
+                            Icon(Icons.Outlined.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(Res.string.quiz_manager_create_web_button),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             quizzes.forEach { quiz ->

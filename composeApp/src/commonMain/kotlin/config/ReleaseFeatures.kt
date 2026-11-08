@@ -29,4 +29,5 @@ object ReleaseFeatures {
     val inAppStaffPanels: Boolean get() = !isV2
 
     val WEB_PANEL_URL: String get() = if (AppEnvironment.useFirebaseEmulators) "http://${AppEnvironment.firebaseEmulatorHost}:5005/admin" else "https://${AppEnvironment.firebaseProjectId}.web.app/admin"
+    val COMMUNITY_PANEL_URL: String get() = if (AppEnvironment.useFirebaseEmulators) "http://${AppEnvironment.firebaseEmulatorHost}:5005/topluluk-paneli" else "https://${AppEnvironment.firebaseProjectId}.web.app/topluluk-paneli"
 }

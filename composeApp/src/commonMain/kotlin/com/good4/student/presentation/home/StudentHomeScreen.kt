@@ -107,7 +107,6 @@ fun StudentHomeScreenRoot(
     val uriHandler = LocalUriHandler.current
     var reservationsScrollRequestKey by rememberSaveable { mutableIntStateOf(0) }
     var pendingReservationFromHome by remember { mutableStateOf<ReservationUiModel?>(null) }
-    var managerEntryHandled by rememberSaveable { mutableStateOf(false) }
     val productListViewModel: ProductListViewModel = koinViewModel()
     val reservationsViewModel: StudentReservationsViewModel? = if (AppEnvironment.firebaseBackend != FirebaseBackend.V2) koinViewModel() else null
     val communityViewModel: CommunityViewModel = koinViewModel()
@@ -137,19 +136,6 @@ fun StudentHomeScreenRoot(
         analytics.click(Interaction.HOME_EDIT)
         menuOpen = false
         editHomeRequested = true
-    }
-
-    LaunchedEffect(communityState.loading, communityState.access, communityState.communities) {
-        if (!managerEntryHandled && !communityState.loading && communityState.access.active) {
-            val managedCommunity = communityState.communities.firstOrNull {
-                it.id in communityState.access.communityIds
-            }
-            managerEntryHandled = true
-            if (managedCommunity != null) {
-                communityViewModel.select(managedCommunity)
-                selectedItemIndex = 2
-            }
-        }
     }
 
     fun showReservationsTab() {
@@ -228,7 +214,6 @@ fun StudentHomeScreenRoot(
             when (selectedItemIndex) {
                 2 -> com.good4.community.CommunitiesScreen(
                     onBack = { selectedItemIndex = 0 },
-                    managerEntryMode = communityState.access.active && managerEntryHandled,
                     onSwitchToStudent = { selectedItemIndex = 0 },
                     viewModel = communityViewModel,
                     onNavigateToQuizHost = onNavigateToQuizHost,

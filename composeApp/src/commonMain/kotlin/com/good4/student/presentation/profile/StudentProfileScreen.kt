@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.OpenInBrowser
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,6 +55,8 @@ import com.good4.core.presentation.components.Good4TopBar
 import com.good4.core.presentation.components.ProfileScreenScaffold
 import good4.composeapp.generated.resources.Res
 import good4.composeapp.generated.resources.account_settings_title
+import good4.composeapp.generated.resources.community_manager_web_panel_action
+import good4.composeapp.generated.resources.community_manager_web_panel_profile_button
 import good4.composeapp.generated.resources.logout
 import good4.composeapp.generated.resources.placeholder_dash
 import good4.composeapp.generated.resources.profile_major_label
@@ -237,6 +241,60 @@ fun StudentProfileScreen(
                                 value = user?.classYear ?: placeholder
                             )
                         }
+                    }
+                }
+            }
+
+            if (state.isCommunityManager) {
+                val uriHandler = LocalUriHandler.current
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { uriHandler.openUri(config.ReleaseFeatures.COMMUNITY_PANEL_URL) },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceDefault),
+                    border = BorderStroke(1.dp, BorderMuted.copy(alpha = 0.35f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(PistachioGreen.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.OpenInBrowser,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(Res.string.community_manager_web_panel_action),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = stringResource(Res.string.community_manager_web_panel_profile_button),
+                                fontSize = 13.sp,
+                                color = TextSecondary
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }

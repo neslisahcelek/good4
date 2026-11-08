@@ -669,8 +669,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         status = document.getOrNull("status") ?: "", university = document.getOrNull("university") ?: "",
         description = document.getOrNull("description") ?: "", logoUrl = document.getOrNull("logoUrl") ?: "",
         coverUrl = document.getOrNull("coverUrl") ?: "",
-        listed = document.getOrNull("listed") ?: true,
-        isTest = document.getOrNull("isTest") ?: false
+        listed = document.getOrNull("listed") ?: true
     )
 
     private fun decodeV2MembershipDto(document: DocumentSnapshot) = com.good4.community.V2MembershipDto(

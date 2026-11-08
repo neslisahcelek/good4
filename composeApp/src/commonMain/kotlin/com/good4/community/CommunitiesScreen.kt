@@ -138,11 +138,14 @@ fun CommunitiesScreen(
     val managerView = state.canManage && !previewAsStudent
     val isV2 = AppEnvironment.firebaseBackend == FirebaseBackend.V2
     val studentView = isV2 && !state.canManage && !previewAsStudent
-    val activeQuizSession by (if (community != null && (!managerView || previewAsStudent)) {
-        quizRepository.observeActiveQuizSession(community.id)
-    } else {
-        kotlinx.coroutines.flow.flowOf(null)
-    }).collectAsStateWithLifecycle(null)
+    val activeQuizFlow = remember(community?.id, managerView, previewAsStudent) {
+        if (community != null && (!managerView || previewAsStudent)) {
+            quizRepository.observeActiveQuizSession(community.id)
+        } else {
+            kotlinx.coroutines.flow.flowOf(null)
+        }
+    }
+    val activeQuizSession by activeQuizFlow.collectAsStateWithLifecycle(null)
     var studentFilter by rememberSaveable(community?.id) { mutableStateOf(StudentEventFilter.UPCOMING) }
     var now by remember { mutableStateOf(eventNow()) }
     val featuredEvents = if (studentView) {

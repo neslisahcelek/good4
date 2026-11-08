@@ -1551,4 +1551,8 @@
     <string name="quiz_question_count_format">%1$d soru</string>
     <string name="quiz_correct_answer_label">Doğru Cevap: %1$s</string>
     <string name="quiz_your_answer_label">Senin Cevabın: %1$s</string>
+    <string name="quiz_manager_create_web_button">Web Panelinde Quiz Oluştur</string>
+    <string name="quiz_manager_manage_web_button">Web Panelinde Yönet</string>
+    <string name="community_manager_web_panel_action">Topluluk Web Paneli</string>
+    <string name="community_manager_web_panel_profile_button">Topluluk Web Panelini Aç</string>
 </resources>

@@ -11,6 +11,7 @@ import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 actual fun observeQuizSession(sessionId: String): Flow<QuizSession?> = Firebase.firestore
@@ -20,6 +21,7 @@ actual fun observeQuizSession(sessionId: String): Flow<QuizSession?> = Firebase.
     .map { doc ->
         if (doc.exists) parseIosQuizSession(doc) else null
     }
+    .catch { emit(null) }
 
 actual fun observeActiveQuizSessionForOrg(organizationId: String): Flow<QuizSession?> = Firebase.firestore
     .collection("quizSessions")
@@ -29,6 +31,7 @@ actual fun observeActiveQuizSessionForOrg(organizationId: String): Flow<QuizSess
     .map { snapshot ->
         snapshot.documents.map { parseIosQuizSession(it) }.firstOrNull { it.isActive }
     }
+    .catch { emit(null) }
 
 actual fun observeQuizPlayer(sessionId: String, userId: String): Flow<QuizPlayer?> = Firebase.firestore
     .collection("quizSessions")
@@ -39,6 +42,7 @@ actual fun observeQuizPlayer(sessionId: String, userId: String): Flow<QuizPlayer
     .map { doc ->
         if (doc.exists) parseIosQuizPlayer(doc) else null
     }
+    .catch { emit(null) }
 
 actual fun observeQuizPlayers(sessionId: String): Flow<List<QuizPlayer>> = Firebase.firestore
     .collection("quizSessions")
@@ -49,6 +53,7 @@ actual fun observeQuizPlayers(sessionId: String): Flow<List<QuizPlayer>> = Fireb
     .map { snapshot ->
         snapshot.documents.map { parseIosQuizPlayer(it) }
     }
+    .catch { emit(emptyList()) }
 
 actual fun observeQuizAnswerCount(sessionId: String, questionIndex: Int): Flow<Int> = Firebase.firestore
     .collection("quizSessions")
@@ -66,6 +71,7 @@ actual fun observeQuizAnswerCount(sessionId: String, questionIndex: Int): Flow<I
         }
         total
     }
+    .catch { emit(0) }
 
 private fun DocumentSnapshot.getAsInt(field: String): Int? {
     getOrNull<Int>(field)?.let { return it }

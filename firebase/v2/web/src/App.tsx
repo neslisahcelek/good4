@@ -168,7 +168,6 @@ type AdminCommunity = {
   legacyTestCommunityId: string;
   status?: string;
   listed?: boolean;
-  isTest?: boolean;
 };
 type LegacyBusiness = { id: string; name: string; linked: boolean };
 type PendingCoupon = {
@@ -369,12 +368,12 @@ const saveAcademicCalendarEvent = httpsCallable<{
   active: boolean;
 }, AcademicCalendarEvent>(functions, "saveAcademicCalendarEvent");
 const createOrganization = httpsCallable<
-  { name: string; type: "business" | "community"; university?: string; legacyTestBusinessId?: string; isTest?: boolean; listed?: boolean },
+  { name: string; type: "business" | "community"; university?: string; legacyTestBusinessId?: string; listed?: boolean },
   { organizationId: string }
 >(functions, "createOrganization");
 const setOrganizationListing = httpsCallable<
-  { organizationId: string; listed: boolean; isTest?: boolean },
-  { organizationId: string; listed: boolean; isTest: boolean }
+  { organizationId: string; listed: boolean },
+  { organizationId: string; listed: boolean }
 >(functions, "setOrganizationListing");
 const assignOrganizationMemberByEmail = httpsCallable<
   { organizationId: string; email: string; displayName: string; role: "owner" | "manager" | "staff"; temporaryPassword?: string },
@@ -2549,7 +2548,6 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
         name: communityName.trim(),
         type: "community",
         university: communityUniversity.trim(),
-        isTest: communityIsTest,
         listed: !communityIsTest,
       });
       setCommunityName("");
@@ -2565,7 +2563,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
   }
 
   async function handleToggleCommunityListing(community: AdminCommunity) {
-    const isCurrentlyListed = community.listed !== false && !community.isTest;
+    const isCurrentlyListed = community.listed !== false;
     const nextListed = !isCurrentlyListed;
     setTogglingCommunityId(community.id);
     setError("");
@@ -2574,7 +2572,6 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
       await setOrganizationListing({
         organizationId: community.id,
         listed: nextListed,
-        isTest: !nextListed,
       });
       setNotice(nextListed ? `“${community.name}” mobilde yayına alındı.` : `“${community.name}” mobilde gizlendi (yalnızca yetkili yöneticiler görebilir).`);
       await refresh(false);
@@ -3474,7 +3471,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
                 <input id="community-university" value={communityUniversity} onChange={(event) => setCommunityUniversity(event.target.value)} placeholder="Örn. Akdeniz Üniversitesi" required />
                 <label className="checkbox-field" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", marginBottom: "8px", fontSize: "14px", cursor: "pointer" }}>
                   <input type="checkbox" checked={communityIsTest} onChange={(event) => setCommunityIsTest(event.target.checked)} />
-                  <span>Test topluluğu olarak oluştur (Öğrencilere gizli)</span>
+                  <span>Liste dışı / Dahili test olarak oluştur (Öğrencilere gizli)</span>
                 </label>
                 <button className="primary-button" disabled={creatingCommunity || !communityName.trim() || !communityUniversity.trim()}>{creatingCommunity ? "Oluşturuluyor…" : "Topluluğu oluştur"}</button>
               </form>
@@ -3504,7 +3501,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
               <div className="business-list">
                 {data.communities.length === 0 ? <div className="empty-state compact-empty"><h3>Henüz topluluk yok</h3></div> : data.communities.map((community) => (
                   (() => {
-                    const isListed = community.listed !== false && !community.isTest;
+                    const isListed = community.listed !== false;
                     const isBusy = togglingCommunityId === community.id;
                     return (
                       <div key={community.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
