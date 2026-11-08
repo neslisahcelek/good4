@@ -212,6 +212,7 @@ export function quizErrorMessage(error: unknown): string {
   if (message.includes("QUIZ_TIME_LIMIT_INVALID")) return "Soru süresi 10, 20, 30 veya 60 saniye olmalıdır.";
   if (message.includes("QUIZ_LIMIT_REACHED")) return "Topluluk başına en fazla 20 quiz oluşturulabilir.";
   if (message.includes("QUIZ_MANAGER_REQUIRED")) return "Bu işlem yalnızca yetkili topluluk yöneticileri tarafından yapılabilir.";
+  if (message.includes("QUIZ_RESTRICTED_TO_TEST_COMMUNITIES")) return "Canlı quiz özelliği şu anda yalnızca dahili test topluluklarında kullanılabilir.";
   if (message.includes("COMMUNITY_NOT_ACTIVE")) return "Topluluk hesabı aktif durumda değil.";
   if (message.includes("COMMUNITY_ID_INVALID")) return "Geçersiz topluluk bilgisi.";
   if (code.includes("permission-denied")) return "Bu işlem için yetkiniz bulunmuyor.";

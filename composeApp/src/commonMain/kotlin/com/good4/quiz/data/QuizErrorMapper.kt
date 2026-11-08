@@ -42,6 +42,8 @@ fun mapQuizErrorToUiText(rawError: String?): UiText {
             UiText.StringResourceId(Res.string.quiz_error_session_not_found)
         code.contains("QUIZ_REPORT_NOT_FOUND", ignoreCase = true) ->
             UiText.StringResourceId(Res.string.quiz_error_report_not_found)
+        code.contains("QUIZ_RESTRICTED_TO_TEST_COMMUNITIES", ignoreCase = true) ->
+            UiText.StringResourceId(Res.string.quiz_error_restricted_to_test_communities)
         code.contains("PERMISSION_DENIED", ignoreCase = true) ->
             UiText.StringResourceId(Res.string.quiz_error_not_follower)
         code.contains("UNAVAILABLE", ignoreCase = true) ||

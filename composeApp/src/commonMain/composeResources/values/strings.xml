@@ -1538,6 +1538,7 @@
     <string name="quiz_error_session_active">Bu toplulukta şu anda zaten aktif bir canlı quiz oturumu bulunuyor.</string>
     <string name="quiz_error_session_not_found">Quiz oturumu bulunamadı.</string>
     <string name="quiz_error_report_not_found">Quiz raporu bulunamadı.</string>
+    <string name="quiz_error_restricted_to_test_communities">Canlı quiz şu an yalnızca dahili test topluluklarında kullanılabilir.</string>
     <string name="quiz_exit_dialog_title">Canlı Quizden Ayrıl</string>
     <string name="quiz_exit_dialog_desc">Quiz devam ediyor. Ayrılırsanız soru süresi işlemeye devam eder. Ayrılmak istediğinizden emin misiniz?</string>
     <string name="quiz_stay_in_game">Oyunda Kal</string>
