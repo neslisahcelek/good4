@@ -119,3 +119,33 @@ private fun QuizPodiumPreview() = Good4Theme {
         )
     }
 }
+
+@Preview
+@Composable
+private fun QuizPlayerQuestionPreview() = Good4Theme {
+    com.good4.quiz.presentation.play.QuizPlayerContent(
+        state = QuizUiPreviewData.state("question4", remainingSeconds = 14),
+        actions = com.good4.quiz.presentation.play.QuizPlayerActions(),
+        onBack = {}
+    )
+}
+
+@Preview
+@Composable
+private fun QuizPlayerRevealPreview() = Good4Theme {
+    com.good4.quiz.presentation.play.QuizPlayerContent(
+        state = QuizUiPreviewData.state("reveal-correct", remainingSeconds = 0),
+        actions = com.good4.quiz.presentation.play.QuizPlayerActions(),
+        onBack = {}
+    )
+}
+
+@Preview
+@Composable
+private fun QuizPlayerFinishedPreview() = Good4Theme {
+    com.good4.quiz.presentation.play.QuizPlayerContent(
+        state = QuizUiPreviewData.state("finished", remainingSeconds = 0),
+        actions = com.good4.quiz.presentation.play.QuizPlayerActions(),
+        onBack = {}
+    )
+}

@@ -27,7 +27,8 @@ fun mapQuizErrorToUiText(rawError: String?): UiText {
             UiText.StringResourceId(Res.string.quiz_error_session_ended)
         code.contains("QUIZ_ALREADY_ANSWERED", ignoreCase = true) ->
             UiText.StringResourceId(Res.string.quiz_error_already_answered)
-        code.contains("QUIZ_TIME_UP", ignoreCase = true) ->
+        code.contains("QUIZ_TIME_UP", ignoreCase = true) ||
+            code.contains("QUIZ_NOT_ACCEPTING_ANSWERS", ignoreCase = true) ->
             UiText.StringResourceId(Res.string.quiz_error_time_up)
         code.contains("QUIZ_NO_PLAYERS", ignoreCase = true) ->
             UiText.StringResourceId(Res.string.quiz_error_no_players)
@@ -48,6 +49,9 @@ fun mapQuizErrorToUiText(rawError: String?): UiText {
             code.contains("INTERNAL", ignoreCase = true) ||
             code.contains("Exception", ignoreCase = true) ||
             code.contains(":") ->
+            UiText.StringResourceId(Res.string.quiz_error_generic)
+        // Any other server code must not reach the screen as a raw identifier.
+        Regex("QUIZ_[A-Z_]+").containsMatchIn(code) ->
             UiText.StringResourceId(Res.string.quiz_error_generic)
         else -> UiText.DynamicString(rawError)
     }

@@ -80,8 +80,19 @@ val SocialPoster = Color(0xFFF4EFE4)
 val SocialPosterLine = Color(0xFF0B5A3A)
 
 // Live Quiz tokens
-val QuizAnswerRed = ErrorRed
-val QuizAnswerBlue = Color(0xFF1A73E8)
-val QuizAnswerYellow = AccentYellow
-val QuizAnswerGreen = PrimaryGreen
+val QuizAnswerRed = Color(0xFFE2383F)
+val QuizAnswerBlue = Color(0xFF1F6FE5)
+val QuizAnswerYellow = Color(0xFFF5B800)
+val QuizAnswerGreen = Color(0xFF26A142)
+
+// Live quiz game stage: a fixed dark scene in both themes so the answer colours stay vivid.
+val QuizStage = Color(0xFF0E2A1F)
+val QuizStageRaised = Color(0xFF173B2D)
+val QuizStageInk = Color(0xFF14201A)
+val QuizStageAccent = DeepGreen
+val QuizCorrectScene = Color(0xFF1E8C3A)
+val QuizWrongScene = Color(0xFFC7343A)
+val QuizGold = Color(0xFFFFC93C)
+val QuizSilver = Color(0xFFCBD3DA)
+val QuizBronze = Color(0xFFD9894B)
 

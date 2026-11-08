@@ -13,6 +13,7 @@ import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
 
 actual fun observeQuizSession(sessionId: String): Flow<QuizSession?> = Firebase.firestore
     .collection("quizSessions")
@@ -98,44 +99,53 @@ private fun DocumentSnapshot.getEpochMillis(field: String): Long? {
     }
 }
 
+// gitlive decodes fields through kotlinx.serialization, so nested maps need serializable shapes;
+// `Map<String, Any>` has no serializer and always came back null.
+@Serializable
+private data class IosQuizQuestionDto(
+    val index: Int = 0,
+    val type: String = "multiple_choice",
+    val text: String = "",
+    val options: List<String> = emptyList(),
+    val timeLimitSec: Int = 20,
+)
+
+@Serializable
+private data class IosQuizTopPlayerDto(val nickname: String = "", val score: Int = 0, val rank: Int = 0)
+
+@Serializable
+private data class IosQuizRevealDto(
+    val index: Int = 0,
+    val correctIndex: Int = 0,
+    val distribution: List<Int> = emptyList(),
+    val unanswered: Int = 0,
+    val top5: List<IosQuizTopPlayerDto> = emptyList(),
+)
+
+@Serializable
+private data class IosQuizLastResultDto(
+    val index: Int = 0,
+    val correct: Boolean = false,
+    val points: Int = 0,
+    val selectedOption: Int = -1,
+)
+
+private fun IosQuizTopPlayerDto.toDomain() = QuizTopPlayer(nickname = nickname, score = score, rank = rank)
+
 private fun parseIosQuizSession(doc: DocumentSnapshot): QuizSession {
-    val qMap = doc.getOrNull<Map<String, Any>>("currentQuestion")
-    val currentQuestion = if (qMap != null) {
-        QuizQuestion(
-            index = (qMap["index"] as? Number)?.toInt() ?: 0,
-            type = qMap["type"] as? String ?: "multiple_choice",
-            text = qMap["text"] as? String ?: "",
-            options = (qMap["options"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList(),
-            timeLimitSec = (qMap["timeLimitSec"] as? Number)?.toInt() ?: 20
-        )
-    } else null
-
-    val rMap = doc.getOrNull<Map<String, Any>>("reveal")
-    val reveal = if (rMap != null) {
+    val currentQuestion = doc.getOrNull<IosQuizQuestionDto>("currentQuestion")?.let {
+        QuizQuestion(index = it.index, type = it.type, text = it.text, options = it.options, timeLimitSec = it.timeLimitSec)
+    }
+    val reveal = doc.getOrNull<IosQuizRevealDto>("reveal")?.let {
         QuizReveal(
-            index = (rMap["index"] as? Number)?.toInt() ?: 0,
-            correctIndex = (rMap["correctIndex"] as? Number)?.toInt() ?: 0,
-            distribution = (rMap["distribution"] as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList(),
-            unanswered = (rMap["unanswered"] as? Number)?.toInt() ?: 0,
-            top5 = (rMap["top5"] as? List<*>)?.mapNotNull { item ->
-                val p = item as? Map<*, *> ?: return@mapNotNull null
-                QuizTopPlayer(
-                    nickname = p["nickname"] as? String ?: "",
-                    score = (p["score"] as? Number)?.toInt() ?: 0,
-                    rank = (p["rank"] as? Number)?.toInt() ?: 0
-                )
-            } ?: emptyList()
-        )
-    } else null
-
-    val podium = (doc.getOrNull<List<Any>>("podium"))?.mapNotNull { item ->
-        val p = item as? Map<*, *> ?: return@mapNotNull null
-        QuizTopPlayer(
-            nickname = p["nickname"] as? String ?: "",
-            score = (p["score"] as? Number)?.toInt() ?: 0,
-            rank = (p["rank"] as? Number)?.toInt() ?: 0
+            index = it.index,
+            correctIndex = it.correctIndex,
+            distribution = it.distribution,
+            unanswered = it.unanswered,
+            top5 = it.top5.map { player -> player.toDomain() }
         )
     }
+    val podium = doc.getOrNull<List<IosQuizTopPlayerDto>>("podium")?.map { it.toDomain() }
 
     return QuizSession(
         id = doc.id,
@@ -156,15 +166,9 @@ private fun parseIosQuizSession(doc: DocumentSnapshot): QuizSession {
 }
 
 private fun parseIosQuizPlayer(doc: DocumentSnapshot): QuizPlayer {
-    val lMap = doc.getOrNull<Map<String, Any>>("lastResult")
-    val lastResult = if (lMap != null) {
-        QuizLastResult(
-            index = (lMap["index"] as? Number)?.toInt() ?: 0,
-            correct = lMap["correct"] as? Boolean ?: false,
-            points = (lMap["points"] as? Number)?.toInt() ?: 0,
-            selectedOption = (lMap["selectedOption"] as? Number)?.toInt() ?: -1
-        )
-    } else null
+    val lastResult = doc.getOrNull<IosQuizLastResultDto>("lastResult")?.let {
+        QuizLastResult(index = it.index, correct = it.correct, points = it.points, selectedOption = it.selectedOption)
+    }
 
     return QuizPlayer(
         userId = doc.getOrNull<String>("userId") ?: doc.id,

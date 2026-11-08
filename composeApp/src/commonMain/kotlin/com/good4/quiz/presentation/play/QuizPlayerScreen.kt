@@ -1,73 +1,116 @@
 package com.good4.quiz.presentation.play
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.good4.core.presentation.ErrorRed
-import com.good4.core.presentation.PrimaryGreen
-import com.good4.core.presentation.SurfaceDefault
-import com.good4.core.presentation.SurfaceMuted
-import com.good4.core.presentation.TextPrimary
-import com.good4.core.presentation.TextSecondary
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import com.good4.core.presentation.QuizCorrectScene
+import com.good4.core.presentation.QuizStage
+import com.good4.core.presentation.QuizStageAccent
+import com.good4.core.presentation.QuizStageInk
+import com.good4.core.presentation.QuizWrongScene
 import com.good4.core.presentation.components.Good4ConfirmDialog
 import com.good4.core.presentation.components.Good4Scaffold
-import com.good4.core.presentation.components.Good4TopBar
+import com.good4.quiz.domain.QuizQuestion
+import com.good4.quiz.presentation.components.AnimatedQuizCharacter
+import com.good4.quiz.presentation.components.QuizAvatar
+import com.good4.quiz.presentation.components.QuizCharacter
+import com.good4.quiz.presentation.components.QuizCharacterAvatar
+import com.good4.quiz.presentation.components.QuizCharacterMood
+import com.good4.quiz.presentation.components.QuizCharacterPicker
 import com.good4.quiz.presentation.components.QuizAnswerButton
 import com.good4.quiz.presentation.components.QuizAnswerShape
-import com.good4.quiz.presentation.components.QuizCountdownBar
+import com.good4.quiz.presentation.components.QuizChunkyButton
+import com.good4.quiz.presentation.components.QuizCountUpText
 import com.good4.quiz.presentation.components.QuizPodium
 import com.good4.quiz.presentation.components.QuizScoreboard
 import com.good4.quiz.presentation.components.QuizShapeIcon
+import com.good4.quiz.presentation.components.QuizStageBackground
+import com.good4.quiz.presentation.components.QuizStageDefaults
+import com.good4.quiz.presentation.components.QuizStagePill
+import com.good4.quiz.presentation.components.QuizStatusScene
+import com.good4.quiz.presentation.components.QuizSymbolDisc
+import com.good4.quiz.presentation.components.QuizTimerBadge
 import good4.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+
+/** Events the player screen sends back; the content itself never talks to the ViewModel. */
+data class QuizPlayerActions(
+    val onNicknameChange: (String) -> Unit = {},
+    val onJoin: () -> Unit = {},
+    val onSelectOption: (Int) -> Unit = {},
+    val onBackupReveal: () -> Unit = {},
+    val onExit: () -> Unit = {}
+)
 
 @Composable
 fun QuizPlayerScreen(
@@ -80,17 +123,19 @@ fun QuizPlayerScreen(
     val uiMessage = state.uiMessage?.asString()
 
     var showExitConfirmDialog by remember { mutableStateOf(false) }
+    // Chosen once (random) and kept across recompositions and process restore. It is local to
+    // this device until the session data carries an avatar id.
+    var avatar by rememberSaveable(stateSaver = QuizAvatar.Saver) {
+        mutableStateOf(QuizAvatar(QuizCharacter.entries.random()))
+    }
 
     val isGameActive = state.phase == PlayerScreenPhase.GET_READY ||
         state.phase == PlayerScreenPhase.QUESTION ||
         state.phase == PlayerScreenPhase.SUBMITTED
-    com.good4.community.CommunityBackHandler {
-        if (isGameActive) {
-            showExitConfirmDialog = true
-        } else {
-            onBackClick()
-        }
+    val onBack = {
+        if (isGameActive) showExitConfirmDialog = true else onBackClick()
     }
+    com.good4.community.CommunityBackHandler { onBack() }
 
     if (showExitConfirmDialog) {
         Good4ConfirmDialog(
@@ -114,97 +159,188 @@ fun QuizPlayerScreen(
         }
     }
 
+    QuizPlayerContent(
+        state = state,
+        actions = QuizPlayerActions(
+            onNicknameChange = viewModel::onNicknameChange,
+            onJoin = viewModel::joinSession,
+            onSelectOption = viewModel::submitAnswer,
+            onBackupReveal = viewModel::triggerBackupReveal,
+            onExit = onBackClick
+        ),
+        onBack = onBack,
+        avatar = avatar,
+        onAvatarChange = { avatar = it },
+        snackbarHostState = snackbarHostState,
+        modifier = modifier
+    )
+}
+
+private enum class RevealOutcome { CORRECT, WRONG, MISSED }
+
+private fun QuizPlayerUiState.revealOutcome(): RevealOutcome {
+    val result = player?.lastResult
+    val revealIndex = session?.reveal?.index ?: session?.currentIndex
+    return when {
+        result == null || result.index != revealIndex -> RevealOutcome.MISSED
+        result.correct -> RevealOutcome.CORRECT
+        else -> RevealOutcome.WRONG
+    }
+}
+
+/** Stateless player screen: renders [state] as a full-screen game stage. */
+@Composable
+fun QuizPlayerContent(
+    state: QuizPlayerUiState,
+    actions: QuizPlayerActions,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    avatar: QuizAvatar = QuizAvatar(QuizCharacter.FOX),
+    onAvatarChange: (QuizAvatar) -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
+) {
+    val stageColor by animateColorAsState(
+        targetValue = if (state.phase == PlayerScreenPhase.REVEAL) {
+            when (state.revealOutcome()) {
+                RevealOutcome.CORRECT -> QuizCorrectScene
+                RevealOutcome.WRONG -> QuizWrongScene
+                RevealOutcome.MISSED -> QuizStage
+            }
+        } else QuizStage,
+        animationSpec = tween(400),
+        label = "stage_color"
+    )
+
     Good4Scaffold(
         modifier = modifier,
-        topBar = {
-            Good4TopBar(
-                title = state.session?.title?.ifBlank { stringResource(Res.string.quiz_title) }
-                    ?: stringResource(Res.string.quiz_title),
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (isGameActive) {
-                            showExitConfirmDialog = true
-                        } else {
-                            onBackClick()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(Res.string.back),
-                            tint = TextPrimary
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { _ ->
+        QuizStageBackground(
+            color = stageColor,
+            showShapes = state.phase != PlayerScreenPhase.QUESTION
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+            ) {
+                QuizStageTopBar(
+                    title = state.session?.title?.ifBlank { null } ?: stringResource(Res.string.quiz_title),
+                    onBack = onBack
+                )
+                AnimatedContent(
+                    targetState = state.phase,
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        (fadeIn(tween(260)) + scaleIn(tween(260), initialScale = 0.94f)) togetherWith
+                            fadeOut(tween(160))
+                    },
+                    label = "player_phase"
+                ) { phase ->
+                    when (phase) {
+                        PlayerScreenPhase.ENTER_NICKNAME -> EnterNicknameContent(
+                            nickname = state.nicknameInput,
+                            error = state.nicknameError?.asString(),
+                            isLoading = state.isJoining,
+                            avatar = avatar,
+                            onAvatarChange = onAvatarChange,
+                            onNicknameChange = actions.onNicknameChange,
+                            onSubmit = actions.onJoin
+                        )
+                        PlayerScreenPhase.LOBBY -> LobbyWaitingContent(
+                            nickname = state.player?.nickname ?: state.nicknameInput,
+                            avatar = avatar
+                        )
+                        PlayerScreenPhase.GET_READY -> GetReadyContent(
+                            avatar = avatar,
+                            remainingSeconds = state.remainingSeconds,
+                            questionIndex = (state.session?.currentIndex ?: 0) + 1,
+                            totalQuestions = state.session?.totalQuestions ?: 0
+                        )
+                        PlayerScreenPhase.QUESTION -> QuestionActiveContent(
+                            state = state,
+                            avatar = avatar,
+                            onSelectOption = actions.onSelectOption
+                        )
+                        PlayerScreenPhase.SUBMITTED -> AnswerSubmittedContent(
+                            state = state,
+                            avatar = avatar,
+                            onBackupReveal = actions.onBackupReveal
+                        )
+                        PlayerScreenPhase.REVEAL -> RevealContent(state = state, avatar = avatar)
+                        PlayerScreenPhase.FINISHED -> FinishedContent(state = state, avatar = avatar, onExit = actions.onExit)
+                        PlayerScreenPhase.CANCELLED -> QuizStatusScene(
+                            symbol = { QuizSymbolDisc(text = "!", background = Color.White, contentColor = QuizStage) },
+                            title = stringResource(Res.string.quiz_session_cancelled_title),
+                            message = stringResource(Res.string.quiz_session_cancelled_message),
+                            actionLabel = stringResource(Res.string.back),
+                            onAction = actions.onExit
+                        )
+                        PlayerScreenPhase.KICKED -> QuizStatusScene(
+                            symbol = { QuizSymbolDisc(text = "✕", background = QuizWrongScene) },
+                            title = stringResource(Res.string.quiz_kicked_title),
+                            message = stringResource(Res.string.quiz_kicked_desc),
+                            actionLabel = stringResource(Res.string.back),
+                            onAction = actions.onExit
                         )
                     }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            when (state.phase) {
-                PlayerScreenPhase.ENTER_NICKNAME -> {
-                    EnterNicknameContent(
-                        nickname = state.nicknameInput,
-                        error = state.nicknameError?.asString(),
-                        isLoading = state.isJoining,
-                        onNicknameChange = viewModel::onNicknameChange,
-                        onSubmit = viewModel::joinSession
-                    )
-                }
-                PlayerScreenPhase.LOBBY -> {
-                    LobbyWaitingContent(
-                        nickname = state.player?.nickname ?: state.nicknameInput,
-                        sessionTitle = state.session?.title.orEmpty()
-                    )
-                }
-                PlayerScreenPhase.GET_READY -> {
-                    GetReadyContent(
-                        remainingSeconds = state.remainingSeconds,
-                        questionIndex = (state.session?.currentIndex ?: 0) + 1,
-                        totalQuestions = state.session?.totalQuestions ?: 0
-                    )
-                }
-                PlayerScreenPhase.QUESTION -> {
-                    QuestionActiveContent(
-                        state = state,
-                        onSelectOption = viewModel::submitAnswer
-                    )
-                }
-                PlayerScreenPhase.SUBMITTED -> {
-                    AnswerSubmittedContent(
-                        remainingSeconds = state.remainingSeconds,
-                        totalSeconds = state.totalSeconds,
-                        canBackupReveal = state.canBackupReveal,
-                        onBackupReveal = viewModel::triggerBackupReveal
-                    )
-                }
-                PlayerScreenPhase.REVEAL -> {
-                    RevealContent(
-                        state = state
-                    )
-                }
-                PlayerScreenPhase.FINISHED -> {
-                    FinishedContent(
-                        state = state,
-                        onExit = onBackClick
-                    )
-                }
-                PlayerScreenPhase.CANCELLED -> {
-                    CancelledContent(
-                        onExit = onBackClick
-                    )
-                }
-                PlayerScreenPhase.KICKED -> {
-                    QuizKickedContent(
-                        onExit = onBackClick
-                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun QuizStageTopBar(title: String, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.14f))
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(Res.string.back),
+                tint = Color.White
+            )
+        }
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            color = Color.White,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 18.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun StageColumn(
+    modifier: Modifier = Modifier,
+    scrollable: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+            .padding(horizontal = QuizStageDefaults.ScreenPadding, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        content = content
+    )
 }
 
 @Composable
@@ -212,377 +348,329 @@ private fun EnterNicknameContent(
     nickname: String,
     error: String?,
     isLoading: Boolean,
+    avatar: QuizAvatar,
+    onAvatarChange: (QuizAvatar) -> Unit,
     onNicknameChange: (String) -> Unit,
     onSubmit: () -> Unit
 ) {
+    val canSubmit = !isLoading && nickname.trim().length >= 2
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = QuizStageDefaults.ScreenPadding, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = SurfaceDefault,
-            shadowElevation = 3.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(Res.string.quiz_nickname_title),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_nickname_subtitle),
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                OutlinedTextField(
-                    value = nickname,
-                    onValueChange = onNicknameChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            text = stringResource(Res.string.quiz_nickname_placeholder),
-                            color = TextSecondary
-                        )
-                    },
-                    isError = error != null,
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryGreen,
-                        unfocusedBorderColor = Color.Black.copy(alpha = 0.15f)
-                    )
-                )
-
-                if (error != null) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = error,
-                        color = ErrorRed,
-                        fontSize = 12.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = onSubmit,
-                    enabled = !isLoading && nickname.trim().length >= 2,
+        // Big preview; it bounces on every pick so the choice feels immediate.
+        key(avatar.key) {
+            AnimatedQuizCharacter(
+                avatar = avatar,
+                mood = QuizCharacterMood.WAVE,
+                modifier = Modifier.height(150.dp)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(avatar.character.nameRes),
+            color = QuizStageAccent,
+            fontWeight = FontWeight.Black,
+            fontSize = 15.sp
+        )
+        Spacer(Modifier.height(14.dp))
+        BasicTextField(
+            value = nickname,
+            onValueChange = onNicknameChange,
+            singleLine = true,
+            textStyle = TextStyle(
+                color = QuizStageInk,
+                fontWeight = FontWeight.Black,
+                fontSize = 22.sp,
+                textAlign = TextAlign.Center
+            ),
+            cursorBrush = SolidColor(QuizStageInk),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { if (canSubmit) onSubmit() }),
+            decorationBox = { inner ->
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen,
-                        contentColor = Color.White
-                    )
+                        .heightIn(min = 60.dp)
+                        .clip(RoundedCornerShape(QuizStageDefaults.CornerMedium))
+                        .background(Color.White)
+                        .padding(horizontal = 18.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                    if (nickname.isEmpty()) {
                         Text(
-                            text = stringResource(Res.string.quiz_nickname_submit),
+                            text = stringResource(Res.string.quiz_nickname_placeholder),
+                            color = QuizStageInk.copy(alpha = 0.4f),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 17.sp,
+                            textAlign = TextAlign.Center
                         )
                     }
+                    inner()
                 }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (error != null) {
+            Spacer(Modifier.height(10.dp))
+            QuizStagePill(text = error, background = QuizWrongScene, fontSize = 13.sp)
+        }
+        Spacer(Modifier.height(16.dp))
+        QuizCharacterPicker(selected = avatar, onChange = onAvatarChange)
+        Spacer(Modifier.height(18.dp))
+        QuizChunkyButton(
+            text = stringResource(Res.string.quiz_join_with_character),
+            onClick = onSubmit,
+            enabled = canSubmit,
+            loading = isLoading
+        )
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+/** The four answer symbols in a row; [bounce] makes them hop one after another while waiting. */
+@Composable
+private fun ShapeRow(size: Int, bounce: Boolean = false) {
+    val transition = rememberInfiniteTransition(label = "shape_row")
+    Row(horizontalArrangement = Arrangement.spacedBy((size / 2).dp)) {
+        QuizAnswerShape.entries.forEach { shape ->
+            val hop by if (bounce) {
+                transition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 1600, delayMillis = 0, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Restart,
+                        initialStartOffset = androidx.compose.animation.core.StartOffset(shape.index * 180)
+                    ),
+                    label = "hop_${shape.name}"
+                )
+            } else remember { mutableStateOf(0f) }
+            val lift = if (hop < 0.3f) kotlin.math.sin(hop / 0.3f * kotlin.math.PI).toFloat() else 0f
+            Box(
+                modifier = Modifier
+                    .size((size + 16).dp)
+                    .graphicsLayer { translationY = -lift * size * 0.6f }
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(shape.color),
+                contentAlignment = Alignment.Center
+            ) {
+                QuizShapeIcon(shape = shape, modifier = Modifier.size((size * 0.6f).dp), color = shape.contentColor)
             }
         }
     }
 }
 
 @Composable
-private fun LobbyWaitingContent(
-    nickname: String,
-    sessionTitle: String
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = SurfaceDefault,
-            shadowElevation = 3.dp
+private fun LobbyWaitingContent(nickname: String, avatar: QuizAvatar) {
+    StageColumn(scrollable = true) {
+        Spacer(Modifier.weight(1f))
+        AnimatedQuizCharacter(
+            avatar = avatar,
+            mood = QuizCharacterMood.WAVE,
+            modifier = Modifier.height(200.dp)
+        )
+        Spacer(Modifier.height(18.dp))
+        Text(
+            text = stringResource(Res.string.quiz_lobby_in_game),
+            color = Color.White,
+            fontWeight = FontWeight.Black,
+            fontSize = 40.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(14.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(QuizStageDefaults.CornerMedium))
+                .background(Color.White)
+                .padding(horizontal = 26.dp, vertical = 12.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "🎉",
-                    fontSize = 44.sp
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_lobby_ready_message),
-                    fontWeight = FontWeight.Black,
-                    fontSize = 22.sp,
-                    color = TextPrimary,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Nickname pill
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(PrimaryGreen.copy(alpha = 0.12f))
-                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                ) {
-                    Text(
-                        text = nickname,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = PrimaryGreen
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                CircularProgressIndicator(
-                    modifier = Modifier.size(28.dp),
-                    color = PrimaryGreen,
-                    strokeWidth = 3.dp
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_lobby_waiting_host),
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = nickname,
+                color = QuizStageInk,
+                fontWeight = FontWeight.Black,
+                fontSize = 26.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = stringResource(Res.string.quiz_lobby_watch_screen),
+            color = Color.White.copy(alpha = 0.8f),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(Res.string.quiz_lobby_waiting_host),
+            color = Color.White.copy(alpha = 0.55f),
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(24.dp))
+        ShapeRow(size = 18, bounce = true)
+        Spacer(Modifier.weight(1.2f))
     }
 }
 
 @Composable
 private fun GetReadyContent(
+    avatar: QuizAvatar,
     remainingSeconds: Int,
     questionIndex: Int,
     totalQuestions: Int
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = stringResource(Res.string.quiz_question_counter, questionIndex, totalQuestions),
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp,
-            color = TextSecondary
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
+    StageColumn {
+        QuizStagePill(text = stringResource(Res.string.quiz_question_counter, questionIndex, totalQuestions))
+        Spacer(Modifier.weight(1f))
+        AnimatedContent(
+            targetState = remainingSeconds.coerceAtLeast(1),
+            transitionSpec = {
+                (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy), initialScale = 1.8f) + fadeIn(tween(150))) togetherWith
+                    (scaleOut(tween(180), targetScale = 0.5f) + fadeOut(tween(180)))
+            },
+            label = "get_ready_number"
+        ) { number ->
+            Box(
+                modifier = Modifier
+                    .size(180.dp)
+                    .clip(CircleShape)
+                    .background(QuizStageAccent),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$number",
+                    color = QuizStageInk,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 112.sp
+                )
+            }
+        }
+        Spacer(Modifier.height(28.dp))
         Text(
             text = stringResource(Res.string.quiz_get_ready_title),
+            color = Color.White,
             fontWeight = FontWeight.Black,
-            fontSize = 28.sp,
-            color = TextPrimary
+            fontSize = 34.sp
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape)
-                .background(PrimaryGreen),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "$remainingSeconds",
-                fontWeight = FontWeight.Black,
-                fontSize = 44.sp,
-                color = Color.White
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
+        Spacer(Modifier.height(6.dp))
         Text(
             text = stringResource(Res.string.quiz_get_ready_subtitle),
-            fontSize = 15.sp,
-            color = TextSecondary
+            color = Color.White.copy(alpha = 0.7f),
+            fontSize = 17.sp
         )
+        Spacer(Modifier.weight(1f))
+        AnimatedQuizCharacter(
+            avatar = avatar,
+            mood = QuizCharacterMood.EXCITED,
+            modifier = Modifier.height(110.dp)
+        )
+        Spacer(Modifier.height(8.dp))
     }
 }
+
+/** Option label as the player sees it; true/false slots are stored as fixed keys on the server. */
+@Composable
+private fun QuizQuestion.optionLabel(index: Int): String = if (isTrueFalse) {
+    if (index == 0) stringResource(Res.string.quiz_true) else stringResource(Res.string.quiz_false)
+} else options.getOrElse(index) { "" }
 
 @Composable
 private fun QuestionActiveContent(
     state: QuizPlayerUiState,
+    avatar: QuizAvatar,
     onSelectOption: (Int) -> Unit
 ) {
-    val question = state.session?.currentQuestion ?: return
-    val currentIndex = (state.session.currentIndex + 1).coerceAtLeast(1)
-    val totalCount = state.session.totalQuestions
+    val session = state.session
+    val question = session?.currentQuestion ?: return
+    val currentIndex = (session.currentIndex + 1).coerceAtLeast(1)
+    val optionCount = if (question.isTrueFalse) 2 else question.options.size.coerceIn(2, 4)
+    // Long answers get a full-width row each so they stay readable on narrow phones.
+    val singleColumn = !question.isTrueFalse && question.options.any { it.length > 30 }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 14.dp)
+            .padding(bottom = 12.dp)
     ) {
-        // Top section: Counter + Timer + Question Text
-        Column(
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            QuizCharacterAvatar(avatar = avatar, size = 44.dp)
+            Spacer(Modifier.width(8.dp))
+            QuizStagePill(text = stringResource(Res.string.quiz_question_counter, currentIndex, session.totalQuestions))
+            Spacer(Modifier.weight(1f))
+            QuizTimerBadge(remainingSeconds = state.remainingSeconds, totalSeconds = state.totalSeconds)
+        }
+        Spacer(Modifier.height(12.dp))
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.9f),
+            contentAlignment = Alignment.Center
+        ) {
+            // A bounded height lets the question text shrink instead of being cut off.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxHeight)
+                    .clip(RoundedCornerShape(QuizStageDefaults.CornerLarge))
+                    .background(Color.White)
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(Res.string.quiz_question_counter, currentIndex, totalCount),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = TextSecondary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            QuizCountdownBar(
-                remainingSeconds = state.remainingSeconds,
-                totalSeconds = state.totalSeconds
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceDefault,
-                shadowElevation = 2.dp
-            ) {
+                // Size steps by length (server caps questions at 120 characters) so long ones still fit.
+                val questionSize = when {
+                    question.text.length > 95 -> 19.sp
+                    question.text.length > 65 -> 23.sp
+                    else -> 28.sp
+                }
                 Text(
                     text = question.text,
-                    modifier = Modifier.padding(18.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    lineHeight = 24.sp,
-                    color = TextPrimary
+                    color = QuizStageInk,
+                    fontWeight = FontWeight.Black,
+                    fontSize = questionSize,
+                    lineHeight = questionSize * 1.15f,
+                    textAlign = TextAlign.Center,
+                    maxLines = 6,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Bottom section: Answer buttons 2x2 grid
-        val options = question.options
-        if (question.isTrueFalse) {
-            // True / False: 2 options stacked or row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                QuizAnswerButton(
-                    index = 0,
-                    text = stringResource(Res.string.quiz_true),
-                    onClick = { onSelectOption(0) },
-                    modifier = Modifier.weight(1f),
-                    isSelected = state.selectedOption == 0,
-                    enabled = state.selectedOption == null
-                )
-                QuizAnswerButton(
-                    index = 1,
-                    text = stringResource(Res.string.quiz_false),
-                    onClick = { onSelectOption(1) },
-                    modifier = Modifier.weight(1f),
-                    isSelected = state.selectedOption == 1,
-                    enabled = state.selectedOption == null
-                )
-            }
-        } else {
-            // Multiple Choice: 2x2 grid
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+        Spacer(Modifier.height(14.dp))
+        val rows = if (singleColumn) (0 until optionCount).map { listOf(it) } else (0 until optionCount).chunked(2)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(if (question.isTrueFalse) 0.75f else 1.25f),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            rows.forEach { row ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    QuizAnswerButton(
-                        index = 0,
-                        text = options.getOrElse(0) { "" },
-                        onClick = { onSelectOption(0) },
-                        modifier = Modifier.weight(1f),
-                        isSelected = state.selectedOption == 0,
-                        enabled = state.selectedOption == null
-                    )
-                    QuizAnswerButton(
-                        index = 1,
-                        text = options.getOrElse(1) { "" },
-                        onClick = { onSelectOption(1) },
-                        modifier = Modifier.weight(1f),
-                        isSelected = state.selectedOption == 1,
-                        enabled = state.selectedOption == null
-                    )
-                }
-
-                if (options.size > 2) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    row.forEach { index ->
                         QuizAnswerButton(
-                            index = 2,
-                            text = options.getOrElse(2) { "" },
-                            onClick = { onSelectOption(2) },
-                            modifier = Modifier.weight(1f),
-                            isSelected = state.selectedOption == 2,
-                            enabled = state.selectedOption == null
+                            index = index,
+                            text = question.optionLabel(index),
+                            onClick = { onSelectOption(index) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxSize(),
+                            isSelected = state.selectedOption == index,
+                            enabled = state.selectedOption == null,
+                            dimmed = state.selectedOption != null && state.selectedOption != index
                         )
-                        if (options.size > 3) {
-                            QuizAnswerButton(
-                                index = 3,
-                                text = options.getOrElse(3) { "" },
-                                onClick = { onSelectOption(3) },
-                                modifier = Modifier.weight(1f),
-                                isSelected = state.selectedOption == 3,
-                                enabled = state.selectedOption == null
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
                     }
                 }
             }
@@ -592,452 +680,247 @@ private fun QuestionActiveContent(
 
 @Composable
 private fun AnswerSubmittedContent(
-    remainingSeconds: Int,
-    totalSeconds: Int,
-    canBackupReveal: Boolean,
+    state: QuizPlayerUiState,
+    avatar: QuizAvatar,
     onBackupReveal: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = SurfaceDefault,
-            shadowElevation = 3.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(54.dp),
-                    tint = PrimaryGreen
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_answer_submitted),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_waiting_others),
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                QuizCountdownBar(
-                    remainingSeconds = remainingSeconds,
-                    totalSeconds = totalSeconds
-                )
-
-                if (canBackupReveal) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = onBackupReveal,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.quiz_reveal_backup_button),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+    val selected = state.selectedOption
+    val question = state.session?.currentQuestion
+    StageColumn(scrollable = true) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            QuizTimerBadge(remainingSeconds = state.remainingSeconds, totalSeconds = state.totalSeconds, size = 52.dp)
+        }
+        Spacer(Modifier.weight(1f))
+        Box(contentAlignment = Alignment.BottomEnd) {
+            AnimatedQuizCharacter(
+                avatar = avatar,
+                mood = QuizCharacterMood.CONFIDENT,
+                modifier = Modifier.height(190.dp)
+            )
+            if (selected != null) {
+                // The chosen answer rides on the character as a badge: colour and symbol, no verdict.
+                val shape = QuizAnswerShape.fromIndex(selected)
+                Box(
+                    modifier = Modifier
+                        .offset(x = 18.dp, y = (-6).dp)
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(shape.color),
+                    contentAlignment = Alignment.Center
+                ) {
+                    QuizShapeIcon(shape = shape, modifier = Modifier.size(30.dp), color = shape.contentColor)
                 }
             }
         }
+        if (selected != null && question != null) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = question.optionLabel(selected),
+                color = Color.White,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(Modifier.height(22.dp))
+        Text(
+            text = stringResource(Res.string.quiz_answer_submitted),
+            color = Color.White,
+            fontWeight = FontWeight.Black,
+            fontSize = 32.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(Res.string.quiz_submitted_hint),
+            color = Color.White.copy(alpha = 0.72f),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+        if (state.canBackupReveal) {
+            Spacer(Modifier.height(28.dp))
+            QuizChunkyButton(
+                text = stringResource(Res.string.quiz_reveal_backup_button),
+                onClick = onBackupReveal,
+                containerColor = Color.White
+            )
+        }
+        Spacer(Modifier.weight(1.3f))
     }
 }
 
 @Composable
-private fun RevealContent(
-    state: QuizPlayerUiState
-) {
-    val lastResult = state.player?.lastResult
-    val isCorrect = lastResult?.correct == true
-    val points = lastResult?.points ?: 0
-    val rank = state.player?.rank ?: 0
-    val streak = state.player?.streak ?: 0
-    val top5 = state.session?.reveal?.top5 ?: emptyList()
+private fun RevealContent(state: QuizPlayerUiState, avatar: QuizAvatar) {
+    val outcome = state.revealOutcome()
+    val player = state.player
+    val points = if (outcome == RevealOutcome.CORRECT) player?.lastResult?.points ?: 0 else 0
+    val rank = player?.rank ?: 0
+    val streak = player?.streak ?: 0
+    val question = state.session?.currentQuestion
+    val reveal = state.session?.reveal
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item(key = "result_card") {
-            val bannerBg = if (isCorrect) PrimaryGreen else ErrorRed
+    val pop = remember { Animatable(0.4f) }
+    LaunchedEffect(Unit) {
+        pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow))
+    }
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = bannerBg,
-                shadowElevation = 4.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = if (isCorrect) "✓" else "✕",
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (isCorrect) stringResource(Res.string.quiz_result_correct)
-                        else stringResource(Res.string.quiz_result_wrong),
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = stringResource(Res.string.quiz_points_earned, points),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (rank > 0) {
-                            Text(
-                                text = stringResource(Res.string.quiz_rank_display, rank),
-                                color = Color.White.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
-                        }
-
-                        if (streak > 1) {
-                            Text(
-                                text = stringResource(Res.string.quiz_streak_display, streak),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
+    StageColumn(scrollable = true) {
+        Spacer(Modifier.height(8.dp))
+        Box(contentAlignment = Alignment.TopEnd) {
+            AnimatedQuizCharacter(
+                avatar = avatar,
+                mood = when (outcome) {
+                    RevealOutcome.CORRECT -> QuizCharacterMood.CHEER
+                    RevealOutcome.WRONG -> QuizCharacterMood.SAD
+                    RevealOutcome.MISSED -> QuizCharacterMood.SURPRISED
+                },
+                modifier = Modifier.height(170.dp)
+            )
+            QuizSymbolDisc(
+                text = when (outcome) {
+                    RevealOutcome.CORRECT -> "✓"
+                    RevealOutcome.WRONG -> "✕"
+                    RevealOutcome.MISSED -> "…"
+                },
+                background = Color.White,
+                contentColor = when (outcome) {
+                    RevealOutcome.CORRECT -> QuizCorrectScene
+                    RevealOutcome.WRONG -> QuizWrongScene
+                    RevealOutcome.MISSED -> QuizStage
+                },
+                size = 54.dp,
+                modifier = Modifier
+                    .offset(x = 22.dp)
+                    .graphicsLayer {
+                        scaleX = pop.value
+                        scaleY = pop.value
                     }
-                }
-            }
-        }
-
-        val currentQuestion = state.session?.currentQuestion
-        val reveal = state.session?.reveal
-        if (currentQuestion != null && reveal != null) {
-            item(key = "question_summary") {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = SurfaceDefault,
-                    shadowElevation = 2.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = currentQuestion.text,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = TextPrimary
-                        )
-
-                        val correctShape = QuizAnswerShape.fromIndex(reveal.correctIndex)
-                        val correctOptionText = if (currentQuestion.isTrueFalse) {
-                            if (reveal.correctIndex == 0) stringResource(Res.string.quiz_true)
-                            else stringResource(Res.string.quiz_false)
-                        } else {
-                            currentQuestion.options.getOrElse(reveal.correctIndex) { "" }
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(PrimaryGreen.copy(alpha = 0.12f))
-                                .padding(horizontal = 10.dp, vertical = 8.dp)
-                        ) {
-                            QuizShapeIcon(
-                                shape = correctShape,
-                                modifier = Modifier.size(18.dp),
-                                color = correctShape.color
-                            )
-                            Text(
-                                text = stringResource(Res.string.quiz_correct_answer_label, correctOptionText),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = PrimaryGreen
-                            )
-                        }
-
-                        val myOption = state.selectedOption
-                        if (myOption != null && myOption != reveal.correctIndex) {
-                            val myShape = QuizAnswerShape.fromIndex(myOption)
-                            val myOptionText = if (currentQuestion.isTrueFalse) {
-                                if (myOption == 0) stringResource(Res.string.quiz_true)
-                                else stringResource(Res.string.quiz_false)
-                            } else {
-                                currentQuestion.options.getOrElse(myOption) { "" }
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(ErrorRed.copy(alpha = 0.12f))
-                                    .padding(horizontal = 10.dp, vertical = 8.dp)
-                            ) {
-                                QuizShapeIcon(
-                                    shape = myShape,
-                                    modifier = Modifier.size(18.dp),
-                                    color = myShape.color
-                                )
-                                Text(
-                                    text = stringResource(Res.string.quiz_your_answer_label, myOptionText),
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp,
-                                    color = ErrorRed
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item(key = "scoreboard") {
-            QuizScoreboard(
-                topPlayers = top5,
-                highlightNickname = state.player?.nickname
             )
         }
+        Spacer(Modifier.height(18.dp))
+        Text(
+            text = when (outcome) {
+                RevealOutcome.CORRECT -> stringResource(Res.string.quiz_result_correct)
+                RevealOutcome.WRONG -> stringResource(Res.string.quiz_result_wrong)
+                RevealOutcome.MISSED -> stringResource(Res.string.quiz_result_missed)
+            },
+            color = Color.White,
+            fontWeight = FontWeight.Black,
+            fontSize = 30.sp,
+            lineHeight = 34.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(10.dp))
+        if (outcome == RevealOutcome.CORRECT) {
+            QuizCountUpText(
+                target = points,
+                format = { stringResource(Res.string.quiz_points_earned, it) },
+                fontSize = 46.sp
+            )
+        } else if (player != null) {
+            Text(
+                text = stringResource(Res.string.quiz_points_total, player.score),
+                color = Color.White.copy(alpha = 0.85f),
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 22.sp
+            )
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (rank > 0) {
+                QuizStagePill(
+                    text = stringResource(Res.string.quiz_rank_display, rank),
+                    background = QuizStageInk.copy(alpha = 0.35f),
+                    fontSize = 16.sp
+                )
+            }
+            if (streak > 1 && outcome == RevealOutcome.CORRECT) {
+                QuizStagePill(
+                    text = stringResource(Res.string.quiz_streak_display, streak),
+                    background = QuizStageInk.copy(alpha = 0.35f),
+                    fontSize = 16.sp
+                )
+            }
+        }
+        if (outcome != RevealOutcome.CORRECT && question != null && reveal != null) {
+            Spacer(Modifier.height(20.dp))
+            val correctShape = QuizAnswerShape.fromIndex(reveal.correctIndex)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(QuizStageDefaults.CornerMedium))
+                    .background(correctShape.color)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                QuizShapeIcon(shape = correctShape, modifier = Modifier.size(26.dp), color = correctShape.contentColor)
+                Text(
+                    text = stringResource(Res.string.quiz_correct_answer_label, question.optionLabel(reveal.correctIndex)),
+                    color = correctShape.contentColor,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Spacer(Modifier.height(22.dp))
+        QuizScoreboard(
+            topPlayers = reveal?.top5.orEmpty(),
+            highlightNickname = player?.nickname,
+            highlightAvatar = avatar
+        )
+        Spacer(Modifier.height(12.dp))
     }
 }
 
 @Composable
 private fun FinishedContent(
     state: QuizPlayerUiState,
+    avatar: QuizAvatar,
     onExit: () -> Unit
 ) {
-    val podium = state.session?.podium ?: emptyList()
     val player = state.player
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        item(key = "podium") {
-            QuizPodium(podium = podium)
-        }
-
+    StageColumn(scrollable = true) {
+        // Only the viewer's own character is known on this device; others keep their initial.
+        QuizPodium(
+            podium = state.session?.podium.orEmpty(),
+            avatarFor = { top -> avatar.takeIf { player != null && top.nickname.equals(player.nickname, ignoreCase = true) } }
+        )
         if (player != null) {
-            item(key = "player_final_card") {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = SurfaceDefault,
-                    shadowElevation = 2.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "${player.nickname} — ${stringResource(Res.string.quiz_rank_display, player.rank)}",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = TextPrimary
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Toplam Puan: ${player.score} • Doğru: ${player.correctCount}",
-                            color = TextSecondary,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-        }
-
-        item(key = "exit_button") {
-            Button(
-                onClick = onExit,
+            Spacer(Modifier.height(16.dp))
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryGreen,
-                    contentColor = Color.White
-                )
+                    .clip(RoundedCornerShape(QuizStageDefaults.CornerLarge))
+                    .background(Color.White)
+                    .padding(vertical = 18.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(
-                    text = stringResource(Res.string.quiz_exit_button),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
+                FinalStat(value = if (player.rank > 0) "${player.rank}." else "—", label = stringResource(Res.string.quiz_final_rank))
+                FinalStat(value = "${player.score}", label = stringResource(Res.string.quiz_final_score))
+                FinalStat(value = "${player.correctCount}", label = stringResource(Res.string.quiz_final_correct))
             }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = stringResource(Res.string.quiz_finished_message),
+                color = Color.White.copy(alpha = 0.75f),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
         }
+        Spacer(Modifier.height(24.dp))
+        QuizChunkyButton(text = stringResource(Res.string.quiz_exit_button), onClick = onExit)
+        Spacer(Modifier.height(8.dp))
     }
 }
 
 @Composable
-private fun CancelledContent(
-    onExit: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = SurfaceDefault,
-            shadowElevation = 3.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = "⚠️", fontSize = 40.sp)
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_session_cancelled_title),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_session_cancelled_message),
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = onExit,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = stringResource(Res.string.back),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun QuizKickedContent(
-    onExit: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = SurfaceDefault,
-            shadowElevation = 3.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = "⛔", fontSize = 40.sp)
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_kicked_title),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = stringResource(Res.string.quiz_kicked_desc),
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = onExit,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = stringResource(Res.string.back),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
+private fun FinalStat(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = value, color = QuizStageInk, fontWeight = FontWeight.Black, fontSize = 28.sp)
+        Text(text = label, color = QuizStageInk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold, fontSize = 13.sp)
     }
 }
