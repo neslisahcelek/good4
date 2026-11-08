@@ -9,6 +9,7 @@ export interface CommunityContextResult {
   university: string;
   legacyTestCommunityId: string | null;
   membershipRole: "manager" | "staff";
+  listed?: boolean;
 }
 
 export interface CommunityPortalEntry {
@@ -35,7 +36,14 @@ export interface CommunityPortalEntry {
 }
 
 export interface CommunityPortalDashboard {
-  community: { name: string; university: string; description: string; logoUrl: string; coverUrl: string };
+  community: {
+    name: string;
+    university: string;
+    description: string;
+    logoUrl: string;
+    coverUrl: string;
+    listed?: boolean;
+  };
   followerCount: number;
   businesses: Array<{ id: string; name: string }>;
   entries: CommunityPortalEntry[];
@@ -97,6 +105,7 @@ export async function getCommunityContextService(database: Firestore, actorUid: 
           university: String(org.get("university") ?? ""),
           legacyTestCommunityId: /^[A-Za-z0-9_-]{1,128}$/.test(legacyValue) ? legacyValue : null,
           membershipRole: role as "manager" | "staff",
+          listed: org.get("listed") !== false,
         };
       }
     }
@@ -116,6 +125,7 @@ export async function getCommunityContextService(database: Firestore, actorUid: 
       university: String(organization.get("university") ?? ""),
       legacyTestCommunityId: /^[A-Za-z0-9_-]{1,128}$/.test(legacyValue) ? legacyValue : null,
       membershipRole: role as "manager" | "staff",
+      listed: organization.get("listed") !== false,
     };
   }
   throw new HttpsError("failed-precondition", "COMMUNITY_MEMBERSHIP_NOT_FOUND");
@@ -183,6 +193,7 @@ export async function getCommunityPortalDashboardService(
       description: String(organization.get("description") ?? legacyCommunity?.get("description") ?? ""),
       logoUrl: String(organization.get("logoUrl") ?? legacyCommunity?.get("logoUrl") ?? ""),
       coverUrl: String(organization.get("coverUrl") ?? legacyCommunity?.get("coverUrl") ?? ""),
+      listed: organization.get("listed") !== false,
     },
     followerCount: integer(organization.get("followerCount")),
     nextCursor: (includeLegacy ? legacyEntriesSnapshot : eventsSnapshot)?.size === pageSize

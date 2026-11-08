@@ -62,6 +62,7 @@ type CommunityAppShellProps = {
   userEmail: string;
   activeSection: CommunitySection;
   counts: { events: number; coupons: number; quizzes?: number };
+  showQuizzes?: boolean;
   onNavigate: (section: CommunitySection) => void;
   onLogout: () => void;
   children: ReactNode;
@@ -221,10 +222,17 @@ export function CommunityAppShell({
   userEmail,
   activeSection,
   counts,
+  showQuizzes = false,
   onNavigate,
   onLogout,
   children,
 }: CommunityAppShellProps) {
+  const managementItems = [
+    { id: "events" as const, icon: "events" as const, label: "Etkinlikler", count: counts.events },
+    { id: "coupons" as const, icon: "coupons" as const, label: "Kuponlar", count: counts.coupons },
+    ...(showQuizzes ? [{ id: "quizzes" as const, icon: "quizzes" as const, label: "Quizler", count: counts.quizzes }] : []),
+  ];
+
   return (
     <AppShell
       brandLabel="Good4"
@@ -236,11 +244,7 @@ export function CommunityAppShell({
       activeItem={activeSection}
       groups={[
         { items: [{ id: "overview", icon: "overview", label: "Genel Bakış" }] },
-        { label: "Yönetim", items: [
-          { id: "events", icon: "events", label: "Etkinlikler", count: counts.events },
-          { id: "coupons", icon: "coupons", label: "Kuponlar", count: counts.coupons },
-          { id: "quizzes", icon: "quizzes", label: "Quizler", count: counts.quizzes },
-        ] },
+        { label: "Yönetim", items: managementItems },
       ]}
       onNavigate={(itemId) => onNavigate(itemId as CommunitySection)}
       onLogout={onLogout}

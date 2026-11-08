@@ -58,6 +58,7 @@ type PortalContext =
     university: string;
     legacyTestCommunityId: string;
     membershipRole: "manager" | "staff";
+    listed?: boolean;
   }
   | { portalRole: "admin"; displayName: string };
 
@@ -149,7 +150,14 @@ type CommunityEntry = {
   }>;
 };
 type CommunityDashboardData = {
-  community: { name: string; university: string; description: string; logoUrl: string; coverUrl: string };
+  community: {
+    name: string;
+    university: string;
+    description: string;
+    logoUrl: string;
+    coverUrl: string;
+    listed?: boolean;
+  };
   followerCount: number;
   businesses: Array<{ id: string; name: string }>;
   entries: CommunityEntry[];
@@ -1155,6 +1163,13 @@ function CommunityPanel({
   const [tab, setTab] = useState<CommunitySection>("overview");
   const [data, setData] = useState<CommunityDashboardData | null>(null);
   const [quizCount, setQuizCount] = useState<number | undefined>(undefined);
+  const isQuizAllowed = context.listed === false || data?.community.listed === false;
+
+  useEffect(() => {
+    if (!isQuizAllowed && tab === "quizzes") {
+      setTab("overview");
+    }
+  }, [isQuizAllowed, tab]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState("");
@@ -1413,6 +1428,10 @@ function CommunityPanel({
   function navigate(section: CommunitySection) {
     setError("");
     setNotice("");
+    if (section === "quizzes" && !isQuizAllowed) {
+      setTab("overview");
+      return;
+    }
     if (section === "events" || section === "coupons" || section === "quizzes") resetForm();
     if (section === "events") setEventView("list");
     setTab(section);
@@ -1453,7 +1472,8 @@ function CommunityPanel({
       logoUrl={data?.community.logoUrl ?? ""}
       userEmail={user.email ?? ""}
       activeSection={tab}
-      counts={{ events: events.length, coupons: coupons.length, quizzes: quizCount }}
+      counts={{ events: events.length, coupons: coupons.length, quizzes: isQuizAllowed ? quizCount : undefined }}
+      showQuizzes={isQuizAllowed}
       onNavigate={navigate}
       onLogout={() => void signOut(auth)}
     >
@@ -1923,7 +1943,7 @@ function CommunityPanel({
             </section>
           ) : null}
 
-          {tab === "quizzes" ? (
+          {isQuizAllowed && tab === "quizzes" ? (
             <CommunityQuizAdmin
               organizationId={context.organizationId}
               organizationName={context.organizationName}

@@ -160,6 +160,9 @@ async function requireCommunityManager(
   if (!member.exists || member.get("status") !== "active" || !["manager", "staff"].includes(member.get("role"))) {
     throw new HttpsError("permission-denied", "QUIZ_MANAGER_REQUIRED");
   }
+  if (organization.get("listed") !== false) {
+    throw new HttpsError("permission-denied", "QUIZ_RESTRICTED_TO_TEST_COMMUNITIES");
+  }
 }
 
 function requireHost(session: FirebaseFirestore.DocumentSnapshot, uid: string): void {

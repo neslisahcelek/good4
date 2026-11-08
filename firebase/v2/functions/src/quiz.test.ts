@@ -51,7 +51,7 @@ beforeEach(async () => {
     database.doc("users/student-2").set({ role: "student", status: "active" }),
     database.doc("users/student-3").set({ role: "student", status: "active" }),
     database.doc("users/stranger-1").set({ role: "student", status: "active" }),
-    database.doc("organizations/comm-1").set({ type: "community", status: "active" }),
+    database.doc("organizations/comm-1").set({ type: "community", status: "active", listed: false }),
     database.doc("organizations/comm-1/members/manager-1").set({ role: "manager", status: "active" }),
     database.doc("organizations/comm-1/followers/student-1").set({ userId: "student-1" }),
     database.doc("organizations/comm-1/followers/student-2").set({ userId: "student-2" }),

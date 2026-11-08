@@ -195,9 +195,7 @@ class CommunityViewModel(private val repository: CommunityRepository, private va
                 val access = repository.access()
                 val businesses = repository.businesses()
                 val blocked = loadBlockedCommunityIds()
-                val visibleCommunities = communities
-                    .filter { c -> c.data.listed || c.id in access.communityIds }
-                    .filterNot { c -> c.id in blocked && c.id !in access.communityIds }
+                val visibleCommunities = filterVisibleCommunities(communities, access, blocked)
                 var couponFailure: String? = null
                 // One quiet retry covers a dropped connection right after the app comes to the front.
                 val coupons = (0..1).firstNotNullOfOrNull { attempt ->
@@ -772,3 +770,18 @@ internal val communityServerMessages = mapOf(
     "COMMUNITY_MEMBERSHIP_REQUIRED" to Res.string.community_error_community_membership_required,
     "COMMUNITY_NOT_ACTIVE" to Res.string.community_error_community_not_active,
 )
+
+/**
+ * Production and staging test community visibility policy (AGENTS.md #14):
+ * - Unlisted communities (`listed == false`) are NEVER shown to ordinary students/users.
+ * - Only assigned managers/staff/admins whose `access.communityIds` contains the community ID can see and test it.
+ * - Blocked communities are hidden unless the user manages that community.
+ */
+internal fun filterVisibleCommunities(
+    communities: List<Community>,
+    access: CommunityAccessDto,
+    blockedCommunityIds: Set<String> = emptySet()
+): List<Community> = communities
+    .filter { c -> c.data.listed || c.id in access.communityIds }
+    .filterNot { c -> c.id in blockedCommunityIds && c.id !in access.communityIds }
+

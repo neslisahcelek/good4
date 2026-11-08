@@ -231,11 +231,13 @@ private fun ManagerHome(
                     StatTile(stringResource(Res.string.community_bu_ay_gelen), monthlyArrivals.toString(), Icons.Outlined.HowToReg, CommunityAttendanceAccent, Modifier.weight(1f))
                 }
             }
-            item(key = "manager-live-quiz") {
-                ManagerQuizSection(
-                    communityId = community.id,
-                    onNavigateToQuizHost = onNavigateToQuizHost
-                )
+            if (!community.data.listed) {
+                item(key = "manager-live-quiz") {
+                    ManagerQuizSection(
+                        communityId = community.id,
+                        onNavigateToQuizHost = onNavigateToQuizHost
+                    )
+                }
             }
             state.error?.let { error ->
                 item(key = "error") { NoticeCard(error, ErrorRed, actionLabel = stringResource(Res.string.campus_closet_retry), onAction = onRetry) }
