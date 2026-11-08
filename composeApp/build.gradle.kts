@@ -119,10 +119,10 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = providers.gradleProperty("good4.versionCode")
             .map { it.toInt() }
-            .orElse(21)
+            .orElse(22)
             .get()
         versionName = providers.gradleProperty("good4.versionName")
-            .orElse("1.1.7")
+            .orElse("1.1.8")
             .get()
     }
 
