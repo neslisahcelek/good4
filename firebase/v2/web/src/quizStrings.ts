@@ -95,12 +95,108 @@ export const quizStrings = {
   validationOptionTooLong: (n: number, optIndex: number) => `${n}. sorunun ${optIndex + 1}. seçeneği en fazla 75 karakter olabilir.`,
   validationOptionsDuplicate: (n: number) => `${n}. soruda yinelenen seçenekler var, tüm seçenekler birbirinden farklı olmalıdır.`,
   validationCorrectIndexInvalid: (n: number) => `${n}. soru için lütfen doğru bir seçenek işaretleyin.`,
+
+  // Presenter View Strings
+  presenterTitle: "Sunum Görünümü",
+  startPresentation: "Sunumu Başlat",
+  resumePresentation: "Canlı Sunuma Dön",
+  openInNewWindow: "Yeni Pencerede Aç",
+  toggleFullscreen: "Tam Ekran",
+  exitPresentation: "Sunumdan Çık",
+  exitConfirmTitle: "Sunumdan Çıkılsın mı?",
+  exitConfirmDesc: "Sunumdan çıkmak aktif oturumu iptal etmez. Dilediğiniz zaman panodan tekrar 'Canlı Sunuma Dön' diyebilirsiniz.",
+  cancelSession: "Oturumu İptal Et",
+  cancelConfirmDesc: "Quiz oturumu tamamen sonlandırılacak ve tüm öğrenciler çıkarılacaktır. Emin misiniz?",
+  lobbyTitle: "Canlı Quize Katılın",
+  lobbySubtitle: "Good4 uygulamasını açarak topluluk sayfasından veya QR kodu tarayarak katılabilirsiniz.",
+  lobbyScanQr: "Kamerayla QR Kodu Tarayın",
+  lobbyOrJoinApp: "Veya Good4 uygulamasından katılın",
+  lobbyPlayersCount: (count: number) => `${count} Katılımcı Hazır`,
+  lobbyWaitingPlayers: "Katılımcılar bekleniyor…",
+  lobbyLockSession: "Lobiyi Kilitle",
+  lobbyUnlockSession: "Lobiyi Aç",
+  lobbyLockedNotice: "Lobi kilitli — Yeni katılımcı kabul edilmiyor",
+  startGameButton: "Oyunu Başlat",
+  spaceShortcutHint: "(Boşluk veya Enter)",
+  questionCounter: (current: number, total: number) => `Soru ${current} / ${total}`,
+  answeredCounter: (answered: number, total: number) => `${answered} / ${total} Cevaplandı`,
+  earlyRevealButton: "Cevapları Göster",
+  unansweredCount: (count: number) => `${count} kişi yanıtlayamadı`,
+  nextQuestionButton: "Sonraki Soru",
+  viewPodiumButton: "Final Podyumunu Gör",
+  podiumTitle: "Yarışma Tamamlandı!",
+  podiumFirst: "1. Şampiyon",
+  podiumSecond: "2. Sıra",
+  podiumThird: "3. Sıra",
+  scoreboardTitle: "Tüm Sıralama",
+  scoreboardRank: "Sıra",
+  scoreboardPlayer: "Katılımcı",
+  scoreboardScore: "Puan",
+  scoreboardCorrectCount: "Doğru",
+  detailedReportButton: "Detaylı Raporu İncele",
+  kickPlayerTooltip: "Katılımcıyı çıkar",
+  kickedNotice: "Katılımcı oturumdan çıkarıldı.",
+  sessionEndedNotice: "Oturum sona erdi.",
+  sessionCancelledNotice: "Oturum iptal edildi.",
+
+  // Legacy/Alternate presenter keys for compatibility
+  presenterLobbyHeading: "Katılımcılar Bekleniyor",
+  presenterHowToJoin: "Nasıl Katılınır?",
+  presenterStep1: "1. Good4 uygulamasını açın",
+  presenterStep2: "2. Topluluk sayfasından 'Canlı Quiz'e katılın veya kamerayla QR kodu tarayın",
+  presenterSessionCode: "Oturum Kodu",
+  presenterPlayersCount: (count: number) => `${count} Katılımcı`,
+  presenterWaitingForPlayers: "Katılımcılar bekleniyor… Telefonunuzdan hemen katılın!",
+  presenterLockLobby: "Katılıma Kilitle",
+  presenterUnlockLobby: "Katılıma Aç",
+  presenterLobbyLocked: "Lobi Kilitli",
+  presenterLobbyUnlocked: "Lobi Açık",
+  presenterStartGame: "Oyunu Başlat (Space)",
+  presenterKickPlayer: "Katılımcıyı Çıkar",
+  presenterKickConfirm: "Bu katılımcıyı çıkarmak istediğinize emin misiniz?",
+  presenterQuestionProgress: (current: number, total: number) => `Soru ${current} / ${total}`,
+  presenterAnswersCount: (answered: number, total: number) => `${answered} / ${total} Cevap Verildi`,
+  presenterEarlyReveal: "Cevapları Göster (Space)",
+  presenterTimeRemaining: "Kalan Süre",
+  presenterSeconds: "sn",
+  presenterCorrectAnswer: "Doğru Cevap",
+  presenterUnansweredCount: (count: number) => `${count} kişi yanıt vermedi`,
+  presenterNextQuestion: "Sonraki Soru (Space)",
+  presenterShowPodium: "Final Podyumunu Gör (Space)",
+  presenterPodiumHeading: "Yarışma Tamamlandı!",
+  presenterLeaderboardHeading: "Genel Sıralama",
+  presenterRankHeader: "Sıra",
+  presenterPlayerHeader: "Katılımcı",
+  presenterScoreHeader: "Puan",
+  presenterCorrectCountHeader: "Doğru Sayısı",
+  presenterExit: "Sunumdan Çık",
+  presenterReport: "Raporu Görüntüle",
+  presenterFullscreen: "Tam Ekran",
+  presenterExitFullscreen: "Tam Ekrandan Çık",
+  presenterNewTab: "Yeni Sekmede Aç",
+  presenterClose: "Kapat",
 };
 
 export function quizErrorMessage(error: unknown): string {
   const code = typeof error === "object" && error && "code" in error ? String((error as { code: unknown }).code) : "";
   const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
 
+  if (message.includes("QUIZ_SESSION_ACTIVE")) return "Bu topluluk için zaten aktif bir quiz oturumu bulunuyor.";
+  if (message.includes("QUIZ_SESSION_NOT_FOUND")) return "Quiz oturumu bulunamadı veya süresi dolmuş olabilir.";
+  if (message.includes("QUIZ_SESSION_ENDED")) return "Quiz oturumu sona erdi.";
+  if (message.includes("QUIZ_HOST_CANNOT_PLAY")) return "Quiz yöneticisi yarışmaya katılamaz.";
+  if (message.includes("QUIZ_NOT_FOLLOWER")) return "Yalnızca topluluk takipçileri katılabilir.";
+  if (message.includes("QUIZ_KICKED")) return "Bu oturumdan çıkarıldınız.";
+  if (message.includes("QUIZ_LOCKED")) return "Oturum kilitli, yeni katılımcı kabul edilmiyor.";
+  if (message.includes("QUIZ_FULL")) return "Quiz oturumu maksimum katılımcı sayısına ulaştı.";
+  if (message.includes("QUIZ_NICKNAME_TAKEN")) return "Bu takma ad zaten alınmış.";
+  if (message.includes("QUIZ_INVALID_PHASE")) return "Geçersiz oturum aşaması.";
+  if (message.includes("QUIZ_NO_PLAYERS")) return "Yarışmayı başlatmak için en az bir katılımcı olmalıdır.";
+  if (message.includes("QUIZ_ALREADY_ANSWERED")) return "Bu soruya zaten cevap verdiniz.";
+  if (message.includes("QUIZ_TIME_UP")) return "Süre doldu.";
+  if (message.includes("QUIZ_REVEAL_TOO_EARLY")) return "Cevapları göstermek için henüz erken.";
+  if (message.includes("QUIZ_REPORT_NOT_FOUND")) return "Quiz raporu bulunamadı.";
+  if (message.includes("QUIZ_PLAYER_NOT_FOUND")) return "Katılımcı bulunamadı.";
   if (message.includes("QUIZ_NOT_READY")) return "Quiz hazır durumda değil veya soru eklenmemiş.";
   if (message.includes("QUIZ_NOT_FOUND")) return "Quiz bulunamadı veya silinmiş olabilir.";
   if (message.includes("QUIZ_TITLE_INVALID")) return "Quiz başlığı 1 ile 80 karakter arasında olmalıdır.";

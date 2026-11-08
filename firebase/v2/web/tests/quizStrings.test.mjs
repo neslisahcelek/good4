@@ -14,6 +14,22 @@ test("quizStrings provides correct strings and limits", () => {
   assert.equal(quizStrings.optionPlaceholder(0), "Seçenek 1");
   assert.equal(quizStrings.saveSuccessNotice("ready"), "Quiz başarıyla 'Hazır' olarak kaydedildi. Mobil uygulamadan canlı oturum başlatılabilir.");
   assert.equal(quizStrings.saveSuccessNotice("draft"), "Quiz başarıyla 'Taslak' olarak kaydedildi.");
+
+  // Presenter View strings assertions
+  assert.equal(quizStrings.presenterTitle, "Sunum Görünümü");
+  assert.equal(quizStrings.startPresentation, "Sunumu Başlat");
+  assert.equal(quizStrings.resumePresentation, "Canlı Sunuma Dön");
+  assert.equal(quizStrings.openInNewWindow, "Yeni Pencerede Aç");
+  assert.equal(quizStrings.toggleFullscreen, "Tam Ekran");
+  assert.equal(quizStrings.exitPresentation, "Sunumdan Çık");
+  assert.equal(quizStrings.exitConfirmTitle, "Sunumdan Çıkılsın mı?");
+  assert.equal(quizStrings.lobbyTitle, "Canlı Quize Katılın");
+  assert.equal(quizStrings.lobbyPlayersCount(5), "5 Katılımcı Hazır");
+  assert.equal(quizStrings.questionCounter(2, 10), "Soru 2 / 10");
+  assert.equal(quizStrings.answeredCounter(7, 12), "7 / 12 Cevaplandı");
+  assert.equal(quizStrings.unansweredCount(3), "3 kişi yanıtlayamadı");
+  assert.equal(quizStrings.podiumTitle, "Yarışma Tamamlandı!");
+  assert.equal(quizStrings.detailedReportButton, "Detaylı Raporu İncele");
 });
 
 test("quizErrorMessage translates backend error codes to Turkish messages", () => {
@@ -25,4 +41,7 @@ test("quizErrorMessage translates backend error codes to Turkish messages", () =
   assert.match(quizErrorMessage(new Error("QUIZ_MANAGER_REQUIRED")), /topluluk yönetici/);
   assert.match(quizErrorMessage({ code: "permission-denied" }), /yetkiniz bulunmuyor/);
   assert.match(quizErrorMessage({ code: "unauthenticated" }), /Oturum süreniz sona erdi/);
+  assert.match(quizErrorMessage(new Error("QUIZ_SESSION_ACTIVE")), /aktif bir quiz oturumu/);
+  assert.match(quizErrorMessage(new Error("QUIZ_NO_PLAYERS")), /en az bir katılımcı/);
+  assert.match(quizErrorMessage(new Error("QUIZ_LOCKED")), /kilitli/);
 });

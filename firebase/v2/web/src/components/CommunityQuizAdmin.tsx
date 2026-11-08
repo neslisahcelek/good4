@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase";
+import { functions, getRealtimeFirestoreDb } from "../firebase";
+import { doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
+import { QuizPresenterView } from "./QuizPresenterView";
 import { quizErrorMessage, quizStrings as s } from "../quizStrings";
 import {
   Button,
@@ -33,9 +35,15 @@ export interface QuizQuestionForm {
 
 export interface CommunityQuizAdminProps {
   organizationId: string;
+  organizationName?: string;
   canManage?: boolean;
   onQuizCountChange?: (count: number) => void;
 }
+
+const startQuizSessionCallable = httpsCallable<
+  { organizationId: string; quizId: string },
+  { sessionId: string }
+>(functions, "startQuizSession");
 
 const listQuizzesCallable = httpsCallable<{ organizationId: string }, { quizzes: QuizSummary[] }>(
   functions,
@@ -108,6 +116,7 @@ function formatUpdatedDate(ms: number): string {
 
 export function CommunityQuizAdmin({
   organizationId,
+  organizationName,
   canManage = true,
   onQuizCountChange,
 }: CommunityQuizAdminProps) {
@@ -117,6 +126,96 @@ export function CommunityQuizAdmin({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  // Live Presenter View & Session state
+  const [activeSession, setActiveSession] = useState<{
+    sessionId: string;
+    quizId: string;
+    status: string;
+  } | null>(null);
+  const [activePresenterSessionId, setActivePresenterSessionId] = useState<string | null>(null);
+  const [busyStartingQuizId, setBusyStartingQuizId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let unsubLock: Unsubscribe | null = null;
+    let unsubSession: Unsubscribe | null = null;
+    let active = true;
+
+    void getRealtimeFirestoreDb()
+      .then((db) => {
+        if (!active) return;
+        const lockDocRef = doc(db, "quizActive", organizationId);
+        unsubLock = onSnapshot(
+          lockDocRef,
+          (lockSnap) => {
+            unsubSession?.();
+            unsubSession = null;
+
+            if (!lockSnap.exists()) {
+              setActiveSession(null);
+              return;
+            }
+
+            const currentSessionId = String(lockSnap.get("sessionId") || "");
+            if (!currentSessionId) {
+              setActiveSession(null);
+              return;
+            }
+
+            const sessionDocRef = doc(db, "quizSessions", currentSessionId);
+            unsubSession = onSnapshot(
+              sessionDocRef,
+              (sessionSnap) => {
+                if (!sessionSnap.exists()) {
+                  setActiveSession(null);
+                  return;
+                }
+                const status = String(sessionSnap.get("status") || "");
+                if (["lobby", "question", "reveal"].includes(status)) {
+                  setActiveSession({
+                    sessionId: currentSessionId,
+                    quizId: String(sessionSnap.get("quizId") || ""),
+                    status,
+                  });
+                } else {
+                  setActiveSession(null);
+                }
+              },
+              (err) => {
+                console.error("quizSession snapshot error:", err);
+              },
+            );
+          },
+          (err) => {
+            console.error("quizActive snapshot error:", err);
+          },
+        );
+      })
+      .catch((err) => {
+        console.error("Firestore error for active quiz session:", err);
+      });
+
+    return () => {
+      active = false;
+      unsubLock?.();
+      unsubSession?.();
+    };
+  }, [organizationId]);
+
+  const handleStartPresentation = async (quizId: string) => {
+    setError("");
+    setBusyStartingQuizId(quizId);
+    try {
+      const res = await startQuizSessionCallable({ organizationId, quizId });
+      if (res.data?.sessionId) {
+        setActivePresenterSessionId(res.data.sessionId);
+      }
+    } catch (err) {
+      setError(quizErrorMessage(err));
+    } finally {
+      setBusyStartingQuizId(null);
+    }
+  };
 
   // Delete dialog state
   const [deletingQuiz, setDeletingQuiz] = useState<QuizSummary | null>(null);
@@ -514,6 +613,31 @@ export function CommunityQuizAdmin({
                       <td>{formatUpdatedDate(quiz.updatedAtMs)}</td>
                       <td>
                         <div className="quiz-actions-cell">
+                          {quiz.status === "ready" && activeSession && activeSession.quizId === quiz.quizId ? (
+                            <Button
+                              variant="primary"
+                              style={{
+                                background: "#008556",
+                                color: "#ffffff",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                              onClick={() => setActivePresenterSessionId(activeSession.sessionId)}
+                            >
+                              <span className="pulse-dot" style={{ width: 8, height: 8 }} />
+                              {s.resumePresentation}
+                            </Button>
+                          ) : quiz.status === "ready" ? (
+                            <Button
+                              variant="primary"
+                              disabled={!canManage || busyStartingQuizId === quiz.quizId}
+                              onClick={() => void handleStartPresentation(quiz.quizId)}
+                              title={activeSession ? "Başka bir quiz oturumu aktif durumda" : undefined}
+                            >
+                              {busyStartingQuizId === quiz.quizId ? "Başlatılıyor…" : s.startPresentation}
+                            </Button>
+                          ) : null}
                           <Button
                             variant="secondary"
                             disabled={!canManage}
@@ -862,6 +986,16 @@ export function CommunityQuizAdmin({
         onClose={() => setDeletingQuiz(null)}
         onConfirm={() => void confirmDelete()}
       />
+
+      {/* Fullscreen Presenter View */}
+      {activePresenterSessionId ? (
+        <QuizPresenterView
+          sessionId={activePresenterSessionId}
+          organizationId={organizationId}
+          organizationName={organizationName || "Topluluk"}
+          onClose={() => setActivePresenterSessionId(null)}
+        />
+      ) : null}
     </div>
   );
 }

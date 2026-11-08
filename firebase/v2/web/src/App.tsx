@@ -1,5 +1,6 @@
 import { BusinessDiscountsAdmin } from "./components/BusinessDiscountsAdmin";
 import { CommunityQuizAdmin } from "./components/CommunityQuizAdmin";
+import { QuizPresenterView } from "./components/QuizPresenterView";
 import { normalizeCouponCode as normalizeCode, couponCodeRoute, formatCommunityCouponDate } from "./communityCouponCode";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { createAccountRequestScope } from "./accountRequestScope";
@@ -1926,6 +1927,7 @@ function CommunityPanel({
           {tab === "quizzes" ? (
             <CommunityQuizAdmin
               organizationId={context.organizationId}
+              organizationName={context.organizationName}
               canManage={context.membershipRole === "manager"}
               onQuizCountChange={setQuizCount}
             />
@@ -3636,6 +3638,29 @@ export default function App({ portal = "staff" }: { portal?: PortalEntrance }) {
       <AccessError
         message={accessError || "İşletme bilgisi bulunamadı."}
         onRetry={user ? () => loadContext(user) : undefined}
+      />
+    );
+  }
+
+  const quizSessionIdParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("quizSessionId") : null;
+  if (quizSessionIdParam && (context.portalRole === "community" || context.portalRole === "admin")) {
+    const orgId = context.portalRole === "community" ? context.organizationId : "";
+    const orgName = context.portalRole === "community" ? context.organizationName : "Good4 Canlı Quiz";
+    return (
+      <QuizPresenterView
+        sessionId={quizSessionIdParam}
+        organizationId={orgId}
+        organizationName={orgName}
+        onClose={() => {
+          if (typeof window !== "undefined" && window.opener) {
+            window.close();
+          } else if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("quizSessionId");
+            window.history.replaceState({}, "", url.toString());
+            window.location.reload();
+          }
+        }}
       />
     );
   }

@@ -10,7 +10,8 @@ import {
   connectFunctionsEmulator,
   getFunctions,
 } from "firebase/functions";
-import type { Firestore } from "firebase/firestore/lite";
+import type { Firestore as FirestoreLite } from "firebase/firestore/lite";
+import type { Firestore } from "firebase/firestore";
 
 const prodConfig = {
   apiKey: "AIzaSyA9OIJZLXKFyzO5C7GZ5RtrQDAGl44fya4",
@@ -49,9 +50,9 @@ if (!useFirebaseEmulators && !isTestProject) {
 
 export const auth = getAuth(app);
 export const functions = getFunctions(app, "europe-west1");
-let firestorePromise: Promise<Firestore> | null = null;
+let firestorePromise: Promise<FirestoreLite> | null = null;
 
-export function getFirestoreDb(): Promise<Firestore> {
+export function getFirestoreDb(): Promise<FirestoreLite> {
   if (!firestorePromise) {
     firestorePromise = import("firebase/firestore/lite").then(({ connectFirestoreEmulator, getFirestore }) => {
       const database = getFirestore(app);
@@ -62,6 +63,20 @@ export function getFirestoreDb(): Promise<Firestore> {
     });
   }
   return firestorePromise;
+}
+
+let realtimeDbPromise: Promise<Firestore> | null = null;
+export function getRealtimeFirestoreDb(): Promise<Firestore> {
+  if (!realtimeDbPromise) {
+    realtimeDbPromise = import("firebase/firestore").then(({ connectFirestoreEmulator, getFirestore }) => {
+      const db = getFirestore(app);
+      if (useFirebaseEmulators) {
+        connectFirestoreEmulator(db, "127.0.0.1", 8285);
+      }
+      return db;
+    });
+  }
+  return realtimeDbPromise;
 }
 
 void setPersistence(auth, browserLocalPersistence);

@@ -9,6 +9,7 @@ import CommunityApplicationPage from "./CommunityApplication";
 import DownloadPage from "./DownloadPage";
 import LandingPage from "./LandingPage";
 import CampusEmailLinkPage from "./CampusEmailLinkPage";
+import QuizJoinBridgePage from "./QuizJoinBridgePage";
 import "./styles.css";
 
 const normalizedPath = window.location.pathname.replace(/\/$/, "") || "/";
@@ -19,6 +20,7 @@ const isStandalonePrivacyPolicy = normalizedPath === "/gizlilik-politikasi";
 const isCommunityApplicationPage = normalizedPath === "/topluluk-basvuru";
 const isDownloadPage = normalizedPath === "/indir";
 const isCampusEmailLinkPage = normalizedPath === "/campus-email-verification";
+const isQuizBridgePage = normalizedPath === "/quiz" || normalizedPath.startsWith("/quiz/");
 // Community managers have their own entrance at /topluluk-paneli, on any host.
 const isCommunityPortalPage = normalizedPath === "/topluluk-paneli" || normalizedPath.startsWith("/topluluk-paneli/");
 // The staff panel lives on panel.good4tr.com, under /admin, and on admin.* hosts;
@@ -31,6 +33,28 @@ if (isCommunityPortalPage) document.title = "Good4 Topluluk Paneli";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {isCampusEmailLinkPage ? <CampusEmailLinkPage /> : isDownloadPage ? <DownloadPage /> : isCommunityApplicationPage ? <CommunityApplicationPage /> : isStandalonePrivacyPolicy ?<Good4PrivacyPolicy /> : isAccountDeletionPage ? <AccountDeletion /> : isAgreementPage ? <MembershipAgreement /> : isPrivacyPage ? <PrivacyPolicy /> : isCommunityPortalPage ? <App portal="community" /> : isAdminPage ? <App /> : <LandingPage />}
+    {isQuizBridgePage ? (
+      <QuizJoinBridgePage />
+    ) : isCampusEmailLinkPage ? (
+      <CampusEmailLinkPage />
+    ) : isDownloadPage ? (
+      <DownloadPage />
+    ) : isCommunityApplicationPage ? (
+      <CommunityApplicationPage />
+    ) : isStandalonePrivacyPolicy ? (
+      <Good4PrivacyPolicy />
+    ) : isAccountDeletionPage ? (
+      <AccountDeletion />
+    ) : isAgreementPage ? (
+      <MembershipAgreement />
+    ) : isPrivacyPage ? (
+      <PrivacyPolicy />
+    ) : isCommunityPortalPage ? (
+      <App portal="community" />
+    ) : isAdminPage ? (
+      <App />
+    ) : (
+      <LandingPage />
+    )}
   </StrictMode>,
 );
