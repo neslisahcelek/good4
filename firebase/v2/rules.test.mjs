@@ -529,7 +529,7 @@ test('students read only published business discounts; codes, claims and history
   }
 });
 
-test('live quiz security rules enforce follower access, hide correctIndex, and keep write client-closed', async () => {
+test('live quiz security rules allow joining by session id, hide correctIndex, and keep write client-closed', async () => {
   await seed('users/host-1', { role: 'student', status: 'active' });
   await seed('users/student-follower', { role: 'student', status: 'active' });
   await seed('users/stranger', { role: 'student', status: 'active' });
@@ -562,8 +562,15 @@ test('live quiz security rules enforce follower access, hide correctIndex, and k
 
   // Follower can read session document
   await assertSucceeds(getDoc(doc(followerDb, 'quizSessions/s1')));
-  // Stranger (non-follower) cannot read session document
-  await assertFails(getDoc(doc(strangerDb, 'quizSessions/s1')));
+  // A non-follower holding the session id (QR join code) can open it as well
+  await assertSucceeds(getDoc(doc(strangerDb, 'quizSessions/s1')));
+  // ...but cannot enumerate sessions of a community they do not follow
+  await assertFails(getDocs(query(collection(strangerDb, 'quizSessions'), where('organizationId', '==', 'comm-1'))));
+  await assertSucceeds(getDocs(query(collection(followerDb, 'quizSessions'), where('organizationId', '==', 'comm-1'))));
+  // Signed-out visitors and inactive accounts still cannot read it
+  await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'quizSessions/s1')));
+  await seed('users/disabled-student', { role: 'student', status: 'disabled' });
+  await assertFails(getDoc(doc(testEnv.authenticatedContext('disabled-student').firestore(), 'quizSessions/s1')));
 
   // Client cannot read questions subcollection (protects correctIndex)
   await assertFails(getDoc(doc(followerDb, 'quizSessions/s1/questions/0')));

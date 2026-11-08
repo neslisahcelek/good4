@@ -340,18 +340,16 @@ export async function joinQuizSessionService(
     if (!(ACTIVE_SESSION_STATUSES as readonly string[]).includes(status)) {
       throw new HttpsError("failed-precondition", "QUIZ_SESSION_ENDED");
     }
-    const organizationId = String(session.get("organizationId"));
+    // Following the community is not required: the session id shared on the host screen (QR) is the join code.
     const playerRef = ref.collection("players").doc(uid);
     const nicknameRef = ref.collection("nicknames").doc(nickname.key);
     const lobbyRef = ref.collection("counters").doc("lobby");
-    const [follower, player, taken, lobby] = await Promise.all([
-      transaction.get(database.doc(`organizations/${organizationId}/followers/${uid}`)),
+    const [player, taken, lobby] = await Promise.all([
       transaction.get(playerRef),
       transaction.get(nicknameRef),
       transaction.get(lobbyRef),
     ]);
     if (session.get("hostUid") === uid) throw new HttpsError("failed-precondition", "QUIZ_HOST_CANNOT_PLAY");
-    if (!follower.exists) throw new HttpsError("permission-denied", "QUIZ_NOT_FOLLOWER");
     if (player.exists) {
       // Reconnect: keeps the original nickname and never takes another slot.
       if (player.get("status") === "kicked") throw new HttpsError("permission-denied", "QUIZ_KICKED");

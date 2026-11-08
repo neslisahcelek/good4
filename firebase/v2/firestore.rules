@@ -254,7 +254,11 @@ service cloud.firestore {
     }
 
     match /quizSessions/{sessionId} {
-      allow get, list: if currentUserIsActive()
+      // The unguessable session id shown on the host screen (QR) works as the join code,
+      // so any active user holding it may open the session without following the community.
+      // Listing stays limited so active sessions cannot be enumerated.
+      allow get: if currentUserIsActive();
+      allow list: if currentUserIsActive()
         && (resource.data.hostUid == request.auth.uid
           || isGood4Admin()
           || isActiveOrganizationMember(resource.data.organizationId)

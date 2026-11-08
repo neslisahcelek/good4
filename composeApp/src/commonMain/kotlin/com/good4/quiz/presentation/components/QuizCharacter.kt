@@ -7,6 +7,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -402,19 +403,53 @@ private fun DrawScope.drawEyes(character: QuizCharacter, look: CharacterLook, ex
     }
     fun happyEye(cx: Float) = curve(Offset(cx - look.eyeRx, ey + 2f), Offset(cx, ey - look.eyeRy * 1.2f), Offset(cx + look.eyeRx, ey + 2f), lineColor, 3.2f)
     fun closedEye(cx: Float) = curve(Offset(cx - look.eyeRx, ey), Offset(cx, ey + 3f), Offset(cx + look.eyeRx, ey), lineColor, 3f)
+    // A narrower, bolder arc so a wink reads as a closed eye, not a brow (panda patch, frog eye bump).
+    fun winkEye(cx: Float) = curve(
+        Offset(cx - look.eyeRx * 0.85f, ey + 2.5f),
+        Offset(cx, ey - look.eyeRy * 1.1f),
+        Offset(cx + look.eyeRx * 0.85f, ey + 2.5f),
+        lineColor,
+        if (character == QuizCharacter.PANDA) 4.4f else 3.6f
+    )
+    // Frog eyes sit on top of the head with no forehead, so brows become slanted lids inside the eye.
+    val lidsInsideEyes = character == QuizCharacter.FROG
+    fun eyelid(cx: Float, leftY: Float, rightY: Float) {
+        val rx = look.eyeRx
+        val ry = look.eyeRy
+        clipPath(Path().apply { addOval(Rect(cx - rx, ey - ry, cx + rx, ey + ry)) }) {
+            drawPath(
+                Path().apply {
+                    moveTo(cx - rx - 1f, ey - ry - 1f)
+                    lineTo(cx + rx + 1f, ey - ry - 1f)
+                    lineTo(cx + rx + 1f, ey + rightY * ry)
+                    lineTo(cx - rx - 1f, ey + leftY * ry)
+                    close()
+                },
+                look.main
+            )
+            drawLine(Ink, Offset(cx - rx - 1f, ey + leftY * ry), Offset(cx + rx + 1f, ey + rightY * ry), 3f, StrokeCap.Round)
+        }
+        drawOval(Ink, Offset(cx - rx, ey - ry), Size(rx * 2, ry * 2), style = Stroke(OUTLINE))
+    }
 
     when (expression) {
         CharacterExpression.HAPPY -> { happyEye(leftX); happyEye(rightX) }
         CharacterExpression.WINK -> {
             if (blink) closedEye(leftX) else openEye(leftX)
-            happyEye(rightX)
+            winkEye(rightX)
         }
         CharacterExpression.SURPRISED -> { openEye(leftX, 1.14f, 0.62f, 0f); openEye(rightX, 1.14f, 0.62f, 0f) }
         CharacterExpression.SAD -> {
             openEye(leftX, lookY = 2.6f); openEye(rightX, lookY = 2.6f)
-            val browY = ey - look.eyeRy - 4f
-            curve(Offset(leftX - 8f, browY + 1f), Offset(leftX, browY - 1f), Offset(leftX + 7f, browY - 5f), Ink, 2.8f)
-            curve(Offset(rightX + 8f, browY + 1f), Offset(rightX, browY - 1f), Offset(rightX - 7f, browY - 5f), Ink, 2.8f)
+            if (lidsInsideEyes) {
+                // Outer corners droop.
+                eyelid(leftX, leftY = -0.1f, rightY = -0.6f)
+                eyelid(rightX, leftY = -0.6f, rightY = -0.1f)
+            } else {
+                val browY = ey - look.eyeRy - 4f
+                curve(Offset(leftX - 8f, browY + 1f), Offset(leftX, browY - 1f), Offset(leftX + 7f, browY - 5f), Ink, 2.8f)
+                curve(Offset(rightX + 8f, browY + 1f), Offset(rightX, browY - 1f), Offset(rightX - 7f, browY - 5f), Ink, 2.8f)
+            }
             drawPath(
                 Path().apply {
                     moveTo(leftX - 6f, ey + 10f)
@@ -426,9 +461,17 @@ private fun DrawScope.drawEyes(character: QuizCharacter, look: CharacterLook, ex
         }
         CharacterExpression.DETERMINED -> {
             if (blink) { closedEye(leftX); closedEye(rightX) } else { openEye(leftX); openEye(rightX) }
-            val browY = ey - look.eyeRy - 3f
-            drawLine(Ink, Offset(leftX - 8f, browY - 4f), Offset(leftX + 7f, browY + 1f), 3f, StrokeCap.Round)
-            drawLine(Ink, Offset(rightX + 8f, browY - 4f), Offset(rightX - 7f, browY + 1f), 3f, StrokeCap.Round)
+            if (lidsInsideEyes) {
+                // Inner corners drop for a focused look.
+                if (!blink) {
+                    eyelid(leftX, leftY = -0.65f, rightY = -0.05f)
+                    eyelid(rightX, leftY = -0.05f, rightY = -0.65f)
+                }
+            } else {
+                val browY = ey - look.eyeRy - 3f
+                drawLine(Ink, Offset(leftX - 8f, browY - 4f), Offset(leftX + 7f, browY + 1f), 3f, StrokeCap.Round)
+                drawLine(Ink, Offset(rightX + 8f, browY - 4f), Offset(rightX - 7f, browY + 1f), 3f, StrokeCap.Round)
+            }
         }
         CharacterExpression.NEUTRAL -> {
             if (blink) { closedEye(leftX); closedEye(rightX) } else { openEye(leftX); openEye(rightX) }

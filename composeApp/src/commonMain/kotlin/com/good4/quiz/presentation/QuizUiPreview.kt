@@ -158,7 +158,8 @@ object QuizUiPreviewData {
         "reveal-missed" -> QuizPlayerUiState(
             phase = PlayerScreenPhase.REVEAL,
             session = session("reveal", questionTf, 1, QuizReveal(1, 1, listOf(5, 20), 3, top5)),
-            player = player(610, 5, QuizLastResult(0, true, 610, 0)).copy(nickname = "Bora")
+            // Same shape the server writes for a player who did not answer.
+            player = player(610, 5, QuizLastResult(1, false, 0, -1)).copy(nickname = "Bora")
         )
         "finished" -> QuizPlayerUiState(
             phase = PlayerScreenPhase.FINISHED,

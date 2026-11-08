@@ -302,7 +302,7 @@ test("startQuizSessionService creates session with frozen questions and enforces
   }), /QUIZ_MANAGER_REQUIRED/);
 });
 
-test("joinQuizSessionService enforces follower status, capacity, nickname uniqueness, and reconnects", async () => {
+test("joinQuizSessionService admits non-followers, enforces capacity, nickname uniqueness, and reconnects", async () => {
   const quiz = await createReadyQuiz();
   const session = await startQuizSessionService(database, "manager-1", { organizationId: "comm-1", quizId: quiz.quizId }, nowMillis);
 
@@ -311,12 +311,6 @@ test("joinQuizSessionService enforces follower status, capacity, nickname unique
     sessionId: session.sessionId,
     nickname: "HostPlayer",
   }), /QUIZ_HOST_CANNOT_PLAY/);
-
-  // Non-follower cannot join
-  await assert.rejects(joinQuizSessionService(database, "stranger-1", {
-    sessionId: session.sessionId,
-    nickname: "Yabanci",
-  }), /QUIZ_NOT_FOLLOWER/);
 
   // Follower joins successfully
   const join1 = await joinQuizSessionService(database, "student-1", {
@@ -358,6 +352,30 @@ test("joinQuizSessionService enforces follower status, capacity, nickname unique
     sessionId: session.sessionId,
     nickname: "Ogrenci 2",
   }), /QUIZ_LOCKED/);
+});
+
+test("joinQuizSessionService lets an active non-follower join with the session id, but not inactive accounts", async () => {
+  const quiz = await createReadyQuiz();
+  const session = await startQuizSessionService(database, "manager-1", { organizationId: "comm-1", quizId: quiz.quizId }, nowMillis);
+
+  const joined = await joinQuizSessionService(database, "stranger-1", {
+    sessionId: session.sessionId,
+    nickname: "Misafir",
+  }, nowMillis);
+  assert.equal(joined.nickname, "Misafir");
+  const player = await database.doc(`quizSessions/${session.sessionId}/players/stranger-1`).get();
+  assert.equal(player.get("status"), "active");
+  assert.equal(
+    (await database.doc("organizations/comm-1/followers/stranger-1").get()).exists,
+    false,
+    "joining must not silently follow the community",
+  );
+
+  await database.doc("users/disabled-1").set({ role: "student", status: "disabled" });
+  await assert.rejects(joinQuizSessionService(database, "disabled-1", {
+    sessionId: session.sessionId,
+    nickname: "Kapali",
+  }, nowMillis), /ACCOUNT_NOT_ACTIVE/);
 });
 
 test("setQuizLockService allows host to toggle lock only during lobby phase", async () => {

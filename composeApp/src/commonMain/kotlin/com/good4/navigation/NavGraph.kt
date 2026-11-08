@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.good4.auth.data.repository.AuthRepository
 import com.good4.campuscloset.CampusEmailVerificationLinks
+import com.good4.quiz.presentation.join.QuizJoinLinks
 import org.koin.compose.koinInject
 import com.good4.admin.presentation.home.AdminHomeScreenRoot
 import com.good4.admin.presentation.profile.AdminProfileScreen
@@ -73,6 +74,7 @@ fun Good4NavGraph(
     val primaryAuth: AuthRepository = koinInject()
     val primaryUser by primaryAuth.authStateFlow.collectAsStateWithLifecycle(initialValue = primaryAuth.currentUser)
     val campusLink by CampusEmailVerificationLinks.pending.collectAsStateWithLifecycle()
+    val quizJoinSessionId by QuizJoinLinks.pending.collectAsStateWithLifecycle()
     val currentEntry by navController.currentBackStackEntryAsState()
     val pushManager = androidx.compose.runtime.remember(primaryAuth) { com.good4.notification.PushRegistrationManager(primaryAuth) }
     val pushDestination by com.good4.notification.CampusPushNotifications.pending.collectAsStateWithLifecycle()
@@ -176,6 +178,19 @@ fun Good4NavGraph(
             && !destination.hasRoute<Route.SocialActivity>()) {
             navController.navigate(Route.CampusCloset) { launchSingleTop = true }
         }
+    }
+    // Live quiz join link (web join page / host QR). Waits until the user is signed in and past
+    // startup and auth screens, so a link opened before login still lands on the quiz afterwards.
+    LaunchedEffect(quizJoinSessionId, primaryUser?.uid, currentEntry?.destination) {
+        val sessionId = quizJoinSessionId ?: return@LaunchedEffect
+        if (primaryUser == null) return@LaunchedEffect
+        val destination = currentEntry?.destination ?: return@LaunchedEffect
+        if (destination.hasRoute<Route.ForceUpdate>() || destination.hasRoute<Route.Splash>()
+            || destination.hasRoute<Route.SessionRestore>() || destination.hasRoute<Route.Login>()
+            || destination.hasRoute<Route.RegisterOptions>() || destination.hasRoute<Route.StudentRegister>()
+            || destination.hasRoute<Route.BusinessRegister>() || destination.hasRoute<Route.EmailVerification>()) return@LaunchedEffect
+        QuizJoinLinks.consume(sessionId)
+        navController.navigate(Route.QuizPlay(sessionId)) { launchSingleTop = true }
     }
     val notificationsViewModel: NotificationsViewModel = koinViewModel()
     LifecycleResumeEffect(notificationsViewModel) {

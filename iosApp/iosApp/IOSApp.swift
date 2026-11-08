@@ -56,6 +56,8 @@ struct IOSApp: App {
                 }
             }
             .onOpenURL { url in
+                // good4://quiz?session=<id> from the web join page or the host's QR code.
+                if QuizJoinLinks.shared.receive(url: url.absoluteString) { return }
                 if !CampusEmailVerificationLinks.shared.receive(url: url.absoluteString) {
                     GIDSignIn.sharedInstance.handle(url)
                 }

@@ -182,7 +182,8 @@ private fun QuizPlayerUiState.revealOutcome(): RevealOutcome {
     val result = player?.lastResult
     val revealIndex = session?.reveal?.index ?: session?.currentIndex
     return when {
-        result == null || result.index != revealIndex -> RevealOutcome.MISSED
+        // The server writes a result for every player at reveal; selectedOption -1 means no answer.
+        result == null || result.index != revealIndex || result.selectedOption < 0 -> RevealOutcome.MISSED
         result.correct -> RevealOutcome.CORRECT
         else -> RevealOutcome.WRONG
     }

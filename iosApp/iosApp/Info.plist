@@ -10,6 +10,14 @@
 				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.good4.quiz-join</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>good4</string>
+			</array>
+		</dict>
 	</array>
 	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
     <false/>

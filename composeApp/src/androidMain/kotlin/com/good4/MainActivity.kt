@@ -27,7 +27,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AndroidCampusPush.requestPermission = requestPushPermission
         receivePush(intent)
-        intent?.dataString?.let(com.good4.campuscloset.CampusEmailVerificationLinks::receive)
+        // On recreation (rotation, process restore) the launch intent comes back; do not reopen a consumed quiz link.
+        if (savedInstanceState == null) receiveLink(intent?.dataString)
+        else intent?.dataString?.let(com.good4.campuscloset.CampusEmailVerificationLinks::receive)
         com.good4.notification.handleNotificationIntent(intent)
 
         var isSplashReady = false
@@ -51,8 +53,15 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         com.good4.notification.handleNotificationIntent(intent)
-        intent.dataString?.let(com.good4.campuscloset.CampusEmailVerificationLinks::receive)
+        receiveLink(intent.dataString)
         receivePush(intent)
+    }
+
+    private fun receiveLink(url: String?) {
+        if (url == null) return
+        if (!com.good4.quiz.presentation.join.QuizJoinLinks.receive(url)) {
+            com.good4.campuscloset.CampusEmailVerificationLinks.receive(url)
+        }
     }
 
     override fun onResume() { super.onResume(); AndroidCampusPush.refresh() }

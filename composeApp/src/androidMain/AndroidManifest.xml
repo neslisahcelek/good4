@@ -80,6 +80,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="good4tr-v2.firebaseapp.com" android:pathPrefix="/__/auth/links" />
             </intent-filter>
+            <!-- Live quiz join links from the web join page / host QR: good4://quiz?session=<id> -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="good4" android:host="quiz" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>
