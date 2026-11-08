@@ -1,36 +1,39 @@
-# Firestore Frameworks and Symbols in Good4 iOS
+# Firestore symbols in iOS archives
 
-Bu doküman, Good4 iOS uygulamasında Firebase Firestore bağımlılıklarının dağıtımı, Swift Package Manager (SPM) yapılandırması ve sembol (dSYM) yönetimini açıklar.
+Firebase 12.19.2's default Swift package graph uses prebuilt Firestore, abseil,
+gRPC and OpenSSL frameworks without bundled dSYMs. These cause Organizer's
+`Upload Symbols Failed` warnings. Unlike MapLibre, no matching vendor symbols
+are available in the resolved packages.
 
----
+Good4 device archives use Firebase's supported source distribution instead.
+Firestore and its C++ dependencies are linked into the app; Xcode includes their
+debug information in the app dSYM. Firebase is pinned to the already-resolved
+12.19.2 version. No generated placeholder dSYMs are used.
 
-## 1. Dağıtım Modeli: Standart Resmi İkili Paketler (Binary Distribution)
+## Local Xcode archive
 
-Good4 iOS projesi, Google Firebase iOS SDK'nın resmi ve varsayılan olarak sağladığı **ikili (prebuilt binary)** paket grafiğini (`abseil-cpp-binary`, `grpc-binary`) kullanır.
+1. Quit Xcode completely. The variable must reach the Xcode process that resolves
+   packages; adding it to a scheme's Run environment or an xcconfig is too late.
+2. From the repository root, run `bash iosApp/scripts/open-xcode.sh`.
+3. The launcher resolves the locked Swift packages with the source environment
+   before opening Xcode. The source graph uses `abseil-cpp-SwiftPM`,
+   `grpc-ios` and `boringSSL-SwiftPM` instead of the binary packages.
+4. Choose **Product > Clean Build Folder**, then archive **iosApp Prod**.
+   The first source build takes longer than the prebuilt distribution.
+5. Distribute the new archive.
 
-### Avantajları:
-1. **Hızlı Derleme (Build Performance):**
-   - Abseil ve gRPC devasa C++ projeleridir. Önceden derlenmiş framework'ler kullanıldığında Xcode Cloud ve yerel derleme süreleri **5-8 dakika daha hızlı** tamamlanır.
-2. **Sıfır Dış Bağımlılık / Konfigürasyon:**
-   - Apple Xcode Cloud veya yerel Xcode üzerinde özel ortam değişkeni (`FIREBASE_SOURCE_FIRESTORE`) tanımlama zorunluluğu yoktur; proje doğrudan "tak-çalıştır" derlenir.
-3. **Uygulama Sembolleri:**
-   - Good4'un tüm Kotlin, Compose ve Swift kodları tam sembolik dSYM üretir; Crashlytics ve TestFlight üzerinde uygulama çökmeleri satır numaralarıyla izlenir.
+## Command line and Xcode Cloud
 
----
+Prefix both package resolution and archive commands with
+`FIREBASE_SOURCE_FIRESTORE=1`. For Xcode Cloud, add that variable with value `1`
+in the workflow's environment settings (`FIREBASE_SOURCE_FIRESTORE = 1`); Xcode Cloud
+automatically resolves the SPM packages during the archive step.
 
-## 2. Xcode Cloud ve CI/CD Entegrasyonu
+## Verify the archive
 
-* **`ci_scripts/ci_post_clone.sh`**:
-  `xcodebuild -resolvePackageDependencies -project iosApp/iosApp.xcodeproj -scheme "iosApp Prod"` komutu ile kilitli `Package.resolved` dosyasını sorunsuz olarak çözer.
-* **`iosApp/scripts/firestore-archive-symbols.sh`**:
-  Arşivleme esnasında prebuilt ikili framework'leri kabul eder ve arşivin başarıyla TestFlight'a yüklenmesini sağlar.
-* **`iosApp/scripts/open-xcode.sh`**:
-  Projeyi yerel Xcode ile doğrudan açmak için kullanılır. Herhangi bir ortam değişkeni önkoşulu yoktur.
+The app's `Frameworks` directory must not contain `FirebaseFirestoreInternal`,
+`absl`, `grpc`, `grpcpp` or `openssl_grpc` frameworks. The archive must contain
+`dSYMs/iosApp.app.dSYM`, with the same arm64 UUID as the app executable. MapLibre
+continues to use the separate UUID-verified vendor dSYM script.
 
----
-
-## 3. Opsiyonel: Kaynak Koddan Derleme (Source Distribution)
-
-Eğer gelecekte Firebase iç C++ kütüphanelerinin dSYM sembollerini de arşive dahil etmek gerekirse:
-1. Terminal veya CI ortamında `FIREBASE_SOURCE_FIRESTORE=1` tanımlanarak `xcodebuild -resolvePackageDependencies` çalıştırılır.
-2. Bu durumda Swift Package Manager otomatik olarak `abseil-cpp-SwiftPM`, `grpc-ios` ve `boringSSL-SwiftPM` paketlerini çözerek kaynak koddan derleme moduna geçer.
+Reference: [Firebase 12.19.2 source distribution](https://github.com/firebase/firebase-ios-sdk/blob/12.19.2/docs/FirestoreSPM.md).

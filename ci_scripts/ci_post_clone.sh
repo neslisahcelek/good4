@@ -47,11 +47,8 @@ chmod +x gradlew
 echo "Pre-warming Kotlin iOS Arm64 compilation..."
 ./gradlew :composeApp:compileKotlinIosArm64
 
-# ── 3. Resolve Swift Package Manager dependencies ─────────────────────────────
-echo "Resolving Swift Package Manager dependencies..."
-xcodebuild \
-    -resolvePackageDependencies \
-    -project "$IOS_DIR/iosApp.xcodeproj" \
-    -scheme "iosApp Prod"
+# Reset strict Xcode package constraints if set by runner
+defaults delete com.apple.dt.Xcode IDEPackageOnlyUseVersionsFromResolvedFile 2>/dev/null || true
+defaults delete com.apple.dt.Xcode IDEDisableAutomaticPackageResolution 2>/dev/null || true
 
 echo "--- ci_post_clone: Done ---"

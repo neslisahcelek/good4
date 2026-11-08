@@ -13,7 +13,7 @@ Bu durum için projede şu altyapı hazırlanmıştır:
    - Xcode Cloud runner'ında OpenJDK 17'yi otomatik olarak Adoptium üzerinden indirir ve yapılandırır.
    - Gradle için `JAVA_HOME` ve `~/.gradle/gradle.properties` ayarlarını yapar.
    - `./gradlew :composeApp:compileKotlinIosArm64` ile Kotlin derleyicisini önceden ısıtır.
-   - Swift Package Manager bağımlılıklarını resmi ikili (binary) sürümlerle hızlıca çözer.
+   - SPM paketleri için runner kısıtlarını sıfırlar; paket çözümlemesi Xcode Cloud'un kendi yerel Archive adımı tarafından yönetilir.
 2. **`ci_scripts/ci_pre_xcodebuild.sh`**:
    - Gizli olan `GoogleService-Info-Prod.plist` dosyasını Xcode Cloud ortam değişkenindeki (`GOOGLE_SERVICE_INFO_PROD_BASE64`) base64 verisinden üretir.
    - Projenin build numarasını `agvtool` ile dinamik olarak artırır.
@@ -74,14 +74,12 @@ Aşağıdaki yapılandırmayı uygulayın:
 
 ## 4. Gerekli Ortam Değişkenleri (Environment Variables)
 
-Xcode Cloud panelinde **Environment** sekmesine gidin ve aşağıdaki değişkeni ekleyin:
+Xcode Cloud panelinde **Environment** sekmesine gidin ve aşağıdaki değişkenleri ekleyin:
 
 | Anahtar (Key) | Değer (Value) | Gizli (Secret) | Açıklama |
 | :--- | :--- | :---: | :--- |
 | `GOOGLE_SERVICE_INFO_PROD_BASE64` | *`<Base64 Değeri>`* | **Evet (Check)** | Firebase Prod konfigürasyonunun base64 şifreli içeriği. |
-
-> [!NOTE]
-> Proje resmi ikili (binary) Firebase paketlerini (`abseil-cpp-binary`, `grpc-binary`) kullandığından, `FIREBASE_SOURCE_FIRESTORE` gibi ek derleme ortam değişkenlerine ihtiyaç duyulmaz.
+| `FIREBASE_SOURCE_FIRESTORE` | `1` | **Hayır** | Firestore ve C++ kütüphanelerinin kaynak kodundan derlenip dSYM üretmesini sağlar. |
 
 > [!IMPORTANT]
 > **`GOOGLE_SERVICE_INFO_PROD_BASE64` Değerini Alma:**
@@ -107,7 +105,7 @@ Eğer deponuz daha önce Xcode Cloud'a bağlanmadıysa:
 1. Workflow kaydedildikten sonra **Start Build** butonuna basarak çalıştırmayı tetikleyin.
 2. Derleme adımlarını izleyin:
    - **Clone**: Depo klonlanır.
-   - **ci_post_clone**: OpenJDK 17 kurulur, Gradle ısıtılır, SPM bağımlılıkları çözülür.
+   - **ci_post_clone**: OpenJDK 17 kurulur, Gradle ısıtılır (`compileKotlinIosArm64`).
    - **ci_pre_xcodebuild**: `GoogleService-Info-Prod.plist` üretilir ve build numarası güncellenir.
-   - **xcodebuild (Archive)**: KMP framework'ü derlenir, MapLibre sembolleri eklenir ve `.ipa` arşivi üretilir.
+   - **xcodebuild (Archive)**: SPM paketleri çözülür, KMP framework'ü derlenir, MapLibre & Firestore sembolleri eklenir ve `.ipa` arşivi üretilir.
    - **TestFlight**: Arşiv başarıyla App Store Connect / TestFlight'a aktarılır.
