@@ -26,6 +26,10 @@ fun MainViewController(): UIViewController {
     val quizPreviewStage = arguments.indexOf("-quizPreview")
         .takeIf { it >= 0 && AppEnvironment.isDebug }
         ?.let { arguments.getOrNull(it + 1) ?: "question4" }
+    // Debug-only: `-communitiesShowcase <scenario>` shows the community discovery redesign with sample data.
+    val communitiesShowcase = arguments.indexOf("-communitiesShowcase")
+        .takeIf { it >= 0 && AppEnvironment.isDebug }
+        ?.let { arguments.getOrNull(it + 1) ?: "full" }
     // Debug-only: `-campusEventsShowcase <full|empty>` shows the events box with sample data.
     val campusEventsShowcase = arguments.indexOf("-campusEventsShowcase")
         .takeIf { it >= 0 && AppEnvironment.isDebug }
@@ -40,6 +44,8 @@ fun MainViewController(): UIViewController {
             Good4Theme { QuizUiPreview(quizPreviewStage) }
         } else if (campusEventsShowcase != null) {
             Good4Theme { com.good4.campusevents.CampusEventsShowcase(campusEventsShowcase) }
+        } else if (communitiesShowcase != null) {
+            Good4Theme { com.good4.community.discover.CommunityDiscoverShowcase(communitiesShowcase) }
         } else {
             App()
         }

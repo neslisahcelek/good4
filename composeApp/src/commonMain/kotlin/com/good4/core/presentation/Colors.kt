@@ -96,3 +96,15 @@ val QuizGold = Color(0xFFFFC93C)
 val QuizSilver = Color(0xFFCBD3DA)
 val QuizBronze = Color(0xFFD9894B)
 
+
+// Logo-less communities get a stable tone from this set (picked by community id), all from the palette above.
+val CommunityAvatarPalette = listOf(
+    CommunityAccent,
+    ClosetElectronicsAccent,
+    ClosetBooksAccent,
+    ClosetOfferAccent,
+    ClosetClothingAccent,
+    DeepGreen,
+    ClosetHobbyAccent,
+    ClosetDormAccent
+)
