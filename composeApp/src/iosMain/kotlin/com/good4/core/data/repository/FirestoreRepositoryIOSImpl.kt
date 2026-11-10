@@ -567,6 +567,7 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
         "BusinessDiscountDto" to com.good4.discounts.BusinessDiscountDto.serializer(),
         "V2CommunityCouponDto" to com.good4.community.V2CommunityCouponDto.serializer(),
         "V2EventDto" to com.good4.community.V2EventDto.serializer(),
+        "CampusEventDto" to com.good4.campusevents.CampusEventDto.serializer(),
         "V2EventRegistrationDto" to com.good4.community.V2EventRegistrationDto.serializer(),
         "ProductDto" to ProductDto.serializer(),
         "BusinessDto" to BusinessDto.serializer(),
@@ -635,6 +636,18 @@ class FirestoreRepositoryIOSImpl : FirestoreRepository {
                 status = document.getOrNull("status") ?: "published"
             ) as T
             "V2EventDto" -> decodeV2EventDto(document) as T
+            "CampusEventDto" -> com.good4.campusevents.CampusEventDto(
+                title = document.getOrNull("title") ?: "",
+                communityName = document.getOrNull("communityName") ?: "",
+                location = document.getOrNull("location") ?: "",
+                description = document.getOrNull("description") ?: "",
+                startsAt = document.getEpochSeconds("startsAt") ?: 0,
+                endsAt = document.getEpochSeconds("endsAt") ?: 0,
+                categoryId = document.getOrNull("categoryId") ?: "other",
+                sourceImageUrl = document.getOrNull("sourceImageUrl") ?: "",
+                posterUrl = document.getOrNull("posterUrl") ?: "",
+                status = document.getOrNull("status") ?: "published"
+            ) as T
             "V2CampaignDto" -> com.good4.suspendedmeal.V2CampaignDto(
                 organizationId = document.getOrNull("organizationId") ?: "", title = document.getOrNull("title") ?: "",
                 description = document.getOrNull("description") ?: "", startsAt = document.getEpochSeconds("startsAt") ?: 0,

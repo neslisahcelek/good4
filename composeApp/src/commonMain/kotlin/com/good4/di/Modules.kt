@@ -84,6 +84,7 @@ val commonModule = module {
     single { com.good4.campuscloset.CampusClosetRepository(get<AuthRepository>(), get()) }
     single { com.good4.social.SocialBadge() }
     single { com.good4.social.SocialRepository(get<AuthRepository>(), get()) }
+    single<com.good4.campusevents.CampusEventsDataSource> { com.good4.campusevents.CampusEventsRepository(get()) }
     single<com.good4.campuscloset.CampusClosetFeedDataSource> { get<com.good4.campuscloset.CampusClosetRepository>() }
     single { com.good4.quiz.data.QuizRepository() }
 
@@ -189,6 +190,7 @@ val commonModule = module {
     viewModel { com.good4.campuscloset.CampusClosetFavoritesViewModel(get()) }
     viewModel { com.good4.campuscloset.CampusClosetBlockedViewModel(get()) }
     viewModel { com.good4.social.SocialHomeViewModel(get<com.good4.social.SocialRepository>(), analytics = get()) }
+    viewModel { com.good4.campusevents.CampusEventsViewModel(get()) }
     viewModel { com.good4.social.SocialCreateViewModel(get(), analytics = get()) }
     viewModel { com.good4.social.SocialActivityViewModel(get(), analytics = get()) }
     viewModel { com.good4.social.SocialRequestsViewModel(get(), analytics = get()) }

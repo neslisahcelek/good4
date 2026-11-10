@@ -599,3 +599,26 @@ test('live quiz security rules allow joining by session id, hide correctIndex, a
   await assertFails(getDoc(doc(hostDb, 'quizReports/s1')));
   await assertFails(getDocs(collection(hostDb, 'organizations/comm-1/quizzes')));
 });
+
+test('campus events are readable when published, hidden when removed, and never client-writable', async () => {
+  await seed('users/student-1', { role: 'student', status: 'active' });
+  await seed('users/disabled-1', { role: 'student', status: 'disabled' });
+  await seed('users/admin-1', { role: 'good4Admin', status: 'active' });
+  await seed('campusEvents/akdeniz-etkinlik-1', { title: 'Kampüste Yoga', status: 'published', endsAt: new Date('2099-01-01') });
+  await seed('campusEvents/akdeniz-etkinlik-2', { title: 'Kaldırılan', status: 'removed', endsAt: new Date('2099-01-01') });
+
+  const studentDb = testEnv.authenticatedContext('student-1').firestore();
+  const adminDb = testEnv.authenticatedContext('admin-1').firestore();
+
+  await assertSucceeds(getDoc(doc(studentDb, 'campusEvents/akdeniz-etkinlik-1')));
+  await assertSucceeds(getDocs(query(collection(studentDb, 'campusEvents'), where('status', '==', 'published'))));
+  await assertFails(getDoc(doc(studentDb, 'campusEvents/akdeniz-etkinlik-2')));
+  await assertFails(getDocs(collection(studentDb, 'campusEvents')));
+  await assertSucceeds(getDoc(doc(adminDb, 'campusEvents/akdeniz-etkinlik-2')));
+  await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'campusEvents/akdeniz-etkinlik-1')));
+  await assertFails(getDoc(doc(testEnv.authenticatedContext('disabled-1').firestore(), 'campusEvents/akdeniz-etkinlik-1')));
+
+  await assertFails(setDoc(doc(studentDb, 'campusEvents/new'), { title: 'x', status: 'published' }));
+  await assertFails(updateDoc(doc(studentDb, 'campusEvents/akdeniz-etkinlik-1'), { posterUrl: 'https://evil' }));
+  await assertFails(updateDoc(doc(adminDb, 'campusEvents/akdeniz-etkinlik-1'), { posterUrl: 'https://x' }));
+});

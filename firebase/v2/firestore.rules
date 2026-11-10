@@ -245,6 +245,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Imported campus events (etkinlik.akdeniz.edu.tr). Written only by the import job and admin callables.
+    match /campusEvents/{eventId} {
+      allow get, list: if (currentUserIsActive() && resource.data.status == 'published')
+        || isGood4Admin();
+      allow create, update, delete: if false;
+    }
+
     match /quizActive/{orgId} {
       allow read, write: if false;
     }

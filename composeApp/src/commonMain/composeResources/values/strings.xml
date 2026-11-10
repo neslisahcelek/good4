@@ -1585,4 +1585,18 @@
     <string name="quiz_manager_manage_web_button">Web Panelinde Yönet</string>
     <string name="community_manager_web_panel_action">Topluluk Web Paneli</string>
     <string name="community_manager_web_panel_profile_button">Topluluk Web Panelini Aç</string>
+    <!-- Kampüs etkinlikleri (etkinlik.akdeniz.edu.tr) -->
+    <string name="campus_events_title">Etkinlikler</string>
+    <string name="campus_events_subtitle">Kampüsteki topluluk etkinlikleri</string>
+    <string name="campus_events_filter_all">Tümü</string>
+    <string name="campus_events_count">%1$d etkinlik</string>
+    <string name="campus_events_empty_title">Şu an yaklaşan etkinlik yok</string>
+    <string name="campus_events_empty_body">Topluluklar yeni etkinlik ekledikçe burada göreceksin.</string>
+    <string name="campus_events_filter_empty">Bu kategoride yaklaşan etkinlik yok.</string>
+    <string name="campus_events_about">Etkinlik hakkında</string>
+    <string name="campus_events_organizer">Düzenleyen</string>
+    <string name="campus_events_poster">%1$s afişi</string>
+    <string name="campus_events_time_range">%1$s – %2$s</string>
+    <string name="campus_events_load_error">Etkinlikler yüklenemedi. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="campus_events_retry">Tekrar dene</string>
 </resources>

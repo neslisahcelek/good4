@@ -138,6 +138,7 @@ private fun defaultHomeShortcuts(): List<HomeShortcut> = HomeShortcut.entries.fi
         && (it != HomeShortcut.DISCOUNTS || com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2)
         && (it != HomeShortcut.CAMPUS_CLOSET || config.ReleaseFeatures.campusCloset)
         && (it != HomeShortcut.SOCIAL_ACTIVITIES || config.ReleaseFeatures.socialActivities)
+        && (it != HomeShortcut.CAMPUS_EVENTS || config.ReleaseFeatures.campusEvents)
 }
 
 @Composable
@@ -156,6 +157,7 @@ fun ProductListScreenRoot(
     onDiscountsClick: () -> Unit = {},
     onCampusClosetClick: () -> Unit = {},
     onSocialClick: () -> Unit = {},
+    onCampusEventsClick: () -> Unit = {},
     onDailyMenuClick: (DailyMeal) -> Unit = {},
     homeShortcuts: List<HomeShortcut> = defaultHomeShortcuts(),
     onMenuShortcutClick: (HomeShortcut) -> Unit = {},
@@ -231,6 +233,7 @@ fun ProductListScreenRoot(
         onCampusClosetClick = onCampusClosetClick,
         campusClosetUnread = closetUnread,
         onSocialClick = onSocialClick,
+        onCampusEventsClick = onCampusEventsClick,
         socialCount = socialCount,
         onDailyMenuClick = onDailyMenuClick,
         homeShortcuts = homeShortcuts,
@@ -261,6 +264,7 @@ fun ProductListScreen(
     onCampusClosetClick: () -> Unit = {},
     campusClosetUnread: Int = 0,
     onSocialClick: () -> Unit = {},
+    onCampusEventsClick: () -> Unit = {},
     socialCount: Int = 0,
     onDailyMenuClick: (DailyMeal) -> Unit = {},
     homeShortcuts: List<HomeShortcut> = defaultHomeShortcuts(),
@@ -344,6 +348,7 @@ fun ProductListScreen(
                                 onCampusClosetClick = onCampusClosetClick,
                                 campusClosetUnread = campusClosetUnread,
                                 onSocialClick = onSocialClick,
+                                onCampusEventsClick = onCampusEventsClick,
                                 socialCount = socialCount,
                                 shortcuts = homeShortcuts,
                                 onMenuShortcutClick = onMenuShortcutClick,
@@ -780,6 +785,7 @@ private fun HomeQuickActions(
     onCampusClosetClick: () -> Unit,
     campusClosetUnread: Int,
     onSocialClick: () -> Unit,
+    onCampusEventsClick: () -> Unit,
     socialCount: Int,
     shortcuts: List<HomeShortcut>,
     onMenuShortcutClick: (HomeShortcut) -> Unit,
@@ -802,6 +808,7 @@ private fun HomeQuickActions(
                 HomeShortcut.DISCOUNTS -> onDiscountsClick
                 HomeShortcut.CAMPUS_CLOSET -> onCampusClosetClick
                 HomeShortcut.SOCIAL_ACTIVITIES -> onSocialClick
+                HomeShortcut.CAMPUS_EVENTS -> onCampusEventsClick
                 else -> ({ onMenuShortcutClick(shortcut) })
             }
             HomeQuickActionCard(

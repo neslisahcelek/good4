@@ -109,6 +109,7 @@ fun Good4NavGraph(
             dest.hasRoute<Route.CampusClosetBlocked>() -> AnalyticsScreen.CAMPUS_CLOSET_BLOCKED
             dest.hasRoute<Route.CampusClosetChat>() -> AnalyticsScreen.CAMPUS_CLOSET_CHAT
             dest.hasRoute<Route.Social>() -> AnalyticsScreen.SOCIAL
+            dest.hasRoute<Route.CampusEvents>() -> AnalyticsScreen.CAMPUS_EVENTS
             dest.hasRoute<Route.SocialCreate>() -> AnalyticsScreen.SOCIAL_CREATE
             dest.hasRoute<Route.SocialActivity>() -> AnalyticsScreen.SOCIAL_ACTIVITY
             dest.hasRoute<Route.SocialRequests>() -> AnalyticsScreen.SOCIAL_REQUESTS
@@ -376,6 +377,9 @@ fun Good4NavGraph(
                 onNavigateToSocial = {
                     navController.navigate(Route.Social)
                 },
+                onNavigateToCampusEvents = {
+                    navController.navigate(Route.CampusEvents)
+                },
                 onNavigateToClassSchedule = {
                     navController.navigate(Route.ClassSchedule)
                 },
@@ -479,6 +483,13 @@ fun Good4NavGraph(
                 conversationId = route.conversationId,
                 onBack = { navController.popBackStack() },
                 onOpenListing = { navController.navigate(Route.CampusClosetListing(it)) }
+            )
+        }
+
+        composable<Route.CampusEvents> {
+            com.good4.campusevents.CampusEventsRoute(
+                viewModel = koinViewModel(),
+                onBack = { navController.popBackStack() }
             )
         }
 

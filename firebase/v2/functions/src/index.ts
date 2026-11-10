@@ -69,6 +69,10 @@ import {
 } from "./communityPortal.js";
 import { recordEventAttendanceService, setEventRegistrationService } from "./events.js";
 import { uploadCommunityEventImageService } from "./communityImages.js";
+import {
+  clearCampusEventPosterService, importAkdenizEventsService, listCampusEventsForAdminService,
+  setCampusEventPosterService, type PosterStorage,
+} from "./akdenizEventsImport.js";
 import { getFollowingCommunityIdsService, setCommunityFollowingService } from "./communityFollowing.js";
 import {
   getMyCommunityApplicationService,
@@ -949,6 +953,116 @@ export const importSksDiningMenu = onSchedule({
     },
     recognize: recognizeMenuImage,
   });
+});
+
+/** Shrinks any poster to a phone-sized WebP so lists stay fast; the source can be several megabytes. */
+async function normalizePoster(bytes: Buffer, maxSide: number): Promise<Buffer> {
+  const { default: sharp } = await import("sharp");
+  let output = await sharp(bytes, { failOn: "error", limitInputPixels: 40_000_000 }).rotate()
+    .resize(maxSide, maxSide, { fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+  if (output.length > 400 * 1024) output = await sharp(output).webp({ quality: 55 }).toBuffer();
+  return output;
+}
+
+async function storePublicImage(objectName: string, bytes: Buffer): Promise<string> {
+  const downloadToken = randomUUID();
+  await storageBucket.file(objectName).save(bytes, {
+    resumable: false,
+    metadata: {
+      contentType: "image/webp",
+      cacheControl: "public,max-age=31536000,immutable",
+      metadata: { firebaseStorageDownloadTokens: downloadToken },
+    },
+  });
+  // Local emulator runs serve files from the storage emulator so the panel and simulators can show them.
+  const origin = process.env.FIREBASE_STORAGE_EMULATOR_HOST
+    ? `http://${process.env.FIREBASE_STORAGE_EMULATOR_HOST}`
+    : "https://firebasestorage.googleapis.com";
+  return `${origin}/v0/b/${storageBucket.name}/o/${encodeURIComponent(objectName)}?alt=media&token=${downloadToken}`;
+}
+
+const AKDENIZ_EVENTS_HOST = "etkinlik.akdeniz.edu.tr";
+
+async function fetchAkdenizText(url: string): Promise<string> {
+  if (new URL(url).host !== AKDENIZ_EVENTS_HOST) throw new Error("AKDENIZ_EVENTS_HOST_INVALID");
+  // Redirects are refused so the host check above cannot be sidestepped.
+  const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(20_000), headers: { "User-Agent": "Good4-EventImport/1.0" } });
+  if (!response.ok) throw new Error(`AKDENIZ_EVENTS_${response.status}`);
+  return response.text();
+}
+
+async function runAkdenizEventsImport() {
+  return importAkdenizEventsService(db, {
+    fetchText: fetchAkdenizText,
+    copySourceImage: async (sourceUrl, eventId) => {
+      // Only the university's own uploads are fetched, and never more than 15 MB.
+      if (new URL(sourceUrl).host !== AKDENIZ_EVENTS_HOST) throw new Error("AKDENIZ_IMAGE_HOST_INVALID");
+      const maxBytes = 15 * 1024 * 1024;
+      const response = await fetch(sourceUrl, { redirect: "error", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Good4-EventImport/1.0" } });
+      if (!response.ok) throw new Error(`AKDENIZ_IMAGE_${response.status}`);
+      if (Number(response.headers.get("content-length") ?? 0) > maxBytes) throw new Error("AKDENIZ_IMAGE_TOO_LARGE");
+      const image = Buffer.from(await response.arrayBuffer());
+      if (image.length > maxBytes) throw new Error("AKDENIZ_IMAGE_TOO_LARGE");
+      return storePublicImage(`campus-events/source/${eventId}-${randomUUID()}.webp`, await normalizePoster(image, 1080));
+    },
+  });
+}
+
+const campusEventPosterStorage: PosterStorage = {
+  save: async (eventId, bytes) => {
+    let normalized: Buffer;
+    try {
+      normalized = await normalizePoster(bytes, 1440);
+    } catch {
+      throw new HttpsError("invalid-argument", "CAMPUS_EVENT_POSTER_CONTENT_INVALID");
+    }
+    const objectName = `campus-events/posters/${eventId}-${randomUUID()}.webp`;
+    return { url: await storePublicImage(objectName, normalized), objectName };
+  },
+  remove: async (objectName) => {
+    if (objectName.startsWith("campus-events/")) await storageBucket.file(objectName).delete({ ignoreNotFound: true });
+  },
+};
+
+// Student-community events published on etkinlik.akdeniz.edu.tr, refreshed through the day.
+export const importAkdenizEvents = onSchedule({
+  schedule: "15 7-23/3 * * *",
+  maxInstances: 1,
+  timeZone: "Europe/Istanbul",
+  region: "europe-west1",
+  memory: "1GiB",
+  timeoutSeconds: 300,
+  retryCount: 1,
+}, async () => {
+  if (!productionJobsEnabled()) return;
+  if (!(await optionalJobsAllowed(db))) return;
+  await runAkdenizEventsImport();
+});
+
+export const runCampusEventsImport = onCall({ ...callableOptions, memory: "1GiB", timeoutSeconds: 300 }, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await requireGood4Admin(db, uid);
+  await limitRequest(uid, "campusEventsImport", 3);
+  return runAkdenizEventsImport();
+});
+
+export const listCampusEvents = onCall(readOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "panel", 30);
+  return listCampusEventsForAdminService(db, uid);
+});
+
+export const setCampusEventPoster = onCall({ ...callableOptions, memory: "512MiB", timeoutSeconds: 60 }, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await requireGood4Admin(db, uid);
+  await limitRequest(uid, "campusEventPoster", 20);
+  return setCampusEventPosterService(db, uid, request.data ?? {}, campusEventPosterStorage);
+});
+
+export const clearCampusEventPoster = onCall(callableOptions, async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  await limitRequest(uid, "campusEventPoster", 20);
+  return clearCampusEventPosterService(db, uid, request.data ?? {}, campusEventPosterStorage);
 });
 
 // Push transport is intentionally disabled until NOTIFICATIONS_ENABLED=true is deployed.

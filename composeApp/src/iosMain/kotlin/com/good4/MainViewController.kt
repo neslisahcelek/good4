@@ -26,6 +26,10 @@ fun MainViewController(): UIViewController {
     val quizPreviewStage = arguments.indexOf("-quizPreview")
         .takeIf { it >= 0 && AppEnvironment.isDebug }
         ?.let { arguments.getOrNull(it + 1) ?: "question4" }
+    // Debug-only: `-campusEventsShowcase <full|empty>` shows the events box with sample data.
+    val campusEventsShowcase = arguments.indexOf("-campusEventsShowcase")
+        .takeIf { it >= 0 && AppEnvironment.isDebug }
+        ?.let { arguments.getOrNull(it + 1) ?: "full" }
 
     val controller = ComposeUIViewController(
         configure = {
@@ -34,6 +38,8 @@ fun MainViewController(): UIViewController {
     ) {
         if (quizPreviewStage != null) {
             Good4Theme { QuizUiPreview(quizPreviewStage) }
+        } else if (campusEventsShowcase != null) {
+            Good4Theme { com.good4.campusevents.CampusEventsShowcase(campusEventsShowcase) }
         } else {
             App()
         }

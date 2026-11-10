@@ -37,6 +37,7 @@ enum class AnalyticsScreen(val feature: String, val value: String) {
     CAMPUS_CLOSET_BLOCKED("campus_closet", "closet_blocked"),
     CAMPUS_CLOSET_CHAT("campus_closet", "closet_chat"),
     SOCIAL("social", "social_feed"),
+    CAMPUS_EVENTS("campus_events", "campus_events_feed"),
     SOCIAL_CREATE("social", "social_create"),
     SOCIAL_ACTIVITY("social", "social_activity"),
     SOCIAL_REQUESTS("social", "social_requests"),
@@ -59,6 +60,7 @@ enum class AnalyticsScreen(val feature: String, val value: String) {
 /** Only catalogued values can cross the analytics boundary. Never accept user text or IDs. */
 enum class AnalyticsTarget(val value: String) {
     COMMUNITIES("communities"), CLASS_SCHEDULE("class_schedule"), SOCIAL_ACTIVITIES("social_activities"),
+    CAMPUS_EVENTS("campus_events"),
     CAMPUS_CLOSET("campus_closet"), CAMPUS_MAP("campus_map"), ACADEMIC_CALENDAR("academic_calendar"),
     SUSPENDED_MEALS("suspended_meals"), TOP_UP("top_up"), TENNIS("tennis"),
     PHONE_NUMBERS("phone_numbers"), FEEDBACK("feedback"), ALL("all"),
@@ -72,6 +74,7 @@ enum class AnalyticsTarget(val value: String) {
         fun shortcut(id: String): AnalyticsTarget? = when (id) {
             "classSchedule" -> CLASS_SCHEDULE
             "socialActivities" -> SOCIAL_ACTIVITIES
+            "campusEvents" -> CAMPUS_EVENTS
             "campusCloset" -> CAMPUS_CLOSET
             "campusMap" -> CAMPUS_MAP
             "academicCalendar" -> ACADEMIC_CALENDAR

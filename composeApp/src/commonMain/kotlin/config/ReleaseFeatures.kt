@@ -25,6 +25,9 @@ object ReleaseFeatures {
     /** Sosyal etkinlikler use the V2 social callables; the server keeps them off until app_config enables them. */
     val socialActivities: Boolean get() = isV2
 
+    /** Kampüs etkinlikleri read the imported `campusEvents` collection, which exists only on V2 projects. */
+    val campusEvents: Boolean get() = isV2
+
     /** In-app staff panels still use legacy collections; V2 staff are sent to the web panel. */
     val inAppStaffPanels: Boolean get() = !isV2
 

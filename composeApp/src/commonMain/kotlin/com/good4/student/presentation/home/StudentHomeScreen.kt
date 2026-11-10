@@ -76,6 +76,7 @@ fun StudentHomeScreenRoot(
     onNavigateToDiscounts: () -> Unit = {},
     onNavigateToCampusCloset: () -> Unit = {},
     onNavigateToSocial: () -> Unit = {},
+    onNavigateToCampusEvents: () -> Unit = {},
     onNavigateToEditHome: (Boolean) -> Unit = {},
     onNavigateToQuizHost: (String) -> Unit = {},
     onNavigateToQuizPlay: (String) -> Unit = {}
@@ -248,6 +249,7 @@ fun StudentHomeScreenRoot(
                         onDiscountsClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.shortcut("discounts")); onNavigateToDiscounts() },
                         onCampusClosetClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_CLOSET); onNavigateToCampusCloset() },
                         onSocialClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.SOCIAL_ACTIVITIES); onNavigateToSocial() },
+                        onCampusEventsClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_EVENTS); onNavigateToCampusEvents() },
                         onCampusMapClick = { analytics.click(Interaction.HOME_SHORTCUT, AnalyticsTarget.CAMPUS_MAP); selectedItemIndex = 3 },
                         onDailyMenuClick = { meal ->
                             analytics.click(Interaction.DINING_SELECT, AnalyticsTarget.valueOf(meal.name))

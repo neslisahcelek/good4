@@ -47,7 +47,7 @@ class HomeLayoutViewModel(
 
     private fun stateFor(uid: String?): HomeLayoutState {
         if (uid.isNullOrBlank()) return HomeLayoutState()
-        val shortcuts = availableHomeShortcuts(UserRole.STUDENT, ReleaseFeatures.suspendedMeals || com.good4.eduverification.CampusAccessSession.status(uid)?.testAvailable == true, ReleaseFeatures.campusCloset, ReleaseFeatures.socialActivities)
+        val shortcuts = availableHomeShortcuts(UserRole.STUDENT, ReleaseFeatures.suspendedMeals || com.good4.eduverification.CampusAccessSession.status(uid)?.testAvailable == true, ReleaseFeatures.campusCloset, ReleaseFeatures.socialActivities, ReleaseFeatures.campusEvents)
         return HomeLayoutState(uid, shortcuts, store.read(uid, shortcuts.map { it.definition }))
     }
 

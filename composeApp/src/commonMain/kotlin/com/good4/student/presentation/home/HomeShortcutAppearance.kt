@@ -3,6 +3,7 @@ package com.good4.student.presentation.home
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Groups
@@ -21,10 +22,12 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
+import com.good4.core.presentation.DeepGreen
 import com.good4.core.presentation.PrimaryGreen
 import com.good4.dining.presentation.AKDENIZ_BALANCE_URL
 import com.good4.student.home.HomeShortcut
 import good4.composeapp.generated.resources.Res
+import good4.composeapp.generated.resources.campus_events_title
 import good4.composeapp.generated.resources.social_title
 import org.jetbrains.compose.resources.stringResource
 
@@ -33,6 +36,7 @@ data class HomeShortcutAppearance(val title: String, val icon: ImageVector, val 
 @Composable
 fun HomeShortcut.appearance(communityManager: Boolean = false): HomeShortcutAppearance = when (this) {
     HomeShortcut.COMMUNITIES -> HomeShortcutAppearance(if (communityManager) "Topluluğu Yönet" else "Topluluklar", Icons.Outlined.Groups, Color(0xFF75D9BE))
+    HomeShortcut.CAMPUS_EVENTS -> HomeShortcutAppearance(stringResource(Res.string.campus_events_title), Icons.Outlined.EventAvailable, DeepGreen)
     HomeShortcut.CLASS_SCHEDULE -> HomeShortcutAppearance("Ders Programı", Icons.AutoMirrored.Outlined.MenuBook, Color(0xFF4B9FD1))
     HomeShortcut.DISCOUNTS -> HomeShortcutAppearance(stringResource(Res.string.discount_title), Icons.Outlined.LocalOffer, PrimaryGreen)
     HomeShortcut.CAMPUS_MAP -> HomeShortcutAppearance("Kampüs Haritası", Icons.Outlined.Map, PrimaryGreen)

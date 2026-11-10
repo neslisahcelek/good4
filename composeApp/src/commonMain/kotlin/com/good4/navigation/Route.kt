@@ -83,6 +83,9 @@ sealed class Route {
     data object Social : Route()
 
     @Serializable
+    data object CampusEvents : Route()
+
+    @Serializable
     data object SocialCreate : Route()
 
     @Serializable

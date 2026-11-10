@@ -21,6 +21,7 @@ import { NotificationAdmin } from "./NotificationAdmin";
 import { auth, functions, getFirestoreDb } from "./firebase";
 import { CampusClosetAdmin } from "./components/CampusClosetAdmin";
 import { SocialActivitiesAdmin } from "./components/SocialActivitiesAdmin";
+import { CampusEventsAdmin } from "./components/CampusEventsAdmin";
 import { socialText } from "./socialStrings";
 import { EVENT_CATEGORIES } from "../../functions/src/eventCategories";
 import { parseKykMenuText, type KykMenuDay } from "../../functions/src/kykMenuParser";
@@ -2087,7 +2088,7 @@ function CommunityEntryCard({
   );
 }
 
-type AdminTab = "discounts" | "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
+type AdminTab = "discounts" | "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "events" | "feedback" | "businesses" | "communities" | "market" | "social" | "audit";
 
 // "Load more" buttons belong to the tab that lists those records.
 const LOAD_MORE_TABS: Record<string, AdminTab[]> = {
@@ -3557,6 +3558,7 @@ function AdminPanel({ user, context }: { user: User; context: Extract<PortalCont
 
         {!loading && data && tab === "market" && <CampusClosetAdmin onPendingCountChange={setMarketPendingCount} />}
         {!loading && data && tab === "social" && <SocialActivitiesAdmin onPendingCountChange={setSocialPendingCount} />}
+        {!loading && data && tab === "events" && <CampusEventsAdmin />}
 
         {!loading && data && tab === "audit" && (
           <section className="admin-section" aria-labelledby="audit-title">

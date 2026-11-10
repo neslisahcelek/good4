@@ -297,7 +297,7 @@ export function BusinessAppShell({
 }
 
 export type AdminSection = "discounts" | "home" | "notifications" | "coupons" | "menu" | "kyk" | "suspended" | "ads" | "calendar" | "feedback"
-  | "businesses" | "communities" | "market" | "social" | "audit";
+  | "businesses" | "communities" | "market" | "social" | "audit" | "events";
 
 export function AdminAppShell({
   displayName,
@@ -341,6 +341,7 @@ export function AdminAppShell({
           { id: "kyk", icon: "dorm", label: "KYK Menüsü" },
           { id: "suspended", icon: "heart", label: "Askıda Yemek" },
           { id: "calendar", icon: "calendar", label: "Akademik Takvim" },
+          { id: "events", icon: "spark", label: "Kampüs Etkinlikleri" },
           { id: "ads", icon: "megaphone", label: "Ana Sayfa Reklamı" },
         ] },
         { label: "Kurumlar", items: [

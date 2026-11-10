@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 
 enum class HomeShortcut(val id: String, val defaultVisible: Boolean) {
     COMMUNITIES("communities", true),
+    CAMPUS_EVENTS("campusEvents", true),
     CLASS_SCHEDULE("classSchedule", true),
     SOCIAL_ACTIVITIES("socialActivities", true),
     CAMPUS_CLOSET("campusCloset", true),
@@ -30,7 +31,8 @@ fun availableHomeShortcuts(
     role: UserRole,
     suspendedMealsEnabled: Boolean,
     campusClosetEnabled: Boolean = false,
-    socialActivitiesEnabled: Boolean = false
+    socialActivitiesEnabled: Boolean = false,
+    campusEventsEnabled: Boolean = false
 ): List<HomeShortcut> =
     if (role != UserRole.STUDENT) emptyList()
     else HomeShortcut.entries.filter {
@@ -38,6 +40,7 @@ fun availableHomeShortcuts(
             && (it != HomeShortcut.DISCOUNTS || com.good4.core.util.AppEnvironment.firebaseBackend == com.good4.core.util.FirebaseBackend.V2)
             && (it != HomeShortcut.CAMPUS_CLOSET || campusClosetEnabled)
             && (it != HomeShortcut.SOCIAL_ACTIVITIES || socialActivitiesEnabled)
+            && (it != HomeShortcut.CAMPUS_EVENTS || campusEventsEnabled)
     }
 
 @Serializable
