@@ -105,7 +105,7 @@ fun AnimatedQuizCharacter(
         pose = pose,
         framing = framing,
         blink = blinkPhase > 0.5f,
-        wave = t,
+        wave = if (pose == CharacterPose.WAVE) t else 0f,
         modifier = modifier
             .semantics { contentDescription = name }
             .graphicsLayer {

@@ -222,7 +222,7 @@ export function CommunityAppShell({
   userEmail,
   activeSection,
   counts,
-  showQuizzes = false,
+  showQuizzes = true,
   onNavigate,
   onLogout,
   children,

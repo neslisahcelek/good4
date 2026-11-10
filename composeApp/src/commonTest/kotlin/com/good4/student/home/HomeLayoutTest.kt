@@ -17,8 +17,8 @@ class HomeLayoutTest {
         override fun write(uid: String, value: String) { values[uid] = value }
     }
 
-    @Test fun defaultOrderPlacesSocialThirdAndCampusClosetFourth() {
-        assertEquals(listOf("communities", "classSchedule", "socialActivities", "campusCloset", "discounts", "campusMap", "academicCalendar", "suspendedMeals"), defaults.visible)
+    @Test fun defaultOrderPlacesEventsSecondSocialFourthAndCampusClosetFifth() {
+        assertEquals(listOf("communities", "campusEvents", "classSchedule", "socialActivities", "campusCloset", "discounts", "campusMap", "academicCalendar", "suspendedMeals"), defaults.visible)
         assertEquals(listOf("topUp", "tennis", "phoneNumbers", "feedback"), defaults.hidden)
     }
 
@@ -96,7 +96,7 @@ class HomeLayoutTest {
 
     @Test fun movesWithinAndAcrossSectionsUseDestinationIndices() {
         val moved = defaults.move("communities", true, 3)!!
-        assertEquals(listOf("classSchedule", "socialActivities", "campusCloset", "communities", "discounts", "campusMap", "academicCalendar", "suspendedMeals"), moved.visible)
+        assertEquals(listOf("campusEvents", "classSchedule", "socialActivities", "communities", "campusCloset", "discounts", "campusMap", "academicCalendar", "suspendedMeals"), moved.visible)
         val hidden = moved.move("communities", false, 2)!!
         assertEquals(listOf("topUp", "tennis", "communities", "phoneNumbers", "feedback"), hidden.hidden)
         assertEquals("communities", hidden.move("communities", true, 0)!!.visible.first())

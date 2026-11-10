@@ -22,7 +22,7 @@ internal fun parseQuizJoinLink(raw: String): String? {
         .split('&')
         .firstNotNullOfOrNull { part ->
             val key = part.substringBefore('=')
-            if (key == "session" || key == "sessionId") part.substringAfter('=', "") else null
+            if (key == "session" || key == "sessionId") part.substringAfter('=', "").takeIf { it.isNotEmpty() } else null
         }
     val sessionId = fromQuery ?: path.takeIf { it.isNotEmpty() }
     return sessionId?.takeIf { QuizSessionIdPattern.matches(it) }

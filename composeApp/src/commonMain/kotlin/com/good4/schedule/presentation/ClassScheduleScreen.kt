@@ -595,7 +595,7 @@ private fun LocalDate.toScheduleDay(): ScheduleDay? = when (dayOfWeek) {
     DayOfWeek.WEDNESDAY -> ScheduleDay.WEDNESDAY
     DayOfWeek.THURSDAY -> ScheduleDay.THURSDAY
     DayOfWeek.FRIDAY -> ScheduleDay.FRIDAY
-    DayOfWeek.SATURDAY, DayOfWeek.SUNDAY -> null
+    else -> null
 }
 
 private fun DayOfWeek.shortLabel(): String = when (this) {

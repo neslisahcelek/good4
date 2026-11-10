@@ -177,15 +177,16 @@ test("saveQuizService saves draft and ready quizzes, updates questions, and limi
     questions: [],
   }), /QUIZ_MANAGER_REQUIRED/);
 
-  // Listed (public) community is rejected
+  // Listed (public) community is allowed to save a quiz
   await database.doc("organizations/comm-listed").set({ type: "community", status: "active", listed: true });
   await database.doc("organizations/comm-listed/members/manager-1").set({ role: "manager", status: "active" });
-  await assert.rejects(saveQuizService(database, "manager-1", {
+  const listedResult = await saveQuizService(database, "manager-1", {
     organizationId: "comm-listed",
     title: "Listed Quiz",
     status: "draft",
     questions: [],
-  }), /QUIZ_RESTRICTED_TO_TEST_COMMUNITIES/);
+  }, nowMillis);
+  assert.ok(listedResult.quizId);
 
   // Updating existing quiz to 1 question removes the old 2nd question doc
   const updated = await saveQuizService(database, "manager-1", {
