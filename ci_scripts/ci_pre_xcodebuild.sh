@@ -43,10 +43,10 @@ fi
 
 # ── 3. Auto-increment build number in Xcode Cloud ──────────────────────────────
 if [[ -n "${CI_BUILD_NUMBER:-}" ]]; then
-    # Dynamically read base build number from project (fallback to 20 if unreadable)
+    # Dynamically read base build number from project (fallback to 21 if unreadable)
     BASE_VERSION=$(cd "$IOS_DIR" && xcrun agvtool what-version -terse 2>/dev/null | tr -dc '0-9')
     if [ -z "$BASE_VERSION" ]; then
-        BASE_VERSION=20
+        BASE_VERSION=21
     fi
     NEW_BUILD_NUM=$((BASE_VERSION + CI_BUILD_NUMBER))
     echo "Updating build number to $NEW_BUILD_NUM (base $BASE_VERSION + CI_BUILD_NUMBER $CI_BUILD_NUMBER)..."
