@@ -33,6 +33,7 @@ Aşağıdaki bölümler genel “sürüm öncesi / yayına hazır mı” denetim
 - Android `composeApp/src/prod/google-services.json` ve varsa kök fallback'in project/package eşleşmesini doğrula. Google Services plugin'in seçtiği matching client'ta `client_type: 3` Web OAuth ID ve üretilen `default_web_client_id` bulunmalı. ID'yi uydurma veya eski V1 client'ını kullanma.
 - `composeApp/src/main/res/raw/keep.xml` içindeki `default_web_client_id` koruması ile `composeApp/proguard-rules.pro` Credential Manager / googleid keep kurallarını denetle. Debug Google girişinin çalışması küçültülmüş release'in çalıştığını kanıtlamaz.
 - iOS `GoogleService-Info-Prod.plist`, build phase'in pakete kopyaladığı plist, bundle ID ve URL scheme/reversed client ID eşleşmesini kontrol et. İzin açıklamaları, entitlements, Push ve App Attest capability/provisioning uyumunu doğrula.
+- iOS `Package.resolved` dosyasını denetle: dSYM sembol eksikliğini önlemek için Firestore kaynak paketleri (`abseil-cpp-SwiftPM`, `grpc-ios`, `boringSSL-SwiftPM`) kilitli olmalıdır; yerel Xcode açılışının ürettiği ikili (`abseil-cpp-binary`, `grpc-binary`) pinleri prod yayına karışmamalıdır.
 
 ## Derleme, test ve yayın paketi
 

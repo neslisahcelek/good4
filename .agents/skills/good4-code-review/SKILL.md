@@ -56,12 +56,15 @@ git ls-files --others --exclude-standard
 - `Promise.all` erken reject'i paralel yüklemeler sürerken cleanup başlatıyor mu? Gerekirse `allSettled` ile hepsinin bitişini bekle ve cleanup başarısızlığını kalıcılaştır.
 - Cleanup sayfalaması silinen ilk sayfa yüzünden kilitleniyor mu? Sorgu snapshot'ı transaction'da yeniden doğrulanıyor mu? Kota oluşturma/yenileme/yeniden yayınlama yollarının hepsinde transaction ile korunuyor mu?
 - Callable export adı birden çok özelliğin API'siyse payload açık ve doğrulanmış mı; export çakışması var mı?
+- **Canlı backend bağımlılığı ve deploy önkoşulu**: Diff'te veya incelenen özellikte yeni bir Firestore koleksiyonu, güvenlik kuralı (`firestore.rules`), bileşik indeks (`firestore.indexes.json`) veya Cloud Function/Callable varsa; mobil istemcinin çalışması için backend deploy'unun zorunlu bir önkoşul olduğunu denetle. İnceleme raporunun başına **"Canlı Dağıtım / Backend Bağımlılıkları"** başlığı aç; hangi kuralların, hangi indekslerin (`READY` durumuna geçmesi gereken) ve hangi fonksiyonların deploy edilmesi gerektiğini açıkça listele. "Deploy edilmediği takdirde mobil istemci `PERMISSION_DENIED` veya eksik indeks (`FAILED_PRECONDITION`) hatasıyla karşılaşacaktır" uyarısını raporla.
 
 ### Mobil / KMP
 
 - `commonMain`'de Android API/import, `Dispatchers.Main/IO`, Android lifecycle artifact'ı var mı? Lifecycle-aware collection ve platform actual'ları tamam mı?
 - iOS/Android `platformModule` gerçek Auth/Firestore impl bağlıyor mu? iOS Koin, Compose lambda dışında mı? Firebase App Check, servisler kurulmadan önce mi?
 - Firestore kullanan yeni DTO iOS serializer map ve timestamp/nested decoder'ına eklendi mi?
+- **Xcode SPM ve `Package.resolved` kontrolü**: `Package.resolved` diff'inde yalnızca `abseil-cpp-SwiftPM` -> `abseil-cpp-binary` ve `grpc-ios` -> `grpc-binary` değişimi (ve `boringssl` silinmesi) görülüyorsa, bu bir geliştirme kodu değildir; yerel Xcode'un `FIREBASE_SOURCE_FIRESTORE=1` ortam değişkeni olmadan açılmasıyla SPM'in otomatik ürettiği ikili paket çıktısıdır. Projenin resmi kaynak Firestore ve dSYM sembol sözleşmesini (`docs/ios-firestore-symbols.md`) korumak için bu dosya asla commit edilmemeli, revert edilmelidir.
+- **Derleme esnasında Git dalı değiştirmeme**: Xcode üzerinde derleme sürerken (özellikle Gradle `embedAndSignAppleFrameworkForXcode` çalışırken) terminalde branch değiştirme (`git checkout`) veya merge yapılmamalıdır; aksi halde Xcode dosya değişimini algılayıp derlemeyi keser (`PhaseScriptExecution failed with a nonzero exit code`).
 - UI gizlemesi tek güvenlik kontrolü mü? Deep link/WebView keyfi URL veya güvensiz JS bridge açıyor mu? ATS/certificate kontrolleri gevşetilmiş mi?
 - Token/hassas veri düz metin tercihlerde mi? Yeni izin/entitlement dar kapsamlı ve Info.plist açıklaması ekli mi? Prod/staging flavor doğru Firebase projesine mi bağlı?
 - iOS picker gerçek implementasyon mu, placeholder mı?
@@ -125,6 +128,8 @@ Stage edilmiş diff yoksa aynı kontrolü incelemenin diff kapsamına göre stag
 - Güvenlik kuralı değişince mevcut kural testlerini incele; yeni yetki reddi için negatif test eksikliğini bulgu olarak belirt.
 
 ## Rapor
+
+Yeni Firestore kuralı, indeksi veya Cloud Function gerektiren mobil/istemci değişikliklerinde, raporun en başında **"Backend / Canlı Dağıtım Bağımlılıkları"** başlığı aç; deploy edilmesi gereken kuralları, `READY` olması gereken bileşik indeksleri ve Cloud Functions fonksiyonlarını listele. Eksik deploy durumunda istemcinin alacağı hatayı (`PERMISSION_DENIED`, `FAILED_PRECONDITION`) açıkça hatırlat.
 
 Önce yalnızca düzeltilmesi gereken bulguları önem sırasıyla yaz:
 
